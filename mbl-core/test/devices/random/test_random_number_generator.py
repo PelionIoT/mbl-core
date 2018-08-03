@@ -109,7 +109,7 @@ class TestRandomNumberGenerator():
         num_cell = 256
 
         # Create a random number generator object.
-        rng = RandomNumberGeneratorService("/dev/urandom")
+        rng = RandomNumberGeneratorService()
 
         # Run the random number generator multiple time.
         rng.generate_n_random_ints(n=num_cell*100)
@@ -130,8 +130,3 @@ class TestRandomNumberGenerator():
         # Calculate the chisquare and p-value.
         chi2, p = scipy.stats.chisquare(f_obs=cells)
         return (chi2, p)
-
-
-#if __name__ == "__main__":
-#    test = TestRandomNumberGenerator()
-#    test.test_random_streams_generated()
