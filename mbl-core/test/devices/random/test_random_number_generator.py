@@ -115,11 +115,11 @@ class TestRandomNumberGenerator():
         rng.generate_n_random_ints(n=num_cell*100)
 
         # Create a list that will contain the number of occurrences for
-        # each number between 0 - 255 i.e h[n] contains the number of
+        # each number between 0 - 255 i.e cells[n] contains the number of
         # occurences of n.
         cells = []
 
-        # Initialise the list with zero.
+        # Initialise the list with zeros.
         for _ in range(num_cell):
             cells.append(0)
 
