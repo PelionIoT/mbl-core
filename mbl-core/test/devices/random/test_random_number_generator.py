@@ -72,28 +72,20 @@ class TestRandomNumberGenerator():
            chosen low cutoff and high
            cutoff value
         """
+        # Set up test parameters
         low_cutoff = 0.05
         high_cutoff = 0.95
         num_of_static_test_run = 100
-        count_p_value_below_low_cutoff = 0
-        count_p_value_above_high_cutoff = 0
         count_p_value_acceptable = 0
 
+        #
         for _ in range(num_of_static_test_run):
             p_value = (self.run_chi_squared_goodness_of_fit_on_rng()[1])
-            if p_value <= low_cutoff:
-                count_p_value_below_low_cutoff += 1
-            elif p_value >= high_cutoff:
-                count_p_value_above_high_cutoff += 1
-            else:
+            if not (p_value <= low_cutoff) and not (p_value >= high_cutoff):
                 count_p_value_acceptable += 1
 
         # Check the results.
-        assert (
-            count_p_value_acceptable > count_p_value_below_low_cutoff and
-            count_p_value_acceptable > count_p_value_above_high_cutoff and
-            count_p_value_acceptable > (num_of_static_test_run/2)
-        )
+        assert count_p_value_acceptable >= (num_of_static_test_run/2)
 
     # helper functions
     def run_chi_squared_goodness_of_fit_on_rng(
