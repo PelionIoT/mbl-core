@@ -93,6 +93,28 @@ class AppManagerTestCaseGenerator:
         """Init AppManagerTestCaseGenerator class."""
         self.config = None
 
+    def create_test_files(self, test_case_config):
+        """
+        Create ipk files and corresponding config file.
+
+        :param test_case_config: Test case config
+        :return: None
+        """
+        self.config = test_case_config
+        # Create test files directory holds all ipks for testing
+        os.makedirs(os.path.dirname(self.config.test_files_dir), exist_ok=True)
+        try:
+            self._create_ipk_file()
+            self._create_test_case_config()
+        except subprocess.CalledProcessError as e:
+            logging.exception(
+                "Operation failed with return error code: {}".format(
+                    e.returncode)
+            )
+        except OSError:
+            logging.exception(
+                "Operation failed with OSError")
+
     def _generate_ipk_content(self):
         # Create DATA directory that contains several files
         for filename in self.config.package_files:
@@ -224,28 +246,6 @@ class AppManagerTestCaseGenerator:
 
         logging.info("Successfully generated JSON file: {}".format(
                          json_file_name))
-
-    def create_test_files(self, test_case_config):
-        """
-        Create ipk files and corresponding config file.
-
-        :param test_case_config: Test case config
-        :return: None
-        """
-        self.config = test_case_config
-        # Create test files directory holds all ipks for testing
-        os.makedirs(os.path.dirname(self.config.test_files_dir), exist_ok=True)
-        try:
-            self._create_ipk_file()
-            self._create_test_case_config()
-        except subprocess.CalledProcessError as e:
-            logging.exception(
-                "Operation failed with return error code: {}".format(
-                    e.returncode)
-            )
-        except OSError:
-            logging.exception(
-                "Operation failed with OSError")
 
 
 def get_argument_parser():

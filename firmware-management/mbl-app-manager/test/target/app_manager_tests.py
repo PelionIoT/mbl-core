@@ -41,6 +41,58 @@ APPS_INSTALL_ROOT_DIR = "/home/app"
 class TestMblAppManager:
     """MBL App Manager main class."""
 
+    def test_main(self):
+        """
+        Test main function.
+
+        This test go over all JSON files in "test_files" directory, parse
+        the configuration and execute the test case it describes.
+        :return: None
+        """
+        subdirectories = os.listdir(IPK_TEST_FILES_DIR)
+        for sub_directory in subdirectories:
+            filename = \
+                os.path.join(IPK_TEST_FILES_DIR, sub_directory)
+            if os.path.splitext(filename)[1] != ".json":
+                continue
+
+            # Parse JSON file
+            with open(filename, "r") as infile:
+                text = infile.read()
+                test_case_config = json.loads(text)
+                ipk_filename = os.path.join(
+                    IPK_TEST_FILES_DIR,
+                    test_case_config["ipk_filename"])
+                package_name = test_case_config["package_name"]
+                package_description = test_case_config["package_description"]
+                package_architecture = test_case_config["package_architecture"]
+                package_version = test_case_config["package_version"]
+                return_code_install = test_case_config["return_code_install"]
+                return_code_remove = test_case_config["return_code_remove"]
+                files = test_case_config["files"]
+
+                print("\n----------------------------------------------------")
+                print("Package name: {}\nDescription: {}\nVersion: {}\n"
+                      "Architecture: {}\n".format(
+                                                  package_name,
+                                                  package_description,
+                                                  package_version,
+                                                  package_architecture
+                                                  ))
+                # Remove previously installed packages with the same name.
+                # This is needed in case previously test failed and there are
+                # still some leftovers
+                self._remove_package(package_name, 0, True)
+                # Now install and verify md5 values for every file in the
+                # package
+                self._install_package(
+                    ipk_filename,
+                    package_name,
+                    return_code_install,
+                    files)
+                # Remove installed package and check return code
+                self._remove_package(package_name, return_code_remove)
+
     def _run_app_manager(
             self,
             command,
@@ -117,55 +169,3 @@ class TestMblAppManager:
                     expected_md5,
                     md5_hash))
                 assert expected_md5 == md5_hash
-
-    def test_main(self):
-        """
-        Test main function.
-
-        This test go over all JSON files in "test_files" directory, parse
-        the configuration and execute the test case it describes.
-        :return: None
-        """
-        subdirectories = os.listdir(IPK_TEST_FILES_DIR)
-        for sub_directory in subdirectories:
-            filename = \
-                os.path.join(IPK_TEST_FILES_DIR, sub_directory)
-            if os.path.splitext(filename)[1] != ".json":
-                continue
-
-            # Parse JSON file
-            with open(filename, "r") as infile:
-                text = infile.read()
-                test_case_config = json.loads(text)
-                ipk_filename = os.path.join(
-                    IPK_TEST_FILES_DIR,
-                    test_case_config["ipk_filename"])
-                package_name = test_case_config["package_name"]
-                package_description = test_case_config["package_description"]
-                package_architecture = test_case_config["package_architecture"]
-                package_version = test_case_config["package_version"]
-                return_code_install = test_case_config["return_code_install"]
-                return_code_remove = test_case_config["return_code_remove"]
-                files = test_case_config["files"]
-
-                print("\n----------------------------------------------------")
-                print("Package name: {}\nDescription: {}\nVersion: {}\n"
-                      "Architecture: {}\n".format(
-                                                  package_name,
-                                                  package_description,
-                                                  package_version,
-                                                  package_architecture
-                                                  ))
-                # Remove previously installed packages with the same name.
-                # This is needed in case previously test failed and there are
-                # still some leftovers
-                self._remove_package(package_name, 0, True)
-                # Now install and verify md5 values for every file in the
-                # package
-                self._install_package(
-                    ipk_filename,
-                    package_name,
-                    return_code_install,
-                    files)
-                # Remove installed package and check return code
-                self._remove_package(package_name, return_code_remove)
