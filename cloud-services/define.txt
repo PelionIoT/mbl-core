@@ -1,0 +1,55 @@
+# Copyright (c) 2017 ARM Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+# Licensed under the Apache License, Version 2.0 (the License); you may
+# not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an AS IS BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../)
+
+# !!!
+# TODO: Currently we are not sure, that all required PAL and mbed-cloud-client configuration
+# parameters are set to correct values. Required to verify that:
+# 1. All PAL and mbed-cloud-client configuration parameters in this file set to correct values for the used version.
+# 2. This file contains all required configuration parameters for the used versions of PAL and mbed-cloud-client.
+
+add_definitions(-DMBED_CLIENT_USER_CONFIG_FILE="\\"mbed_cloud_client_user_config.h"\\")
+add_definitions(-DMBED_CLOUD_CLIENT_USER_CONFIG_FILE="\\"mbed_cloud_client_user_config.h"\\")
+add_definitions(-DPAL_USER_DEFINED_CONFIGURATION="\\"sotp_fs_config_linux.h"\\")
+
+SET(PAL_TLS_BSP_DIR ${NEW_CMAKE_SOURCE_DIR}/mbed-cloud-client/mbed-client-pal/Configs/${TLS_LIBRARY})
+
+# PAL specific configurations for Linux platform simulation
+add_definitions(-DPAL_SIMULATOR_TEST_ENABLE=0)
+add_definitions(-DPAL_SIMULATE_RTOS_REBOOT=0)
+add_definitions(-DPAL_SIMULATOR_FLASH_OVER_FILE_SYSTEM=1)
+add_definitions(-DPAL_SIMULATOR_FS_RM_INSTEAD_OF_FORMAT=1)
+
+# PAL specific configurations for mbedTLS
+add_definitions(-DMBEDTLS_CONFIG_FILE="\\"${PAL_TLS_BSP_DIR}/mbedTLSConfig_${OS_BRAND}.h"\\")
+
+add_definitions(-DPAL_NUMBER_OF_PARTITIONS=1)
+add_definitions(-DPAL_FS_MOUNT_POINT_PRIMARY="\\"/config\\"")
+add_definitions(-DPAL_FS_MOUNT_POINT_SECONDARY="\\"/config\\"")
+add_definitions(-DESFS_WORKING_DIRECTORY="\\"working\\"")
+add_definitions(-DESFS_BACKUP_DIRECTORY="\\"backup\\"")
+add_definitions(-DPAL_UPDATE_FIRMWARE_DIR="\\"/mnt/cache/firmware\\"")
+add_definitions(-DMBED_CLOUD_CLIENT_UPDATE_STORAGE=ARM_UCP_LINUX_YOCTO_RPI)
+
+add_definitions(-DMBED_CONF_MBED_TRACE_ENABLE=1)
+
+add_definitions(-DNS_EXCLUDE_HIGHRES_TIMER)
+add_definitions(-DNS_EVENTLOOP_USE_TICK_TIMER)
+
+add_definitions(-DMBED_CONF_MBED_CLIENT_EVENT_LOOP_SIZE=8192)
+add_definitions(-DMBED_CONF_APP_CLOUD_MODE)
+add_definitions(-DMBED_CONF_APP_DEVELOPER_MODE)
+add_definitions(-DMBED_CONF_MBED_CLIENT_DNS_THREAD_STACK_SIZE=102400)
