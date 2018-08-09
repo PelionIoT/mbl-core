@@ -1,2 +1,6 @@
+subprocess
+re
+os
+scipy.stats
 numpy
-scipy
+zipfile
