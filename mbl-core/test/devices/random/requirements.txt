@@ -1,4 +1,3 @@
-<<<<<<< 65cfb9f48eae9806756b4fb136f84d6b5598a612
 sys
 subprocess
 os
@@ -6,7 +5,3 @@ scipy.stats
 numpy
 gzip
 tempfile
-=======
-numpy
-scipy
->>>>>>> IOTMBL-600 - Create initial system tests

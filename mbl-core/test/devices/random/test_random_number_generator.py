@@ -131,7 +131,6 @@ class TestRandomNumberGenerator:
         num_acceptable_p_value_for_pass = 78
         count_p_value_acceptable = 0
 
-        #
         for _ in range(num_of_static_test_run):
             p_value = (run_chi_squared_goodness_of_fit()[1])
             if not (p_value <= low_cutoff) and not (p_value >= high_cutoff):
