@@ -1,14 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Copyright (c) 2018, Arm Limited and Contributors. All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
 
-import subprocess
-import json
-import os
-import hashlib
-
-MBL_APP_MANAGER = "/usr/bin/mbl-app-manager"
-
 """
+Pytest for testing MBL App Manager.
+
 This pytest tests expect a directory "test_files" to exist under
 /home/app/ directory. This directory should contain ipk files and
 test case configuration files (JSON)
@@ -31,11 +28,19 @@ In order to run pytest without prints:
 ./python3 ./pytest.python3-pytest ./app_manager_test.py
 """
 
+import subprocess
+import json
+import os
+import hashlib
+
+MBL_APP_MANAGER = "/usr/bin/mbl-app-manager"
 IPK_TEST_FILES_DIR = "/home/app/test_files/"
 APPS_INSTALL_ROOT_DIR = "/home/app"
 
 
-class TestMblAppManager(object):
+class TestMblAppManager:
+    """MBL App Manager main class."""
+
     def _run_app_manager(
             self,
             command,
@@ -65,7 +70,7 @@ class TestMblAppManager(object):
             expected_return_code,
             ignore_return_code=False):
         """
-        Remove installed packages
+        Remove installed package.
 
         :param package_name: Package name
         :param ignore_return_code: If set to True - ignore remove return code.
@@ -114,7 +119,13 @@ class TestMblAppManager(object):
                 assert expected_md5 == md5_hash
 
     def test_main(self):
-        # Go over all JSON files in the directory
+        """
+        Test main function.
+
+        This test go over all JSON files in "test_files" directory, parse
+        the configuration and execute the test case it describes.
+        :return: None
+        """
         subdirectories = os.listdir(IPK_TEST_FILES_DIR)
         for sub_directory in subdirectories:
             filename = \

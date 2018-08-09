@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+# Copyright (c) 2018, Arm Limited and Contributors. All rights reserved.
+#
 # SPDX-License-Identifier: Apache-2.0
-
-__version__ = '1.0'
 
 """
 This script generates test files for testing ARM MBL App Manager using pytest.
+
 Test files consist of pairs of .ipk and .json config files.
 Output directory "test_files" holds several of such pairs.
 The output directory "test_files" should be pushed to device to /home/app/
@@ -19,19 +20,22 @@ import logging
 import hashlib
 import json
 
+__version__ = '1.0'
+
 DATA_DIR_NAME = "DATA"
 CONTROL_DIR_NAME = "CONTROL"
 IPKG_DIR_NAME = "IPKG"
 OUTPUT_FILES_DIR_NAME = "test_files"
 
 
-class AppManagerTestCaseConfig(object):
+class AppManagerTestCaseConfig:
     """
-    AppManagerTestCaseConfig contains configuration data of how to create
-    test case files.
+    Contains configuration data of how to create test case files.
+
     It is used as an input parameter of create_test_files() function of
     AppManagerTestCaseGenerator class below.
     """
+
     def __init__(
             self,
             output_dir,
@@ -42,8 +46,22 @@ class AppManagerTestCaseConfig(object):
             package_files,
             return_code_install,
             return_code_remove,
-            ctrl_add_package_name=True
-    ):
+            ctrl_add_package_name=True):
+        """
+        Init AppManagerTestCaseConfig class.
+
+        :param output_dir: Output directory to hold test files
+        :param package_name: Package name
+        :param package_description: Package description
+        :param package_version: Package version
+        :param package_architecture: Package architecture
+        :param package_files: List of all package files to be added
+        :param return_code_install: Expected install return code
+        :param return_code_remove: Expected remove return code
+        :param ctrl_add_package_name: Add package name to control file.
+               Default is true. Use False in order to create invalid file for
+               negative tests.
+        """
         self.output_dir = output_dir
         self.package_name = package_name
         self.package_description = package_description
@@ -55,27 +73,24 @@ class AppManagerTestCaseConfig(object):
         self.ctrl_add_package_name = ctrl_add_package_name
 
         # Init directories names
-        self.package_dest_dir = \
-            os.path.join(self.output_dir, package_name, "")
-        self.data_dir = \
-            os.path.join(self.package_dest_dir, DATA_DIR_NAME)
+        self.package_dest_dir = os.path.join(self.output_dir, package_name)
+        self.data_dir = os.path.join(self.package_dest_dir, DATA_DIR_NAME)
         self.control_dir = \
             os.path.join(self.package_dest_dir, CONTROL_DIR_NAME)
-        self.ipkg_dir = \
-            os.path.join(self.package_dest_dir, IPKG_DIR_NAME, "")
-        self.test_files_dir = \
-            os.path.join(output_dir, OUTPUT_FILES_DIR_NAME, "")
+        self.ipkg_dir = os.path.join(self.package_dest_dir, IPKG_DIR_NAME)
+        self.test_files_dir = os.path.join(output_dir, OUTPUT_FILES_DIR_NAME)
         # output_filename_no_postfix is used for .ipk and .json output files
         self.output_filename_no_postfix = "{}_{}_{}".format(
             package_name,
             package_version,
-            package_architecture
-        )
+            package_architecture)
 
 
-class AppManagerTestCaseGenerator(object):
-    def __init__(self, _logger):
-        self.logger = _logger
+class AppManagerTestCaseGenerator:
+    """Generates test case files (.ipk and configuration files)."""
+
+    def __init__(self):
+        """Init AppManagerTestCaseGenerator class."""
         self.config = None
 
     def _generate_ipk_content(self):
@@ -108,7 +123,7 @@ class AppManagerTestCaseGenerator(object):
             f.write("Description: {}\n\n".format(
                 self.config.package_description
             ))
-        self.logger.info(
+        logging.info(
             "Successfully generated ipk content for package: {}".format(
                          self.config.package_name)
         )
@@ -118,7 +133,7 @@ class AppManagerTestCaseGenerator(object):
         self._generate_ipk_content()
 
         # Create IPKG directory
-        os.makedirs(os.path.dirname(self.config.ipkg_dir), exist_ok=True)
+        os.makedirs(self.config.ipkg_dir, exist_ok=True)
 
         # Create tar files for DATA and CONTROL
         command = [
@@ -138,7 +153,7 @@ class AppManagerTestCaseGenerator(object):
         subprocess.check_call(command, cwd=self.config.control_dir)
 
         # Create ipk file
-        os.makedirs(os.path.dirname(self.config.test_files_dir), exist_ok=True)
+        os.makedirs(self.config.test_files_dir, exist_ok=True)
         ipk_file_name = os.path.join(
                 self.config.test_files_dir,
                 "{}.ipk".format(self.config.output_filename_no_postfix)
@@ -155,9 +170,7 @@ class AppManagerTestCaseGenerator(object):
 
     def _create_test_case_config(self):
         """
-        Generates ipk JSON file describing the test case, expected results
-        and md5 value for each file under package DATA dir.
-        JSON file is saved to self.info.test_files_dir
+        Generate JSON config file describing the test case.
 
         JSON test case config structure:
         {
@@ -175,32 +188,31 @@ class AppManagerTestCaseGenerator(object):
 
         :return: None
         """
-
         # List all files in DATA dir along with their md5 hash
-        files_dict = dict()
+        package_files = dict()
         for subdir, dirs, files in os.walk(self.config.data_dir):
-            for file in files:
-                file_full_path = os.path.join(subdir, file)
+            for filename in files:
+                file_full_path = os.path.join(subdir, filename)
                 with open(file_full_path, "rb") as infile:
                     # Calculate md5 hash
                     buff = infile.read()
                     md5_hash = hashlib.md5(buff).hexdigest()
-                    subdir_relative_path = \
+                    subdir_rel_path = \
                         os.path.relpath(subdir, self.config.data_dir)
                     filename_relative_path = \
-                        os.path.join(subdir_relative_path, file).lstrip("./")
-                    files_dict[filename_relative_path] = md5_hash
+                        os.path.join(subdir_rel_path, filename)
+                    package_files[filename_relative_path] = md5_hash
         # Build JSON dictionary
-        json_dict = dict()
-        json_dict["ipk_filename"] = "{}.ipk".format(
+        json_data = dict()
+        json_data["ipk_filename"] = "{}.ipk".format(
             self.config.output_filename_no_postfix)
-        json_dict["package_name"] = self.config.package_name
-        json_dict["package_description"] = self.config.package_description
-        json_dict["package_architecture"] = self.config.package_architecture
-        json_dict["package_version"] = self.config.package_version
-        json_dict["return_code_install"] = self.config.return_code_install
-        json_dict["return_code_remove"] = self.config.return_code_remove
-        json_dict["files"] = files_dict
+        json_data["package_name"] = self.config.package_name
+        json_data["package_description"] = self.config.package_description
+        json_data["package_architecture"] = self.config.package_architecture
+        json_data["package_version"] = self.config.package_version
+        json_data["return_code_install"] = self.config.return_code_install
+        json_data["return_code_remove"] = self.config.return_code_remove
+        json_data["files"] = package_files
 
         json_file_name = os.path.join(
                 self.config.test_files_dir,
@@ -208,15 +220,15 @@ class AppManagerTestCaseGenerator(object):
         )
 
         with open(json_file_name, "w") as outfile:
-            json.dump(json_dict, outfile, indent=4, sort_keys=True)
+            json.dump(json_data, outfile, indent=4, sort_keys=True)
 
-        self.logger.info("Successfully generated JSON file: {}".format(
+        logging.info("Successfully generated JSON file: {}".format(
                          json_file_name))
 
     def create_test_files(self, test_case_config):
         """
-        Creates ipk files and corresponding config file based on
-        test_case_config
+        Create ipk files and corresponding config file.
+
         :param test_case_config: Test case config
         :return: None
         """
@@ -227,16 +239,21 @@ class AppManagerTestCaseGenerator(object):
             self._create_ipk_file()
             self._create_test_case_config()
         except subprocess.CalledProcessError as e:
-            self.logger.exception(
+            logging.exception(
                 "Operation failed with return error code: {}".format(
                     e.returncode)
             )
         except OSError:
-            self.logger.exception(
+            logging.exception(
                 "Operation failed with OSError")
 
 
 def get_argument_parser():
+    """
+    Return argument parser.
+
+    :return: parser
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description='ARM App manager test case generator'
@@ -260,24 +277,17 @@ def _main():
     parser = get_argument_parser()
     args = parser.parse_args()
 
-    debug_level = logging.INFO
-
-    if args.verbose is not None:
-        if args.verbose:
-            debug_level = logging.DEBUG
-        else:
-            debug_level = logging.INFO
+    debug_level = logging.DEBUG if args.verbose else logging.INFO
 
     logging.basicConfig(
         level=debug_level,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     )
-    logger = logging.getLogger('ARM APP MANAGER TEST CASE GENERATOR')
-    logger.debug('Starting ARM APP MANAGER TEST CASE GENERATOR: ' +
-                 __version__)
-    logger.info('Command line arguments:{}'.format(args))
+    logging.debug('Starting ARM APP MANAGER TEST CASE GENERATOR: {}'.format(
+                 __version__))
+    logging.info('Command line arguments:{}'.format(args))
 
-    app_manager_test_case_generator = AppManagerTestCaseGenerator(logger)
+    app_manager_test_case_generator = AppManagerTestCaseGenerator()
 
     # Create 2 valid ipks
     package_files = ["Dummy_file1.txt", "foo/Dummy_file2.txt"]
