@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`mbl-core/cloud-services` folder contains the Cloud client for Mbed Linux OS.
+`mbl-core/cloud-services/mbl-cloud-client/` folder contains the Cloud client for Mbed Linux OS.
 
 In order to get an access to ARM's Cloud Services from Mbed Linux, Mbed Linux Cloud Client should be built and run as part of Mbed Linux. To do that, follow the instructions at <https://github.com/ARMmbed/meta-mbl/blob/master/docs/walkthrough.md>
 
@@ -10,7 +10,7 @@ For more information about Mbed Linux OS, please see [meta-mbl][meta-mbl].
 
 ## Cloud Services
 
-The Cloud Services component is concerned with providing device applications with access to Mbed Cloud services and for providing the process environment for running the Mbed Cloud Client.  To achieve this, upper-edge C/C++ APIs provided by the Mbed Cloud Client are mapped to a set of D-Bus interfaces to form a D-Bus service. 
+The Cloud Services component is concerned with providing device applications with access to Mbed Cloud services and for providing the process environment for running the Mbed Cloud Client.  To achieve this, upper-edge C/C++ APIs provided by the Mbed Cloud Client are mapped to a set of D-Bus interfaces to form a D-Bus service.
 
 ## Mbed cloud client version
 
@@ -34,9 +34,9 @@ Mbed Cloud client current version is [1.4.0][cc-1-4-0].
 
 ## Building
 
-1. Clone <https://github.com/ARMmbed/mbl-core> repository and navigate to the `cloud-services` folder that is located in the root folder of the mbl-core repository.
+1. Clone <https://github.com/ARMmbed/mbl-core> repository and navigate to the `mbl-core/cloud-services/mbl-cloud-client/` folder.
 
-2. Copy `mbed_cloud_dev_credentials.c` and `update_default_resources.c` into the `cloud-services` folder.
+2. Copy `mbed_cloud_dev_credentials.c` and `update_default_resources.c` into the `mbl-core/cloud-services/mbl-cloud-client/` folder.
 
 3. Obtain dependencies using `mbed-cli` - from the repo's top level directory:
 ```shell
