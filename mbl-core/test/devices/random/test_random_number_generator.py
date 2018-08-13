@@ -26,7 +26,7 @@ RANDOMNESS_SOURCE = "/dev/random"
 # helper function(s)
 
 
-def get_rngtest_success_and_failure_counts(
+def parse_rngtest_output(
     rngtest_output: str,
 ) -> int:
     """
@@ -127,7 +127,7 @@ class TestRandomNumberGenerator:
         os.remove(unzipped_file)
         os.remove(zipped_file)
 
-    def test_null_hypothesis(
+    def test_distribution_null_hypothesis(
         self
     ):
         """The test performs hypothesis testing to determine with a certain
@@ -175,12 +175,10 @@ class TestRandomNumberGenerator:
         )
 
         # Read the program statistics output from stderr
-        statistics_output = process.stderr.decode('utf8')
+        rngtest_output = process.stderr.decode('utf8')
 
         # Get the success and failure counts
-        count_success, count_failure = get_rngtest_success_and_failure_counts(
-            statistics_output
-        )
+        count_success, count_failure = parse_rngtest_output(rngtest_output)
 
         # Check the results
         assert count_success == num_of_blocks
