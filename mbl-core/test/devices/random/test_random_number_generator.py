@@ -31,7 +31,7 @@ def extract_count_from_str(
     stats_str: str,
     stats_preceding_str: str
 ) -> str:
-    """ Extracts the count from a line of a rngtest statistics output."""
+    """ Extract the count from a line of a rngtest statistics output."""
     count = re.search(
         pattern="{}(.*)$".format(stats_preceding_str),
         string=stats_str
@@ -98,17 +98,6 @@ class RandomNumberGeneratorService():
             self.bytes_generator.read(1),
             byteorder='big'
         )
-
-    def generate_n_random_bytes(
-        self,
-        n: int=1
-    ):
-        """Generate a number of bytes."""
-        bytes_ls = []
-        while len(self.numbers) < n:
-            byte = self.generate_random_byte()
-            bytes_ls.append(byte)
-        return bytes_ls
 
 
 class TestRandomNumberGenerator():
