@@ -67,54 +67,35 @@ def run_chi_squared_goodness_of_fit(
     # Number of times the rng will be run.
     no_of_random_bytes = 25600
 
-    # Create a random number generator object.
-    rng = RandomNumberGeneratorService()
+    with RandomNumberGeneratorAccess() as rng:
+        # Create a list that will contain the number of occurrences for
+        # each number between 0 - 255 i.e cells[n] contains the number of
+        # occurences of n.
+        cells = []
 
-    # Create a list that will contain the number of occurrences for
-    # each number between 0 - 255 i.e cells[n] contains the number of
-    # occurences of n.
-    cells = []
+        # Initialise the list with zeros.
+        for _ in range(num_cell):
+            cells.append(0)
 
-    # Initialise the list with zeros.
-    for _ in range(num_cell):
-        cells.append(0)
+        # Set the occurrences of each numbers between 0 and 255.
+        for n in range(0, no_of_random_bytes):
+            byte = int.from_bytes(rng.read(1), byteorder='big')            
+            cells[byte] += 1
 
-    # Set the occurrences of each numbers between 0 and 255.
-    for n in range(0, no_of_random_bytes):
-        cells[rng.generate_random_byte()] += 1
+        # Calculate the chisquare and p-value.
+        chi2, p = scipy.stats.chisquare(f_obs=cells)
+        return (chi2, p)
 
-    # Calculate the chisquare and p-value.
-    chi2, p = scipy.stats.chisquare(f_obs=cells)
-    return (chi2, p)
+class RandomNumberGeneratorAccess:
+    def __enter__(self):
+        self.bytes_generator = open(RANDOMNESS_SOURCE, "rb")
+        return self.bytes_generator
 
-
-class RandomNumberGeneratorService():
-    """The service class to generate random bytes."""
-
-    def __init__(
-        self,
-        source: str = RANDOMNESS_SOURCE
-    ) -> int:
-        self.set_bytes_generator(source)
-
-    def set_bytes_generator(
-        self,
-        source: str = RANDOMNESS_SOURCE
-    ):
-        self.src = source
-        self.bytes_generator = open(source, "rb")
-
-    def generate_random_byte(
-        self
-    ) -> list:
-        """Generate a byte."""
-        return int.from_bytes(
-            self.bytes_generator.read(1),
-            byteorder='big'
-        )
+    def __exit__(self, type, value, traceback):
+        self.bytes_generator.close()
 
 
-class TestRandomNumberGenerator():
+class TestRandomNumberGenerator:
     """Test method(s) for the random number generator."""
 
     def test_compression_size(
@@ -124,14 +105,16 @@ class TestRandomNumberGenerator():
            detected after compressing a file containing a number of bytes
            obtained from the random generator source.
         """
+        
         # Create file to zip
         unzipped_file = "random_bytes.txt"
         no_of_bytes = 4000
-        rng = RandomNumberGeneratorService()
-        f = open(unzipped_file, "wb+")
-        for _ in range(0, no_of_bytes):
-            f.write(rng.bytes_generator.read(1))
-        f.close()
+
+        with RandomNumberGeneratorAccess() as rng:
+            f = open(unzipped_file, "wb+")
+            for _ in range(0, no_of_bytes):
+                f.write(rng.read(1))
+            f.close()
 
         # Zip file
         zipped_file = "random_bytes.zip"
