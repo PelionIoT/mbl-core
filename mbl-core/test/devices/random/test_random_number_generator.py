@@ -2,7 +2,6 @@
 
 
 import subprocess
-import re
 import os
 import scipy.stats
 import numpy
@@ -27,16 +26,31 @@ RANDOMNESS_SOURCE = "/dev/random"
 # helper function(s)
 
 
-def extract_count_from_str(
-    stats_str: str,
-    stats_preceding_str: str
-) -> str:
-    """ Extract the count from a line of a rngtest statistics output."""
-    count = re.search(
-        pattern="{}(.*)$".format(stats_preceding_str),
-        string=stats_str
-    ).group(1)
-    return count
+def get_rngtest_success_and_failure_counts(
+    rngtest_output: str,
+) -> int:
+    """
+    Extract the success and failure counts from a rngtest statistics output.
+    """
+    try:
+        # Identify the lines that provide information about
+        # success(es) and failure(s)
+        statistics_line_success = ""
+        statistics_line_failure = ""
+        substr_success = "rngtest: FIPS 140-2 successes: "
+        substr_failure = "rngtest: FIPS 140-2 failures: "
+        
+        for line in rngtest_output.split('\n'):
+            if substr_success in line:
+                statistics_line_success = line
+            elif substr_failure in line:
+                statistics_line_failure = line
+
+        count_success = int(statistics_line_success.split(":")[-1])
+        count_failure = int(statistics_line_failure.split(":")[-1])
+        return (count_success, count_failure)
+    except ValueError:
+        print("counts not found from rngtest output")  
 
 
 def run_chi_squared_goodness_of_fit(
@@ -165,15 +179,14 @@ class TestRandomNumberGenerator():
            block of data.
         """
         num_of_blocks = 5
-        randomness_source = "/dev/random"
 
         # Run Linux 'rngtest' program as a shell subprocess to perform the test
-        bash_command = "rngtest -c{} < {}".format(
+        shell_command = "rngtest -c{} < {}".format(
             num_of_blocks,
-            randomness_source
+            RANDOMNESS_SOURCE
         )
         process = subprocess.run(
-            args=bash_command,
+            args=shell_command,
             shell=True,
             stderr=subprocess.PIPE
         )
@@ -181,30 +194,9 @@ class TestRandomNumberGenerator():
         # Read the program statistics output from stderr
         statistics_output = process.stderr.decode('utf8')
 
-        # Identify the lines that provide information about
-        # success(es) and failure(s)
-        statistics_line_success = []
-        statistics_line_failure = []
-        substr_success = "rngtest: FIPS 140-2 successes: "
-        substr_failure = "rngtest: FIPS 140-2 failures: "
-        for line in statistics_output.split('\n'):
-            if substr_success in line:
-                statistics_line_success = line
-            elif substr_failure in line:
-                statistics_line_failure = line
-
         # Get the success and failure counts
-        count_success = int(
-            extract_count_from_str(
-                stats_str=statistics_line_success,
-                stats_preceding_str=substr_success
-            )
-        )
-        count_failure = int(
-            extract_count_from_str(
-                stats_str=statistics_line_failure,
-                stats_preceding_str=substr_failure
-            )
+        count_success, count_failure = get_rngtest_success_and_failure_counts(
+            statistics_output
         )
 
         # Check the results
