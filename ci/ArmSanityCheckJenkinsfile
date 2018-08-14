@@ -1,0 +1,10 @@
+/* Copyright (c) 2018 ARM Ltd.
+
+   SPDX-License-Identifier: Apache-2.0 */
+
+@Library('mbl-jenkins-library@master') _
+
+sanityCheckPipeline {
+    credentialsId = "fc6db1f7-2a3f-4655-b54a-476bac1194e5"
+    agent = "builder"
+}
