@@ -1,6 +1,7 @@
+sys
 subprocess
-re
 os
 scipy.stats
 numpy
-zipfile
+gzip
+tempfile
