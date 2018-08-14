@@ -1,11 +1,13 @@
 # Copyright (c) 2018 ARM Ltd.
 
 
+import sys
 import subprocess
 import os
 import scipy.stats
 import numpy
-import zipfile
+import gzip
+import tempfile
 
 """ Pytest tests
 
@@ -26,9 +28,7 @@ RANDOMNESS_SOURCE = "/dev/random"
 # helper function(s)
 
 
-def parse_rngtest_output(
-    rngtest_output: str,
-) -> int:
+def parse_rngtest_output(rngtest_output: str) -> (int, int):
     """
     Extract the success and failure counts from a rngtest statistics output.
     """
@@ -39,7 +39,7 @@ def parse_rngtest_output(
         statistics_line_failure = ""
         substr_success = "rngtest: FIPS 140-2 successes: "
         substr_failure = "rngtest: FIPS 140-2 failures: "
-        
+
         for line in rngtest_output.split('\n'):
             if substr_success in line:
                 statistics_line_success = line
@@ -49,16 +49,15 @@ def parse_rngtest_output(
         count_success = int(statistics_line_success.split(":")[-1])
         count_failure = int(statistics_line_failure.split(":")[-1])
         return (count_success, count_failure)
-    except ValueError:
-        print("counts not found from rngtest output")  
+    except BaseException:
+        print("Unexpected error: {}".format(sys.exc_info()[0]))
 
 
-def run_chi_squared_goodness_of_fit(
-) -> (numpy.float64, numpy.float64):
+def run_chi_squared_goodness_of_fit() -> (numpy.float64, numpy.float64):
     """Perform Hypothesis testing to determine with a certain
-       level of certainty that the hypothesis that the data
-       is taken from a uniform distribution can be rejected.
-       Return the chi square and the p-value in that order.
+    level of certainty that the hypothesis that the data
+    is taken from a uniform distribution can be rejected.
+    Return the chi square and the p-value in that order.
     """
     # Number of possible numbers or cells or bins is 256 because a
     # random byte between 0 and 255 is generated.
@@ -79,65 +78,60 @@ def run_chi_squared_goodness_of_fit(
 
         # Set the occurrences of each numbers between 0 and 255.
         for n in range(0, no_of_random_bytes):
-            byte = int.from_bytes(rng.read(1), byteorder='big')            
-            cells[byte] += 1
+            integer = int.from_bytes(rng.read(1), byteorder="big")
+            cells[integer] += 1
 
         # Calculate the chisquare and p-value.
         chi2, p = scipy.stats.chisquare(f_obs=cells)
         return (chi2, p)
 
+
 class RandomNumberGeneratorAccess:
+    """Allow safe access to random generator with the 'with' statement."""
     def __enter__(self):
+        """Open the random generator file and return it."""
         self.bytes_generator = open(RANDOMNESS_SOURCE, "rb")
         return self.bytes_generator
 
     def __exit__(self, type, value, traceback):
+        """Close previously opened random generator file."""
         self.bytes_generator.close()
 
 
 class TestRandomNumberGenerator:
     """Test method(s) for the random number generator."""
 
-    def test_compression_size(
-        self
-    ):
+    def test_compression_size(self):
         """Test the randomness of the data by ensuring that no redundancy is
-           detected after compressing a file containing a number of bytes
-           obtained from the random generator source.
+        detected after compressing a file containing a number of bytes
+        obtained from the random generator source.
         """
-        
-        # Create file to zip
-        unzipped_file = "random_bytes.txt"
-        no_of_bytes = 4000
+        zipped_file = tempfile.NamedTemporaryFile(mode="wb+")
+        try:
+            content = []
+            # Write bytes to the file
+            no_of_bytes = 4000
+            with RandomNumberGeneratorAccess() as rng:
+                content = rng.read(no_of_bytes)
 
-        with RandomNumberGeneratorAccess() as rng:
-            f = open(unzipped_file, "wb+")
-            for _ in range(0, no_of_bytes):
-                f.write(rng.read(1))
-            f.close()
+            # Zip file
+            with gzip.open(zipped_file.name, "wb+") as f:
+                f.write(content)
 
-        # Zip file
-        zipped_file = "random_bytes.zip"
-        zipfile.ZipFile(zipped_file, mode='w').write(unzipped_file)
+            # Check result
+            assert os.path.getsize(zipped_file.name) >= no_of_bytes
+        finally:
+            zipped_file.close()
 
-        # Check result
-        assert os.path.getsize(zipped_file) >= os.path.getsize(unzipped_file)
-
-        # Clean up
-        os.remove(unzipped_file)
-        os.remove(zipped_file)
-
-    def test_distribution_null_hypothesis(
-        self
-    ):
+    def test_distribution_null_hypothesis(self):
         """The test performs hypothesis testing to determine with a certain
-           level of certainty that the hypothesis that the data
-           is taken from a uniform distribution can be rejected. This is done
-           by running an hypothesis test multiple times and analysing the
-           probability of observing a test statistic at least as extreme in
-           a chi-squared distribution, also known as p-value.
-           A pass is determined when the majority of p-values fall between
-           chosen low cutoff and high cutoff value.
+        level of certainty that the hypothesis that the data
+        is taken from a uniform distribution can be rejected. This is done
+        by running an hypothesis test multiple times and analysing the
+        probability of observing a test statistic at least as extreme in
+        a chi-squared distribution, also known as p-value.
+        A pass is determined when the majority of p-values fall between
+        chosen low cutoff and high cutoff value.
         """
         # Set up test parameters
         low_cutoff = 0.05
@@ -153,13 +147,12 @@ class TestRandomNumberGenerator:
         # Check the results.
         assert count_p_value_acceptable >= (num_of_static_test_run/2)
 
-    def test_fips_140_2(
-        self
-    ):
-        """The test works on blocks of 20000 bits (2500 bytes), using the
-           FIPS 140-2 RNG tests (Monobit test, Poker test, Runs test,
-           Long run test and Continuous test) to test the randomness of each
-           block of data.
+    def test_fips_140_2(self):
+        """
+        The test works on blocks of 20000 bits (2500 bytes), using the
+        FIPS 140-2 RNG tests (Monobit test, Poker test, Runs test,
+        Long run test and Continuous test) to test the randomness of each
+        block of data.
         """
         num_of_blocks = 5
 
@@ -175,7 +168,7 @@ class TestRandomNumberGenerator:
         )
 
         # Read the program statistics output from stderr
-        rngtest_output = process.stderr.decode('utf8')
+        rngtest_output = process.stderr.decode("utf8")
 
         # Get the success and failure counts
         count_success, count_failure = parse_rngtest_output(rngtest_output)
