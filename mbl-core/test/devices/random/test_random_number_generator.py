@@ -51,6 +51,7 @@ def parse_rngtest_output(rngtest_output: str) -> (int, int):
         return (count_success, count_failure)
     except BaseException:
         print("Unexpected error: {}".format(sys.exc_info()[0]))
+        raise
 
 
 def run_chi_squared_goodness_of_fit() -> (numpy.float64, numpy.float64):
@@ -106,22 +107,12 @@ class TestRandomNumberGenerator:
         detected after compressing a file containing a number of bytes
         obtained from the random generator source.
         """
-        zipped_file = tempfile.NamedTemporaryFile(mode="wb+")
-        try:
-            content = []
-            # Write bytes to the file
-            no_of_bytes = 4000
-            with RandomNumberGeneratorAccess() as rng:
-                content = rng.read(no_of_bytes)
-
-            # Zip file
-            with gzip.open(zipped_file.name, "wb+") as f:
-                f.write(content)
-
-            # Check result
-            assert os.path.getsize(zipped_file.name) >= no_of_bytes
-        finally:
-            zipped_file.close()
+        with tempfile.NamedTemporaryFile(mode="wb") as tmpfile:
+            with gzip.GzipFile(tmpfile.name, mode="wb") as zipped_tmpfile:
+                with RandomNumberGeneratorAccess() as rng:
+                    no_of_bytes = 4000
+                    zipped_tmpfile.write(rng.read(no_of_bytes))
+            assert os.path.getsize(zipped_tmpfile.name) >= no_of_bytes
 
     def test_distribution_null_hypothesis(self):
         """The test performs hypothesis testing to determine with a certain
@@ -145,7 +136,7 @@ class TestRandomNumberGenerator:
                 count_p_value_acceptable += 1
 
         # Check the results.
-        assert count_p_value_acceptable >= (num_of_static_test_run/2)
+        assert count_p_value_acceptable >= (num_of_static_test_run / 2)
 
     def test_fips_140_2(self):
         """
