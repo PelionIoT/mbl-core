@@ -128,6 +128,7 @@ class TestRandomNumberGenerator:
         low_cutoff = 0.05
         high_cutoff = 0.95
         num_of_static_test_run = 100
+        num_acceptable_p_value_for_pass = 78
         count_p_value_acceptable = 0
 
         for _ in range(num_of_static_test_run):
@@ -136,7 +137,7 @@ class TestRandomNumberGenerator:
                 count_p_value_acceptable += 1
 
         # Check the results.
-        assert count_p_value_acceptable >= (num_of_static_test_run / 2)
+        assert count_p_value_acceptable >= num_acceptable_p_value_for_pass
 
     def test_fips_140_2(self):
         """
