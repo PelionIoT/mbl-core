@@ -1,4 +1,7 @@
-# Copyright (c) 2018 ARM Ltd.
+"""Copyright (c) 2018 ARM Limited and Contributors. All rights reserved.
+
+SPDX-License-Identifier: Apache-2.0
+"""
 
 
 import sys
@@ -9,7 +12,7 @@ import numpy
 import gzip
 import tempfile
 
-""" Pytest tests
+"""Pytest tests
 
 Pytest is the framework used to run tests. It autodiscovers tests by the
 name of the class or method/function. More info about autodiscovery:
@@ -29,9 +32,7 @@ RANDOMNESS_SOURCE = "/dev/random"
 
 
 def parse_rngtest_output(rngtest_output: str) -> (int, int):
-    """
-    Extract the success and failure counts from a rngtest statistics output.
-    """
+    """Parse rngtest output to return succcess and failure counts."""
     try:
         # Identify the lines that provide information about
         # success(es) and failure(s)
@@ -55,9 +56,11 @@ def parse_rngtest_output(rngtest_output: str) -> (int, int):
 
 
 def run_chi_squared_goodness_of_fit() -> (numpy.float64, numpy.float64):
-    """Perform Hypothesis testing to determine with a certain
-    level of certainty that the hypothesis that the data
-    is taken from a uniform distribution can be rejected.
+    """Calculate the chi-square and p-value for a rng sample.
+
+    Perform Hypothesis testing to determine with a certain level of certainty
+    that the hypothesis that the random number generator data is taken from a
+    uniform distribution can be rejected.
     Return the chi square and the p-value in that order.
     """
     # Number of possible numbers or cells or bins is 256 because a
@@ -89,6 +92,7 @@ def run_chi_squared_goodness_of_fit() -> (numpy.float64, numpy.float64):
 
 class RandomNumberGeneratorAccess:
     """Allow safe access to random generator with the 'with' statement."""
+
     def __enter__(self):
         """Open the random generator file and return it."""
         self.bytes_generator = open(RANDOMNESS_SOURCE, "rb")
@@ -103,9 +107,11 @@ class TestRandomNumberGenerator:
     """Test method(s) for the random number generator."""
 
     def test_compression_size(self):
-        """Test the randomness of the data by ensuring that no redundancy is
-        detected after compressing a file containing a number of bytes
-        obtained from the random generator source.
+        """Test that there is no repeated pattern in the rng output.
+
+        Test the randomness of the data by ensuring that no redundancy is
+        detected after compressing a file containing a number of bytes obtained
+        from the random generator source.
         """
         with tempfile.NamedTemporaryFile(mode="wb") as tmpfile:
             with gzip.GzipFile(tmpfile.name, mode="wb") as zipped_tmpfile:
@@ -115,14 +121,17 @@ class TestRandomNumberGenerator:
             assert os.path.getsize(zipped_tmpfile.name) >= no_of_bytes
 
     def test_distribution_null_hypothesis(self):
-        """The test performs hypothesis testing to determine with a certain
-        level of certainty that the hypothesis that the data
-        is taken from a uniform distribution can be rejected. This is done
-        by running an hypothesis test multiple times and analysing the
-        probability of observing a test statistic at least as extreme in
-        a chi-squared distribution, also known as p-value.
-        A pass is determined when the majority of p-values fall between
-        chosen low cutoff and high cutoff value.
+        """
+        Run multiple chi-square tests on a rng to assess its distribution.
+
+        The test performs hypothesis testing to determine with a certain
+        level of certainty that the hypothesis that the data is taken from a
+        uniform distribution can be rejected. This is done by running an
+        hypothesis test multiple times and analysing the probability of
+        observing a test statistic at least as extreme in a chi-squared
+        distribution, also known as p-value.A pass is determined when the
+        majority of p-values fall between chosen low cutoff and high cutoff
+        value.
         """
         # Set up test parameters
         low_cutoff = 0.05
@@ -141,10 +150,14 @@ class TestRandomNumberGenerator:
 
     def test_fips_140_2(self):
         """
+        Test the rng against the FIPS 140-2 security standard.
+
         The test works on blocks of 20000 bits (2500 bytes), using the
-        FIPS 140-2 RNG tests (Monobit test, Poker test, Runs test,
-        Long run test and Continuous test) to test the randomness of each
-        block of data.
+        FIPS 140-2 RNG tests (Monobit test, Poker test, Runs test,cLong run
+        test and Continuous test) to test the randomness of each block of data.
+        The test is performed by running Linux rngtest tool from a shell
+        command via a subprocess. The result from the tool is used to check the
+        pass condition.
         """
         num_of_blocks = 5
 
