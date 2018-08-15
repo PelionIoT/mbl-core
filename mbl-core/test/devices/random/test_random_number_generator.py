@@ -41,7 +41,7 @@ def parse_rngtest_output(rngtest_output: str) -> (int, int):
         substr_success = "rngtest: FIPS 140-2 successes: "
         substr_failure = "rngtest: FIPS 140-2 failures: "
 
-        for line in rngtest_output.split('\n'):
+        for line in rngtest_output.split("\n"):
             if substr_success in line:
                 statistics_line_success = line
             elif substr_failure in line:
@@ -141,7 +141,7 @@ class TestRandomNumberGenerator:
         count_p_value_acceptable = 0
 
         for _ in range(num_of_static_test_run):
-            p_value = (run_chi_squared_goodness_of_fit()[1])
+            p_value = run_chi_squared_goodness_of_fit()[1]
             if not (p_value <= low_cutoff) and not (p_value >= high_cutoff):
                 count_p_value_acceptable += 1
 
@@ -163,13 +163,10 @@ class TestRandomNumberGenerator:
 
         # Run Linux 'rngtest' program as a shell subprocess to perform the test
         shell_command = "rngtest -c{} < {}".format(
-            num_of_blocks,
-            RANDOMNESS_SOURCE
+            num_of_blocks, RANDOMNESS_SOURCE
         )
         process = subprocess.run(
-            args=shell_command,
-            shell=True,
-            stderr=subprocess.PIPE
+            args=shell_command, shell=True, stderr=subprocess.PIPE
         )
 
         # Read the program statistics output from stderr
@@ -181,8 +178,3 @@ class TestRandomNumberGenerator:
         # Check the results
         assert count_success == num_of_blocks
         assert count_failure == 0
-
-
-#if __name__ == "__main__":
-#    test = TestRandomNumberGenerator()
-#    test.test_random_streams_generated()
