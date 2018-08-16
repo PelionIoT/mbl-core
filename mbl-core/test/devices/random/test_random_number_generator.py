@@ -77,8 +77,7 @@ def run_chi_squared_goodness_of_fit() -> (numpy.float64, numpy.float64):
         cells = []
 
         # Initialise the list with zeros.
-        for _ in range(num_cell):
-            cells.append(0)
+        cells = [0] * num_cell
 
         # Set the occurrences of each numbers between 0 and 255.
         for n in range(0, no_of_random_bytes):
@@ -142,7 +141,7 @@ class TestRandomNumberGenerator:
 
         for _ in range(num_of_static_test_run):
             p_value = run_chi_squared_goodness_of_fit()[1]
-            if not (p_value <= low_cutoff) and not (p_value >= high_cutoff):
+            if low_cutoff <= p_value <= high_cutoff:
                 count_p_value_acceptable += 1
 
         # Check the results.
