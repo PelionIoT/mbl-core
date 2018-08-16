@@ -12,15 +12,7 @@ import numpy
 import gzip
 import tempfile
 
-"""Pytest tests
-
-Pytest is the framework used to run tests. It autodiscovers tests by the
-name of the class or method/function. More info about autodiscovery:
-https://docs.pytest.org/en/latest/goodpractices.html#test-discovery
-
-Pytest documentation can be found here: https://docs.pytest.org/en/latest/
-
-The aim of this file is to test the randomness of the OS random generator.
+"""The aim of this file is to test the randomness of the OS random generator.
 
 This is done by reading the special file /dev/random which serves as
 pseudorandom number generator.
