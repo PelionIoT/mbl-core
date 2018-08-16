@@ -1,16 +1,12 @@
-# Mbed Linux Cloud Client Repository
+# Mbed Linux OS Cloud Client
 
 ## Purpose
 
 `mbl-core/cloud-services/mbl-cloud-client/` folder contains the Cloud client for Mbed Linux OS.
 
-In order to get an access to ARM's Cloud Services from Mbed Linux, Mbed Linux Cloud Client should be built and run as part of Mbed Linux. To do that, follow the instructions at <https://github.com/ARMmbed/meta-mbl/blob/master/docs/walkthrough.md>
+In order to get an access to ARM's Cloud Services from Mbed Linux OS, Mbed Linux OS Cloud Client should be built and run as part of Mbed Linux OS. To do that, follow the instructions at <https://github.com/ARMmbed/meta-mbl/blob/master/docs/walkthrough.md>
 
 For more information about Mbed Linux OS, please see [meta-mbl][meta-mbl].
-
-## Cloud Services
-
-The Cloud Services component is concerned with providing device applications with access to Mbed Cloud services and for providing the process environment for running the Mbed Cloud Client.  To achieve this, upper-edge C/C++ APIs provided by the Mbed Cloud Client are mapped to a set of D-Bus interfaces to form a D-Bus service.
 
 ## Mbed cloud client version
 
@@ -57,7 +53,7 @@ make mbl-cloud-client
 
 ## Running
 
-The executable uses various directories that you probably don't want to exist on your development machine so it is best to run mbed Linux Cloud Client in a docker container. While still in the `__x86_x64_NativeLinux_mbedtls` directory:
+The executable uses various directories that you probably don't want to exist on your development machine so it is best to run mbed Linux OS Cloud Client in a docker container. While still in the `__x86_x64_NativeLinux_mbedtls` directory:
 ```shell
 cp ../Dockerfile Debug
 docker build -t mbl-cloud-client Debug
