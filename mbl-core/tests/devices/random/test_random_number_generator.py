@@ -42,7 +42,7 @@ def parse_rngtest_output(rngtest_output: str) -> (int, int):
         count_success = int(statistics_line_success.split(":")[-1])
         count_failure = int(statistics_line_failure.split(":")[-1])
         return (count_success, count_failure)
-    except BaseException:
+    except Exception:
         print("Unexpected error: {}".format(sys.exc_info()[0]))
         raise
 
