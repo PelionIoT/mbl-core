@@ -361,10 +361,8 @@ def _main():
         )
         app_manager_test_case_generator.create_test_files(test_case_config4)
 
-    except subprocess.CalledProcessError:
+    except Exception:
         return 1
-    except OSError:
-        return 2
 
 
 if __name__ == "__main__":
