@@ -165,7 +165,7 @@ class AppManagerTestCaseGenerator:
             os.path.join(self.config.ipkg_dir, "data.tar.gz"),
             ".",
         ]
-        subprocess.check_call(command, cwd=self.config.data_dir)
+        subprocess.run(command, cwd=self.config.data_dir, check=True)
 
         command = [
             "tar",
@@ -173,7 +173,7 @@ class AppManagerTestCaseGenerator:
             os.path.join(self.config.ipkg_dir, "control.tar.gz"),
             ".",
         ]
-        subprocess.check_call(command, cwd=self.config.control_dir)
+        subprocess.run(command, cwd=self.config.control_dir, check=True)
 
         # Create ipk file
         os.makedirs(self.config.test_files_dir, exist_ok=True)
@@ -189,7 +189,7 @@ class AppManagerTestCaseGenerator:
             "control.tar.gz",
         ]
 
-        subprocess.check_call(command, cwd=self.config.ipkg_dir)
+        subprocess.run(command, cwd=self.config.ipkg_dir, check=True)
 
     def _create_test_case_config(self):
         """
@@ -228,7 +228,7 @@ class AppManagerTestCaseGenerator:
                     )
                     package_files[filename_relative_path] = md5_hash
         # Build JSON dictionary
-        json_data = dict()
+        json_data = {}
         json_data["ipk_filename"] = "{}.ipk".format(
             self.config.output_filename_no_postfix
         )
