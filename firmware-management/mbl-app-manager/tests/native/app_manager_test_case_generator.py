@@ -113,8 +113,10 @@ class AppManagerTestCaseGenerator:
                     e.returncode
                 )
             )
+            raise
         except OSError:
             logging.exception("Operation failed with OSError")
+            raise
 
     def _generate_ipk_content(self):
         # Create DATA directory that contains several files
@@ -295,68 +297,74 @@ def _main():
     )
     logging.info("Command line arguments:{}".format(args))
 
-    app_manager_test_case_generator = AppManagerTestCaseGenerator()
+    try:
+        app_manager_test_case_generator = AppManagerTestCaseGenerator()
 
-    # Create 2 valid ipks
-    package_files = ["Dummy_file1.txt", "foo/Dummy_file2.txt"]
-    test_case_config1 = AppManagerTestCaseConfig(
-        output_dir=args.output_directory,
-        package_name="valid-ipk1",
-        package_description="This is a valid ipk1 description.\n"
-        "Expecting to successfully installed.",
-        package_version="1.0",
-        package_architecture="armv7vet2hf-neon",
-        package_files=package_files,
-        return_code_install=0,
-        return_code_remove=0,
-    )
-    app_manager_test_case_generator.create_test_files(test_case_config1)
+        # Create 2 valid ipks
+        package_files = ["Dummy_file1.txt", "foo/Dummy_file2.txt"]
+        test_case_config1 = AppManagerTestCaseConfig(
+            output_dir=args.output_directory,
+            package_name="valid-ipk1",
+            package_description="This is a valid ipk1 description.\n"
+            "Expecting to successfully installed.",
+            package_version="1.0",
+            package_architecture="armv7vet2hf-neon",
+            package_files=package_files,
+            return_code_install=0,
+            return_code_remove=0,
+        )
+        app_manager_test_case_generator.create_test_files(test_case_config1)
 
-    package_files = [
-        "Dummy_file1.txt",
-        "foo/Dummy_file2.txt",
-        "foo/123/Dummy_file3.txt",
-    ]
-    test_case_config2 = AppManagerTestCaseConfig(
-        output_dir=args.output_directory,
-        package_name="valid-ipk2",
-        package_description="This is a valid ipk2 description.\n"
-        "Expecting to successfully installed.",
-        package_version="2.0",
-        package_architecture="armv7vet2hf-neon",
-        package_files=package_files,
-        return_code_install=0,
-        return_code_remove=0,
-    )
-    app_manager_test_case_generator.create_test_files(test_case_config2)
+        package_files = [
+            "Dummy_file1.txt",
+            "foo/Dummy_file2.txt",
+            "foo/123/Dummy_file3.txt",
+        ]
+        test_case_config2 = AppManagerTestCaseConfig(
+            output_dir=args.output_directory,
+            package_name="valid-ipk2",
+            package_description="This is a valid ipk2 description.\n"
+            "Expecting to successfully installed.",
+            package_version="2.0",
+            package_architecture="armv7vet2hf-neon",
+            package_files=package_files,
+            return_code_install=0,
+            return_code_remove=0,
+        )
+        app_manager_test_case_generator.create_test_files(test_case_config2)
 
-    # Create 2 invalid ipks
-    package_files = ["Dummy_file1.txt", "foo/Dummy_file2.txt"]
-    test_case_config3 = AppManagerTestCaseConfig(
-        output_dir=args.output_directory,
-        package_name="invalid-ipk1",
-        package_description="Invalid ipk1 file (missing package name).",
-        package_version="2.0",
-        package_architecture="armv7vet2hf-neon",
-        package_files=package_files,
-        return_code_install=1,
-        return_code_remove=0,
-        ctrl_add_package_name=False,
-    )
-    app_manager_test_case_generator.create_test_files(test_case_config3)
+        # Create 2 invalid ipks
+        package_files = ["Dummy_file1.txt", "foo/Dummy_file2.txt"]
+        test_case_config3 = AppManagerTestCaseConfig(
+            output_dir=args.output_directory,
+            package_name="invalid-ipk1",
+            package_description="Invalid ipk1 file (missing package name).",
+            package_version="2.0",
+            package_architecture="armv7vet2hf-neon",
+            package_files=package_files,
+            return_code_install=1,
+            return_code_remove=0,
+            ctrl_add_package_name=False,
+        )
+        app_manager_test_case_generator.create_test_files(test_case_config3)
 
-    package_files = ["Dummy_file1.txt"]
-    test_case_config4 = AppManagerTestCaseConfig(
-        output_dir=args.output_directory,
-        package_name="invalid-ipk2",
-        package_description="Invalid ipk2 file (unsupported architecture).",
-        package_version="2.0",
-        package_architecture="invalid-architecture",
-        package_files=package_files,
-        return_code_install=1,
-        return_code_remove=0,
-    )
-    app_manager_test_case_generator.create_test_files(test_case_config4)
+        package_files = ["Dummy_file1.txt"]
+        test_case_config4 = AppManagerTestCaseConfig(
+            output_dir=args.output_directory,
+            package_name="invalid-ipk2",
+            package_description="Invalid ipk2 file (unsupported architecture)",
+            package_version="2.0",
+            package_architecture="invalid-architecture",
+            package_files=package_files,
+            return_code_install=1,
+            return_code_remove=0,
+        )
+        app_manager_test_case_generator.create_test_files(test_case_config4)
+
+    except subprocess.CalledProcessError:
+        return 1
+    except OSError:
+        return 2
 
 
 if __name__ == "__main__":
