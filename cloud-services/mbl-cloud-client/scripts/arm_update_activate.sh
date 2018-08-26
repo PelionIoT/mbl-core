@@ -135,6 +135,24 @@ else
     exit 21
 fi
 
+# For now, we assume that a firmware is in a tar (Tape Archive) format and an ipk is in ar (Linux Archive) format.
+# (That is not nessasaraly always true, so for now it's just a temporary solution)
+# Hack Start >>>>>>>>>>>>>>>>>>>
+# If FIRMWARE is not a tar file we assume it's an IPK file for installation
+if ! tar -t -f "$FIRMWARE" > /dev/null 2>&1; then
+    mbl-app-manager -f "$FIRMWARE"
+    # Flag that boot is not required
+    touch /tmp/do_not_reboot
+    exit 0
+else
+    # Remove old flag and if it fails, exit with error
+    if ! rm -f /tmp/do_not_reboot; then
+        echo "Failed to remove /tmp/do_not_reboot flag file";
+        exit 27
+    fi
+fi
+# Hack End >>>>>>>>>>>>>>>>>>>
+
 create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE"
 ensure_not_mounted_or_die "$nextPartition"
 

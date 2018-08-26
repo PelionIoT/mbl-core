@@ -32,6 +32,15 @@
 # shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
+# For now, we assume that a firmware is in a tar (Tape Archive) format and an ipk is in ar (Linux Archive) format.
+# (That is not nessasaraly always true, so for now it's just a temporary solution)
+# Hack Start >>>>>>>>>>>>>>>>>>>
+# If FIRMWARE is not a tar file we assume it's an IPK file and bail-out
+if ! tar -t -f "$FIRMWARE" > /dev/null 2>&1; then
+    exit 0
+fi
+# Hack End >>>>>>>>>>>>>>>>>>>
+
 if [ -n "$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" ]; then
     # Redirect stdout and stderr to the log file
     exec >"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
