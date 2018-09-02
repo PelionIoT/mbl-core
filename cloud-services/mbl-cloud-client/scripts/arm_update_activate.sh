@@ -135,15 +135,59 @@ else
     exit 21
 fi
 
-# For now, we assume that a firmware is in a tar (Tape Archive) format and an ipk is in ar (Linux Archive) format.
-# (That is not nessasaraly always true, so for now it's just a temporary solution)
-# Hack Start >>>>>>>>>>>>>>>>>>>
+# For now, we have a temporary solution. At this stage we support single package/firmware updated. We expect one of 2 types of files :
+# 1) Rootfs firmware update - in tar format
+# 2) An opkg ipk file - wrapped in a tar format (needed to be extracted in order to get the actual ipk)
+# Lets check if a single '*.ipk' file is inside the tar 
 # If FIRMWARE is not a tar file we assume it's an IPK file for installation
-if ! tar -t -f "$FIRMWARE" > /dev/null 2>&1; then
-    mbl-app-manager -f "$FIRMWARE"
-    # Flag that boot is not required
-    touch /tmp/do_not_reboot
-    exit 0
+FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
+if echo "${FIRMWARE_FILES}" | grep -e ".*\.ipk$" > /dev/null 2>&1 ; then
+    if [ $(echo "${FIRMWARE_FILES}" | wc -l) -eq 1 ]; then
+        # get the package name (the first token in the string when seperator is '_'). 
+        # Comment : there are other options :
+        # 1) Use opkg capabilities but I can't do that here due to some restrictions. 
+        # 2) Look in the ipk control file. 
+        IPK_FILE_NAME=${FIRMWARE_FILES}
+        IPK_PKG_NAME=$(echo "${IPK_FILE_NAME}" | cut -d'_' -f1)
+        
+        # get the actualt ipk file to /tmp
+        tar -xvf "${FIRMWARE}" -C /tmp
+        if [ $? -ne 0 ] ; then
+            echo "tar -xvf \"${FIRMWARE}\" -C /tmp failed!"
+            exit 41
+        fi
+
+        #remove package if installed
+        RET=$(mbl-app-manager -l)
+        if [ $? -ne 0 ]; then
+            echo "mbl-app-manager -l failed!"
+            exit 42
+        fi
+        if echo "$RET" | grep "${IPK_PKG_NAME}" ; then
+            mbl-app-manager -r "${IPK_PKG_NAME}"
+            if [ $? -ne 0 ]; then
+                echo "mbl-app-manager -r \"${IPK_PKG_NAME}\" failed!"
+                exit 44
+            fi   
+        fi
+        
+        #install package
+        mbl-app-manager -i "/tmp/${IPK_FILE_NAME}"
+        if [ $? -ne 0 ]; then
+            echo "mbl-app-manager -i \"/tmp/${IPK_FILE_NAME}\" failed!"
+            exit 42
+        fi
+        
+        #remove temporary ipk file
+        rm -rf "/tmp/${IPK_FILE_NAME}"
+        
+        # Flag that boot is not required
+        touch /tmp/do_not_reboot
+        exit 0
+    else
+        echo "Only a single package installation is supported!";
+        exit 40
+    fi
 else
     # Remove old flag and if it fails, exit with error
     if ! rm -f /tmp/do_not_reboot; then
@@ -151,7 +195,6 @@ else
         exit 27
     fi
 fi
-# Hack End >>>>>>>>>>>>>>>>>>>
 
 create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE"
 ensure_not_mounted_or_die "$nextPartition"
