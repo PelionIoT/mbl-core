@@ -141,7 +141,7 @@ fi
 # 2) An opkg ipk file - wrapped in a tar format (needed to be extracted in order to get the actual ipk)
 # Lets check if a single '*.ipk' file is inside the tar 
 # If FIRMWARE is not a tar file we assume it's an IPK file for installation
-SRC_IPK_PATH=/mnt/cache/opt/src_ipk
+SRC_IPK_PATH=/mnt/cache/opkg/src_ipk
 if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
 then
     echo "tar -tf \"${FIRMWARE}\" failed!"
