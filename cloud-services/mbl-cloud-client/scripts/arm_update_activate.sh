@@ -74,28 +74,6 @@ famrpodMountpoint="$3"
     ensure_mounted_or_die "$famrpodPart" "$famrpodMountpoint" "$ROOTFS_TYPE"
 }
 
-# Check if a package is installed
-# Exits on errors.
-# Returns 0 if not installed / 1 if installed
-# $1: Name of package to check if installed
-is_package_installed() {
-pkg_name="$1"
-
-    
-    if ! installed_pkgs=$(mbl-app-manager -l)
-    then
-            echo "mbl-app-manager -l failed!"
-            exit 42
-    fi
-    printf "%s" "$installed_pkgs" | awk '{print $1}' | while read -r installed_pkg_name; do
-        if [ "$installed_pkg_name" = "$pkg_name" ]; then
-            return 1
-       fi
-    done
-    return 0
-}
-
-
 # Formats and populates a new root partition
 # Exits on errors.
 #
@@ -164,7 +142,6 @@ fi
 # Lets check if a single '*.ipk' file is inside the tar 
 # If FIRMWARE is not a tar file we assume it's an IPK file for installation
 SRC_IPK_PATH=/mnt/cache/opt/src_ipk
-
 if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
 then
     echo "tar -tf \"${FIRMWARE}\" failed!"
@@ -187,8 +164,15 @@ if echo "${FIRMWARE_FILES}" | grep -q '.*\.ipk$' ; then
         fi
 
         #remove package if installed
-        is_installed=is_package_installed "$IPK_PKG_NAME"       
-        if is_installed; then
+        if ! installed_pkgs=$(mbl-app-manager -l)
+        then
+            echo "mbl-app-manager -l failed!"
+            exit 42
+        fi
+                
+        is_package_installed=$(printf "%s" "$installed_pkgs" | awk -v "pkgname=${IPK_PKG_NAME}" '$1==pkgname { print $1 }')
+        if [ -n "$is_package_installed" ]
+        then
             if ! mbl-app-manager -r "${IPK_PKG_NAME}"
             then
                 echo "mbl-app-manager -r \"${IPK_PKG_NAME} \" failed!"
