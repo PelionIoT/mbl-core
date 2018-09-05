@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Ltd.
+# Copyright 2018 ARM Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 #

@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Ltd.
+# Copyright 2018 ARM Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -74,6 +74,28 @@ famrpodMountpoint="$3"
     ensure_mounted_or_die "$famrpodPart" "$famrpodMountpoint" "$ROOTFS_TYPE"
 }
 
+# Check if a package is installed
+# Exits on errors.
+# Returns 0 if not installed / 1 if installed
+# $1: Name of package to check if installed
+is_package_installed() {
+pkg_name="$1"
+
+    
+    if ! installed_pkgs=$(mbl-app-manager -l)
+    then
+            echo "mbl-app-manager -l failed!"
+            exit 42
+    fi
+    printf "%s" "$installed_pkgs" | awk '{print $1}' | while read -r installed_pkg_name; do
+        if [ "$installed_pkg_name" = "$pkg_name" ]; then
+            return 1
+       fi
+    done
+    return 0
+}
+
+
 # Formats and populates a new root partition
 # Exits on errors.
 #
@@ -109,6 +131,7 @@ crpodImageFile="$3"
     exit 23
 }
 
+
 # Detect root partitions
 root1=$(get_device_for_label rootfs1)
 exit_on_error "$?"
@@ -140,9 +163,15 @@ fi
 # 2) An opkg ipk file - wrapped in a tar format (needed to be extracted in order to get the actual ipk)
 # Lets check if a single '*.ipk' file is inside the tar 
 # If FIRMWARE is not a tar file we assume it's an IPK file for installation
-FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
-if echo "${FIRMWARE_FILES}" | grep -e ".*\.ipk$" > /dev/null 2>&1 ; then
-    if [ $(echo "${FIRMWARE_FILES}" | wc -l) -eq 1 ]; then
+SRC_IPK_PATH=/mnt/cache/opt/src_ipk
+
+if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
+then
+    echo "tar -tf \"${FIRMWARE}\" failed!"
+    exit 46
+fi
+if echo "${FIRMWARE_FILES}" | grep -q '.*\.ipk$' ; then
+    if [ "$(echo "${FIRMWARE_FILES}" | wc -l)" -eq 1 ]; then
         # get the package name (the first token in the string when seperator is '_'). 
         # Comment : there are other options :
         # 1) Use opkg capabilities but I can't do that here due to some restrictions. 
@@ -150,36 +179,32 @@ if echo "${FIRMWARE_FILES}" | grep -e ".*\.ipk$" > /dev/null 2>&1 ; then
         IPK_FILE_NAME=${FIRMWARE_FILES}
         IPK_PKG_NAME=$(echo "${IPK_FILE_NAME}" | cut -d'_' -f1)
         
-        # get the actualt ipk file to /tmp
-        tar -xvf "${FIRMWARE}" -C /tmp
-        if [ $? -ne 0 ] ; then
-            echo "tar -xvf \"${FIRMWARE}\" -C /tmp failed!"
+        # extract the actual ipk file into SRC_IPK_PATH
+        if ! tar -xvf "${FIRMWARE}" -C ${SRC_IPK_PATH}
+        then
+            echo "tar -xvf \"${FIRMWARE}\" -C ${SRC_IPK_PATH} failed!"
             exit 41
         fi
 
         #remove package if installed
-        RET=$(mbl-app-manager -l)
-        if [ $? -ne 0 ]; then
-            echo "mbl-app-manager -l failed!"
-            exit 42
-        fi
-        if echo "$RET" | grep "${IPK_PKG_NAME}" ; then
-            mbl-app-manager -r "${IPK_PKG_NAME}"
-            if [ $? -ne 0 ]; then
-                echo "mbl-app-manager -r \"${IPK_PKG_NAME}\" failed!"
+        is_installed=is_package_installed "$IPK_PKG_NAME"       
+        if is_installed; then
+            if ! mbl-app-manager -r "${IPK_PKG_NAME}"
+            then
+                echo "mbl-app-manager -r \"${IPK_PKG_NAME} \" failed!"
                 exit 44
             fi   
         fi
         
         #install package
-        mbl-app-manager -i "/tmp/${IPK_FILE_NAME}"
-        if [ $? -ne 0 ]; then
-            echo "mbl-app-manager -i \"/tmp/${IPK_FILE_NAME}\" failed!"
-            exit 42
+        if ! mbl-app-manager -i "${SRC_IPK_PATH}/${IPK_FILE_NAME}"
+        then
+            echo "mbl-app-manager -i \"${SRC_IPK_PATH}/${IPK_FILE_NAME}\" failed!"
+            exit 45
         fi
         
         #remove temporary ipk file
-        rm -rf "/tmp/${IPK_FILE_NAME}"
+        rm -rf "${SRC_IPK_PATH:?}/${IPK_FILE_NAME:?}"
         
         # Flag that boot is not required
         touch /tmp/do_not_reboot
