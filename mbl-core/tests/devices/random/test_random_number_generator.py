@@ -131,7 +131,7 @@ class TestRandomNumberGenerator:
     #     Researchers usually use 0.95 as the high cutoff value.
     #     The total number of "good" p-values required to pass was set to 78%
     #     as the probability that a TRNG would fail (based on chosen low and
-    #     high cutoff values) is 0.00011415631973171919. A TRNG would be 
+    #     high cutoff values) is 0.00011415631973171919. A TRNG would be
     #     expected to fail the test about once every 10,100 runs.
     #     """
     #     # Set up test parameters
