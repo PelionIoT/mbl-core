@@ -122,17 +122,17 @@ class TestRandomNumberGenerator:
     #     observing a test statistic at least as extreme in a chi-squared
     #     distribution, also known as p-value.A pass is determined when the
     #     majority of p-values fall between chosen low cutoff and high cutoff
-    #     value. The low cutoff in this case is the significance level, which is
-    #     the level of p-value required to reject the null hypothesis. Typically
-    #     researchers choose a significance level equal to 0.01, 0.05, or 0.10;
-    #     0.05 was chosen here. The high cutoff value (corresponding to a low
-    #     chi-square value) indicates a high correlation between the sample of
-    #     the rng and a uniform distribution. Researchers usually use 0.95 as the
-    #     high cutoff value.
-    #     The total number of "good" p-values required to pass was set to 78% as
-    #     the probability that a TRNG would fail (based on chosen low and high
-    #     cutoff values) is 0.00011415631973171919. A TRNG would be expected to
-    #     to fail the test about once every 10,100 runs.
+    #     value. The low cutoff in this case is the significance level, which
+    #     is the level of p-value required to reject the null hypothesis.
+    #     Typically researchers choose a significance level equal to 0.01,
+    #     0.05, or 0.10; 0.05 was chosen here. The high cutoff value
+    #     (corresponding to a low chi-square value) indicates a high
+    #     correlation between the sample of the rng and a uniform distribution.
+    #     Researchers usually use 0.95 as the high cutoff value.
+    #     The total number of "good" p-values required to pass was set to 78%
+    #     as the probability that a TRNG would fail (based on chosen low and
+    #     high cutoff values) is 0.00011415631973171919. A TRNG would be 
+    #     expected to fail the test about once every 10,100 runs.
     #     """
     #     # Set up test parameters
     #     low_cutoff = 0.05
