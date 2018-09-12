@@ -37,7 +37,8 @@ set -x
 
 if [ -n "$ARM_UPDATE_ACTIVATE_LOG_PATH" ]; then
     # Redirect stdout and stderr to the log file
-    exec >"$ARM_UPDATE_ACTIVATE_LOG_PATH" 2>&1
+    exec >>"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
+    printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting arm_update_activate.sh"
 fi
 
 # Returns successfully if the given path is a directory and is empty (except
