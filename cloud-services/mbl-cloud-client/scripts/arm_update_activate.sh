@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Ltd.
+# Copyright 2016-2018 ARM Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -109,6 +109,7 @@ crpodImageFile="$3"
     exit 23
 }
 
+
 # Detect root partitions
 root1=$(get_device_for_label rootfs1)
 exit_on_error "$?"
@@ -133,6 +134,75 @@ elif [ "$activePartition" = "$root2" ]; then
 else
     echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
     exit 21
+fi
+
+# For now, we have a temporary solution. At this stage we support single package/firmware updated. We expect one of 2 types of files :
+# 1) Rootfs firmware update - in tar format
+# 2) An opkg ipk file - wrapped in a tar format (needed to be extracted in order to get the actual ipk)
+# Lets check if a single '*.ipk' file is inside the tar 
+# If FIRMWARE is not a tar file we assume it's an IPK file for installation
+SRC_IPK_PATH=/mnt/cache/opkg/src_ipk
+if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
+then
+    echo "tar -tf \"${FIRMWARE}\" failed!"
+    exit 46
+fi
+if echo "${FIRMWARE_FILES}" | grep -q '.*\.ipk$' ; then
+    if [ "$(echo "${FIRMWARE_FILES}" | wc -l)" -eq 1 ]; then
+        # get the package name (the first token in the string when seperator is '_'). 
+        # Comment : there are other options :
+        # 1) Use opkg capabilities but I can't do that here due to some restrictions. 
+        # 2) Look in the ipk control file. 
+        IPK_FILE_NAME=${FIRMWARE_FILES}
+        IPK_PKG_NAME=$(echo "${IPK_FILE_NAME}" | cut -d'_' -f1)
+        
+        # extract the actual ipk file into SRC_IPK_PATH
+        if ! tar -xvf "${FIRMWARE}" -C ${SRC_IPK_PATH}
+        then
+            echo "tar -xvf \"${FIRMWARE}\" -C ${SRC_IPK_PATH} failed!"
+            exit 41
+        fi
+
+        #remove package if installed
+        if ! installed_pkgs=$(mbl-app-manager -l)
+        then
+            echo "mbl-app-manager -l failed!"
+            exit 42
+        fi
+                
+        is_package_installed=$(printf "%s" "$installed_pkgs" | awk -v "pkgname=${IPK_PKG_NAME}" '$1==pkgname { print $1 }')
+        if [ -n "$is_package_installed" ]
+        then
+            if ! mbl-app-manager -r "${IPK_PKG_NAME}"
+            then
+                echo "mbl-app-manager -r \"${IPK_PKG_NAME} \" failed!"
+                exit 44
+            fi   
+        fi
+        
+        #install package
+        if ! mbl-app-manager -i "${SRC_IPK_PATH}/${IPK_FILE_NAME}"
+        then
+            echo "mbl-app-manager -i \"${SRC_IPK_PATH}/${IPK_FILE_NAME}\" failed!"
+            exit 45
+        fi
+        
+        #remove temporary ipk file
+        rm -rf "${SRC_IPK_PATH:?}/${IPK_FILE_NAME:?}"
+        
+        # Flag that boot is not required
+        touch /tmp/do_not_reboot
+        exit 0
+    else
+        echo "Only a single package installation is supported!";
+        exit 40
+    fi
+else
+    # Remove old flag and if it fails, exit with error
+    if ! rm -f /tmp/do_not_reboot; then
+        echo "Failed to remove /tmp/do_not_reboot flag file";
+        exit 27
+    fi
 fi
 
 create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE"

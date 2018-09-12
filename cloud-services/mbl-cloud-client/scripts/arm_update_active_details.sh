@@ -1,6 +1,6 @@
 #!/bin/sh
 # ----------------------------------------------------------------------------
-# Copyright 2016-2017 ARM Ltd.
+# Copyright 2016-2018 ARM Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -32,6 +32,9 @@
 # shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
+#exit if reboot is not required
+[ -f /tmp/do_not_reboot ] && exit 0   
+    
 if [ -n "$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" ]; then
     # Redirect stdout and stderr to the log file
     exec >"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
