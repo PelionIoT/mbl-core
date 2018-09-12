@@ -34,7 +34,7 @@ class AppLifecycleManager:
         In case container already exist an error code will return.
         :param container_id: Container ID
         :param application_id: Application ID (Application install directory
-        under /home/app/
+        under /home/app/)
         :param context: Application specific context string such as a URI
         :return: 0 in case of success, 1 in case of failure
         """
@@ -116,7 +116,7 @@ class AppLifecycleManager:
         self._delete_container(container_id)
         # Make sure container does not exist
         if self.is_container_exist(container_id):
-            logging.error("Container {} did not stop.".format(container_id))
+            logging.error("Container {} is not killed.".format(container_id))
             return 1
         logging.info("Container {} is killed.".format(container_id))
         return 0
@@ -126,7 +126,7 @@ class AppLifecycleManager:
         Check is container exist (e.g. created/running, and so on.
 
         :param container_id: Container ID
-        :return: True is exist, False if not exist
+        :return: True if exist, False if not exist
         """
         container_status = self._get_container_status(container_id)
         return container_status != CONTAINER_STATUS_NOT_EXIST
@@ -146,7 +146,7 @@ class AppLifecycleManager:
         Check if container is running.
 
         :param container_id: Container ID
-        :return: True is running, False if not running
+        :return: True if running, False if not running
         """
         container_status = self._get_container_status(container_id)
         return container_status == CONTAINER_STATUS_RUNNING
@@ -156,7 +156,7 @@ class AppLifecycleManager:
         Check if container is stopped.
 
         :param container_id: Container ID
-        :return: True is stopped, False if not stopped
+        :return: True if stopped, False if not stopped
         """
         container_status = self._get_container_status(container_id)
         return container_status == CONTAINER_STATUS_STOPPED
