@@ -37,7 +37,8 @@
     
 if [ -n "$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" ]; then
     # Redirect stdout and stderr to the log file
-    exec >"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
+    exec >>"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
+    printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting arm_update_active_details.sh"
 fi
 
 # header directory
