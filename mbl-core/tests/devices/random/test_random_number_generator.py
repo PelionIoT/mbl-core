@@ -7,10 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 import sys
 import subprocess
 import os
-# import scipy.stats
-# import numpy
 import gzip
 import tempfile
+
+# import scipy.stats
+# import numpy
 
 """The aim of this file is to test the randomness of the OS random generator.
 
