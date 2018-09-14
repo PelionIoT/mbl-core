@@ -1,6 +1,5 @@
 sys
 subprocess
 os
-numpy
 gzip
 tempfile

@@ -8,7 +8,7 @@ import sys
 import subprocess
 import os
 # import scipy.stats
-import numpy
+# import numpy
 import gzip
 import tempfile
 
