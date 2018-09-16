@@ -72,7 +72,9 @@ class TestMblAppLifecycleManager:
         teardown_method is invoked for every test method of a class.
         """
         # Kill container in case test failed
+        print("Teardown method start...")
         self._kill_container(CONTAINER_ID)
+        print("Teardown method end")
 
     def test_run_container_stop_container(self):
         """
@@ -82,11 +84,11 @@ class TestMblAppLifecycleManager:
         """
         # Run operations
         app_lifecycle_mgr = AppLifecycleManager()
-        self._run_container(CONTAINER_ID, TEST_APP_ID, "dummy_uri")
-        assert app_lifecycle_mgr.is_container_running(CONTAINER_ID)
+        self._run_container(CONTAINER_ID, TEST_APP_ID)
+        assert app_lifecycle_mgr.container_running(CONTAINER_ID)
         # Stop container, when done - container should not exist anymore
         self._stop_container(CONTAINER_ID, timeout="10")
-        assert not app_lifecycle_mgr.is_container_exist(CONTAINER_ID)
+        assert not app_lifecycle_mgr.container_exists(CONTAINER_ID)
 
     def test_run_container_kill_container(self):
         """
@@ -96,13 +98,13 @@ class TestMblAppLifecycleManager:
         """
         # Run operations
         app_lifecycle_mgr = AppLifecycleManager()
-        self._run_container(CONTAINER_ID, TEST_APP_ID, "dummy_uri")
-        assert app_lifecycle_mgr.is_container_running(CONTAINER_ID)
+        self._run_container(CONTAINER_ID, TEST_APP_ID)
+        assert app_lifecycle_mgr.container_running(CONTAINER_ID)
         # Stop container, when done - container should not exist anymore
         self._kill_container(CONTAINER_ID)
-        assert not app_lifecycle_mgr.is_container_exist(CONTAINER_ID)
+        assert not app_lifecycle_mgr.container_exists(CONTAINER_ID)
 
-    def _run_container(self, CONTAINER_ID, application_id, context):
+    def _run_container(self, CONTAINER_ID, application_id):
         # Run container
         command = [
             "python3",
@@ -111,8 +113,6 @@ class TestMblAppLifecycleManager:
             CONTAINER_ID,
             "-a",
             application_id,
-            "-c",
-            context,
         ]
         print("Executing command: " + " ".join(command))
         subprocess.run(command)
