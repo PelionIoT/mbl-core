@@ -11,6 +11,9 @@ import sys
 
 sys.path.append("/usr")
 from bin.MBLAppLifecycleManager import AppLifecycleManager  # noqa
+from bin.MBLAppLifecycleManager import (
+    AppLifecycleManagerContainerState
+)  # noqa
 
 MBL_APP_MANAGER = "/usr/bin/mbl-app-manager"
 MBL_APP_LIFECYCLE_MANAGER = "/usr/bin/MBLAppLifecycleManager.py"
@@ -85,10 +88,12 @@ class TestMblAppLifecycleManager:
         # Run operations
         app_lifecycle_mgr = AppLifecycleManager()
         self._run_container(CONTAINER_ID, TEST_APP_ID)
-        assert app_lifecycle_mgr.container_running(CONTAINER_ID)
+        state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
+        assert state == AppLifecycleManagerContainerState.RUNNING
         # Stop container, when done - container should not exist anymore
         self._stop_container(CONTAINER_ID, timeout="10")
-        assert not app_lifecycle_mgr.container_exists(CONTAINER_ID)
+        state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
+        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXISTS
 
     def test_run_container_kill_container(self):
         """
@@ -99,10 +104,12 @@ class TestMblAppLifecycleManager:
         # Run operations
         app_lifecycle_mgr = AppLifecycleManager()
         self._run_container(CONTAINER_ID, TEST_APP_ID)
-        assert app_lifecycle_mgr.container_running(CONTAINER_ID)
+        state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
+        assert state == AppLifecycleManagerContainerState.RUNNING
         # Stop container, when done - container should not exist anymore
         self._kill_container(CONTAINER_ID)
-        assert not app_lifecycle_mgr.container_exists(CONTAINER_ID)
+        state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
+        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXISTS
 
     def _run_container(self, CONTAINER_ID, application_id):
         # Run container
