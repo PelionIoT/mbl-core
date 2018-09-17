@@ -45,10 +45,10 @@ class AppLifecycleManager:
         :param container_id: Container ID
         :param application_id: Application ID (Application install directory
         under /home/app/)
-        :return: 0 - STATUS_SUCCESS
-                 1 - STATUS_ERR_OPERATION_FAILED
-                 3 - STATUS_ERR_CONTAINER_EXISTS
-                 4 - STATUS_ERR_CONTAINER_NOT_CREATED
+        :return: AppLifecycleManagerErrors.STATUS_SUCCESS
+                 AppLifecycleManagerErrors.STATUS_ERR_OPERATION_FAILED
+                 AppLifecycleManagerErrors.STATUS_ERR_CONTAINER_EXISTS
+                 AppLifecycleManagerErrors.STATUS_ERR_CONTAINER_NOT_CREATED
                  Any other error returned by subprocess.run()
         """
         # Make sure container does not exist
@@ -63,7 +63,7 @@ class AppLifecycleManager:
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         command = ["runc", "create", container_id]
         result = self._run_command(command, working_dir)
-        if result != AppLifecycleManagerErrors.STATUS_SUCCESS:
+        if result != 0:
             return result
         # Make sure container created
         if not self.container_created(container_id):
@@ -74,7 +74,7 @@ class AppLifecycleManager:
         # Start container
         command = ["runc", "start", container_id]
         result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.STATUS_SUCCESS:
+        if result != 0:
             return result
         # Make sure container started
         if self.container_running(container_id):
@@ -91,10 +91,10 @@ class AppLifecycleManager:
         :param container_id: Container ID
         :param timeout: Timeout (seconds) to wait until container is stopped.
         in case timeout reached - a kill operation will be called.
-        :return: 0 - STATUS_SUCCESS
-                 1 - STATUS_ERR_OPERATION_FAILED
-                 2 - STATUS_ERR_CONTAINER_DOES_NOT_EXIST
-                 any other error returned by subprocess.run()
+        :return: AppLifecycleManagerErrors.STATUS_SUCCESS
+                 AppLifecycleManagerErrors.STATUS_ERR_OPERATION_FAILED
+                 AppLifecycleManagerErrors.STATUS_ERR_CONTAINER_DOES_NOT_EXIST
+                 Any other error returned by subprocess.run()
         """
         logging.info("Stop container id: {}".format(container_id))
         container_exists = self.container_exists(container_id)
@@ -109,7 +109,7 @@ class AppLifecycleManager:
         if not container_stopped:
             command = ["runc", "kill", container_id, "SIGTERM"]
             result = self._run_command(command)
-            if result != AppLifecycleManagerErrors.STATUS_SUCCESS:
+            if result != 0:
                 return result
             # Verify container has stopped using timeout
             while timeout > 0:
@@ -147,11 +147,11 @@ class AppLifecycleManager:
 
         In case container does not exist an error code will return.
         :param container_id: Container ID
-        :return: 0 - STATUS_SUCCESS
-                 1 - STATUS_ERR_OPERATION_FAILED
-                 2 - STATUS_ERR_CONTAINER_DOES_NOT_EXIST
-                 5 - STATUS_ERR_CONTAINER_NOT_STOPPED
-                 any other error returned by subprocess.run()
+        :return: AppLifecycleManagerErrors.STATUS_SUCCESS
+                 AppLifecycleManagerErrors.STATUS_ERR_OPERATION_FAILED
+                 AppLifecycleManagerErrors.STATUS_ERR_CONTAINER_DOES_NOT_EXIST
+                 AppLifecycleManagerErrors.STATUS_ERR_CONTAINER_NOT_STOPPED
+                 Any other error returned by subprocess.run()
         """
         logging.info("Kill container id: {}".format(container_id))
         container_exists = self.container_exists(container_id)
@@ -164,7 +164,7 @@ class AppLifecycleManager:
             )
         command = ["runc", "kill", container_id, "SIGKILL"]
         result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.STATUS_SUCCESS:
+        if result != 0:
             return result
         container_stopped = self.container_stopped(container_id)
         if not container_stopped:
@@ -262,25 +262,26 @@ class AppLifecycleManager:
             return e.returncode
         state_dictionary = ast.literal_eval(output)
         status = state_dictionary["status"]
-        logging.debug("Container status: {}".format(status))
+        logging.info("Container status: {}".format(status))
         return status
 
     def _delete_container(self, container_id):
-        logging.debug("Delete container: {}".format(container_id))
+        logging.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
         result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.STATUS_SUCCESS:
+        if result != 0:
             logging.error(
                 logging.error(
                     "Delete Container id: {} failed".format(container_id)
                 )
             )
-        return result
+            return result
+        return AppLifecycleManagerErrors.STATUS_SUCCESS
 
     def _run_command(self, command, working_dir=None):
-        logging.debug("Executing command: " + " ".join(command))
+        logging.info("Executing command: " + " ".join(command))
         result = subprocess.run(command, cwd=working_dir)
-        if result.returncode != AppLifecycleManagerErrors.STATUS_SUCCESS:
+        if result.returncode != 0:
             logging.error(
                 "Error executing command failed with error: {}.".format(
                     result.returncode
