@@ -29,6 +29,7 @@ class AppLifecycleManagerErrors(Enum):
     ERR_CONTAINER_NOT_CREATED = 4
     ERR_CONTAINER_NOT_STOPPED = 5
     ERR_CONTAINER_STATUS_UNKNOWN = 6
+    ERR_INVALID_ARGS = 7
 
 
 class AppLifecycleManagerContainerState(Enum):
@@ -120,16 +121,15 @@ class AppLifecycleManager:
                 "Container id: {} does not exist.".format(container_id)
             )
             return AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
-        state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         if state != AppLifecycleManagerContainerState.STOPPED:
             command = ["runc", "kill", container_id, "SIGTERM"]
             result = self._run_command(command)
             if result != AppLifecycleManagerErrors.SUCCESS:
                 return result
             # Verify container has stopped using timeout
-            while timeout > 0:
+            start = time.monotonic()
+            endtime = start + timeout
+            while endtime > time.monotonic():
                 state = self.get_container_state(container_id)
                 if state == AppLifecycleManagerContainerState.UNKNOWN:
                     return (
@@ -137,12 +137,9 @@ class AppLifecycleManager:
                     )
                 if state == AppLifecycleManagerContainerState.STOPPED:
                     break
-                start = time.monotonic()
                 time.sleep(SLEEP_INTERVAL)
-                end = time.monotonic()
-                actual_sleep_time = max(end - start, SLEEP_INTERVAL)
-                timeout = timeout - actual_sleep_time
         # If managed to stop container - delete it, else - kill it...
+        state = self.get_container_state(container_id)
         if state == AppLifecycleManagerContainerState.STOPPED:
             result = self._delete_container(container_id)
             if result != AppLifecycleManagerErrors.SUCCESS:
@@ -272,8 +269,20 @@ class AppLifecycleManager:
                 "Error code: {}, output: {}".format(e.returncode, e.output)
             )
             return AppLifecycleManagerContainerState.UNKNOWN
-        state_data = json.loads(output)
-        status = state_data["status"]
+        try:
+            state_data = json.loads(output)
+            status = state_data["status"]
+        except ValueError as error:
+            logging.error("JSON value error for container id {}: {}".format(
+                container_id, error)
+            )
+            return AppLifecycleManagerContainerState.UNKNOWN
+        except:
+            logging.error("JSON parsing error for container id {}: {}".format(
+                container_id)
+            )
+            return AppLifecycleManagerContainerState.UNKNOWN
+
         logging.debug("Container status: {}".format(status))
         if status == "created":
             return AppLifecycleManagerContainerState.CREATED
@@ -301,6 +310,9 @@ class AppLifecycleManager:
                 "Error executing command: {}, failed with error: {}.".format(
                     command, result.returncode
                 )
+            )
+            logging.error(
+                "Error output: {}".format(result.stderr)
             )
             return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
         return AppLifecycleManagerErrors.SUCCESS
@@ -377,14 +389,14 @@ def _main():
         if args.run_container:
             if args.application_id is None:
                 logging.info("Missing application-id argument")
-                return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
+                return AppLifecycleManagerErrors.ERR_INVALID_ARGS
             return app_manager_lifecycle_mng.run_container(
                 args.run_container, args.application_id
             )
         elif args.stop_container:
             if args.timeout is None:
                 logging.info("Missing timeout argument")
-                return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
+                return AppLifecycleManagerErrors.ERR_INVALID_ARGS
             return app_manager_lifecycle_mng.stop_container(
                 args.stop_container, args.timeout
             )
