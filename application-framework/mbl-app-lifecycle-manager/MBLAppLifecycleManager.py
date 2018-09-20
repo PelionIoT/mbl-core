@@ -273,13 +273,17 @@ class AppLifecycleManager:
             state_data = json.loads(output)
             status = state_data["status"]
         except ValueError as error:
-            logging.error("JSON value error for container id {}: {}".format(
-                container_id, error)
+            logging.error(
+                "JSON value error for container id {}: {}".format(
+                    container_id, error
+                )
             )
             return AppLifecycleManagerContainerState.UNKNOWN
-        except:
-            logging.error("JSON parsing error for container id {}: {}".format(
-                container_id)
+        except Exception:
+            logging.error(
+                "JSON parsing error for container id {}: {}".format(
+                    container_id
+                )
             )
             return AppLifecycleManagerContainerState.UNKNOWN
 
@@ -311,9 +315,7 @@ class AppLifecycleManager:
                     command, result.returncode
                 )
             )
-            logging.error(
-                "Error output: {}".format(result.stderr)
-            )
+            logging.error("Error output: {}".format(result.stderr))
             return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
         return AppLifecycleManagerErrors.SUCCESS
 
