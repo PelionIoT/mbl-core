@@ -43,7 +43,7 @@ class TestMblAppLifecycleManager:
         # Install app_lifecycle_mng_test_container
         # All container operation will be done using it
         assert os.path.isfile(IPK_TEST_FILE), "Missing IPK test file."
-        command = ["python3", MBL_APP_MANAGER, "-f", IPK_TEST_FILE]
+        command = ["python3", MBL_APP_MANAGER, "-f", IPK_TEST_FILE, "-v"]
         print("\nSetup: Installing test container package...")
         _run_app_manager(command)
         print("Installing test container package - done.\n")
@@ -51,7 +51,7 @@ class TestMblAppLifecycleManager:
     @classmethod
     def teardown_class(cls):
         """Teardown everything previously setup using a call to setup_class."""
-        command = ["python3", MBL_APP_MANAGER, "-r", TEST_APP_ID]
+        command = ["python3", MBL_APP_MANAGER, "-r", TEST_APP_ID, "-v"]
         print("\nTeardown: Deleting test container package...")
         _run_app_manager(command)
         print("Deleting test container package - Done.")
@@ -93,7 +93,7 @@ class TestMblAppLifecycleManager:
         # Stop container, when done - container should not exist anymore
         self._stop_container(CONTAINER_ID, timeout="10")
         state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
-        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXISTS
+        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXIST
 
     def test_run_container_kill_container(self):
         """
@@ -109,7 +109,7 @@ class TestMblAppLifecycleManager:
         # Stop container, when done - container should not exist anymore
         self._kill_container(CONTAINER_ID)
         state = app_lifecycle_mgr.get_container_state(CONTAINER_ID)
-        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXISTS
+        assert state == AppLifecycleManagerContainerState.DOES_NOT_EXIST
 
     def _run_container(self, CONTAINER_ID, application_id):
         # Run container
@@ -120,6 +120,7 @@ class TestMblAppLifecycleManager:
             CONTAINER_ID,
             "-a",
             application_id,
+            "-v",
         ]
         print("Executing command: " + " ".join(command))
         subprocess.run(command)
@@ -133,12 +134,19 @@ class TestMblAppLifecycleManager:
             CONTAINER_ID,
             "-t",
             timeout,
+            "-v",
         ]
         print("Executing command: " + " ".join(command))
         subprocess.run(command)
 
     def _kill_container(self, CONTAINER_ID):
         # Run container
-        command = ["python3", MBL_APP_LIFECYCLE_MANAGER, "-k", CONTAINER_ID]
+        command = [
+            "python3",
+            MBL_APP_LIFECYCLE_MANAGER,
+            "-k",
+            CONTAINER_ID,
+            "-v",
+        ]
         print("Executing command: " + " ".join(command))
         subprocess.run(command)
