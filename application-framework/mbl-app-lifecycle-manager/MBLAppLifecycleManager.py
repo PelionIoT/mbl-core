@@ -251,7 +251,7 @@ class AppLifecycleManager:
                  AppLifecycleManagerContainerState.UNKNOWN
         """
         command = ["runc", "state", container_id]
-        logging.info("Executing command: {}".format(command))
+        logging.debug("Executing command: {}".format(command))
         try:
             output = subprocess.check_output(
                 command, stderr=subprocess.STDOUT
@@ -308,7 +308,7 @@ class AppLifecycleManager:
         return AppLifecycleManagerErrors.SUCCESS
 
     def _run_command(self, command, working_dir=None, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT):
-        logging.info("Executing command: {}".format(command))
+        logging.debug("Executing command: {}".format(command))
         result = subprocess.run(
             command,
             cwd=working_dir,
