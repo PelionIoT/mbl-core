@@ -30,6 +30,7 @@ class AppLifecycleManagerErrors(Enum):
     ERR_CONTAINER_NOT_STOPPED = 5
     ERR_CONTAINER_STATUS_UNKNOWN = 6
     ERR_INVALID_ARGS = 7
+    ERR_CONTAINER_STOPPED = 8
 
 
 class AppLifecycleManagerContainerState(Enum):
@@ -114,31 +115,22 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         """
         logging.info("Stop container id: {}".format(container_id))
-        state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        if state == AppLifecycleManagerContainerState.DOES_NOT_EXIST:
-            logging.error(
-                "Container id: {} does not exist.".format(container_id)
-            )
-            return AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
-        if state != AppLifecycleManagerContainerState.STOPPED:
-            command = ["runc", "kill", container_id, "SIGTERM"]
-            _, result = self._run_command(command)
-            if result != AppLifecycleManagerErrors.SUCCESS:
-                return result
-            # Verify container has stopped using timeout
-            start = time.monotonic()
-            endtime = start + timeout
-            while endtime > time.monotonic():
-                state = self.get_container_state(container_id)
-                if state == AppLifecycleManagerContainerState.UNKNOWN:
-                    return (
-                        AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-                    )
-                if state == AppLifecycleManagerContainerState.STOPPED:
-                    break
-                time.sleep(SLEEP_INTERVAL)
+        result = self._signal_container(container_id, "SIGTERM")
+        if result != AppLifecycleManagerErrors.SUCCESS and result != AppLifecycleManagerErrors.ERR_CONTAINER_STOPPED:
+            return result
+
+        # Verify container has stopped using timeout
+        start = time.monotonic()
+        endtime = start + timeout
+        while endtime > time.monotonic():
+            state = self.get_container_state(container_id)
+            if state == AppLifecycleManagerContainerState.UNKNOWN:
+                return (
+                    AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
+                )
+            if state == AppLifecycleManagerContainerState.STOPPED:
+                break
+            time.sleep(SLEEP_INTERVAL)
         # If managed to stop container - delete it, else - kill it...
         state = self.get_container_state(container_id)
         if state == AppLifecycleManagerContainerState.STOPPED:
@@ -179,20 +171,8 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         """
         logging.info("Kill container id: {}".format(container_id))
-        state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            logging.error(
-                "Failed to get container id: {} status".format(container_id)
-            )
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        if state == AppLifecycleManagerContainerState.DOES_NOT_EXIST:
-            logging.error(
-                "Container id: {} does not exist.".format(container_id)
-            )
-            return AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
-        command = ["runc", "kill", container_id, "SIGKILL"]
-        _, result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.SUCCESS:
+        result = self._signal_container(container_id, "SIGKILL")
+        if result != AppLifecycleManagerErrors.SUCCESS and result != AppLifecycleManagerErrors.ERR_CONTAINER_STOPPED:
             return result
         state = self.get_container_state(container_id)
         if state == AppLifecycleManagerContainerState.UNKNOWN:
@@ -295,6 +275,16 @@ class AppLifecycleManager:
             return AppLifecycleManagerContainerState.RUNNING
         if status == "stopped":
             return AppLifecycleManagerContainerState.STOPPED
+
+    def _signal_container(self, container_id, signal):
+        logging.info("Sending {} to container {}".format(signal, container_id))
+        output, ret = self._run_command(["runc", "kill", container_id, signal])
+        if ret == AppLifecycleManagerErrors.ERR_OPERATION_FAILED:
+            if "does not exist" in output:
+                return AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
+            if "process already finished" in output:
+                return AppLifecycleManagerErrors.ERR_CONTAINER_STOPPED
+        return ret
 
     def _delete_container(self, container_id):
         logging.info("Delete container: {}".format(container_id))
