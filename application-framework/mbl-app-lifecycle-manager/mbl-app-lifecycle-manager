@@ -8,6 +8,7 @@ import logging
 
 import mbl.AppLifecycleManager as alm
 
+
 def get_argument_parser():
     """
     Return argument parser.
@@ -42,7 +43,9 @@ def get_argument_parser():
         "--sigterm-timeout",
         type=int,
         help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGTERM. Default is {}".format(alm.DEFAULT_SIGTERM_TIMEOUT),
+        " after sending a SIGTERM. Default is {}".format(
+            alm.DEFAULT_SIGTERM_TIMEOUT
+        ),
     )
 
     parser.add_argument(
@@ -50,7 +53,9 @@ def get_argument_parser():
         "--sigkill-timeout",
         type=int,
         help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGKILL. Default is {}".format(alm.DEFAULT_SIGKILL_TIMEOUT),
+        " after sending a SIGKILL. Default is {}".format(
+            alm.DEFAULT_SIGKILL_TIMEOUT
+        ),
     )
 
     parser.add_argument(
@@ -84,8 +89,12 @@ def _main():
                 args.run_container, args.application_id
             )
         elif args.stop_container:
-            sigterm_timeout = args.sigterm_timeout or alm.DEFAULT_SIGTERM_TIMEOUT
-            sigkill_timeout = args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
+            sigterm_timeout = (
+                args.sigterm_timeout or alm.DEFAULT_SIGTERM_TIMEOUT
+            )
+            sigkill_timeout = (
+                args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
+            )
             return app_manager_lifecycle_mng.stop_container(
                 args.stop_container, sigterm_timeout, sigkill_timeout
             )
@@ -95,5 +104,6 @@ def _main():
     except Exception:
         logging.exception("Operation failed exception")
         return alm.Error.ERR_OPERATION_FAILED
+
 
 _main()
