@@ -49,7 +49,9 @@ class AppLifecycleManager:
     """Manage application lifecycle including run/stop/kill containers."""
 
     def __init__(self):
-        logging.info("Creating AppLifecycleManager version {}".format(__version__))
+        logging.info(
+            "Creating AppLifecycleManager version {}".format(__version__)
+        )
 
     def run_container(self, container_id, application_id):
         """
@@ -96,10 +98,14 @@ class AppLifecycleManager:
                  Error.ERR_TIMEOUT
         """
         logging.info("Stop container ID: {}".format(container_id))
-        ret = self._stop_container_with_signal(container_id, "SIGTERM", sigterm_timeout)
+        ret = self._stop_container_with_signal(
+            container_id, "SIGTERM", sigterm_timeout
+        )
         if ret == Error.ERR_TIMEOUT:
             logging.warning(
-                "Stop Container ID: {} failed. Trying to kill it".format(container_id)
+                "Stop Container ID: {} failed. Trying to kill it".format(
+                    container_id
+                )
             )
             ret = self._stop_container_with_signal(
                 container_id, "SIGKILL", sigkill_timeout
@@ -108,7 +114,9 @@ class AppLifecycleManager:
             return ret
         return self._delete_container(container_id)
 
-    def kill_container(self, container_id, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
+    def kill_container(
+        self, container_id, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT
+    ):
         """
         Kill container.
 
@@ -121,7 +129,9 @@ class AppLifecycleManager:
                  Error.ERR_TIMEOUT
         """
         logging.info("Kill container ID: {}".format(container_id))
-        ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
+        ret = self._stop_container_with_signal(
+            container_id, "SIGKILL", sigkill_timeout
+        )
         if ret != Error.SUCCESS:
             return ret
         return self._delete_container(container_id)
@@ -164,7 +174,9 @@ class AppLifecycleManager:
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
             logging.exception(
-                "JSON decode error for container ID {}: {}".format(container_id, error)
+                "JSON decode error for container ID {}: {}".format(
+                    container_id, error
+                )
             )
             return ContainerState.UNKNOWN
 
@@ -205,7 +217,9 @@ class AppLifecycleManager:
         if state == ContainerState.UNKNOWN:
             return Error.ERR_CONTAINER_STATUS_UNKNOWN
         if state != ContainerState.DOES_NOT_EXIST:
-            logging.error("Container ID: {} already exists.".format(container_id))
+            logging.error(
+                "Container ID: {} already exists.".format(container_id)
+            )
             return Error.ERR_CONTAINER_EXISTS
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         logging.info("Create container: {}".format(container_id))
@@ -265,7 +279,9 @@ class AppLifecycleManager:
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
         if result != Error.SUCCESS:
-            logging.error("Delete Container ID: {} failed".format(container_id))
+            logging.error(
+                "Delete Container ID: {} failed".format(container_id)
+            )
             return Error.ERR_OPERATION_FAILED
         return Error.SUCCESS
 
