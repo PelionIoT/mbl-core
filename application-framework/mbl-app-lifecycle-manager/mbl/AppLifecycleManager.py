@@ -113,7 +113,6 @@ class AppLifecycleManager:
             return ret
         return self._delete_container(container_id)
 
-
     def get_container_state(self, container_id):
         """
         Return container state.
