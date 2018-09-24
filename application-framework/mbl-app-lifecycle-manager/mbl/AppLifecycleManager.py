@@ -6,7 +6,6 @@
 """This script manage application lifecycle."""
 
 import sys
-import argparse
 import os
 import subprocess
 import logging
@@ -48,6 +47,9 @@ class AppLifecycleManagerContainerState(Enum):
 
 class AppLifecycleManager:
     """Manage application lifecycle including run/stop/kill containers."""
+
+    def __init__(self):
+        logging.info("Creating AppLifecycleManager version {}".format(__version__))
 
     def run_container(self, container_id, application_id):
         """
@@ -289,114 +291,3 @@ class AppLifecycleManager:
             )
             return output, AppLifecycleManagerErrors.ERR_OPERATION_FAILED
         return output, AppLifecycleManagerErrors.SUCCESS
-
-
-def get_argument_parser():
-    """
-    Return argument parser.
-
-    :return: parser
-    """
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="App lifecycle manager",
-    )
-
-    group = parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "-r",
-        "--run-container",
-        metavar="CONTAINER_ID",
-        help="Run container, assigning the given container ID",
-    )
-
-    group.add_argument(
-        "-s",
-        "--stop-container",
-        metavar="CONTAINER_ID",
-        help="Stop container with the given container ID",
-    )
-
-    group.add_argument(
-        "-k",
-        "--kill-container",
-        metavar="CONTAINER_ID",
-        help="Kill container with the container ID",
-    )
-
-    parser.add_argument("-a", "--application-id", help="Application ID")
-
-    parser.add_argument(
-        "-t",
-        "--sigterm-timeout",
-        type=int,
-        help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGTERM. Default is {}".format(DEFAULT_SIGTERM_TIMEOUT),
-    )
-
-    parser.add_argument(
-        "-j",
-        "--sigkill-timeout",
-        type=int,
-        help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGKILL. Default is {}".format(DEFAULT_SIGKILL_TIMEOUT),
-    )
-
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="increase output verbosity",
-        action="store_true",
-    )
-
-    return parser
-
-
-def _main():
-    parser = get_argument_parser()
-    args = parser.parse_args()
-    info_level = logging.DEBUG if args.verbose else logging.INFO
-
-    logging.basicConfig(
-        level=info_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logging.info("Starting ARM APP LIFECYCLE MANAGER: {}".format(__version__))
-    logging.info("Command line arguments:{}".format(args))
-
-    try:
-        app_manager_lifecycle_mng = AppLifecycleManager()
-        if args.run_container:
-            if args.application_id is None:
-                logging.info("Missing application-id argument")
-                return AppLifecycleManagerErrors.ERR_INVALID_ARGS
-            return app_manager_lifecycle_mng.run_container(
-                args.run_container, args.application_id
-            )
-        elif args.stop_container:
-            sigterm_timeout = args.sigterm_timeout or DEFAULT_SIGTERM_TIMEOUT
-            sigkill_timeout = args.sigkill_timeout or DEFAULT_SIGKILL_TIMEOUT
-            return app_manager_lifecycle_mng.stop_container(
-                args.stop_container, sigterm_timeout, sigkill_timeout
-            )
-        elif args.kill_container:
-            sigkill_timeout = args.sigkill_timeout or DEFAULT_SIGKILL_TIMEOUT
-            return app_manager_lifecycle_mng.kill_container(
-                args.kill_container, sigkill_timeout
-            )
-    except subprocess.CalledProcessError as e:
-        logging.exception(
-            "Operation failed with subprocess error code: " + str(e.returncode)
-        )
-        return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-    except OSError:
-        logging.exception("Operation failed with OSError")
-        return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-    except Exception:
-        logging.exception("Operation failed exception")
-        return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-
-
-if __name__ == "__main__":
-    sys.exit(_main())
