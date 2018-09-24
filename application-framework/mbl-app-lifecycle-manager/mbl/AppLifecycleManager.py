@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""This script manage application lifecycle."""
+"""This script manages application lifecycles."""
 
 import sys
 import os
@@ -36,7 +36,7 @@ class Error(Enum):
 
 
 class ContainerState(Enum):
-    """AppLifecycleManager container state."""
+    """AppLifecycleManager container states."""
 
     CREATED = 0
     RUNNING = 1
@@ -64,7 +64,6 @@ class AppLifecycleManager:
         :return: Error.SUCCESS
                  Error.ERR_OPERATION_FAILED
                  Error.ERR_CONTAINER_EXISTS
-                 Error.ERR_CONTAINER_NOT_CREATED
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
         """
         logging.info("Run container ID: {}".format(container_id))
@@ -139,32 +138,32 @@ class AppLifecycleManager:
     def get_container_state(self, container_id):
         """
         Return container state.
-
-        If container exists (e.g. created, started, stopped), runc will return
-        a string for initializing a dictionary with container state values.
-        e.g.
-        {
-            "ociVersion": "<version>",
-            "id": "<container id>",
-            "pid": <number>,
-            "status": "<created/started/stopped>",
-            "bundle": "<container full path>",
-            "rootfs": "<container rootfs path>",
-            "created": "<creation date>",
-            "owner": "<owner>"
-        }
-
-        If container does not exist - runc will return s string:
-        "container <container ID> does not exist"
-
         :param container_id:
         :return: container state enum
                  ContainerState.CREATED
                  ContainerState.RUNNING
                  ContainerState.STOPPED
-                 ContainerState.DOES_NOT_EXISTS
+                 ContainerState.DOES_NOT_EXIST
                  ContainerState.UNKNOWN
         """
+
+        # If container exists (e.g. created, started, stopped), runc will return
+        # a string for initializing a dictionary with container state values.
+        # e.g.
+        # {
+        #     "ociVersion": "<version>",
+        #     "id": "<container id>",
+        #     "pid": <number>,
+        #     "status": "<created/started/stopped>",
+        #     "bundle": "<container full path>",
+        #     "rootfs": "<container rootfs path>",
+        #     "created": "<creation date>",
+        #     "owner": "<owner>"
+        # }
+        #
+        # If container does not exist - runc will return s string:
+        # "container <container ID> does not exist"
+
         output, ret = self._run_command(["runc", "state", container_id])
         if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
