@@ -65,42 +65,13 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_NOT_CREATED
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
         """
-        # Normally we could just run a command and if it fails, determine why
-        # based on the return code and output of the command. In this case we
-        # can't capture the output of "runc create" because runc will let the
-        # container it creates inherit the stdio for runc, so attempting to
-        # capture runc's output will also attempt to capture the containers
-        # output.
-        #
-        # Check that the container does not exist before we try to create it so
-        # that we can report an already existing container as an error. There
-        # is a race condition here, but it is benign.
-        state = self.get_container_state(container_id)
-        if state == ContainerState.UNKNOWN:
-            return Error.ERR_CONTAINER_STATUS_UNKNOWN
-        if state != ContainerState.DOES_NOT_EXIST:
-            logging.error(
-                "Container ID: {} already exists.".format(container_id)
-            )
-            return Error.ERR_CONTAINER_EXISTS
-        # Create container
         logging.info("Run container ID: {}".format(container_id))
-        working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
-        command = ["runc", "create", container_id]
-        # We have to send stdio to /dev/null because otherwise the container
-        # will inherit our stdio
-        _, result = self._run_command(
-            command,
-            working_dir,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        if result != Error.SUCCESS:
-            return result
-        # Start container
-        _, result = self._run_command(["runc", "start", container_id])
-        return result
+
+        ret = self._create_container(container_id, application_id)
+        if ret != Error.SUCCESS:
+            return ret
+        return self._start_container(container_id)
+
 
     def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
         """
@@ -216,6 +187,42 @@ class AppLifecycleManager:
             )
         )
         return ContainerState.UNKNOWN
+
+    def _create_container(self, container_id, application_id):
+        # Normally we could just run a command and if it fails, determine why
+        # based on the return code and output of the command. In this case we
+        # can't capture the output of "runc create" because runc will let the
+        # container it creates inherit the stdio for runc, so attempting to
+        # capture runc's output will also attempt to capture the containers
+        # output.
+        #
+        # Check that the container does not exist before we try to create it so
+        # that we can report an already existing container as an error. There
+        # is a race condition here, but it is benign.
+        state = self.get_container_state(container_id)
+        if state == ContainerState.UNKNOWN:
+            return Error.ERR_CONTAINER_STATUS_UNKNOWN
+        if state != ContainerState.DOES_NOT_EXIST:
+            logging.error(
+                "Container ID: {} already exists.".format(container_id)
+            )
+            return Error.ERR_CONTAINER_EXISTS
+        working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
+        logging.info("Create container: {}".format(container_id))
+        _, result = self._run_command(
+            ["runc", "create", container_id],
+            working_dir,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        return result
+
+    def _start_container(self, container_id):
+        logging.info("Start container: {}".format(container_id))
+        _, result = self._run_command(["runc", "start", container_id])
+        return result
+
 
     def _signal_container(self, container_id, signal):
         logging.info("Sending {} to container {}".format(signal, container_id))
