@@ -49,9 +49,7 @@ class AppLifecycleManager:
     """Manage application lifecycle including run/stop/kill containers."""
 
     def __init__(self):
-        """
-        Create AppLifecycleManager object
-        """
+        """Create AppLifecycleManager object."""
         logging.info(
             "Creating AppLifecycleManager version {}".format(__version__)
         )
