@@ -16,6 +16,8 @@ from enum import Enum
 
 __version__ = "1.0"
 APPS_INSTALL_ROOT_DIR = "/home/app"
+DEFAULT_SIGTERM_TIMEOUT = 3
+DEFAULT_SIGKILL_TIMEOUT = 1
 SLEEP_INTERVAL = 0.1
 
 
@@ -102,14 +104,18 @@ class AppLifecycleManager:
         logging.error("Run Container id: {} failed".format(container_id))
         return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
 
-    def stop_container(self, container_id, timeout):
+    def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
         """
         Stop container.
 
         In case container does not exist an error code will return.
         :param container_id: Container ID
-        :param timeout: Timeout (seconds) to wait until container is stopped.
-        in case timeout reached - a kill operation will be called.
+        :param sigterm_timeout: Timeout (seconds) after sending a SIGTERM to a
+                                container to wait until the container stops.
+                                If the timeout is reached a SIGKILL will be sent.
+        :param sigkill_timeout: Timeout (seconds) after sending a SIGKILL to a
+                                container to wait until the container stops.
+                                If the timeout is reached ERR_TIMEOUT is returned.
         :return: AppLifecycleManagerErrors.SUCCESS
                  AppLifecycleManagerErrors.ERR_OPERATION_FAILED
                  AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
@@ -117,19 +123,19 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_TIMEOUT
         """
         logging.info("Stop container id: {}".format(container_id))
-        ret = self._stop_container_with_signal(container_id, "SIGTERM", timeout)
+        ret = self._stop_container_with_signal(container_id, "SIGTERM", sigterm_timeout)
         if ret == AppLifecycleManagerErrors.ERR_TIMEOUT:
             logging.warning(
                 "Stop Container id: {} failed. Trying to kill it".format(
                     container_id
                 )
             )
-            ret = self._stop_container_with_signal(container_id, "SIGKILL", timeout)
+            ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
         if ret != AppLifecycleManagerErrors.SUCCESS:
             return ret
         return self._delete_container(container_id)
 
-    def kill_container(self, container_id, timeout):
+    def kill_container(self, container_id, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
         """
         Kill container.
 
@@ -142,7 +148,7 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_TIMEOUT
         """
         logging.info("Kill container id: {}".format(container_id))
-        ret = self._stop_container_with_signal(container_id, "SIGKILL", timeout)
+        ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
         if ret != AppLifecycleManagerErrors.SUCCESS:
             return ret
         return self._delete_container(container_id)
@@ -332,10 +338,18 @@ def get_argument_parser():
 
     parser.add_argument(
         "-t",
-        "--timeout",
+        "--sigterm-timeout",
         type=int,
         help="Maximum time (seconds) to wait for application container to exit"
-        " during stop command",
+        " after sending a SIGTERM. Default is {}".format(DEFAULT_SIGTERM_TIMEOUT),
+    )
+
+    parser.add_argument(
+        "-j",
+        "--sigkill-timeout",
+        type=int,
+        help="Maximum time (seconds) to wait for application container to exit"
+        " after sending a SIGKILL. Default is {}".format(DEFAULT_SIGKILL_TIMEOUT),
     )
 
     parser.add_argument(
@@ -370,18 +384,15 @@ def _main():
                 args.run_container, args.application_id
             )
         elif args.stop_container:
-            if args.timeout is None:
-                logging.info("Missing timeout argument")
-                return AppLifecycleManagerErrors.ERR_INVALID_ARGS
+            sigterm_timeout = args.sigterm_timeout or DEFAULT_SIGTERM_TIMEOUT
+            sigkill_timeout = args.sigkill_timeout or DEFAULT_SIGKILL_TIMEOUT
             return app_manager_lifecycle_mng.stop_container(
-                args.stop_container, args.timeout
+                args.stop_container, sigterm_timeout, sigkill_timeout
             )
         elif args.kill_container:
-            if args.timeout is None:
-                logging.info("Missing timeout argument")
-                return AppLifecycleManagerErrors.ERR_INVALID_ARGS
+            sigkill_timeout = args.sigkill_timeout or DEFAULT_SIGKILL_TIMEOUT
             return app_manager_lifecycle_mng.kill_container(
-                args.kill_container, args.timeout
+                args.kill_container, sigkill_timeout
             )
     except subprocess.CalledProcessError as e:
         logging.exception(
