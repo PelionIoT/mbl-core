@@ -69,11 +69,11 @@ class AppLifecycleManager:
             return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         if state != AppLifecycleManagerContainerState.DOES_NOT_EXIST:
             logging.error(
-                "Container id: {} already exists.".format(container_id)
+                "Container ID: {} already exists.".format(container_id)
             )
             return AppLifecycleManagerErrors.ERR_CONTAINER_EXISTS
         # Create container
-        logging.info("Run container id: {}".format(container_id))
+        logging.info("Run container ID: {}".format(container_id))
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         command = ["runc", "create", container_id]
         # We have to send stdio to /dev/null because otherwise the container will inherit our stdio
@@ -86,7 +86,7 @@ class AppLifecycleManager:
             return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         if state != AppLifecycleManagerContainerState.CREATED:
             logging.error(
-                "Container id: {} is not created.".format(container_id)
+                "Container ID: {} is not created.".format(container_id)
             )
             return AppLifecycleManagerErrors.ERR_CONTAINER_NOT_CREATED
         # Start container
@@ -99,9 +99,9 @@ class AppLifecycleManager:
         if state == AppLifecycleManagerContainerState.UNKNOWN:
             return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
         if state == AppLifecycleManagerContainerState.RUNNING:
-            logging.info("Run Container id: {} succeeded".format(container_id))
+            logging.info("Run Container ID: {} succeeded".format(container_id))
             return AppLifecycleManagerErrors.SUCCESS
-        logging.error("Run Container id: {} failed".format(container_id))
+        logging.error("Run Container ID: {} failed".format(container_id))
         return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
 
     def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
@@ -122,11 +122,11 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
                  AppLifecycleManagerErrors.ERR_TIMEOUT
         """
-        logging.info("Stop container id: {}".format(container_id))
+        logging.info("Stop container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(container_id, "SIGTERM", sigterm_timeout)
         if ret == AppLifecycleManagerErrors.ERR_TIMEOUT:
             logging.warning(
-                "Stop Container id: {} failed. Trying to kill it".format(
+                "Stop Container ID: {} failed. Trying to kill it".format(
                     container_id
                 )
             )
@@ -147,7 +147,7 @@ class AppLifecycleManager:
                  AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
                  AppLifecycleManagerErrors.ERR_TIMEOUT
         """
-        logging.info("Kill container id: {}".format(container_id))
+        logging.info("Kill container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
         if ret != AppLifecycleManagerErrors.SUCCESS:
             return ret
@@ -191,7 +191,7 @@ class AppLifecycleManager:
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
             logging.exception(
-                "JSON decode error for container id {}: {}".format(
+                "JSON decode error for container ID {}: {}".format(
                     container_id, error
                 )
             )
@@ -264,7 +264,7 @@ class AppLifecycleManager:
         _, result = self._run_command(command)
         if result != AppLifecycleManagerErrors.SUCCESS:
             logging.error(
-                "Delete Container id: {} failed".format(container_id)
+                "Delete Container ID: {} failed".format(container_id)
             )
             return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
         return AppLifecycleManagerErrors.SUCCESS
@@ -307,22 +307,22 @@ def get_argument_parser():
     group.add_argument(
         "-r",
         "--run-container",
-        metavar="RUN",
-        help="Run container, input is container ID",
+        metavar="CONTAINER_ID",
+        help="Run container, assigning the given container ID",
     )
 
     group.add_argument(
         "-s",
         "--stop-container",
-        metavar="STOP",
-        help="Stop container, input is container ID",
+        metavar="CONTAINER_ID",
+        help="Stop container with the given container ID",
     )
 
     group.add_argument(
         "-k",
         "--kill-container",
-        metavar="KILL",
-        help="Kill container, input is container ID",
+        metavar="CONTAINER_ID",
+        help="Kill container with the container ID",
     )
 
     parser.add_argument("-a", "--application-id", help="Application ID")
