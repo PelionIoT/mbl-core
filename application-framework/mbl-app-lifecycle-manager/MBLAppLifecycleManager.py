@@ -182,43 +182,28 @@ class AppLifecycleManager:
                  AppLifecycleManagerContainerState.DOES_NOT_EXISTS
                  AppLifecycleManagerContainerState.UNKNOWN
         """
-        command = ["runc", "state", container_id]
-        logging.debug("Executing command: {}".format(command))
-        try:
-            output = subprocess.check_output(
-                command, stderr=subprocess.STDOUT
-            ).decode("utf-8")
-        except subprocess.CalledProcessError as e:
-            output_str = e.output.decode()
-            if output_str.find("does not exist"):
-                logging.debug(
-                    "Container {} does not exist.".format(container_id)
-                )
+        output, ret = self._run_command(["runc", "state", container_id])
+        if ret == AppLifecycleManagerErrors.ERR_OPERATION_FAILED:
+            if "does not exist" in output:
                 return AppLifecycleManagerContainerState.DOES_NOT_EXIST
-            logging.error(
-                "Get container {} status failed".format(container_id)
-            )
-            logging.error(
-                "Error code: {}, output: {}".format(e.returncode, e.output)
-            )
             return AppLifecycleManagerContainerState.UNKNOWN
         try:
             state_data = json.loads(output)
-            status = state_data["status"]
-        except ValueError as error:
-            logging.error(
-                "JSON value error for container id {}: {}".format(
+        except (ValueError, TypeError) as error:
+            logging.exception(
+                "JSON decode error for container id {}: {}".format(
                     container_id, error
                 )
             )
             return AppLifecycleManagerContainerState.UNKNOWN
-        except Exception:
+
+        if "status" not in state_data:
             logging.error(
-                "JSON parsing error for container id {}: {}".format(
-                    container_id
+                "\"status\" field not found in JSON output of \"runc state\" for container ID {}. Output was [{}]".format(
+                    container_id, output
                 )
             )
-            return AppLifecycleManagerContainerState.UNKNOWN
+        status = state_data["status"]
 
         logging.debug("Container status: {}".format(status))
         if status == "created":
@@ -227,6 +212,12 @@ class AppLifecycleManager:
             return AppLifecycleManagerContainerState.RUNNING
         if status == "stopped":
             return AppLifecycleManagerContainerState.STOPPED
+        logging.error(
+            "Unrecognized \"status\" value from \"runc state\" for container ID {}. Output was [{}]".format(
+                container_id, output
+            )
+        )
+        return AppLifecycleManagerContainerState.UNKNOWN
 
     def _signal_container(self, container_id, signal):
         logging.info("Sending {} to container {}".format(signal, container_id))
