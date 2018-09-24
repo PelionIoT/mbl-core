@@ -72,8 +72,12 @@ class AppLifecycleManager:
             return ret
         return self._start_container(container_id)
 
-
-    def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
+    def stop_container(
+        self,
+        container_id,
+        sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT,
+        sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT,
+    ):
         """
         Stop container.
 
@@ -95,11 +99,11 @@ class AppLifecycleManager:
         ret = self._stop_container_with_signal(container_id, "SIGTERM", sigterm_timeout)
         if ret == Error.ERR_TIMEOUT:
             logging.warning(
-                "Stop Container ID: {} failed. Trying to kill it".format(
-                    container_id
-                )
+                "Stop Container ID: {} failed. Trying to kill it".format(container_id)
             )
-            ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
+            ret = self._stop_container_with_signal(
+                container_id, "SIGKILL", sigkill_timeout
+            )
         if ret != Error.SUCCESS:
             return ret
         return self._delete_container(container_id)
@@ -160,15 +164,13 @@ class AppLifecycleManager:
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
             logging.exception(
-                "JSON decode error for container ID {}: {}".format(
-                    container_id, error
-                )
+                "JSON decode error for container ID {}: {}".format(container_id, error)
             )
             return ContainerState.UNKNOWN
 
         if "status" not in state_data:
             logging.error(
-                "\"status\" field not found in JSON output of \"runc state\" for container ID {}. Output was [{}]".format(
+                '"status" field not found in JSON output of "runc state" for container ID {}. Output was [{}]'.format(
                     container_id, output
                 )
             )
@@ -182,7 +184,7 @@ class AppLifecycleManager:
         if status == "stopped":
             return ContainerState.STOPPED
         logging.error(
-            "Unrecognized \"status\" value from \"runc state\" for container ID {}. Output was [{}]".format(
+            'Unrecognized "status" value from "runc state" for container ID {}. Output was [{}]'.format(
                 container_id, output
             )
         )
@@ -203,9 +205,7 @@ class AppLifecycleManager:
         if state == ContainerState.UNKNOWN:
             return Error.ERR_CONTAINER_STATUS_UNKNOWN
         if state != ContainerState.DOES_NOT_EXIST:
-            logging.error(
-                "Container ID: {} already exists.".format(container_id)
-            )
+            logging.error("Container ID: {} already exists.".format(container_id))
             return Error.ERR_CONTAINER_EXISTS
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         logging.info("Create container: {}".format(container_id))
@@ -214,7 +214,7 @@ class AppLifecycleManager:
             working_dir,
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            stderr=subprocess.DEVNULL,
         )
         return result
 
@@ -222,7 +222,6 @@ class AppLifecycleManager:
         logging.info("Start container: {}".format(container_id))
         _, result = self._run_command(["runc", "start", container_id])
         return result
-
 
     def _signal_container(self, container_id, signal):
         logging.info("Sending {} to container {}".format(signal, container_id))
@@ -240,9 +239,7 @@ class AppLifecycleManager:
         while endtime > time.monotonic():
             state = self.get_container_state(container_id)
             if state == ContainerState.UNKNOWN:
-                return (
-                    Error.ERR_CONTAINER_STATUS_UNKNOWN
-                )
+                return Error.ERR_CONTAINER_STATUS_UNKNOWN
             if state == required_state:
                 return Error.SUCCESS
             time.sleep(SLEEP_INTERVAL)
@@ -253,35 +250,36 @@ class AppLifecycleManager:
             return Error.ERR_CONTAINER_STATUS_UNKNOWN
         return Error.ERR_TIMEOUT
 
-
     def _stop_container_with_signal(self, container_id, signal, timeout):
         ret = self._signal_container(container_id, signal)
         if ret == Error.ERR_CONTAINER_STOPPED:
             return Error.SUCCESS
         if ret != Error.SUCCESS:
             return ret
-        return self._wait_for_container_state(container_id, ContainerState.STOPPED, timeout)
-
+        return self._wait_for_container_state(
+            container_id, ContainerState.STOPPED, timeout
+        )
 
     def _delete_container(self, container_id):
         logging.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
         if result != Error.SUCCESS:
-            logging.error(
-                "Delete Container ID: {} failed".format(container_id)
-            )
+            logging.error("Delete Container ID: {} failed".format(container_id))
             return Error.ERR_OPERATION_FAILED
         return Error.SUCCESS
 
-    def _run_command(self, command, working_dir=None, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT):
+    def _run_command(
+        self,
+        command,
+        working_dir=None,
+        stdin=None,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+    ):
         logging.debug("Executing command: {}".format(command))
         result = subprocess.run(
-            command,
-            cwd=working_dir,
-            stdin=stdin,
-            stdout=stdout,
-            stderr=stderr,
+            command, cwd=working_dir, stdin=stdin, stdout=stdout, stderr=stderr
         )
         output = ""
         if result.stdout:
