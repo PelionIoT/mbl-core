@@ -65,7 +65,16 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_NOT_CREATED
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
         """
-        # Make sure container does not exist
+        # Normally we could just run a command and if it fails, determine why
+        # based on the return code and output of the command. In this case we
+        # can't capture the output of "runc create" because runc will let the
+        # container it creates inherit the stdio for runc, so attempting to
+        # capture runc's output will also attempt to capture the containers
+        # output.
+        #
+        # Check that the container does not exist before we try to create it so
+        # that we can report an already existing container as an error. There
+        # is a race condition here, but it is benign.
         state = self.get_container_state(container_id)
         if state == ContainerState.UNKNOWN:
             return Error.ERR_CONTAINER_STATUS_UNKNOWN
@@ -78,33 +87,20 @@ class AppLifecycleManager:
         logging.info("Run container ID: {}".format(container_id))
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         command = ["runc", "create", container_id]
-        # We have to send stdio to /dev/null because otherwise the container will inherit our stdio
-        _, result = self._run_command(command, working_dir, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # We have to send stdio to /dev/null because otherwise the container
+        # will inherit our stdio
+        _, result = self._run_command(
+            command,
+            working_dir,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         if result != Error.SUCCESS:
             return result
-        # Make sure container created
-        state = self.get_container_state(container_id)
-        if state == ContainerState.UNKNOWN:
-            return Error.ERR_CONTAINER_STATUS_UNKNOWN
-        if state != ContainerState.CREATED:
-            logging.error(
-                "Container ID: {} is not created.".format(container_id)
-            )
-            return Error.ERR_CONTAINER_NOT_CREATED
         # Start container
-        command = ["runc", "start", container_id]
-        _, result = self._run_command(command)
-        if result != Error.SUCCESS:
-            return result
-        # Make sure container started
-        state = self.get_container_state(container_id)
-        if state == ContainerState.UNKNOWN:
-            return Error.ERR_CONTAINER_STATUS_UNKNOWN
-        if state == ContainerState.RUNNING:
-            logging.info("Run Container ID: {} succeeded".format(container_id))
-            return Error.SUCCESS
-        logging.error("Run Container ID: {} failed".format(container_id))
-        return Error.ERR_OPERATION_FAILED
+        _, result = self._run_command(["runc", "start", container_id])
+        return result
 
     def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
         """
