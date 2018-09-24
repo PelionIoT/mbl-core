@@ -33,6 +33,7 @@ class Error(Enum):
     ERR_INVALID_ARGS = 7
     ERR_CONTAINER_STOPPED = 8
     ERR_TIMEOUT = 9
+    ERR_APP_NOT_FOUND = 10
 
 
 class ContainerState(Enum):
@@ -203,6 +204,9 @@ class AppLifecycleManager:
             )
             return Error.ERR_CONTAINER_EXISTS
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
+        if not os.path.isdir(working_dir):
+            logging.error("App {} not found".format(application_id))
+            return Error.ERR_APP_NOT_FOUND
         logging.info("Create container: {}".format(container_id))
         _, result = self._run_command(
             ["runc", "create", container_id],
