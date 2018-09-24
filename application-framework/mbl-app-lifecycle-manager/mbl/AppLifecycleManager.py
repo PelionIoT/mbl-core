@@ -49,6 +49,9 @@ class AppLifecycleManager:
     """Manage application lifecycle including run/stop/kill containers."""
 
     def __init__(self):
+        """
+        Create AppLifecycleManager object
+        """
         logging.info(
             "Creating AppLifecycleManager version {}".format(__version__)
         )
@@ -86,10 +89,12 @@ class AppLifecycleManager:
         :param container_id: Container ID
         :param sigterm_timeout: Timeout (seconds) after sending a SIGTERM to a
                                 container to wait until the container stops.
-                                If the timeout is reached a SIGKILL will be sent.
+                                If the timeout is reached a SIGKILL will be
+                                sent.
         :param sigkill_timeout: Timeout (seconds) after sending a SIGKILL to a
                                 container to wait until the container stops.
-                                If the timeout is reached ERR_TIMEOUT is returned.
+                                If the timeout is reached ERR_TIMEOUT is
+                                returned.
         :return: Error.SUCCESS
                  Error.ERR_OPERATION_FAILED
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
@@ -116,6 +121,7 @@ class AppLifecycleManager:
     def get_container_state(self, container_id):
         """
         Return container state.
+
         :param container_id:
         :return: container state enum
                  ContainerState.CREATED
@@ -124,10 +130,9 @@ class AppLifecycleManager:
                  ContainerState.DOES_NOT_EXIST
                  ContainerState.UNKNOWN
         """
-
-        # If container exists (e.g. created, started, stopped), runc will return
-        # a string for initializing a dictionary with container state values.
-        # e.g.
+        # If container exists (e.g. created, started, stopped), runc will
+        # return a string for initializing a dictionary with container state
+        # values. e.g.
         # {
         #     "ociVersion": "<version>",
         #     "id": "<container id>",
@@ -159,7 +164,8 @@ class AppLifecycleManager:
 
         if "status" not in state_data:
             logging.error(
-                '"status" field not found in JSON output of "runc state" for container ID {}. Output was [{}]'.format(
+                '"status" field not found in JSON output of "runc state" '
+                "for container ID {}. Output was [{}]".format(
                     container_id, output
                 )
             )
@@ -173,9 +179,8 @@ class AppLifecycleManager:
         if status == "stopped":
             return ContainerState.STOPPED
         logging.error(
-            'Unrecognized "status" value from "runc state" for container ID {}. Output was [{}]'.format(
-                container_id, output
-            )
+            'Unrecognized "status" value from "runc state" for container '
+            "ID {}. Output was [{}]".format(container_id, output)
         )
         return ContainerState.UNKNOWN
 
@@ -190,6 +195,7 @@ class AppLifecycleManager:
         # Check that the container does not exist before we try to create it so
         # that we can report an already existing container as an error. There
         # is a race condition here, but it is benign.
+
         state = self.get_container_state(container_id)
         if state == ContainerState.UNKNOWN:
             return Error.ERR_CONTAINER_STATUS_UNKNOWN
