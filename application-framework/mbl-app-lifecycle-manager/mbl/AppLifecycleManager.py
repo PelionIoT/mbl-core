@@ -20,7 +20,7 @@ DEFAULT_SIGKILL_TIMEOUT = 1
 SLEEP_INTERVAL = 0.1
 
 
-class AppLifecycleManagerErrors(Enum):
+class Error(Enum):
     """AppLifecycleManager error codes."""
 
     SUCCESS = 0
@@ -35,7 +35,7 @@ class AppLifecycleManagerErrors(Enum):
     ERR_TIMEOUT = 9
 
 
-class AppLifecycleManagerContainerState(Enum):
+class ContainerState(Enum):
     """AppLifecycleManager container state."""
 
     CREATED = 0
@@ -59,52 +59,52 @@ class AppLifecycleManager:
         :param container_id: Container ID
         :param application_id: Application ID (Application install directory
         under /home/app/)
-        :return: AppLifecycleManagerErrors.SUCCESS
-                 AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-                 AppLifecycleManagerErrors.ERR_CONTAINER_EXISTS
-                 AppLifecycleManagerErrors.ERR_CONTAINER_NOT_CREATED
-                 AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
+        :return: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_EXISTS
+                 Error.ERR_CONTAINER_NOT_CREATED
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
         """
         # Make sure container does not exist
         state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        if state != AppLifecycleManagerContainerState.DOES_NOT_EXIST:
+        if state == ContainerState.UNKNOWN:
+            return Error.ERR_CONTAINER_STATUS_UNKNOWN
+        if state != ContainerState.DOES_NOT_EXIST:
             logging.error(
                 "Container ID: {} already exists.".format(container_id)
             )
-            return AppLifecycleManagerErrors.ERR_CONTAINER_EXISTS
+            return Error.ERR_CONTAINER_EXISTS
         # Create container
         logging.info("Run container ID: {}".format(container_id))
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         command = ["runc", "create", container_id]
         # We have to send stdio to /dev/null because otherwise the container will inherit our stdio
         _, result = self._run_command(command, working_dir, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if result != AppLifecycleManagerErrors.SUCCESS:
+        if result != Error.SUCCESS:
             return result
         # Make sure container created
         state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        if state != AppLifecycleManagerContainerState.CREATED:
+        if state == ContainerState.UNKNOWN:
+            return Error.ERR_CONTAINER_STATUS_UNKNOWN
+        if state != ContainerState.CREATED:
             logging.error(
                 "Container ID: {} is not created.".format(container_id)
             )
-            return AppLifecycleManagerErrors.ERR_CONTAINER_NOT_CREATED
+            return Error.ERR_CONTAINER_NOT_CREATED
         # Start container
         command = ["runc", "start", container_id]
         _, result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.SUCCESS:
+        if result != Error.SUCCESS:
             return result
         # Make sure container started
         state = self.get_container_state(container_id)
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        if state == AppLifecycleManagerContainerState.RUNNING:
+        if state == ContainerState.UNKNOWN:
+            return Error.ERR_CONTAINER_STATUS_UNKNOWN
+        if state == ContainerState.RUNNING:
             logging.info("Run Container ID: {} succeeded".format(container_id))
-            return AppLifecycleManagerErrors.SUCCESS
+            return Error.SUCCESS
         logging.error("Run Container ID: {} failed".format(container_id))
-        return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
+        return Error.ERR_OPERATION_FAILED
 
     def stop_container(self, container_id, sigterm_timeout=DEFAULT_SIGTERM_TIMEOUT, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT):
         """
@@ -118,22 +118,22 @@ class AppLifecycleManager:
         :param sigkill_timeout: Timeout (seconds) after sending a SIGKILL to a
                                 container to wait until the container stops.
                                 If the timeout is reached ERR_TIMEOUT is returned.
-        :return: AppLifecycleManagerErrors.SUCCESS
-                 AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-                 AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
-                 AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-                 AppLifecycleManagerErrors.ERR_TIMEOUT
+        :return: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_TIMEOUT
         """
         logging.info("Stop container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(container_id, "SIGTERM", sigterm_timeout)
-        if ret == AppLifecycleManagerErrors.ERR_TIMEOUT:
+        if ret == Error.ERR_TIMEOUT:
             logging.warning(
                 "Stop Container ID: {} failed. Trying to kill it".format(
                     container_id
                 )
             )
             ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
-        if ret != AppLifecycleManagerErrors.SUCCESS:
+        if ret != Error.SUCCESS:
             return ret
         return self._delete_container(container_id)
 
@@ -143,15 +143,15 @@ class AppLifecycleManager:
 
         In case container does not exist an error code will return.
         :param container_id: Container ID
-        :return: AppLifecycleManagerErrors.SUCCESS
-                 AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-                 AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
-                 AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-                 AppLifecycleManagerErrors.ERR_TIMEOUT
+        :return: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_TIMEOUT
         """
         logging.info("Kill container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(container_id, "SIGKILL", sigkill_timeout)
-        if ret != AppLifecycleManagerErrors.SUCCESS:
+        if ret != Error.SUCCESS:
             return ret
         return self._delete_container(container_id)
 
@@ -178,17 +178,17 @@ class AppLifecycleManager:
 
         :param container_id:
         :return: container state enum
-                 AppLifecycleManagerContainerState.CREATED
-                 AppLifecycleManagerContainerState.RUNNING
-                 AppLifecycleManagerContainerState.STOPPED
-                 AppLifecycleManagerContainerState.DOES_NOT_EXISTS
-                 AppLifecycleManagerContainerState.UNKNOWN
+                 ContainerState.CREATED
+                 ContainerState.RUNNING
+                 ContainerState.STOPPED
+                 ContainerState.DOES_NOT_EXISTS
+                 ContainerState.UNKNOWN
         """
         output, ret = self._run_command(["runc", "state", container_id])
-        if ret == AppLifecycleManagerErrors.ERR_OPERATION_FAILED:
+        if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
-                return AppLifecycleManagerContainerState.DOES_NOT_EXIST
-            return AppLifecycleManagerContainerState.UNKNOWN
+                return ContainerState.DOES_NOT_EXIST
+            return ContainerState.UNKNOWN
         try:
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
@@ -197,7 +197,7 @@ class AppLifecycleManager:
                     container_id, error
                 )
             )
-            return AppLifecycleManagerContainerState.UNKNOWN
+            return ContainerState.UNKNOWN
 
         if "status" not in state_data:
             logging.error(
@@ -209,26 +209,26 @@ class AppLifecycleManager:
 
         logging.debug("Container status: {}".format(status))
         if status == "created":
-            return AppLifecycleManagerContainerState.CREATED
+            return ContainerState.CREATED
         if status == "running":
-            return AppLifecycleManagerContainerState.RUNNING
+            return ContainerState.RUNNING
         if status == "stopped":
-            return AppLifecycleManagerContainerState.STOPPED
+            return ContainerState.STOPPED
         logging.error(
             "Unrecognized \"status\" value from \"runc state\" for container ID {}. Output was [{}]".format(
                 container_id, output
             )
         )
-        return AppLifecycleManagerContainerState.UNKNOWN
+        return ContainerState.UNKNOWN
 
     def _signal_container(self, container_id, signal):
         logging.info("Sending {} to container {}".format(signal, container_id))
         output, ret = self._run_command(["runc", "kill", container_id, signal])
-        if ret == AppLifecycleManagerErrors.ERR_OPERATION_FAILED:
+        if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
-                return AppLifecycleManagerErrors.ERR_CONTAINER_DOES_NOT_EXIST
+                return Error.ERR_CONTAINER_DOES_NOT_EXIST
             if "process already finished" in output:
-                return AppLifecycleManagerErrors.ERR_CONTAINER_STOPPED
+                return Error.ERR_CONTAINER_STOPPED
         return ret
 
     def _wait_for_container_state(self, container_id, required_state, timeout):
@@ -236,40 +236,40 @@ class AppLifecycleManager:
         endtime = start + timeout
         while endtime > time.monotonic():
             state = self.get_container_state(container_id)
-            if state == AppLifecycleManagerContainerState.UNKNOWN:
+            if state == ContainerState.UNKNOWN:
                 return (
-                    AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
+                    Error.ERR_CONTAINER_STATUS_UNKNOWN
                 )
             if state == required_state:
-                return AppLifecycleManagerErrors.SUCCESS
+                return Error.SUCCESS
             time.sleep(SLEEP_INTERVAL)
         state = self.get_container_state(container_id)
         if state == required_state:
-            return AppLifecycleManagerErrors.SUCCESS
-        if state == AppLifecycleManagerContainerState.UNKNOWN:
-            return AppLifecycleManagerErrors.ERR_CONTAINER_STATUS_UNKNOWN
-        return AppLifecycleManagerErrors.ERR_TIMEOUT
+            return Error.SUCCESS
+        if state == ContainerState.UNKNOWN:
+            return Error.ERR_CONTAINER_STATUS_UNKNOWN
+        return Error.ERR_TIMEOUT
 
 
     def _stop_container_with_signal(self, container_id, signal, timeout):
         ret = self._signal_container(container_id, signal)
-        if ret == AppLifecycleManagerErrors.ERR_CONTAINER_STOPPED:
-            return AppLifecycleManagerErrors.SUCCESS
-        if ret != AppLifecycleManagerErrors.SUCCESS:
+        if ret == Error.ERR_CONTAINER_STOPPED:
+            return Error.SUCCESS
+        if ret != Error.SUCCESS:
             return ret
-        return self._wait_for_container_state(container_id, AppLifecycleManagerContainerState.STOPPED, timeout)
+        return self._wait_for_container_state(container_id, ContainerState.STOPPED, timeout)
 
 
     def _delete_container(self, container_id):
         logging.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
-        if result != AppLifecycleManagerErrors.SUCCESS:
+        if result != Error.SUCCESS:
             logging.error(
                 "Delete Container ID: {} failed".format(container_id)
             )
-            return AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-        return AppLifecycleManagerErrors.SUCCESS
+            return Error.ERR_OPERATION_FAILED
+        return Error.SUCCESS
 
     def _run_command(self, command, working_dir=None, stdin=None, stdout=subprocess.PIPE, stderr=subprocess.STDOUT):
         logging.debug("Executing command: {}".format(command))
@@ -289,5 +289,5 @@ class AppLifecycleManager:
                     command, result.returncode, output
                 )
             )
-            return output, AppLifecycleManagerErrors.ERR_OPERATION_FAILED
-        return output, AppLifecycleManagerErrors.SUCCESS
+            return output, Error.ERR_OPERATION_FAILED
+        return output, Error.SUCCESS

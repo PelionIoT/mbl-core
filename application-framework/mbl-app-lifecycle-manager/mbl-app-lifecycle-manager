@@ -86,7 +86,7 @@ def _main():
         if args.run_container:
             if args.application_id is None:
                 logging.info("Missing application-id argument")
-                return alm.AppLifecycleManagerErrors.ERR_INVALID_ARGS
+                return alm.Error.ERR_INVALID_ARGS
             return app_manager_lifecycle_mng.run_container(
                 args.run_container, args.application_id
             )
@@ -103,9 +103,9 @@ def _main():
             )
     except OSError:
         logging.exception("Operation failed with OSError")
-        return alm.AppLifecycleManagerErrors.ERR_OPERATION_FAILED
+        return alm.Error.ERR_OPERATION_FAILED
     except Exception:
         logging.exception("Operation failed exception")
-        return alm.AppLifecycleManagerErrors.ERR_OPERATION_FAILED
+        return alm.Error.ERR_OPERATION_FAILED
 
 _main()
