@@ -35,6 +35,10 @@ class Error(Enum):
     ERR_TIMEOUT = 9
     ERR_APP_NOT_FOUND = 10
     ERR_CONTAINER_RUNNING = 11
+    ERR_DELETE_FAILED = 12
+    ERR_CREATE_FAILED = 13
+    ERR_START_FAILED = 14
+    ERR_SIGNAL_FAILED = 15
 
 
 class ContainerState(Enum):
@@ -65,7 +69,8 @@ class AppLifecycleManager:
         :param application_id: Application ID (Application install directory
         under /home/app/)
         :return: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CREATE_FAILED
+                 Error.ERR_START_FAILED
                  Error.ERR_CONTAINER_EXISTS
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_APP_NOT_FOUND
@@ -98,7 +103,8 @@ class AppLifecycleManager:
                                 If the timeout is reached ERR_TIMEOUT is
                                 returned.
         :return: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_SIGNAL_FAILED
+                 Error.ERR_DELETE_FAILED
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_TIMEOUT
@@ -131,7 +137,8 @@ class AppLifecycleManager:
         In case container does not exist an error code will return.
         :param container_id: Container ID
         :return: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_SIGNAL_FAILED
+                 Error.ERR_DELETE_FAILED
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_TIMEOUT
@@ -229,7 +236,7 @@ class AppLifecycleManager:
                  Error.ERR_APP_NOT_FOUND
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_CONTAINER_EXISTS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CREATE_FAILED
         """
         # Normally we could just run a command and if it fails, determine why
         # based on the return code and output of the command. In this case we
@@ -253,7 +260,7 @@ class AppLifecycleManager:
             return result
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         if not os.path.isdir(working_dir):
-            result = Error.APP_NOT_FOUND
+            result = Error.ERR_APP_NOT_FOUND
             self._log_error_return(
                 "create_container",
                 result,
@@ -269,6 +276,8 @@ class AppLifecycleManager:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        if result == Error.ERR_OPERATION_FAILED:
+            result = Error.ERR_CREATE_FAILED
         self._log_error_return("_create_container", result, container_id)
         return result
 
@@ -277,7 +286,9 @@ class AppLifecycleManager:
         Start a pre-created container.
 
         Returns: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_STOPPED
+                 Error.ERR_CONTAINER_RUNNING
+                 Error.ERR_START_FAILED
          """
         logging.info("Start container: {}".format(container_id))
         output, result = self._run_command(["runc", "start", container_id])
@@ -286,6 +297,8 @@ class AppLifecycleManager:
                 result = Error.ERR_CONTAINER_STOPPED
             elif "cannot start an already running container" in output:
                 result = Error.ERR_CONTAINER_RUNNING
+            else:
+                result = Error.ERR_START_FAILED
         self._log_error_return("_start_container", result, container_id)
         return result
 
@@ -294,7 +307,7 @@ class AppLifecycleManager:
         Send a signal to a container.
 
         Returns: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_SIGNAL_FAILED
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_STOPPED
         """
@@ -305,6 +318,8 @@ class AppLifecycleManager:
                 ret = Error.ERR_CONTAINER_DOES_NOT_EXIST
             elif "process already finished" in output:
                 ret = Error.ERR_CONTAINER_STOPPED
+            else:
+                ret = Error.ERR_SIGNAL_FAILED
         self._log_error_return("_signal_container", ret, container_id)
         return ret
 
@@ -339,6 +354,7 @@ class AppLifecycleManager:
         The container already being stopped is not treated as an error.
 
         Returns: Error.SUCCESS
+                 Error.ERR_SIGNAL_FAILED
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_TIMEOUT
@@ -360,7 +376,9 @@ class AppLifecycleManager:
         Delete a container.
 
         Returns: Error.SUCCESS
-                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_DELETE_FAILED
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_RUNNING
         """
         logging.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
@@ -371,7 +389,7 @@ class AppLifecycleManager:
             elif "is not stopped: running" in output:
                 result= Error.ERR_CONTAINER_RUNNING
             else:
-                result = Error.ERR_OPERATION_FAILED
+                result = Error.ERR_DELETE_FAILED
         self._log_error_return("_delete_container", result, container_id)
         return result
 
