@@ -107,8 +107,9 @@ class AppLifecycleManager:
         )
         if ret == Error.ERR_TIMEOUT:
             logging.warning(
-                "Stop Container ID: {} failed. Trying to kill it".format(
-                    container_id
+                "Container {} failed to stop within {}s of being sent a "
+                "SIGTERM. Try sending a SIGKILL...".format(
+                    container_id, sigterm_timeout,
                 )
             )
             ret = self._stop_container_with_signal(
