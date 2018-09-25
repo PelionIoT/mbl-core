@@ -36,6 +36,13 @@ def get_argument_parser():
         help="Stop container with the given container ID",
     )
 
+    group.add_argument(
+        "-k",
+        "--kill-container",
+        metavar="CONTAINER_ID",
+        help="Kill container with the container ID",
+    )
+
     parser.add_argument("-a", "--application-id", help="Application ID")
 
     parser.add_argument(
@@ -97,6 +104,11 @@ def _main():
             )
             return app_manager_lifecycle_mng.stop_container(
                 args.stop_container, sigterm_timeout, sigkill_timeout
+            )
+        elif args.kill_container:
+            sigkill_timeout = args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
+            return app_manager_lifecycle_mng.kill_container(
+                args.kill_container, sigkill_timeout
             )
     except OSError:
         logging.exception("Operation failed with OSError")

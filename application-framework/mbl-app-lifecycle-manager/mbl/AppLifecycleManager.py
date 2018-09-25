@@ -83,7 +83,7 @@ class AppLifecycleManager:
         sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT,
     ):
         """
-        Stop container.
+        Stop container and delete container.
 
         In case container does not exist an error code will return.
         :param container_id: Container ID
@@ -114,6 +114,28 @@ class AppLifecycleManager:
             ret = self._stop_container_with_signal(
                 container_id, "SIGKILL", sigkill_timeout
             )
+        if ret != Error.SUCCESS:
+            return ret
+        return self._delete_container(container_id)
+
+    def kill_container(
+        self, container_id, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT
+    ):
+        """
+        Kill container and delete container.
+
+        In case container does not exist an error code will return.
+        :param container_id: Container ID
+        :return: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_TIMEOUT
+        """
+        logging.info("Kill container ID: {}".format(container_id))
+        ret = self._stop_container_with_signal(
+            container_id, "SIGKILL", sigkill_timeout
+        )
         if ret != Error.SUCCESS:
             return ret
         return self._delete_container(container_id)
