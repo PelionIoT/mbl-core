@@ -109,7 +109,9 @@ def _main():
                 args.stop_container, sigterm_timeout, sigkill_timeout
             )
         elif args.kill_container:
-            sigkill_timeout = args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
+            sigkill_timeout = (
+                args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
+            )
             ret = app_manager_lifecycle_mng.kill_container(
                 args.kill_container, sigkill_timeout
             )
