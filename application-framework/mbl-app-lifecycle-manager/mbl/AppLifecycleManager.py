@@ -67,6 +67,7 @@ class AppLifecycleManager:
                  Error.ERR_OPERATION_FAILED
                  Error.ERR_CONTAINER_EXISTS
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_APP_NOT_FOUND
         """
         logging.info("Run container ID: {}".format(container_id))
 
@@ -184,6 +185,15 @@ class AppLifecycleManager:
         return ContainerState.UNKNOWN
 
     def _create_container(self, container_id, application_id):
+        """
+        Creates a container (but doesn't run it).
+
+        Returns: Error.SUCCESS
+                 Error.ERR_APP_NOT_FOUND
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_CONTAINER_EXISTS
+                 Error.ERR_OPERATION_FAILED
+        """
         # Normally we could just run a command and if it fails, determine why
         # based on the return code and output of the command. In this case we
         # can't capture the output of "runc create" because runc will let the
@@ -218,11 +228,25 @@ class AppLifecycleManager:
         return result
 
     def _start_container(self, container_id):
+        """
+        Start a pre-created container.
+
+        Returns: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+         """
         logging.info("Start container: {}".format(container_id))
         _, result = self._run_command(["runc", "start", container_id])
         return result
 
     def _signal_container(self, container_id, signal):
+        """
+        Send a signal to a container.
+
+        Returns: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_STOPPED
+        """
         logging.info("Sending {} to container {}".format(signal, container_id))
         output, ret = self._run_command(["runc", "kill", container_id, signal])
         if ret == Error.ERR_OPERATION_FAILED:
@@ -233,6 +257,13 @@ class AppLifecycleManager:
         return ret
 
     def _wait_for_container_state(self, container_id, required_state, timeout):
+        """
+        Wait until a container has a given state.
+
+        Returns: Error.SUCCESS
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_TIMEOUT
+        """
         start = time.monotonic()
         endtime = start + timeout
         while endtime > time.monotonic():
@@ -250,6 +281,16 @@ class AppLifecycleManager:
         return Error.ERR_TIMEOUT
 
     def _stop_container_with_signal(self, container_id, signal, timeout):
+        """
+        Send a container a signal and wait until it stops.
+
+        The container already being stopped is not treated as an error.
+
+        Returns: Error.SUCCESS
+                 Error.ERR_CONTAINER_DOES_NOT_EXIST
+                 Error.ERR_CONTAINER_STATUS_UNKNOWN
+                 Error.ERR_TIMEOUT
+        """
         ret = self._signal_container(container_id, signal)
         if ret == Error.ERR_CONTAINER_STOPPED:
             return Error.SUCCESS
@@ -260,6 +301,12 @@ class AppLifecycleManager:
         )
 
     def _delete_container(self, container_id):
+        """
+        Delete a container.
+
+        Returns: Error.SUCCESS
+                 Error.ERR_OPERATION_FAILED
+        """
         logging.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
@@ -278,6 +325,14 @@ class AppLifecycleManager:
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     ):
+        """
+        Run a command using subprocess.run(), with extra logging.
+
+        Returns: 2-tuple (output, error) where output is the decoded (as UTF-8)
+        stdout of the command if it is captured, and err is one of:
+            Error.SUCCESS
+            Error.OPERATION_FAILED
+        """
         logging.debug("Executing command: {}".format(command))
         result = subprocess.run(
             command, cwd=working_dir, stdin=stdin, stdout=stdout, stderr=stderr
