@@ -34,6 +34,7 @@ class Error(Enum):
     ERR_CONTAINER_STOPPED = 8
     ERR_TIMEOUT = 9
     ERR_APP_NOT_FOUND = 10
+    ERR_CONTAINER_RUNNING = 11
 
 
 class ContainerState(Enum):
@@ -72,9 +73,10 @@ class AppLifecycleManager:
         logging.info("Run container ID: {}".format(container_id))
 
         ret = self._create_container(container_id, application_id)
-        if ret != Error.SUCCESS:
-            return ret
-        return self._start_container(container_id)
+        if ret == Error.SUCCESS:
+            ret = self._start_container(container_id)
+        self._log_error_return("run_container", ret, container_id)
+        return ret
 
     def stop_container(
         self,
@@ -115,9 +117,10 @@ class AppLifecycleManager:
             ret = self._stop_container_with_signal(
                 container_id, "SIGKILL", sigkill_timeout
             )
-        if ret != Error.SUCCESS:
-            return ret
-        return self._delete_container(container_id)
+        if ret == Error.SUCCESS:
+            ret = self._delete_container(container_id)
+        self._log_error_return("stop_container", ret, container_id)
+        return ret
 
     def kill_container(
         self, container_id, sigkill_timeout=DEFAULT_SIGKILL_TIMEOUT
@@ -137,9 +140,10 @@ class AppLifecycleManager:
         ret = self._stop_container_with_signal(
             container_id, "SIGKILL", sigkill_timeout
         )
-        if ret != Error.SUCCESS:
-            return ret
-        return self._delete_container(container_id)
+        if ret == Error.SUCCESS:
+            ret = self._delete_container(container_id)
+        self._log_error_return("kill_container", ret, container_id)
+        return ret
 
     def get_container_state(self, container_id):
         """
@@ -167,7 +171,7 @@ class AppLifecycleManager:
         #     "owner": "<owner>"
         # }
         #
-        # If container does not exist - runc will return s string:
+        # If container does not exist - runc will return string:
         # "container <container ID> does not exist"
 
         output, ret = self._run_command(["runc", "state", container_id])
@@ -192,6 +196,7 @@ class AppLifecycleManager:
                     container_id, output
                 )
             )
+            return ContainerState.UNKNOWN
         status = state_data["status"]
 
         logging.debug("Container status: {}".format(status))
@@ -206,6 +211,15 @@ class AppLifecycleManager:
             "ID {}. Output was [{}]".format(container_id, output)
         )
         return ContainerState.UNKNOWN
+
+    def _log_error_return(self, function_name, error, container_id, extra_info=""):
+        if error != Error.SUCCESS:
+            if extra_info:
+                extra_info = " ({})".format(extra_info)
+            logging.warning("{} returning {} for container {}{}".format(
+                function_name, error, container_id, extra_info
+                )
+            )
 
     def _create_container(self, container_id, application_id):
         """
@@ -229,17 +243,24 @@ class AppLifecycleManager:
         # is a race condition here, but it is benign.
 
         state = self.get_container_state(container_id)
+        result = Error.SUCCESS
         if state == ContainerState.UNKNOWN:
-            return Error.ERR_CONTAINER_STATUS_UNKNOWN
-        if state != ContainerState.DOES_NOT_EXIST:
-            logging.error(
-                "Container ID: {} already exists.".format(container_id)
-            )
-            return Error.ERR_CONTAINER_EXISTS
+            result = Error.ERR_CONTAINER_STATUS_UNKNOWN
+        elif state != ContainerState.DOES_NOT_EXIST:
+            result = Error.ERR_CONTAINER_EXISTS
+        if result != Error.SUCCESS:
+            self._log_error_return("_create_container", result, container_id)
+            return result
         working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
         if not os.path.isdir(working_dir):
-            logging.error("App {} not found".format(application_id))
-            return Error.ERR_APP_NOT_FOUND
+            result = Error.APP_NOT_FOUND
+            self._log_error_return(
+                "create_container",
+                result,
+                container_id,
+                "Application ID {}".format(application_id)
+            )
+            return result
         logging.info("Create container: {}".format(container_id))
         _, result = self._run_command(
             ["runc", "create", container_id],
@@ -248,6 +269,7 @@ class AppLifecycleManager:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
+        self._log_error_return("_create_container", result, container_id)
         return result
 
     def _start_container(self, container_id):
@@ -258,7 +280,13 @@ class AppLifecycleManager:
                  Error.ERR_OPERATION_FAILED
          """
         logging.info("Start container: {}".format(container_id))
-        _, result = self._run_command(["runc", "start", container_id])
+        output, result = self._run_command(["runc", "start", container_id])
+        if result != Error.SUCCESS:
+            if "cannot start a container that has stopped" in output:
+                result = Error.ERR_CONTAINER_STOPPED
+            elif "cannot start an already running container" in output:
+                result = Error.ERR_CONTAINER_RUNNING
+        self._log_error_return("_start_container", result, container_id)
         return result
 
     def _signal_container(self, container_id, signal):
@@ -274,9 +302,10 @@ class AppLifecycleManager:
         output, ret = self._run_command(["runc", "kill", container_id, signal])
         if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
-                return Error.ERR_CONTAINER_DOES_NOT_EXIST
-            if "process already finished" in output:
-                return Error.ERR_CONTAINER_STOPPED
+                ret = Error.ERR_CONTAINER_DOES_NOT_EXIST
+            elif "process already finished" in output:
+                ret = Error.ERR_CONTAINER_STOPPED
+        self._log_error_return("_signal_container", ret, container_id)
         return ret
 
     def _wait_for_container_state(self, container_id, required_state, timeout):
@@ -316,12 +345,15 @@ class AppLifecycleManager:
         """
         ret = self._signal_container(container_id, signal)
         if ret == Error.ERR_CONTAINER_STOPPED:
-            return Error.SUCCESS
-        if ret != Error.SUCCESS:
-            return ret
-        return self._wait_for_container_state(
-            container_id, ContainerState.STOPPED, timeout
+            ret = Error.SUCCESS
+        if ret == Error.SUCCESS:
+            ret = self._wait_for_container_state(
+                container_id, ContainerState.STOPPED, timeout
+            )
+        self._log_error_return(
+            "_stop_container_with_signal", ret, container_id
         )
+        return ret
 
     def _delete_container(self, container_id):
         """
@@ -334,11 +366,14 @@ class AppLifecycleManager:
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
         if result != Error.SUCCESS:
-            logging.error(
-                "Delete Container ID: {} failed".format(container_id)
-            )
-            return Error.ERR_OPERATION_FAILED
-        return Error.SUCCESS
+            if "does not exist" in output:
+                result = Error.ERR_CONTAINER_DOES_NOT_EXIST
+            elif "is not stopped: running" in output:
+                result= Error.ERR_CONTAINER_RUNNING
+            else:
+                result = Error.ERR_OPERATION_FAILED
+        self._log_error_return("_delete_container", result, container_id)
+        return result
 
     def _run_command(
         self,
@@ -364,7 +399,7 @@ class AppLifecycleManager:
         if result.stdout:
             output = result.stdout.decode("utf-8")
         if result.returncode != 0:
-            logging.error(
+            logging.warning(
                 "Command {} failed with status {} and output [{}]".format(
                     command, result.returncode, output
                 )

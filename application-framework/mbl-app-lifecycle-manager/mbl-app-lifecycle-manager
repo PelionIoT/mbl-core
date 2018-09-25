@@ -5,6 +5,7 @@
 
 import argparse
 import logging
+import sys
 
 import mbl.AppLifecycleManager as alm
 
@@ -86,15 +87,17 @@ def _main():
     )
     logging.debug("Command line arguments:{}".format(args))
 
+    ret = alm.Error.ERR_INVALID_ARGS
     try:
         app_manager_lifecycle_mng = alm.AppLifecycleManager()
         if args.run_container:
             if args.application_id is None:
                 logging.info("Missing application-id argument")
-                return alm.Error.ERR_INVALID_ARGS
-            return app_manager_lifecycle_mng.run_container(
-                args.run_container, args.application_id
-            )
+                ret = alm.Error.ERR_INVALID_ARGS
+            else:
+                ret = app_manager_lifecycle_mng.run_container(
+                    args.run_container, args.application_id
+                )
         elif args.stop_container:
             sigterm_timeout = (
                 args.sigterm_timeout or alm.DEFAULT_SIGTERM_TIMEOUT
@@ -102,12 +105,12 @@ def _main():
             sigkill_timeout = (
                 args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
             )
-            return app_manager_lifecycle_mng.stop_container(
+            ret = app_manager_lifecycle_mng.stop_container(
                 args.stop_container, sigterm_timeout, sigkill_timeout
             )
         elif args.kill_container:
             sigkill_timeout = args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
-            return app_manager_lifecycle_mng.kill_container(
+            ret = app_manager_lifecycle_mng.kill_container(
                 args.kill_container, sigkill_timeout
             )
     except OSError:
@@ -116,6 +119,10 @@ def _main():
     except Exception:
         logging.exception("Operation failed exception")
         return alm.Error.ERR_OPERATION_FAILED
+    if ret == alm.Error.SUCCESS:
+        logging.info("Operation successful")
+    else:
+        logging.error("Operation failed: {}".format(ret))
+    return ret
 
-
-_main()
+sys.exit(_main())
