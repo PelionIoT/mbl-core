@@ -116,7 +116,7 @@ class AppLifecycleManager:
             logging.warning(
                 "Container {} failed to stop within {}s of being sent a "
                 "SIGTERM. Try sending a SIGKILL...".format(
-                    container_id, sigterm_timeout,
+                    container_id, sigterm_timeout
                 )
             )
             ret = self._stop_container_with_signal(
@@ -218,18 +218,21 @@ class AppLifecycleManager:
         )
         return ContainerState.UNKNOWN
 
-    def _log_error_return(self, function_name, error, container_id, extra_info=""):
+    def _log_error_return(
+        self, function_name, error, container_id, extra_info=""
+    ):
         if error != Error.SUCCESS:
             if extra_info:
                 extra_info = " ({})".format(extra_info)
-            logging.warning("{} returning {} for container {}{}".format(
-                function_name, error, container_id, extra_info
+            logging.warning(
+                "{} returning {} for container {}{}".format(
+                    function_name, error, container_id, extra_info
                 )
             )
 
     def _create_container(self, container_id, application_id):
         """
-        Creates a container (but doesn't run it).
+        Create a container (but don't run it).
 
         Returns: Error.SUCCESS
                  Error.ERR_APP_NOT_FOUND
@@ -264,7 +267,7 @@ class AppLifecycleManager:
                 "create_container",
                 result,
                 container_id,
-                "Application ID {}".format(application_id)
+                "Application ID {}".format(application_id),
             )
             return result
         logging.info("Create container: {}".format(container_id))
@@ -288,7 +291,7 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_STOPPED
                  Error.ERR_CONTAINER_RUNNING
                  Error.ERR_START_FAILED
-         """
+        """
         logging.info("Start container: {}".format(container_id))
         output, result = self._run_command(["runc", "start", container_id])
         if result != Error.SUCCESS:
@@ -386,7 +389,7 @@ class AppLifecycleManager:
             if "does not exist" in output:
                 result = Error.ERR_CONTAINER_DOES_NOT_EXIST
             elif "is not stopped: running" in output:
-                result= Error.ERR_CONTAINER_RUNNING
+                result = Error.ERR_CONTAINER_RUNNING
             else:
                 result = Error.ERR_DELETE_FAILED
         self._log_error_return("_delete_container", result, container_id)
