@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+# Copyright (c) 2018, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+"""This script manage application updates."""
+
+import sys
+import argparse
+import os
+import subprocess
+import logging
+import mbl.AppManager as apm
+import mbl.AppLifecycleManager as alm
+
+# sys.path.append("/usr")
+# from bin.MBLAppLifecycleManager import AppLifecycleManager  # noqa
+# from bin.MBLAppLifecycleManager import Error  # noqa
+# from bin.MBLAppLifecycleManager import ContainerState  # noqa
+
+__version__ = "1.0"
+APP_STOP_TIMEOUT = 3
+
+
+class AppUpdateManager:
+    """Manage application Updates."""
+
+    def __init__(self):
+        self.package_handler = apm.PackageHandler(
+            logging.getLogger("ARM-MBL-APP-UPDATE-MANAGER")
+        )
+        self.app_lifecycle_mng = alm.AppLifecycleManager()
+
+    def install_and_run_package(self, package_path):
+        logging.info("Install and run package: {}".format(package_path))
+        # Check if container is running and stop it
+        # App id is the destination directory of a package
+        app_id = self.package_handler.get_package_dest_dir(package_path)
+
+        # Check if app is running
+        # Note: We use app_id as container ID
+        status = self.app_lifecycle_mng.get_container_state(app_id)
+        if status is ContainerState.UNKNOWN:
+            logging.error("Container id {} status is unknow.".format(app_id))
+            return ContainerState.UNKNOWN
+        if status is not ContainerState.DOES_NOT_EXIST:
+            # Need to stop container
+            result = self.app_lifecycle_mng.stop_container(
+                app_id, APP_STOP_TIMEOUT
+            )
+            if result is not Error.SUCCESS:
+                logging.error(
+                    "Stop container id {} failed with err: {}".format(
+                        app_id, result
+                    )
+                )
+                return result
+        # Force install package (force = remove and install)
+        self.package_handler.force_install_package(package_path)
+        # Run container (we use app id as container id)
+        result = self.app_lifecycle_mng.run_container(app_id, app_id)
+        if result != Error.SUCCESS:
+            logging.error(
+                "Run container id {} failed with err: {}".format(
+                    app_id, result
+                )
+            )
+            return result
+        return Error.SUCCESS
+
+
+class StoreValidFile(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        prospective_file = values
+        if not os.path.isfile(prospective_file):
+            raise argparse.ArgumentTypeError(
+                "file: {} not found".format(prospective_file)
+            )
+        if not os.access(prospective_file, os.R_OK):
+            raise argparse.ArgumentTypeError(
+                "file: {} is not a readable file".format(prospective_file)
+            )
+        setattr(namespace, self.dest, os.path.abspath(prospective_file))
+
+
+def get_argument_parser():
+    """
+    Return argument parser.
+
+    :return: parser
+    """
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="App lifecycle manager",
+    )
+
+    parser.add_argument(
+        "-i",
+        "--install-package",
+        metavar="INSTALL",
+        required=True,
+        action=StoreValidFile,
+        help="Install package on device and run it, input is .ipk file path",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Increase output verbosity",
+        action="store_true",
+    )
+
+    return parser
+
+
+def _main():
+    parser = get_argument_parser()
+    args = parser.parse_args()
+    info_level = logging.DEBUG if args.verbose else logging.INFO
+
+    logging.basicConfig(
+        level=info_level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+    logging.info("Starting ARM APP UPDATE MANAGER: {}".format(__version__))
+    logging.info("Command line arguments:{}".format(args))
+
+    try:
+        app_update_manager = AppUpdateManager()
+        if args.install_package:
+            result = app_update_manager.install_and_run_package(
+                args.install_package
+            )
+    except subprocess.CalledProcessError as e:
+        logging.exception(
+            "Operation failed with subprocess error code: " + str(e.returncode)
+        )
+        return 1
+    except OSError:
+        logging.exception("Operation failed with OSError")
+        return 1
+    except Exception:
+        logging.exception("Operation failed exception")
+        return 1
+
+
+if __name__ == "__main__":
+    sys.exit(_main())
