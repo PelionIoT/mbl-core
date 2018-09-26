@@ -24,8 +24,10 @@ class Error(Enum):
     SUCCESS = 0
     ERR_OPERATION_FAILED = 1
     ERR_GET_CONTAINER_STATUS_FAILED = 2
-    ERR_STOP_CONTAINER_FAILED = 3
-    ERR_RUN_CONTAINER_FAILED = 4
+    ERR_INSTALL_PACKAGE_FAILED = 3
+    ERR_STOP_CONTAINER_FAILED = 4
+    ERR_RUN_CONTAINER_FAILED = 5
+    ERR_GET_APP_ID_FAILED = 6
 
 
 class AppUpdateManager:
@@ -51,8 +53,14 @@ class AppUpdateManager:
         logging.info("Install and run package: {}".format(package_path))
         # Check if container is running and stop it
         # App id is the destination directory of a package
-        app_id = self.app_mng.get_package_dest_dir(package_path)
-
+        app_id = ""
+        try:
+            app_id = self.app_mng.get_package_dest_dir(package_path)
+        except subprocess.CalledProcessError as e:
+            logging.exception(
+                "Operation failed with return code: {}".format(e.returncode)
+            )
+            return Error.ERR_GET_APP_ID_FAILED
         # Check if app is running
         # Note: We use app_id as container ID
         status = self.app_lifecycle_mng.get_container_state(app_id)
@@ -75,8 +83,15 @@ class AppUpdateManager:
                 )
                 return Error.ERR_STOP_CONTAINER_FAILED
         # Force install package (force = remove and install)
-        logging.debug("Installing package {}...".format(package_path))
-        self.app_mng.force_install_package(package_path)
+        logging.debug("InstalL package {}...".format(package_path))
+        try:
+            self.app_mng.force_install_package(package_path)
+        except subprocess.CalledProcessError as e:
+            logging.exception(
+                "Install package {} failed with return code: {}"
+                    .format(package_path, e.returncode)
+            )
+            return Error.ERR_INSTALL_PACKAGE_FAILED
         # Run container (we use app id as container id)
         logging.debug("Run Container {}...".format(app_id))
         result = self.app_lifecycle_mng.run_container(app_id, app_id)
