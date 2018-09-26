@@ -10,11 +10,22 @@ import argparse
 import os
 import subprocess
 import logging
+from enum import Enum
 import mbl.AppManager as apm
 import mbl.AppLifecycleManager as alm
 
 __version__ = "1.0"
 APP_STOP_TIMEOUT = 3
+
+
+class Error(Enum):
+    """AppUpdateManager error codes."""
+
+    SUCCESS = 0
+    ERR_OPERATION_FAILED = 1
+    ERR_GET_CONTAINER_STATUS_FAILED = 2
+    ERR_STOP_CONTAINER_FAILED = 3
+    ERR_RUN_CONTAINER_FAILED = 4
 
 
 class AppUpdateManager:
@@ -47,9 +58,12 @@ class AppUpdateManager:
         status = self.app_lifecycle_mng.get_container_state(app_id)
         if status is alm.ContainerState.UNKNOWN:
             logging.error("Container id {} status is unknow.".format(app_id))
-            return alm.ContainerState.UNKNOWN
+            return Error.ERR_GET_CONTAINER_STATUS_FAILED
         if status is not alm.ContainerState.DOES_NOT_EXIST:
             # Need to stop container
+            logging.debug(
+                "Container id {} exists. Stop container...".format(app_id)
+            )
             result = self.app_lifecycle_mng.stop_container(
                 app_id, APP_STOP_TIMEOUT
             )
@@ -59,10 +73,12 @@ class AppUpdateManager:
                         app_id, result
                     )
                 )
-                return result
+                return Error.ERR_STOP_CONTAINER_FAILED
         # Force install package (force = remove and install)
+        logging.debug("Installing package {}...".format(package_path))
         self.app_mng.force_install_package(package_path)
         # Run container (we use app id as container id)
+        logging.debug("Run Container {}...".format(app_id))
         result = self.app_lifecycle_mng.run_container(app_id, app_id)
         if result != alm.Error.SUCCESS:
             logging.error(
@@ -70,8 +86,8 @@ class AppUpdateManager:
                     app_id, result
                 )
             )
-            return result
-        return alm.Error.SUCCESS
+            return Error.ERR_RUN_CONTAINER_FAILED
+        return Error.SUCCESS
 
 
 class StoreValidFile(argparse.Action):
@@ -130,23 +146,29 @@ def _main():
     logging.info("Starting ARM APP UPDATE MANAGER: {}".format(__version__))
     logging.info("Command line arguments:{}".format(args))
 
+    ret = Error.ERR_OPERATION_FAILED
     try:
         app_update_manager = AppUpdateManager()
         if args.install_package:
-            result = app_update_manager.install_and_run_package(
+            ret = app_update_manager.install_and_run_package(
                 args.install_package
             )
     except subprocess.CalledProcessError as e:
         logging.exception(
             "Operation failed with subprocess error code: " + str(e.returncode)
         )
-        return 1
+        return Error.ERR_OPERATION_FAILED
     except OSError:
         logging.exception("Operation failed with OSError")
-        return 1
+        return Error.ERR_OPERATION_FAILED
     except Exception:
         logging.exception("Operation failed exception")
-        return 1
+        return Error.ERR_OPERATION_FAILED
+    if ret == Error.SUCCESS:
+        logging.info("Operation successful")
+    else:
+        logging.error("Operation failed: {}".format(ret))
+    return ret
 
 
 if __name__ == "__main__":
