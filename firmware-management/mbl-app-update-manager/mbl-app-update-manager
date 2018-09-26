@@ -88,8 +88,9 @@ class AppUpdateManager:
             self.app_mng.force_install_package(package_path)
         except subprocess.CalledProcessError as e:
             logging.exception(
-                "Install package {} failed with return code: {}"
-                    .format(package_path, e.returncode)
+                "Install package {} failed with return code: {}".format(
+                    package_path, e.returncode
+                )
             )
             return Error.ERR_INSTALL_PACKAGE_FAILED
         # Run container (we use app id as container id)
