@@ -31,6 +31,7 @@ class Error(Enum):
     ERR_CONTAINER_DOES_NOT_EXIST = 7
     ERR_INVALID_ARGS = 8
 
+
 class AppUpdateManager:
     """Manage application Updates."""
 
