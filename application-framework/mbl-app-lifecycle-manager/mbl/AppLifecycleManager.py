@@ -55,7 +55,8 @@ class AppLifecycleManager:
 
     def __init__(self):
         """Create AppLifecycleManager object."""
-        logging.info(
+        self.logger = logging.getLogger("AppLifecycleManager")
+        self.logger.info(
             "Creating AppLifecycleManager version {}".format(__version__)
         )
 
@@ -74,7 +75,7 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_APP_NOT_FOUND
         """
-        logging.info("Run container ID: {}".format(container_id))
+        self.logger.info("Run container ID: {}".format(container_id))
 
         ret = self._create_container(container_id, application_id)
         if ret == Error.SUCCESS:
@@ -108,12 +109,12 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_TIMEOUT
         """
-        logging.info("Stop container ID: {}".format(container_id))
+        self.logger.info("Stop container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(
             container_id, "SIGTERM", sigterm_timeout
         )
         if ret == Error.ERR_TIMEOUT:
-            logging.warning(
+            self.logger.warning(
                 "Container {} failed to stop within {}s of being sent a "
                 "SIGTERM. Try sending a SIGKILL...".format(
                     container_id, sigterm_timeout
@@ -142,7 +143,7 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_STATUS_UNKNOWN
                  Error.ERR_TIMEOUT
         """
-        logging.info("Kill container ID: {}".format(container_id))
+        self.logger.info("Kill container ID: {}".format(container_id))
         ret = self._stop_container_with_signal(
             container_id, "SIGKILL", sigkill_timeout
         )
@@ -188,7 +189,7 @@ class AppLifecycleManager:
         try:
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
-            logging.exception(
+            self.logger.exception(
                 "JSON decode error for container ID {}: {}".format(
                     container_id, error
                 )
@@ -196,7 +197,7 @@ class AppLifecycleManager:
             return ContainerState.UNKNOWN
 
         if "status" not in state_data:
-            logging.error(
+            self.logger.error(
                 '"status" field not found in JSON output of "runc state" '
                 "for container ID {}. Output was [{}]".format(
                     container_id, output
@@ -205,14 +206,14 @@ class AppLifecycleManager:
             return ContainerState.UNKNOWN
         status = state_data["status"]
 
-        logging.debug("Container status: {}".format(status))
+        self.logger.debug("Container status: {}".format(status))
         if status == "created":
             return ContainerState.CREATED
         if status == "running":
             return ContainerState.RUNNING
         if status == "stopped":
             return ContainerState.STOPPED
-        logging.error(
+        self.logger.error(
             'Unrecognized "status" value from "runc state" for container '
             "ID {}. Output was [{}]".format(container_id, output)
         )
@@ -224,7 +225,7 @@ class AppLifecycleManager:
         if error != Error.SUCCESS:
             if extra_info:
                 extra_info = " ({})".format(extra_info)
-            logging.warning(
+            self.logger.warning(
                 "{} returning {} for container {}{}".format(
                     function_name, error, container_id, extra_info
                 )
@@ -270,7 +271,7 @@ class AppLifecycleManager:
                 "Application ID {}".format(application_id),
             )
             return result
-        logging.info("Create container: {}".format(container_id))
+        self.logger.info("Create container: {}".format(container_id))
         _, result = self._run_command(
             ["runc", "create", container_id],
             working_dir,
@@ -292,7 +293,7 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_RUNNING
                  Error.ERR_START_FAILED
         """
-        logging.info("Start container: {}".format(container_id))
+        self.logger.info("Start container: {}".format(container_id))
         output, result = self._run_command(["runc", "start", container_id])
         if result != Error.SUCCESS:
             if "cannot start a container that has stopped" in output:
@@ -313,7 +314,9 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_STOPPED
         """
-        logging.info("Sending {} to container {}".format(signal, container_id))
+        self.logger.info(
+            "Sending {} to container {}".format(signal, container_id)
+        )
         output, ret = self._run_command(["runc", "kill", container_id, signal])
         if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
@@ -382,7 +385,7 @@ class AppLifecycleManager:
                  Error.ERR_CONTAINER_DOES_NOT_EXIST
                  Error.ERR_CONTAINER_RUNNING
         """
-        logging.info("Delete container: {}".format(container_id))
+        self.logger.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
         _, result = self._run_command(command)
         if result != Error.SUCCESS:
@@ -411,7 +414,7 @@ class AppLifecycleManager:
             Error.SUCCESS
             Error.OPERATION_FAILED
         """
-        logging.debug("Executing command: {}".format(command))
+        self.logger.debug("Executing command: {}".format(command))
         result = subprocess.run(
             command, cwd=working_dir, stdin=stdin, stdout=stdout, stderr=stderr
         )
@@ -419,7 +422,7 @@ class AppLifecycleManager:
         if result.stdout:
             output = result.stdout.decode("utf-8")
         if result.returncode != 0:
-            logging.warning(
+            self.logger.warning(
                 "Command {} failed with status {} and output [{}]".format(
                     command, result.returncode, output
                 )
