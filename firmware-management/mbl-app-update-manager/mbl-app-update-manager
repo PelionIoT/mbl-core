@@ -29,7 +29,7 @@ class Error(Enum):
     ERR_RUN_CONTAINER_FAILED = 5
     ERR_GET_APP_ID_FAILED = 6
     ERR_CONTAINER_DOES_NOT_EXIST = 7
-
+    ERR_INVALID_ARGS = 8
 
 class AppUpdateManager:
     """Manage application Updates."""
@@ -244,7 +244,11 @@ def get_argument_parser():
 
 def _main():
     parser = get_argument_parser()
-    args = parser.parse_args()
+    try:
+        args = parser.parse_args()
+    except SystemExit:
+        return Error.ERR_INVALID_ARGS
+
     info_level = logging.DEBUG if args.verbose else logging.INFO
 
     logging.basicConfig(
@@ -277,4 +281,4 @@ def _main():
 
 
 if __name__ == "__main__":
-    sys.exit(_main())
+    sys.exit(_main().value)
