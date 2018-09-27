@@ -407,7 +407,7 @@ class AppLifecycleManager:
         stderr=subprocess.STDOUT,
     ):
         """
-        Run a command using subprocess.run(), with extra self.logger.
+        Run a command using subprocess.run(), with extra logging.
 
         Returns: 2-tuple (output, error) where output is the decoded (as UTF-8)
         stdout of the command if it is captured, and err is one of:
