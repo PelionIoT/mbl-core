@@ -257,8 +257,7 @@ def _main():
 
     ret = Error.ERR_OPERATION_FAILED
     try:
-        if args.install_package:
-            ret = install_package_and_run_container(args.install_package)
+        ret = install_package_and_run_container(args.install_package)
     except subprocess.CalledProcessError as e:
         logger.exception(
             "Operation failed with subprocess error code: " + str(e.returncode)
