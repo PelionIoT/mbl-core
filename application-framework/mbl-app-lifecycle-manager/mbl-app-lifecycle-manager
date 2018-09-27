@@ -85,14 +85,15 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logging.debug("Command line arguments:{}".format(args))
+    logger = logging.getLogger("mbl-app-lifecycle-manager")
+    logger.debug("Command line arguments:{}".format(args))
 
     ret = alm.Error.ERR_INVALID_ARGS
     try:
         app_manager_lifecycle_mng = alm.AppLifecycleManager()
         if args.run_container:
             if args.application_id is None:
-                logging.info("Missing application-id argument")
+                logger.info("Missing application-id argument")
                 ret = alm.Error.ERR_INVALID_ARGS
             else:
                 ret = app_manager_lifecycle_mng.run_container(
@@ -116,15 +117,15 @@ def _main():
                 args.kill_container, sigkill_timeout
             )
     except OSError:
-        logging.exception("Operation failed with OSError")
+        logger.exception("Operation failed with OSError")
         return alm.Error.ERR_OPERATION_FAILED
     except Exception:
-        logging.exception("Operation failed exception")
+        logger.exception("Operation failed exception")
         return alm.Error.ERR_OPERATION_FAILED
     if ret == alm.Error.SUCCESS:
-        logging.info("Operation successful")
+        logger.info("Operation successful")
     else:
-        logging.error("Operation failed: {}".format(ret))
+        logger.error("Operation failed: {}".format(ret))
     return ret
 
 

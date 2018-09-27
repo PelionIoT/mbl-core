@@ -23,11 +23,12 @@ class Error(Enum):
 
     SUCCESS = 0
     ERR_OPERATION_FAILED = 1
-    ERR_GET_CONTAINER_STATUS_FAILED = 2
-    ERR_INSTALL_PACKAGE_FAILED = 3
+    ERR_INSTALL_PACKAGE_FAILED = 2
+    ERR_REMOVE_PACKAGE_FAILED = 3
     ERR_STOP_CONTAINER_FAILED = 4
     ERR_RUN_CONTAINER_FAILED = 5
     ERR_GET_APP_ID_FAILED = 6
+    ERR_CONTAINER_DOES_NOT_EXIST = 7
 
 
 class AppUpdateManager:
@@ -35,75 +36,166 @@ class AppUpdateManager:
 
     def __init__(self):
         """Initialize AppUpdateManager class."""
-        logging.info(
+        self.logger = logging.getLogger("AppUpdateManager")
+        self.logger.info(
             "Creating AppUpdateManager version {}".format(__version__)
         )
         self.app_mng = apm.AppManager()
         self.app_lifecycle_mng = alm.AppLifecycleManager()
 
-    def install_and_run_package(self, package_path):
+    def stop_container(self, app_id, timeout):
         """
-        Instal and run application.
-
-        If application exists it will first stop and delete it, and then
-        Install and run it.
-        :param package_path: Package path
+        Stop container using AppLifecycleManager.
+        :param app_id: App id
+        :param timeout: Timeout
         :return:
+                Error.SUCCESS
+                Error.ERR_CONTAINER_DOES_NOT_EXIST
+                Error.ERR_STOP_CONTAINER_FAILED
         """
-        logging.info("Install and run package: {}".format(package_path))
-        # Check if container is running and stop it
-        # App id is the destination directory of a package
-        app_id = ""
-        try:
-            app_id = self.app_mng.get_package_dest_dir(package_path)
-        except subprocess.CalledProcessError as e:
-            logging.exception(
-                "Operation failed with return code: {}".format(e.returncode)
-            )
-            return Error.ERR_GET_APP_ID_FAILED
-        # Check if app is running
-        # Note: We use app_id as container ID
-        status = self.app_lifecycle_mng.get_container_state(app_id)
-        if status is alm.ContainerState.UNKNOWN:
-            logging.error("Container id {} status is unknow.".format(app_id))
-            return Error.ERR_GET_CONTAINER_STATUS_FAILED
-        if status is not alm.ContainerState.DOES_NOT_EXIST:
-            # Need to stop container
-            logging.debug(
-                "Container id {} exists. Stop container...".format(app_id)
-            )
-            result = self.app_lifecycle_mng.stop_container(
-                app_id, APP_STOP_TIMEOUT
-            )
-            if result is not alm.Error.SUCCESS:
-                logging.error(
-                    "Stop container id {} failed with err: {}".format(
-                        app_id, result
-                    )
-                )
-                return Error.ERR_STOP_CONTAINER_FAILED
-        # Force install package (force = remove and install)
-        logging.debug("InstalL package {}...".format(package_path))
-        try:
-            self.app_mng.force_install_package(package_path)
-        except subprocess.CalledProcessError as e:
-            logging.exception(
-                "Install package {} failed with return code: {}".format(
-                    package_path, e.returncode
+        self.logger.debug("Stop Container id {}".format(app_id))
+        result = self.app_lifecycle_mng.stop_container(app_id, timeout)
+        if result is alm.Error.ERR_CONTAINER_DOES_NOT_EXIST:
+            self.logger.debug("Container id {} does not exist".format(app_id))
+            return Error.ERR_CONTAINER_DOES_NOT_EXIST
+        if result is not alm.Error.SUCCESS:
+            self.logger.error(
+                "Stop container id {} failed with err: {}".format(
+                    app_id, result
                 )
             )
-            return Error.ERR_INSTALL_PACKAGE_FAILED
-        # Run container (we use app id as container id)
-        logging.debug("Run Container {}...".format(app_id))
+            return Error.ERR_STOP_CONTAINER_FAILED
+        self.logger.debug("Stop Container id {} succeeded.".format(app_id))
+        return Error.SUCCESS
+
+    def run_container(self, app_id):
+        """
+        Run container using AppLifecycleManager.
+        :param app_id: App id
+        :return:
+                Error.SUCCESS
+                Error.ERR_RUN_CONTAINER_FAILED
+        """
+        self.logger.debug("Run Container id {}".format(app_id))
         result = self.app_lifecycle_mng.run_container(app_id, app_id)
         if result != alm.Error.SUCCESS:
-            logging.error(
+            self.logger.error(
                 "Run container id {} failed with err: {}".format(
                     app_id, result
                 )
             )
             return Error.ERR_RUN_CONTAINER_FAILED
+        self.logger.debug("Run Container id {} succeeded.".format(app_id))
         return Error.SUCCESS
+
+    def install_package(self, package_path):
+        """
+        Install package using AppManager.
+        :param package_path: Package path to IPK file
+        :return:
+                Error.SUCCESS
+                Error.ERR_INSTALL_PACKAGE_FAILED
+        """
+        self.logger.debug("Install package {}".format(package_path))
+        try:
+            self.app_mng.install_package(package_path)
+        except subprocess.CalledProcessError as e:
+            self.logger.exception(
+                "Install package {} failed with error: {}".format(
+                    package_path, e.returncode
+                )
+            )
+            return Error.ERR_INSTALL_PACKAGE_FAILED
+        self.logger.debug("Install package {} succeeded".format(package_path))
+        return Error.SUCCESS
+
+    def remove_package(self, package_name):
+        """
+        Remove package using AppManager.
+        :param package_name: Package name
+        :return:
+                Error.SUCCESS
+                Error.ERR_REMOVE_PACKAGE_FAILED
+        """
+        self.logger.debug("Remove package {}".format(package_name))
+        try:
+            self.app_mng.remove_package(package_name)
+        except subprocess.CalledProcessError as e:
+            self.logger.exception(
+                "Remove package {} failed with error: {}".format(
+                    package_name, e.returncode
+                )
+            )
+            return Error.ERR_REMOVE_PACKAGE_FAILED
+        self.logger.debug("Remove package {} succeeded".format(package_name))
+        return Error.SUCCESS
+
+    def get_app_id_from_package(self, package_path):
+        """
+        Get App id from package using AppManager.
+        :param package_path: Package path
+        :return:
+                Error.SUCCESS, app id
+                Error.ERR_GET_APP_ID_FAILED, empty app id
+        """
+        self.logger.debug("Get app id from package {}".format(package_path))
+        app_id = ""
+        try:
+            # App id is the destination directory of a package
+            app_id = self.app_mng.get_package_dest_dir(package_path)
+        except subprocess.CalledProcessError as e:
+            self.logger.exception(
+                "Get App id failed with error: {}".format(e.returncode)
+            )
+            return Error.ERR_GET_APP_ID_FAILED, app_id
+        self.logger.debug("App Id is {}".format(app_id))
+        return Error.SUCCESS, app_id
+
+
+def install_package_and_run_container(package_path):
+    """
+    Install package and run container.
+
+    If application exists it will first stop and remove it, and then
+    Install and run it.
+    :param package_path: Package path
+    :return:
+            Error.SUCCESS
+            Error.ERR_INSTALL_PACKAGE_FAILED
+            Error.ERR_REMOVE_PACKAGE_FAILED
+            Error.ERR_STOP_CONTAINER_FAILED
+            Error.ERR_RUN_CONTAINER_FAILED
+            Error.ERR_GET_APP_ID_FAILED
+            Error.ERR_CONTAINER_DOES_NOT_EXIST
+    """
+    logging.info("Install package and run container: {}".format(package_path))
+    app_update_manager = AppUpdateManager()
+
+    # Get App id from package
+    result, app_id = app_update_manager.get_app_id_from_package(package_path)
+    if result != Error.SUCCESS:
+        return result
+    # Stop container
+    result = app_update_manager.stop_container(app_id, APP_STOP_TIMEOUT)
+    # It is fine if container does not exist...nothing to stop
+    if (
+        result is not Error.SUCCESS
+        and result is not Error.ERR_CONTAINER_DOES_NOT_EXIST
+    ):
+        return result
+    # Remove package (app id is the package name)
+    result = app_update_manager.remove_package(app_id)
+    if result != Error.SUCCESS:
+        return result
+    # Install package
+    result = app_update_manager.install_package(package_path)
+    if result != Error.SUCCESS:
+        return result
+    # Run container (we use app id as container id)
+    result = app_update_manager.run_container(app_id)
+    if result != Error.SUCCESS:
+        return result
+    return Error.SUCCESS
 
 
 class StoreValidFile(argparse.Action):
@@ -159,31 +251,29 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logging.info("Starting ARM APP UPDATE MANAGER: {}".format(__version__))
-    logging.info("Command line arguments:{}".format(args))
+    logger = logging.getLogger("mbl-app-update-manager")
+    logger.info("Starting ARM APP UPDATE MANAGER: {}".format(__version__))
+    logger.info("Command line arguments:{}".format(args))
 
     ret = Error.ERR_OPERATION_FAILED
     try:
-        app_update_manager = AppUpdateManager()
         if args.install_package:
-            ret = app_update_manager.install_and_run_package(
-                args.install_package
-            )
+            ret = install_package_and_run_container(args.install_package)
     except subprocess.CalledProcessError as e:
-        logging.exception(
+        logger.exception(
             "Operation failed with subprocess error code: " + str(e.returncode)
         )
         return Error.ERR_OPERATION_FAILED
     except OSError:
-        logging.exception("Operation failed with OSError")
+        logger.exception("Operation failed with OSError")
         return Error.ERR_OPERATION_FAILED
     except Exception:
-        logging.exception("Operation failed exception")
+        logger.exception("Operation failed exception")
         return Error.ERR_OPERATION_FAILED
     if ret == Error.SUCCESS:
-        logging.info("Operation successful")
+        logger.info("Operation successful")
     else:
-        logging.error("Operation failed: {}".format(ret))
+        logger.error("Operation failed: {}".format(ret))
     return ret
 
 
