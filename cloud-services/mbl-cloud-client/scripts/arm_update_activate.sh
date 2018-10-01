@@ -87,6 +87,18 @@ crpodRootfsFile="$4"
     exit 23
 }
 
+# Save the update header to a standard place
+#
+# $1: Header to save
+save_header_or_die() {
+shodHeader="$1"
+    if ! cp "$shodHeader" "$SAVED_HEADER_PATH"; then
+        echo "Failed to copy image header"
+        exit 24
+    fi
+}
+
+
 # ------------------------------------------------------------------------------
 # Main code starts here
 # ------------------------------------------------------------------------------
@@ -103,9 +115,17 @@ touch /tmp/do_not_reboot
 # ------------------------------------------------------------------------------
 # Install app updates from payload file
 # ------------------------------------------------------------------------------
-mbl-app-update-manager --install-packages "$FIRMWARE"
-if [ $? -ne 0 ]; then
-   exit  47
+
+touch /mnt/cache/do_app_update
+while ! [ -e /mnt/cache/done_app_update ]; do
+    sleep 1
+done
+rm /mnt/cache/done_app_update
+
+app_update_rc=$(cat /mnt/cache/app_update_rc)
+rm /mnt/cache/app_update_rc
+if [ "$app_update_rc" -ne 0 ]; then
+    exit 47
 fi
 
 # ------------------------------------------------------------------------------
@@ -118,6 +138,7 @@ if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}"); then
 fi
 
 if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+    save_header_or_die "$HEADER"
     exit 0
 fi
 
@@ -152,10 +173,7 @@ ensure_not_mounted_or_die "$nextPartition"
 
 ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
 
-if ! cp "$HEADER" "/mnt/flags/${nextPartitionLabel}_header"; then
-    echo "Failed to copy image header"
-    exit 24
-fi
+save_header_or_die "$HEADER"
 sync
 
 if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
@@ -176,7 +194,5 @@ if ! rm -f /tmp/do_not_reboot; then
     echo "Failed to remove /tmp/do_not_reboot flag file";
     exit 27
 fi
-
-ensure_not_mounted_or_die "$FLAGS"
 
 exit 0
