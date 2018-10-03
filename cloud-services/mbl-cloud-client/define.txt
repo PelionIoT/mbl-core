@@ -41,7 +41,7 @@ add_definitions(-DPAL_FS_MOUNT_POINT_PRIMARY="\\"/config/user\\"")
 add_definitions(-DPAL_FS_MOUNT_POINT_SECONDARY="\\"/config/user\\"")
 add_definitions(-DESFS_WORKING_DIRECTORY="\\"working\\"")
 add_definitions(-DESFS_BACKUP_DIRECTORY="\\"backup\\"")
-add_definitions(-DPAL_UPDATE_FIRMWARE_DIR="\\"/mnt/cache/firmware\\"")
+add_definitions(-DPAL_UPDATE_FIRMWARE_DIR="\\"/scratch/firmware\\"")
 add_definitions(-DMBED_CLOUD_CLIENT_UPDATE_STORAGE=ARM_UCP_LINUX_YOCTO_RPI)
 
 add_definitions(-DMBED_CONF_MBED_TRACE_ENABLE=1)

@@ -22,7 +22,7 @@ from ubuntu:16.04
 RUN mkdir -p /config/factory
 RUN mkdir -p /config/user
 RUN mkdir -p /mnt/flags
-RUN mkdir -p /mnt/cache
+RUN mkdir -p /scratch
 RUN mkdir -p /pal
 RUN mkdir -p /opt/arm
 
