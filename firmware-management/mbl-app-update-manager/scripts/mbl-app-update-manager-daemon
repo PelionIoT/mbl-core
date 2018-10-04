@@ -1,6 +1,13 @@
+#!/bin/sh
+
+# Copyright (c) 2018 ARM Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
 # Redirect stdout and stderr to the log file
-exec >>"/var/log/wait_for_update.log" 2>&1
-printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting wait_for_update.sh"
+name=${0##*/}
+exec >>"/var/log/${name}.log" 2>&1
+printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting ${name}"
 
 set -x
 
