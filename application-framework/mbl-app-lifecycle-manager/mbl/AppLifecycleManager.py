@@ -261,8 +261,8 @@ class AppLifecycleManager:
         if result != Error.SUCCESS:
             self._log_error_return("_create_container", result, container_id)
             return result
-        working_dir = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
-        if not os.path.isdir(working_dir):
+        bundle_path = os.path.join(APPS_INSTALL_ROOT_DIR, application_id)
+        if not os.path.isdir(bundle_path):
             result = Error.ERR_APP_NOT_FOUND
             self._log_error_return(
                 "create_container",
@@ -273,8 +273,7 @@ class AppLifecycleManager:
             return result
         self.logger.info("Create container: {}".format(container_id))
         _, result = self._run_command(
-            ["runc", "create", container_id],
-            working_dir,
+            ["runc", "create", "--bundle", bundle_path, container_id],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
@@ -401,7 +400,6 @@ class AppLifecycleManager:
     def _run_command(
         self,
         command,
-        working_dir=None,
         stdin=None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -416,7 +414,7 @@ class AppLifecycleManager:
         """
         self.logger.debug("Executing command: {}".format(command))
         result = subprocess.run(
-            command, cwd=working_dir, stdin=stdin, stdout=stdout, stderr=stderr
+            command, stdin=stdin, stdout=stdout, stderr=stderr
         )
         output = ""
         if result.stdout:

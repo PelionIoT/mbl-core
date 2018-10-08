@@ -22,6 +22,7 @@
 LOCAL_CONFIG_PATH=/opt/arm/arm_update_local_config.sh
 ROOTFS_TYPE="ext4"
 FLAGSFS_TYPE="ext4"
+SAVED_HEADER_PATH="/mnt/flags/header"
 
 # Given an exit status, exits with that status if it is non-zero, otherwise
 # does nothing
@@ -129,5 +130,6 @@ emodFsType="$3"
 get_active_root_device() {
     lsblk -nrpo NAME,MOUNTPOINT | grep -e ".* /$" | cut -d ' ' -f1
 }
+
 
 [ -e "$LOCAL_CONFIG_PATH" ] && . "$LOCAL_CONFIG_PATH"

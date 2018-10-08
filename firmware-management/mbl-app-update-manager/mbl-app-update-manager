@@ -10,12 +10,14 @@ import argparse
 import os
 import subprocess
 import logging
+import tarfile
 from enum import Enum
 import mbl.AppManager as apm
 import mbl.AppLifecycleManager as alm
 
 __version__ = "1.0"
 APP_STOP_TIMEOUT = 3
+SRC_IPK_PATH = "/mnt/cache/opkg/src_ipk"
 
 
 class Error(Enum):
@@ -199,6 +201,81 @@ def install_package_and_run_container(package_path):
     return Error.SUCCESS
 
 
+def extract_ipks_from_tar(tar_path):
+    """
+    Extracts .ipk files from a tar file.
+
+    Returns a 2-tuple (ipk_paths, error) where ipk_paths is a list of paths to
+    extracted .ipk files and error is one of:
+        Error.SUCCESS
+        Error.ERR_TAR_FAILURE
+    """
+    logging.info(
+        "Extracting .ipk files from update payload tar file {}".format(
+            tar_path
+        )
+    )
+    try:
+        ipk_paths = []
+        ipk_members = []
+        with tarfile.open(tar_path) as tar:
+            search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members)
+            tar.extractall(path=SRC_IPK_PATH, members=ipk_members)
+        if not ipk_paths:
+            logging.info(
+                "No .ipk files found in update payload tar file {}".format(
+                    tar_path
+                )
+            )
+        return (ipk_paths, Error.SUCCESS)
+    except TarError:
+        logging.exception(
+            "Failed to extract .ipk files from tar archive {}".format(tar_path)
+        )
+        return ([], Error.ERR_TAR_FAILURE)
+
+
+def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
+    for tar_info in tar:
+        if os.path.splitext(tar_info.name)[1] != ".ipk":
+            continue
+        if not tar_info.isfile():
+            logging.warning(
+                "Ignoring .ipk file {} from update payload tar "
+                "file {} - it is not a regular file".format(
+                    tar_info.name, tar_path
+                )
+            )
+            continue
+        if os.path.dirname(tar_info.name):
+            logging.warning(
+                "Ignoring .ipk file {} from update payload tar "
+                "file {} - it has directory components".format(
+                    tar_info.name, tar_path
+                )
+            )
+            continue
+        ipk_members.append(tar_info)
+        ipk_paths.append(os.path.join(SRC_IPK_PATH, tar_info.name))
+        logging.info(
+            "Found .ipk file {} in update payload tar file {}".format(
+                tar_info.name, tar_path
+            )
+        )
+
+
+def install_and_run_apps_from_tar(tar_path):
+    ipk_paths, ret = extract_ipks_from_tar(tar_path)
+    if ret != Error.SUCCESS:
+        return ret
+
+    for ipk_path in ipk_paths:
+        ret = install_package_and_run_container(ipk_path)
+        if ret != Error.SUCCESS:
+            return ret
+    return Error.SUCCESS
+
+
 class StoreValidFile(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         prospective_file = values
@@ -226,11 +303,11 @@ def get_argument_parser():
 
     parser.add_argument(
         "-i",
-        "--install-package",
-        metavar="IPK_FILE",
+        "--install-packages",
+        metavar="UPDATE_PAYLOAD_TAR_FILE",
         required=True,
         action=StoreValidFile,
-        help="Install package on device and run it, input is .ipk file path",
+        help="Install packages from a firmware update tar file and run them",
     )
 
     parser.add_argument(
@@ -262,10 +339,12 @@ def _main():
 
     ret = Error.ERR_OPERATION_FAILED
     try:
-        ret = install_package_and_run_container(args.install_package)
+        ret = install_and_run_apps_from_tar(args.install_packages)
     except subprocess.CalledProcessError as e:
         logger.exception(
-            "Operation failed with subprocess error code: " + str(e.returncode)
+            "Operation failed with subprocess error code: {}".format(
+                e.returncode
+            )
         )
         return Error.ERR_OPERATION_FAILED
     except OSError:
