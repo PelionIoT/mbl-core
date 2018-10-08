@@ -219,7 +219,7 @@ def extract_ipks_from_tar(tar_path):
         ipk_paths = []
         ipk_members = []
         with tarfile.open(tar_path) as tar:
-            search_for_ipk(tar_path, tar, ipk_paths, ipk_members)
+            search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members)
             tar.extractall(path=SRC_IPK_PATH, members=ipk_members)
         if not ipk_paths:
             logging.info(
@@ -235,7 +235,7 @@ def extract_ipks_from_tar(tar_path):
         return ([], Error.ERR_TAR_FAILURE)
 
 
-def search_for_ipk(tar_path, tar, ipk_paths, ipk_members):
+def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
     for tar_info in tar:
         if os.path.splitext(tar_info.name)[1] != ".ipk":
             continue
