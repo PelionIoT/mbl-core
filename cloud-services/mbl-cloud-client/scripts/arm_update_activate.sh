@@ -136,9 +136,9 @@ fi
 # ------------------------------------------------------------------------------
 # Install rootfs update from payload file
 # ------------------------------------------------------------------------------
-list_tar_content_cmd="tar -tf"
-if ! FIRMWARE_FILES=$(${list_tar_content_cmd} "${FIRMWARE}"); then
-    echo "${list_tar_content_cmd} \"${FIRMWARE}\" failed!"
+tar_list_content_cmd="tar -tf"
+if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
+    echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
     exit 46
 fi
 
