@@ -4,8 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Redirect stdout and stderr to the log file
+# Get the script name from the path
 name=${0##*/}
+# Redirect stdout and stderr to the log file
 exec >>"/var/log/${name}.log" 2>&1
 printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting ${name}"
 
