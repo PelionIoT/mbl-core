@@ -219,33 +219,7 @@ def extract_ipks_from_tar(tar_path):
         ipk_paths = []
         ipk_members = []
         with tarfile.open(tar_path) as tar:
-            for tar_info in tar:
-                if os.path.splitext(tar_info.name)[1] != ".ipk":
-                    continue
-                if not tar_info.isfile():
-                    logging.warning(
-                        "Ignoring .ipk file {} from update payload tar "
-                        "file {} - it is not a regular file".format(
-                            tar_info.name, tar_path
-                        )
-                    )
-                    continue
-                if os.path.dirname(tar_info.name):
-                    logging.warning(
-                        "Ignoring .ipk file {} from update payload tar "
-                        "file {} - it has directory components".format(
-                            tar_info.name, tar_path
-                        )
-                    )
-                    continue
-                ipk_members.append(tar_info)
-                ipk_paths.append(os.path.join(SRC_IPK_PATH, tar_info.name))
-                logging.info(
-                    "Found .ipk file {} in update payload tar file {}".format(
-                        tar_info.name, tar_path
-                    )
-                )
-
+            search_for_ipk(tar_path, tar, ipk_paths, ipk_members)
             tar.extractall(path=SRC_IPK_PATH, members=ipk_members)
         if not ipk_paths:
             logging.info(
@@ -260,6 +234,33 @@ def extract_ipks_from_tar(tar_path):
         )
         return ([], Error.ERR_TAR_FAILURE)
 
+def search_for_ipk(tar_path, tar, ipk_paths, ipk_members):
+    for tar_info in tar:
+        if os.path.splitext(tar_info.name)[1] != ".ipk":
+            continue
+        if not tar_info.isfile():
+            logging.warning(
+                "Ignoring .ipk file {} from update payload tar "
+                "file {} - it is not a regular file".format(
+                    tar_info.name, tar_path
+                )
+            )
+            continue
+        if os.path.dirname(tar_info.name):
+            logging.warning(
+                "Ignoring .ipk file {} from update payload tar "
+                "file {} - it has directory components".format(
+                    tar_info.name, tar_path
+                )
+            )
+            continue
+        ipk_members.append(tar_info)
+        ipk_paths.append(os.path.join(SRC_IPK_PATH, tar_info.name))
+        logging.info(
+            "Found .ipk file {} in update payload tar file {}".format(
+                tar_info.name, tar_path
+            )
+        )
 
 def install_and_run_apps_from_tar(tar_path):
     ipk_paths, ret = extract_ipks_from_tar(tar_path)
