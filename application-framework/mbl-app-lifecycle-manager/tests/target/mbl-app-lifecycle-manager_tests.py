@@ -34,13 +34,25 @@ class TestAppLifecycleManager:
     @classmethod
     def setup_class(cls):
         """Setup any state specific to the execution of the given class."""
+        print("\nSetup TestAppLifecycleManager")
         cls.app_lifecycle_mgr = alm.AppLifecycleManager()
         cls.app_mgr = apm.AppManager()
         # Install app_lifecycle_mng_test_container
         # All container operation will be done using it
         assert os.path.isfile(IPK_TEST_FILE), "Missing IPK test file."
+        # In case container run before the tests - stop it
+        command = [
+            MBL_APP_LIFECYCLE_MANAGER,
+            "-s",
+            CONTAINER_ID,
+            "-t",
+            "3",
+            "-v",
+        ]
+        print("Executing command: {}".format(command))
+        subprocess.run(command, check=False)
+        print("Installing test container package...")
         command = [MBL_APP_MANAGER, "-f", IPK_TEST_FILE, "-v"]
-        print("\nSetup: Installing test container package...")
         print("Executing command: {}".format(command))
         result = subprocess.run(command)
         assert result.returncode == 0
@@ -88,11 +100,11 @@ class TestAppLifecycleManager:
         :return: None
         """
         # Run container
-        result = self._run_container(CONTAINER_ID, self.app_id, True)
+        self._run_container(CONTAINER_ID, self.app_id, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.RUNNING
         # Stop container, when done - container should not exist anymore
-        result = self._stop_container(CONTAINER_ID, 10, True)
+        self._stop_container(CONTAINER_ID, 10, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.DOES_NOT_EXIST
 
@@ -103,17 +115,16 @@ class TestAppLifecycleManager:
         :return: None
         """
         # Run container
-        result = self._run_container(CONTAINER_ID, self.app_id, True)
-        assert result == alm.Error.SUCCESS.value
+        self._run_container(CONTAINER_ID, self.app_id, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.RUNNING
         # Kill container, when done - container should not exist anymore
-        result = self._kill_container(CONTAINER_ID, True)
+        self._kill_container(CONTAINER_ID, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.DOES_NOT_EXIST
 
     @staticmethod
-    def _run_container(CONTAINER_ID, application_id, check_output):
+    def _run_container(CONTAINER_ID, application_id, check_exit_code):
         command = [
             MBL_APP_LIFECYCLE_MANAGER,
             "-r",
@@ -123,12 +134,12 @@ class TestAppLifecycleManager:
             "-v",
         ]
         print("Executing command: {}".format(command))
-        result = subprocess.run(command, check=check_output)
+        result = subprocess.run(command, check=check_exit_code)
         print("_run_container returned {}".format(result.returncode))
         return result.returncode
 
     @staticmethod
-    def _stop_container(CONTAINER_ID, timeout, check_output):
+    def _stop_container(CONTAINER_ID, timeout, check_exit_code):
         command = [
             MBL_APP_LIFECYCLE_MANAGER,
             "-s",
@@ -138,14 +149,14 @@ class TestAppLifecycleManager:
             "-v",
         ]
         print("Executing command: {}".format(command))
-        result = subprocess.run(command, check=check_output)
+        result = subprocess.run(command, check=check_exit_code)
         print("_stop_container returned {}".format(result.returncode))
         return result.returncode
 
     @staticmethod
-    def _kill_container(CONTAINER_ID, check_output):
+    def _kill_container(CONTAINER_ID, check_exit_code):
         command = [MBL_APP_LIFECYCLE_MANAGER, "-k", CONTAINER_ID, "-v"]
         print("Executing command: {}".format(command))
-        result = subprocess.run(command, check=check_output)
+        result = subprocess.run(command, check=check_exit_code)
         print("_kill_container returned {}".format(result.returncode))
         return result.returncode

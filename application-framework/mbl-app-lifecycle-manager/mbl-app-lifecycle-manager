@@ -125,7 +125,7 @@ def _main():
     if ret == alm.Error.SUCCESS:
         logger.info("Operation successful")
     else:
-        logger.error("Operation failed: {}".format(ret))
+        logger.error("Operation failed: {}".format(ret.value))
     return ret.value
 
 
