@@ -3,24 +3,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""setup.py file for MBL AppManager package"""
+"""setup.py file for MBL AppManager package."""
 
 from setuptools import setup
 
 
 setup(
     name="mbl_AppManager",
-
     version="1",
-
     description="",
     long_description="",
-
     author="",
     author_email="",
-
     license="Apache Software License",
-
     packages=["mbl.AppManager"],
     zip_safe=False,
 )

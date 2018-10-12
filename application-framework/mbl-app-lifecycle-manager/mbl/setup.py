@@ -3,24 +3,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""setup.py file for MBL AppLifecycleManager package"""
+"""setup.py file for MBL AppLifecycleManager package."""
 
 from setuptools import setup
 
 
 setup(
     name="mbl_AppLifecycleManager",
-
     version="1",
-
     description="",
     long_description="",
-
     author="",
     author_email="",
-
     license="Apache Software License",
-
     packages=["mbl.AppLifecycleManager"],
     zip_safe=False,
 )
