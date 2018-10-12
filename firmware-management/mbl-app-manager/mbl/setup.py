@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""setup.py file for MBL AppManager package"""
+
 from setuptools import setup
 
 

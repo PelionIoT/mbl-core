@@ -3,4 +3,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""__init__.py file for MBL AppLifecycleManager package"""
+
 name = 'AppLifecycleManager'
