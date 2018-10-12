@@ -5,4 +5,4 @@
 
 """__init__.py file for MBL AppLifecycleManager package"""
 
-name = 'AppLifecycleManager'
+name = "AppLifecycleManager"

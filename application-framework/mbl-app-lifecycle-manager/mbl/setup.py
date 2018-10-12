@@ -9,18 +9,18 @@ from setuptools import setup
 
 
 setup(
-    name='mbl_AppLifecycleManager',
+    name="mbl_AppLifecycleManager",
 
-    version='1',
+    version="1",
 
-    description='',
-    long_description='',
+    description="",
+    long_description="",
 
-    author='',
-    author_email='',
+    author="",
+    author_email="",
 
-    license='Apache Software License',
+    license="Apache Software License",
 
-    packages=['mbl.AppLifecycleManager'],
+    packages=["mbl.AppLifecycleManager"],
     zip_safe=False,
 )

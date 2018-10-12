@@ -5,4 +5,4 @@
 
 """__init__.py file for MBL AppManager package"""
 
-name = 'AppManager'
+name = "AppManager"

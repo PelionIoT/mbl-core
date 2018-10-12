@@ -9,18 +9,18 @@ from setuptools import setup
 
 
 setup(
-    name='mbl_AppManager',
+    name="mbl_AppManager",
 
-    version='1',
+    version="1",
 
-    description='',
-    long_description='',
+    description="",
+    long_description="",
 
-    author='',
-    author_email='',
+    author="",
+    author_email="",
 
-    license='Apache Software License',
+    license="Apache Software License",
 
-    packages=['mbl.AppManager'],
+    packages=["mbl.AppManager"],
     zip_safe=False,
 )
