@@ -15,7 +15,7 @@ setup(
     long_description="",
     author="",
     author_email="",
-    license="Apache Software License",
+    license="Apache-2.0",
     packages=["mbl.AppLifecycleManager"],
     zip_safe=False,
 )
