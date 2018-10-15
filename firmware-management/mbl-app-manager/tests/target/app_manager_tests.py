@@ -173,4 +173,4 @@ class TestMblAppManager:
         The AppManager subpackage should be accessible via the "mbl" namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.util.find_spec("mbl.AppManager") != None
+        assert importlib.util.find_spec("mbl.AppManager") is not None

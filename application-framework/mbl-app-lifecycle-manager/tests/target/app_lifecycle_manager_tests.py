@@ -28,4 +28,4 @@ class TestMblAppLifecycleManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.util.find_spec("mbl.AppLifecycleManager") != None
+        assert importlib.util.find_spec("mbl.AppLifecycleManager") is not None
