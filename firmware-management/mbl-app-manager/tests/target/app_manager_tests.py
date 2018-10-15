@@ -32,7 +32,7 @@ import subprocess
 import json
 import os
 import hashlib
-import mbl
+import importlib
 
 MBL_APP_MANAGER = "/usr/bin/mbl-app-manager"
 IPK_TEST_FILES_DIR = "/home/app/test_files/"
@@ -173,4 +173,4 @@ class TestMblAppManager:
         The AppManager subpackage should be accessible via the "mbl" namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert mbl.AppManager.name == "AppManager"
+        assert importlib.util.find_spec("mbl.AppManager") != None

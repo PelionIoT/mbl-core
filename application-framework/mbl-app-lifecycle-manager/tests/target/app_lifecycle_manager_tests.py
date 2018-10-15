@@ -14,7 +14,7 @@ In order to run pytest without prints:
 ./python3 ./pytest.python3-pytest ./app_lifecycle_manager_tests.py
 """
 
-import mbl
+import importlib
 
 
 class TestMblAppLifecycleManager:
@@ -28,4 +28,4 @@ class TestMblAppLifecycleManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert mbl.AppLifecycleManager.name == "AppLifecycleManager"
+        assert importlib.util.find_spec("mbl.AppLifecycleManager") != None
