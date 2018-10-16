@@ -10,7 +10,9 @@ import os
 import sys
 
 # pytest run with its own python3 package, so main python3 path are not
-# known to it, so must add path here before import
+# known to it, so must add path here before import. When we will have
+# a well defined method for installing pytest properly, we might need
+# to change this way of importing modules.
 sys.path.append(
     os.path.join(os.sep, "usr", "lib", "python3.5", "site-packages", "mbl")
 )
@@ -69,18 +71,6 @@ class TestAppLifecycleManager:
         result = subprocess.run(command)
         assert result.returncode == 0
         print("Deleting test container package - Done.")
-
-    def setup_method(self, method):
-        """
-        Setup any state tied to the execution of the given method in a class.
-
-        setup_method is invoked for every test method of a class.
-        """
-        print(
-            "\n======== Test module:{}, Test name: {} ========".format(
-                self.__class__.__name__, method.__name__
-            )
-        )
 
     def teardown_method(self, method):
         """
