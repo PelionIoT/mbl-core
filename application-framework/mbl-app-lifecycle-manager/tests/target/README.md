@@ -13,3 +13,5 @@
 
 6. Run pytest on the target device using following commands:
    python3 <pytests path>/pytest.python3-pytest -s /mnt/cache/mbl-app-lifecycle-manager_tests.py
+
+* Note - Above instructions are provisional way of running Pytest.
