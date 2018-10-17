@@ -32,14 +32,13 @@
 # shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
-#exit if reboot is not required
-[ -f /tmp/do_not_reboot ] && exit 0   
-    
 if [ -n "$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" ]; then
     # Redirect stdout and stderr to the log file
     exec >>"$ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH" 2>&1
     printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting arm_update_active_details.sh"
 fi
+
+set -x
 
 # header directory
 HEADER_DIR=$(dirname "${HEADER}")
@@ -50,36 +49,15 @@ HEADER_NAME="header"
 # location where the update client will find the header
 HEADER_PATH="${HEADER_DIR}/${HEADER_NAME}.bin"
 
-set -x
-
-# Detect root partitions
-root1=$(get_device_for_label rootfs1)
-exit_on_error "$?"
-
-root2=$(get_device_for_label rootfs2)
-exit_on_error "$?"
-
 # Flag partition
 FLAGS=$(get_device_for_label bootflags)
 exit_on_error "$?"
 
-# Find the partition that is currently mounted to /
-activePartition=$(get_active_root_device)
-
-if [ "$activePartition" = "$root1" ]; then
-    activePartitionLabel=rootfs1
-elif [ "$activePartition" = "$root2" ]; then
-    activePartitionLabel=rootfs2
-else
-    echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
-    exit 21
-fi
-
 ensure_mounted_or_die "$FLAGS" /mnt/flags "$FLAGSFS_TYPE"
 
 # Boot Flags
-if [ -e "/mnt/flags/${activePartitionLabel}_header" ]; then
-    if ! cp "/mnt/flags/${activePartitionLabel}_header" "$HEADER_PATH"; then
+if [ -e "$SAVED_HEADER_PATH" ]; then
+    if ! cp "$SAVED_HEADER_PATH" "$HEADER_PATH"; then
         echo "Failed to copy image header"
         exit 22
     fi

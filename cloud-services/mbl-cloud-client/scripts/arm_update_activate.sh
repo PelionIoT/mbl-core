@@ -41,18 +41,6 @@ if [ -n "$ARM_UPDATE_ACTIVATE_LOG_PATH" ]; then
     printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting arm_update_activate.sh"
 fi
 
-# Returns successfully if the given path is a directory and is empty (except
-# for maybe a 'lost+found' directory).
-#
-# $1: path of the directory to check
-is_empty_directory() {
-iedDirectory="$1"
-
-    [ -d "$iedDirectory" ] || return 1
-
-    test -z "$(find "$iedDirectory" -mindepth 1 -maxdepth 1 -not -name 'lost+found' -printf 'x' -quit)"
-}
-
 # Format and mount a root partition
 # Exits on errors.
 #
@@ -80,36 +68,84 @@ famrpodMountpoint="$3"
 #
 # $1: Path to the device file for the new root partition
 # $2: Label for the new root partition
-# $3: Image file (compressed tar file) with which to populate the new
-#     partition. Trial and error is used to determine the compression algorithm
+# $3: Update payload file (tar file) containing a rootfs tar.xz file to
+#     populate the new partition
+# $4: Name of the rootfs archive within the payload tar file
 create_root_partition_or_die() {
 crpodPart="$1"
 crpodLabel="$2"
-crpodImageFile="$3"
+crpodPayloadFile="$3"
+crpodRootfsFile="$4"
 
     crpodMountpoint=/mnt/root
-
     format_and_mount_root_partition_or_die "$crpodPart" "$crpodLabel" "$crpodMountpoint"
 
-    for crpodDecompressFlag in -z -j -J; do
-        # If a previous decompression failed then we might end up with some
-        # stray content in our mountpoint. Reformat if that is the case.
-        if ! is_empty_directory "$crpodMountpoint"; then
-            format_and_mount_root_partition_or_die "$crpodPart" "$crpodLabel" "$crpodMountpoint"
-        fi
-
-        echo "Trying decompression flag \"${crpodDecompressFlag}\"..."
-        if EXTRACT_UNSAFE_SYMLINKS=1 tar -x "$crpodDecompressFlag" -f "$crpodImageFile" -C "$crpodMountpoint"; then
-            echo "Unarchiving with decompression flag \"${crpodDecompressFlag}\" succeeded"
-            return 0
-        fi
-        echo "Unarchiving with decompression flag \"${crpodDecompressFlag}\" failed"
-    done
-
-    echo "Failed to find working decompression flag for image"
+    if EXTRACT_UNSAFE_SYMLINKS=1 tar -xOf "$crpodPayloadFile" "$crpodRootfsFile" | tar -xJ -C "$crpodMountpoint"; then
+        return 0
+    fi
+    echo "Failed to unarchive rootfs update"
     exit 23
 }
 
+# Save the update header to a standard place
+#
+# $1: Header to save
+save_header_or_die() {
+shodHeader="$1"
+    if ! cp "$shodHeader" "$SAVED_HEADER_PATH"; then
+        echo "Failed to copy image header"
+        exit 24
+    fi
+}
+
+
+# ------------------------------------------------------------------------------
+# Main code starts here
+# ------------------------------------------------------------------------------
+
+# The udpate payload ($FIRMWARE) is a tar file containing files for updates for
+# different components of the system. Updates for different components are
+# distinguished by their file names within the tar file.
+
+# We only have to reboot during the update if there's an update for a component
+# that requires a reboot, so set the do_not_reboot flag here and let it be
+# deleted if a reboot is required..
+touch /tmp/do_not_reboot
+
+# ------------------------------------------------------------------------------
+# Install app updates from payload file
+# ------------------------------------------------------------------------------
+
+printf "%s\n" "${FIRMWARE}" > /mnt/cache/firmware_path
+touch /mnt/cache/do_app_update
+set +x
+echo "Waiting for app update to finish"
+while ! [ -e /mnt/cache/done_app_update ]; do
+    sleep 1
+done
+echo "App update finished"
+set -x
+rm /mnt/cache/done_app_update
+
+app_update_rc=$(cat /mnt/cache/app_update_rc)
+rm /mnt/cache/app_update_rc
+if [ "$app_update_rc" -ne 0 ]; then
+    exit 47
+fi
+
+# ------------------------------------------------------------------------------
+# Install rootfs update from payload file
+# ------------------------------------------------------------------------------
+tar_list_content_cmd="tar -tf"
+if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
+    echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
+    exit 46
+fi
+
+if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+    save_header_or_die "$HEADER"
+    exit 0
+fi
 
 # Detect root partitions
 root1=$(get_device_for_label rootfs1)
@@ -137,84 +173,12 @@ else
     exit 21
 fi
 
-# For now, we have a temporary solution. At this stage we support single package/firmware updated. We expect one of 2 types of files :
-# 1) Rootfs firmware update - in tar format
-# 2) An opkg ipk file - wrapped in a tar format (needed to be extracted in order to get the actual ipk)
-# Lets check if a single '*.ipk' file is inside the tar 
-# If FIRMWARE is not a tar file we assume it's an IPK file for installation
-SRC_IPK_PATH=/mnt/cache/opkg/src_ipk
-if ! FIRMWARE_FILES=$(tar -tf "${FIRMWARE}")
-then
-    echo "tar -tf \"${FIRMWARE}\" failed!"
-    exit 46
-fi
-if echo "${FIRMWARE_FILES}" | grep -q '.*\.ipk$' ; then
-    if [ "$(echo "${FIRMWARE_FILES}" | wc -l)" -eq 1 ]; then
-        # get the package name (the first token in the string when seperator is '_'). 
-        # Comment : there are other options :
-        # 1) Use opkg capabilities but I can't do that here due to some restrictions. 
-        # 2) Look in the ipk control file. 
-        IPK_FILE_NAME=${FIRMWARE_FILES}
-        IPK_PKG_NAME=$(echo "${IPK_FILE_NAME}" | cut -d'_' -f1)
-        
-        # extract the actual ipk file into SRC_IPK_PATH
-        if ! tar -xvf "${FIRMWARE}" -C ${SRC_IPK_PATH}
-        then
-            echo "tar -xvf \"${FIRMWARE}\" -C ${SRC_IPK_PATH} failed!"
-            exit 41
-        fi
-
-        #remove package if installed
-        if ! installed_pkgs=$(mbl-app-manager -l)
-        then
-            echo "mbl-app-manager -l failed!"
-            exit 42
-        fi
-                
-        is_package_installed=$(printf "%s" "$installed_pkgs" | awk -v "pkgname=${IPK_PKG_NAME}" '$1==pkgname { print $1 }')
-        if [ -n "$is_package_installed" ]
-        then
-            if ! mbl-app-manager -r "${IPK_PKG_NAME}"
-            then
-                echo "mbl-app-manager -r \"${IPK_PKG_NAME} \" failed!"
-                exit 44
-            fi   
-        fi
-        
-        #install package
-        if ! mbl-app-manager -i "${SRC_IPK_PATH}/${IPK_FILE_NAME}"
-        then
-            echo "mbl-app-manager -i \"${SRC_IPK_PATH}/${IPK_FILE_NAME}\" failed!"
-            exit 45
-        fi
-        
-        #remove temporary ipk file
-        rm -rf "${SRC_IPK_PATH:?}/${IPK_FILE_NAME:?}"
-        
-        # Flag that boot is not required
-        touch /tmp/do_not_reboot
-        exit 0
-    else
-        echo "Only a single package installation is supported!";
-        exit 40
-    fi
-else
-    # Remove old flag and if it fails, exit with error
-    if ! rm -f /tmp/do_not_reboot; then
-        echo "Failed to remove /tmp/do_not_reboot flag file";
-        exit 27
-    fi
-fi
-
-create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE"
+create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
 ensure_not_mounted_or_die "$nextPartition"
 
 ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
 
-if ! cp "$HEADER" "/mnt/flags/${nextPartitionLabel}_header"; then
-    echo "Failed to copy image header"
-    exit 24
-fi
+save_header_or_die "$HEADER"
 sync
 
 if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
@@ -230,6 +194,10 @@ else
 fi
 sync
 
-ensure_not_mounted_or_die "$FLAGS"
+# Remove do_not_reboot_flag - we need a reboot for rootfs updates
+if ! rm -f /tmp/do_not_reboot; then
+    echo "Failed to remove /tmp/do_not_reboot flag file";
+    exit 27
+fi
 
 exit 0
