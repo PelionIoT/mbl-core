@@ -126,7 +126,7 @@ def _main():
         logger.info("Operation successful")
     else:
         logger.error("Operation failed: {}".format(ret))
-    return ret
+    return ret.value
 
 
 sys.exit(_main())
