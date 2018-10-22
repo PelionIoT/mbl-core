@@ -4,8 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """setup.py file for MBL AppManager package."""
+
 import os
 from setuptools import setup
+
 
 def read(fname):
     """Utility function to read the README file."""
