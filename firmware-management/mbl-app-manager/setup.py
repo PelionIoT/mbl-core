@@ -4,15 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """setup.py file for MBL AppManager package."""
-
+import os
 from setuptools import setup
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 setup(
     name="mbl_AppManager",
     version="1",
     description="Mbed Linux OS Application Manager",
-    long_description="This script implements mbl app manager for installing, removing and listing installed apps using opkg.",
+    long_description=read("README"),
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",

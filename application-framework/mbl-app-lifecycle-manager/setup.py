@@ -5,14 +5,18 @@
 
 """setup.py file for MBL AppLifecycleManager package."""
 
+import os
 from setuptools import setup
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 setup(
     name="mbl_AppLifecycleManager",
     version="1",
     description="Mbed Linux OS Application Lifecycle Manager",
-    long_description="This script implements mbl app lifecycle manager for starting, and stopping applications bundled as OCI containers.",
+    long_description=read("README"),
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
