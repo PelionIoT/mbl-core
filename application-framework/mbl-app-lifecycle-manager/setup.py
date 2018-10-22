@@ -13,7 +13,7 @@ setup(
     version="1",
     description="Mbed Linux OS Application Lifecycle Manager",
     long_description="This script implements mbl app lifecycle manager for starting, and stopping applications bundled as OCI containers.",
-    author="ARM",
+    author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
     packages=["mbl.AppLifecycleManager"],

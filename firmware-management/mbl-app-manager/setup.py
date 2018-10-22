@@ -13,7 +13,7 @@ setup(
     version="1",
     description="Mbed Linux OS Application Manager",
     long_description="This script implements mbl app manager for installing, removing and listing installed apps using opkg.",
-    author="ARM",
+    author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
     packages=["mbl.AppManager"],
