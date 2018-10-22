@@ -11,9 +11,9 @@ from setuptools import setup
 setup(
     name="mbl_AppLifecycleManager",
     version="1",
-    description="",
-    long_description="",
-    author="",
+    description="Mbed Linux OS Application Lifecycle Manager",
+    long_description="This script implements mbl app lifecycle manager for starting, and stopping applications bundled as OCI containers.",
+    author="ARM",
     author_email="",
     license="Apache-2.0",
     packages=["mbl.AppLifecycleManager"],
