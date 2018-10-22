@@ -112,30 +112,7 @@ shodHeader="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# ------------------------------------------------------------------------------
-# Install app updates from payload file
-# ------------------------------------------------------------------------------
-
-printf "%s\n" "${FIRMWARE}" > /mnt/cache/firmware_path
-touch /mnt/cache/do_app_update
-set +x
-echo "Waiting for app update to finish"
-while ! [ -e /mnt/cache/done_app_update ]; do
-    sleep 1
-done
-echo "App update finished"
-set -x
-rm /mnt/cache/done_app_update
-
-app_update_rc=$(cat /mnt/cache/app_update_rc)
-rm /mnt/cache/app_update_rc
-if [ "$app_update_rc" -ne 0 ]; then
-    exit 47
-fi
-
-# ------------------------------------------------------------------------------
-# Install rootfs update from payload file
-# ------------------------------------------------------------------------------
+# Check if we need to do firmware update or application update
 tar_list_content_cmd="tar -tf"
 if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
     echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
@@ -143,10 +120,33 @@ if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
 fi
 
 if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+    # ------------------------------------------------------------------------------
+    # Install app updates from payload file
+    # ------------------------------------------------------------------------------
+
+    printf "%s\n" "${FIRMWARE}" > /scratch/firmware_path
+    touch /scratch/do_app_update
+    set +x
+    echo "Waiting for app update to finish"
+    while ! [ -e /scratch/done_app_update ]; do
+        sleep 1
+    done
+    echo "App update finished"
+    set -x
+    rm /scratch/done_app_update
+
+    app_update_rc=$(cat /scratch/app_update_rc)
+    rm /scratch/app_update_rc
+    if [ "$app_update_rc" -ne 0 ]; then
+        exit 47
+    fi
     save_header_or_die "$HEADER"
     exit 0
 fi
 
+# ------------------------------------------------------------------------------
+# Install rootfs update from payload file
+# ------------------------------------------------------------------------------
 # Detect root partitions
 root1=$(get_device_for_label rootfs1)
 exit_on_error "$?"
