@@ -9,6 +9,7 @@ import os
 from setuptools import setup
 
 def read(fname):
+    """Utility function to read the README file."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
