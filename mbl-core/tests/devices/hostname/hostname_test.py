@@ -99,7 +99,7 @@ class TestHostname:
             f.write(new_hostname)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == new_hostname
+        assert hostname.stdout.decode('utf-8').strip() == new_hostname
 
         # Test modify user configuration
         #
@@ -107,7 +107,7 @@ class TestHostname:
             f.write("hostname_change_user_config")
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == \
+        assert hostname.stdout.decode('utf-8').strip() == \
             "hostname_change_user_config"
 
         # Restore the original hostname configuration
@@ -131,7 +131,7 @@ class TestHostname:
             f.write(new_hostname)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == new_hostname
+        assert hostname.stdout.decode('utf-8').strip() == new_hostname
 
         # Test add user configuration
         #
@@ -139,7 +139,7 @@ class TestHostname:
             f.write(hostname_orig)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == hostname_orig
+        assert hostname.stdout.decode('utf-8').strip() == hostname_orig
 
         # Test modify user configuration
         #
@@ -147,7 +147,7 @@ class TestHostname:
             f.write("hostname_test_modify")
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == \
+        assert hostname.stdout.decode('utf-8').strip() == \
             "hostname_test_modify"
 
         # Test remove user configuration
@@ -155,7 +155,7 @@ class TestHostname:
         os.remove(HOSTNAME_USER_FILE)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == new_hostname
+        assert hostname.stdout.decode('utf-8').strip() == new_hostname
 
         # Restore the original hostname configuration
         #
@@ -174,7 +174,7 @@ class TestHostname:
             f.write("hostname_test")
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == "hostname_test"
+        assert hostname.stdout.decode('utf-8').strip() == "hostname_test"
 
         # Test remove user configuration
         #
@@ -206,7 +206,7 @@ class TestHostname:
 
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == hostname_orig
+        assert hostname.stdout.decode('utf-8').strip() == hostname_orig
 
     # run /etc/init.d/hostname.sh
     def _run_hostname_script(
