@@ -13,17 +13,15 @@ import os
 from subprocess import check_output
 
 HOSTNAME_SCRIPT_CMD = [
-    os.path.join(os.path.sep, 'etc', 'init.d','hostname.sh')
+    os.path.join(os.path.sep, 'etc', 'init.d', 'hostname.sh')
 ]
 HOSTNAME_CMD = [os.path.join(os.path.sep, 'bin', 'hostname')]
-HOSTNAME_FACTORY_FILE = os.path.join(os.path.sep, 'config', 'factory',
-    'hostname')
-HOSTNAME_USER_FILE = os.path.join(os.path.sep, 'config', 'user',
-    'hostname')
-RM_HOSTNAME_USER_FILE_CMD = [os.path.join(os.path.sep, 'bin', 'rm'),
-    HOSTNAME_USER_FILE]
-RM_HOSTNAME_FACTORY_FILE_CMD = [os.path.join(os.path.sep, 'bin', 'rm'),
-    HOSTNAME_FACTORY_FILE]
+HOSTNAME_FACTORY_FILE = os.path.join(
+    os.path.sep, 'config', 'factory', 'hostname'
+)
+HOSTNAME_USER_FILE = os.path.join(
+    os.path.sep, 'config', 'user', 'hostname'
+)
 
 
 class TestHostname:
@@ -64,8 +62,7 @@ class TestHostname:
         )
 
         if os.path.isfile(HOSTNAME_USER_FILE) and \
-            os.path.getsize(HOSTNAME_USER_FILE):
-				
+        os.path.getsize(HOSTNAME_USER_FILE):
             with open(HOSTNAME_USER_FILE, 'r') as f:
                 hostname_user = f.read().rstrip()
                 assert hostname_user == hostname_orig
@@ -83,21 +80,21 @@ class TestHostname:
         )
         self._check_hostname_modify_user_config(
             hostname_factory, hostname_user, hostname_orig
-        )   
+        )
         self._check_hostname_factory_config_exist(
             hostname_factory, hostname_user, hostname_orig
         )
 
     # check modify user defined hostname
     def _check_hostname_modify_user_config(
-        self, hostname_factory, hostname_user, hostname_orig, 
+        self, hostname_factory, hostname_user, hostname_orig,
         new_hostname="hostname_test_change_usr_cfg"
     ):
 
         # Setup: remove factory configuration and add user configuration
         #
         if os.path.isfile(HOSTNAME_FACTORY_FILE):
-            subprocess.check_call(RM_HOSTNAME_FACTORY_FILE_CMD)
+            os.remove(HOSTNAME_FACTORY_FILE)
         with open(HOSTNAME_USER_FILE, 'w') as f:
             f.write(new_hostname)
         self._run_hostname_script()
@@ -119,17 +116,17 @@ class TestHostname:
             hostname_factory, hostname_user, hostname_orig
         )
 
-    # check add/modify/remove user configuration when factory 
+    # check add/modify/remove user configuration when factory
     # configuration exist
     def _check_hostname_factory_config_exist(
-        self, hostname_factory, hostname_user, hostname_orig, 
+        self, hostname_factory, hostname_user, hostname_orig,
         new_hostname="hostname_test_factory_cfg"
     ):
 
         # Setup: remove user configuration and add factory configuration
         #
         if os.path.isfile(HOSTNAME_USER_FILE):
-            subprocess.check_call(RM_HOSTNAME_USER_FILE_CMD)
+            os.remove(HOSTNAME_USER_FILE)
         with open(HOSTNAME_FACTORY_FILE, 'w') as f:
             f.write(new_hostname)
         self._run_hostname_script()
@@ -139,7 +136,7 @@ class TestHostname:
         # Test add user configuration
         #
         with open(HOSTNAME_USER_FILE, 'w') as f:
-            f.write(hostname_orig)        
+            f.write(hostname_orig)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
         assert hostname.stdout.decode('utf-8').rstrip() == hostname_orig
@@ -155,10 +152,10 @@ class TestHostname:
 
         # Test remove user configuration
         #
-        subprocess.check_call(RM_HOSTNAME_USER_FILE_CMD)
+        os.remove(HOSTNAME_USER_FILE)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == new_hostname        
+        assert hostname.stdout.decode('utf-8').rstrip() == new_hostname
 
         # Restore the original hostname configuration
         #
@@ -172,7 +169,7 @@ class TestHostname:
         # Setup: remove factory configuration and add user configuration
         #
         if os.path.isfile(HOSTNAME_FACTORY_FILE):
-            subprocess.check_call(RM_HOSTNAME_FACTORY_FILE_CMD)
+            os.remove(HOSTNAME_FACTORY_FILE)
         with open(HOSTNAME_USER_FILE, 'w') as f:
             f.write("hostname_test")
         self._run_hostname_script()
@@ -181,14 +178,14 @@ class TestHostname:
 
         # Test remove user configuration
         #
-        subprocess.check_call(RM_HOSTNAME_USER_FILE_CMD)  
+        os.remove(HOSTNAME_USER_FILE)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
         assert hostname.stdout.decode('utf-8').find("mbed_linux_") == 0
 
         # restore the original hostname configuration
         #
-        self._restore_hostname(hostname_factory, hostname_user, hostname_orig)    
+        self._restore_hostname(hostname_factory, hostname_user, hostname_orig)
 
     # restore the original configuration
     def _restore_hostname(
@@ -199,17 +196,17 @@ class TestHostname:
             with open(HOSTNAME_USER_FILE, 'w') as f:
                 f.write(hostname_user)
         elif os.path.isfile(HOSTNAME_USER_FILE):
-            subprocess.check_call(RM_HOSTNAME_USER_FILE_CMD)
+            os.remove(HOSTNAME_USER_FILE)
 
         if hostname_factory is not None:
             with open(HOSTNAME_FACTORY_FILE, 'w') as f:
                 f.write(hostname_factory)
         elif os.path.isfile(HOSTNAME_FACTORY_FILE):
-            subprocess.check_call(RM_HOSTNAME_FACTORY_FILE_CMD)
+            os.remove(HOSTNAME_FACTORY_FILE)
 
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').rstrip() == hostname_orig     
+        assert hostname.stdout.decode('utf-8').rstrip() == hostname_orig
 
     # run /etc/init.d/hostname.sh
     def _run_hostname_script(
@@ -217,7 +214,7 @@ class TestHostname:
     ):
 
         p = subprocess.Popen(
-            HOSTNAME_SCRIPT_CMD, stdin=subprocess.PIPE, 
+            HOSTNAME_SCRIPT_CMD, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         try:
