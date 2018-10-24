@@ -9,25 +9,24 @@ name=${0##*/}
 # Redirect stdout and stderr to the log file
 exec >>"/var/log/${name}.log" 2>&1
 printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting ${name}"
-
 set -x
 
 wait_for_app_update_file() {
     set +x
     echo "Waiting for app update"
-    while ! [ -e "/mnt/cache/do_app_update" ]; do
+    while ! [ -e "/scratch/do_app_update" ]; do
         sleep 1
     done
     echo "App update starting"
     set -x
-    rm "/mnt/cache/do_app_update"
+    rm "/scratch/do_app_update"
 }
 
 update_apps() {
-    mbl-app-update-manager --install-packages "$(cat /mnt/cache/firmware_path)"
-    printf "%s\n" "$?" > /mnt/cache/app_update_rc
-    rm /mnt/cache/firmware_path
-    touch "/mnt/cache/done_app_update"
+    mbl-app-update-manager --install-packages "$(cat /scratch/firmware_path)"
+    printf "%s\n" "$?" > /scratch/app_update_rc
+    rm /scratch/firmware_path
+    touch "/scratch/done_app_update"
 }
 
 while true; do
@@ -37,3 +36,4 @@ done
 
 # Should never get here
 exit 1
+
