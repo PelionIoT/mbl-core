@@ -46,10 +46,7 @@ class TestHostname:
         result = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
         hostname_orig = result.stdout.decode('utf-8').rstrip()
 
-        if os.path.isfile(
-            HOSTNAME_FACTORY_FILE
-        ) and os.path.getsize(HOSTNAME_FACTORY_FILE):
-
+        if os.path.isfile(HOSTNAME_FACTORY_FILE)
             with open(HOSTNAME_FACTORY_FILE, 'r') as f:
                 hostname_factory = f.read().rstrip()
 
@@ -61,8 +58,7 @@ class TestHostname:
             )
         )
 
-        if os.path.isfile(HOSTNAME_USER_FILE) and \
-        os.path.getsize(HOSTNAME_USER_FILE):
+        if os.path.isfile(HOSTNAME_USER_FILE):
             with open(HOSTNAME_USER_FILE, 'r') as f:
                 hostname_user = f.read().rstrip()
                 assert hostname_user == hostname_orig
@@ -81,7 +77,14 @@ class TestHostname:
         self._check_hostname_modify_user_config(
             hostname_factory, hostname_user, hostname_orig
         )
-        self._check_hostname_factory_config_exist(
+        
+        self._check_hostname_factory_cfg_exist_add_usr_cfg(
+            hostname_factory, hostname_user, hostname_orig
+        )
+        self._check_hostname_factory_cfg_exist_modify_usr_cfg(
+            hostname_factory, hostname_user, hostname_orig
+        )
+        self._check_hostname_factory_config_exist_remove_user_config(
             hostname_factory, hostname_user, hostname_orig
         )
 
@@ -93,13 +96,7 @@ class TestHostname:
 
         # Setup: remove factory configuration and add user configuration
         #
-        if os.path.isfile(HOSTNAME_FACTORY_FILE):
-            os.remove(HOSTNAME_FACTORY_FILE)
-        with open(HOSTNAME_USER_FILE, 'w') as f:
-            f.write(new_hostname)
-        self._run_hostname_script()
-        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').strip() == new_hostname
+        _setup_hostname()
 
         # Test modify user configuration
         #
@@ -116,22 +113,15 @@ class TestHostname:
             hostname_factory, hostname_user, hostname_orig
         )
 
-    # check add/modify/remove user configuration when factory
-    # configuration exist
-    def _check_hostname_factory_config_exist(
+    # check add user configuration when factory configuration exist
+    def _check_hostname_factory_cfg_exist_add_usr_cfg(
         self, hostname_factory, hostname_user, hostname_orig,
         new_hostname="hostname_test_factory_cfg"
     ):
 
         # Setup: remove user configuration and add factory configuration
         #
-        if os.path.isfile(HOSTNAME_USER_FILE):
-            os.remove(HOSTNAME_USER_FILE)
-        with open(HOSTNAME_FACTORY_FILE, 'w') as f:
-            f.write(new_hostname)
-        self._run_hostname_script()
-        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').strip() == new_hostname
+        _setup_hostname()
 
         # Test add user configuration
         #
@@ -141,6 +131,60 @@ class TestHostname:
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
         assert hostname.stdout.decode('utf-8').strip() == hostname_orig
 
+        # Test modify user configuration
+        #
+        with open(HOSTNAME_USER_FILE, 'w') as f:
+            f.write("hostname_test_modify")
+        self._run_hostname_script()
+        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
+        assert hostname.stdout.decode('utf-8').strip() == \
+            "hostname_test_modify"
+
+        # Restore the original hostname configuration
+        #
+        self._restore_hostname(hostname_factory, hostname_user, hostname_orig)
+  
+    # check modify user configuration when factory configuration exist
+    def _check_hostname_factory_cfg_exist_modify_usr_cfg(
+        self, hostname_factory, hostname_user, hostname_orig,
+        new_hostname="hostname_test_factory_cfg"
+    ):
+
+        # Setup: remove user configuration and add factory configuration
+        #
+        _setup_hostname()
+
+        # Test add user configuration
+        #
+        with open(HOSTNAME_USER_FILE, 'w') as f:
+            f.write(hostname_orig)
+        self._run_hostname_script()
+        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
+        assert hostname.stdout.decode('utf-8').strip() == hostname_orig
+
+        # Test modify user configuration
+        #
+        with open(HOSTNAME_USER_FILE, 'w') as f:
+            f.write("hostname_test_modify")
+        self._run_hostname_script()
+        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
+        assert hostname.stdout.decode('utf-8').strip() == \
+            "hostname_test_modify"
+
+        # Restore the original hostname configuration
+        #
+        self._restore_hostname(hostname_factory, hostname_user, hostname_orig)
+  
+    # check remove user configuration when factory configuration exist
+    def _check_hostname_factory_config_exist_remove_user_config(
+        self, hostname_factory, hostname_user, hostname_orig,
+        new_hostname="hostname_test_factory_cfg_rm_user_cfg"
+    ):
+
+        # Setup: remove user configuration and add factory configuration
+        #
+        _setup_hostname()
+        
         # Test modify user configuration
         #
         with open(HOSTNAME_USER_FILE, 'w') as f:
@@ -166,15 +210,15 @@ class TestHostname:
         self, hostname_factory, hostname_user, hostname_orig
     ):
 
-        # Setup: remove factory configuration and add user configuration
+        # Setup: add factory and user configurations
         #
-        if os.path.isfile(HOSTNAME_FACTORY_FILE):
-            os.remove(HOSTNAME_FACTORY_FILE)
         with open(HOSTNAME_USER_FILE, 'w') as f:
-            f.write("hostname_test")
+            f.write("hostname_fact_test")
+        with open(HOSTNAME_USER_FILE, 'w') as f:
+            f.write("hostname_usr_test")
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode('utf-8').strip() == "hostname_test"
+        assert hostname.stdout.decode('utf-8').strip() == "hostname_usr_test"
 
         # Test remove user configuration
         #
@@ -186,6 +230,18 @@ class TestHostname:
         # restore the original hostname configuration
         #
         self._restore_hostname(hostname_factory, hostname_user, hostname_orig)
+        
+    # setup: remove factory configuration and add user configuration
+    def _setup_hostname(
+        self
+    ):
+		if os.path.isfile(HOSTNAME_FACTORY_FILE):
+            os.remove(HOSTNAME_FACTORY_FILE)
+        with open(HOSTNAME_USER_FILE, 'w') as f:
+            f.write("hostname_test")
+        self._run_hostname_script()
+        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
+        assert hostname.stdout.decode('utf-8').strip() == "hostname_test"
 
     # restore the original configuration
     def _restore_hostname(
