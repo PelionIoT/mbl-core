@@ -119,7 +119,7 @@ if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
     exit 46
 fi
 
-if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^mbl-console-image.*rootfs\.tar\.xz$'); then
     # ------------------------------------------------------------------------------
     # Install app updates from payload file
     # ------------------------------------------------------------------------------

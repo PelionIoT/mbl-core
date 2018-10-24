@@ -9,8 +9,11 @@ name=${0##*/}
 # Redirect stdout and stderr to the log file
 exec >>"/var/log/${name}.log" 2>&1
 printf "%s: %s\n" "$(date '+%FT%T%z')" "Starting ${name}"
-
 set -x
+
+# Clean posible leftover from last app updates
+rm -f /scratch/do_app_update
+rm -f /scratch/done_app_update
 
 wait_for_app_update_file() {
     set +x
@@ -37,3 +40,4 @@ done
 
 # Should never get here
 exit 1
+
