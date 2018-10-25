@@ -72,7 +72,7 @@ class TestHostname:
         """check modify user defined hostname."""
         # Setup: remove factory configuration and add user configuration
         #
-        self._setup_only_factory_cfg_hostname("hostname_fact_test")
+        self._setup_cfg_hostname("hostname_fact_test")
 
         # Test modify user configuration
         #
@@ -86,7 +86,7 @@ class TestHostname:
         """check add user configuration when factory configuration exist."""
         # Setup: remove user configuration and add factory configuration
         #
-        self._setup_only_factory_cfg_hostname("hostname_fact_test")
+        self._setup_cfg_hostname("hostname_fact_test")
 
         # Test add user configuration
         #
@@ -100,9 +100,7 @@ class TestHostname:
         """check modify user configuration when factory configuration exist."""
         # Setup: add factory and user configurations
         #
-        self._setup_user_and_factory_cfg_hostname(
-            "hostname_fact_test", "hostname_usr_test"
-        )
+        self._setup_cfg_hostname("hostname_fact_test", "hostname_usr_test")
 
         # Test modify user configuration
         #
@@ -118,9 +116,7 @@ class TestHostname:
         """check remove user configuration when factory configuration exist."""
         # Setup: add factory and user configurations
         #
-        self._setup_user_and_factory_cfg_hostname(
-            "hostname_fact_test", "hostname_usr_test"
-        )
+        self._setup_cfg_hostname("hostname_fact_test", "hostname_usr_test")
 
         # Test remove user configuration
         #
@@ -148,28 +144,28 @@ class TestHostname:
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
         assert hostname.stdout.decode("utf-8").find("mbed_linux_") == 0
 
-    def _setup_only_factory_cfg_hostname(self, hostname_factory):
-        """setup: remove factory configuration and add user configuration."""
-        if os.path.isfile(HOSTNAME_FACTORY_FILE):
-            os.remove(HOSTNAME_FACTORY_FILE)
-        with open(HOSTNAME_USER_FILE, "w") as f:
-            f.write(hostname_factory)
+    def _setup_cfg_hostname(self, hostname_factory, hostname_user=None):
+        """setup factory and user configurations."""
+        if hostname_factory is None:
+            if os.path.isfile(HOSTNAME_FACTORY_FILE):
+                os.remove(HOSTNAME_FACTORY_FILE)
+        else:
+            with open(HOSTNAME_FACTORY_FILE, "w") as f:
+                f.write(hostname_factory)
+
+        if hostname_user is None:
+            if os.path.isfile(HOSTNAME_USER_FILE):
+                os.remove(HOSTNAME_USER_FILE)
+        else:
+            with open(HOSTNAME_USER_FILE, "w") as f:
+                f.write(hostname_user)
 
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode("utf-8").strip() == hostname_factory
-
-    def _setup_user_and_factory_cfg_hostname(
-        self, hostname_factory, hostname_user
-    ):
-        """setup: add user and factory configuration."""
-        with open(HOSTNAME_FACTORY_FILE, "w") as f:
-            f.write(hostname_factory)
-        with open(HOSTNAME_USER_FILE, "w") as f:
-            f.write(hostname_user)
-        self._run_hostname_script()
-        hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode("utf-8").strip() == hostname_user
+        if hostname_user is not None:
+            assert hostname.stdout.decode("utf-8").strip() == hostname_user
+        elif hostname_factory is not None:
+            assert hostname.stdout.decode("utf-8").strip() == hostname_factory
 
     def _restore_hostname(self):
         """restore the original configuration."""
