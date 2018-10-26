@@ -284,7 +284,7 @@ def install_and_run_apps_from_tar(tar_path):
 
 
 class StoreValidFile(argparse.Action):
-    """Lorem ipsum"""
+    """Lorem ipsum."""
 
     def __call__(self, parser, namespace, values, option_string=None):
         """Lorem ipsum."""
