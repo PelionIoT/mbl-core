@@ -32,6 +32,7 @@ import subprocess
 import json
 import os
 import hashlib
+import importlib
 
 MBL_APP_MANAGER = "/usr/bin/mbl-app-manager"
 IPK_TEST_FILES_DIR = "/home/app/test_files/"
@@ -45,7 +46,7 @@ class TestMblAppManager:
         """
         Test main function.
 
-        This test go over all JSON files in "test_files" directory, parse
+        This test goes over all JSON files in the "test_files" directory, parse
         the configuration and execute the test case it describes.
         :return: None
         """
@@ -164,3 +165,12 @@ class TestMblAppManager:
                     )
                 )
                 assert expected_md5 == md5_hash
+
+    def test_app_manager_mbl_subpackage(self):
+        """
+        Test that AppManager is a subpackage of the "mbl" package.
+
+        The AppManager subpackage should be accessible via the "mbl" namespace.
+        """
+        # Assert that the package can be imported as a subpackage to
+        assert importlib.util.find_spec("mbl.AppManager") is not None
