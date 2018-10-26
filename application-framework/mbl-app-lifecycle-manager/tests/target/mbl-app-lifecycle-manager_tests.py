@@ -106,7 +106,7 @@ class TestAppLifecycleManager:
         self._kill_container(CONTAINER_ID, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.DOES_NOT_EXIST
-    
+
     def test_app_manager_mbl_subpackage(self):
         """
         Test that AppLifecycleManager is a subpackage of the "mbl" package.
