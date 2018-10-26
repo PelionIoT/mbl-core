@@ -19,4 +19,6 @@ class TestMblFirmwareUpdateManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.util.find_spec("mbl.FirmwareUpdateManager") is not None
+        assert (
+            importlib.util.find_spec("mbl.FirmwareUpdateManager") is not None
+        )
