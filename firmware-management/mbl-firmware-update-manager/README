@@ -1,0 +1,4 @@
+This script implements mbl firmware update manager. It is responsible for
+the following:
+* triggering the firmware upgrade process
+* rebooting Mbed Linux OS if required
