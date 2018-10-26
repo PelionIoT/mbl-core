@@ -8,16 +8,10 @@
 import subprocess
 import os
 import sys
+import mbl.AppLifecycleManager as alm
+import mbl.AppManager as apm
+import importlib
 
-# pytest run with its own python3 package, so main python3 path are not
-# known to it, so must add path here before import. When we will have
-# a well defined method for installing pytest properly, we might need
-# to change this way of importing modules.
-sys.path.append(
-    os.path.join(os.sep, "usr", "lib", "python3.5", "site-packages", "mbl")
-)
-import AppLifecycleManager as alm  # noqa
-import AppManager as apm  # noqa
 
 MBL_APP_MANAGER = "mbl-app-manager"
 MBL_APP_LIFECYCLE_MANAGER = "mbl-app-lifecycle-manager"
@@ -112,6 +106,16 @@ class TestAppLifecycleManager:
         self._kill_container(CONTAINER_ID, True)
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.DOES_NOT_EXIST
+    
+    def test_app_manager_mbl_subpackage(self):
+        """
+        Test that AppLifecycleManager is a subpackage of the "mbl" package.
+
+        The AppLifecycleManager subpackage should be accessible via the "mbl"
+        namespace.
+        """
+        # Assert that the package can be imported as a subpackage to
+        assert importlib.util.find_spec("mbl.AppLifecycleManager") is not None
 
     @staticmethod
     def _run_container(CONTAINER_ID, application_id, check_exit_code):
