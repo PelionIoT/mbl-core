@@ -115,9 +115,7 @@ class TestAppLifecycleManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert (
-            importlib.util.find_spec("mbl.AppLifecycleManager") is not None
-        )
+        assert importlib.util.find_spec("mbl.AppLifecycleManager") is not None
 
     @staticmethod
     def _run_container(CONTAINER_ID, application_id, check_exit_code):
