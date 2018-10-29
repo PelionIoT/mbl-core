@@ -11,7 +11,7 @@ import importlib
 class TestMblFirmwareUpdateManager:
     """MBL Firmware Update Manager main class."""
 
-    def test_firmware_manager_mbl_subpackage(self):
+    def test_firmware_update_manager_mbl_subpackage(self):
         """
         Test that FirmwareUpdateManager is a subpackage of the "mbl" package.
 
@@ -20,5 +20,5 @@ class TestMblFirmwareUpdateManager:
         """
         # Assert that the package can be imported as a subpackage to
         assert (
-            importlib.util.find_spec("mbl.FirmwareUpdateManager") is not None
+            importlib.__import__("mbl.FirmwareUpdateManager") is not None
         )

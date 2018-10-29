@@ -107,7 +107,7 @@ class TestAppLifecycleManager:
         state = self.app_lifecycle_mgr.get_container_state(CONTAINER_ID)
         assert state == alm.ContainerState.DOES_NOT_EXIST
 
-    def test_app_manager_mbl_subpackage(self):
+    def test_app_lifecycle_manager_mbl_subpackage(self):
         """
         Test that AppLifecycleManager is a subpackage of the "mbl" package.
 
@@ -115,7 +115,7 @@ class TestAppLifecycleManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.util.find_spec("mbl.AppLifecycleManager") is not None
+        assert importlib.__import__("mbl.AppLifecycleManager") is not None
 
     @staticmethod
     def _run_container(CONTAINER_ID, application_id, check_exit_code):

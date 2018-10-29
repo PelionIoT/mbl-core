@@ -11,7 +11,7 @@ import importlib
 class TestMblAppUpdateManager:
     """MBL App Update Manager main class."""
 
-    def test_app_manager_mbl_subpackage(self):
+    def test_app_update_manager_mbl_subpackage(self):
         """
         Test that AppUpdateManager is a subpackage of the "mbl" package.
 
@@ -19,4 +19,4 @@ class TestMblAppUpdateManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.util.find_spec("mbl.AppUpdateManager") is not None
+        assert importlib.__import__("mbl.AppUpdateManager") is not None
