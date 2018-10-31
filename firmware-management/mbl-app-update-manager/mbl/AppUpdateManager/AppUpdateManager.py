@@ -287,7 +287,7 @@ class StoreValidFile(argparse.Action):
     """Utility class used in CLI argument parser scripts."""
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Verifies the validity of input parameters."""
+        """Perform file validity checks."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
