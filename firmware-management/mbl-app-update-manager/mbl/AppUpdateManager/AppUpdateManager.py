@@ -284,10 +284,10 @@ def install_and_run_apps_from_tar(tar_path):
 
 
 class StoreValidFile(argparse.Action):
-    """Lorem ipsum."""
+    """Utility class used in CLI argument parser scripts."""
 
     def __call__(self, parser, namespace, values, option_string=None):
-        """Lorem ipsum."""
+        """Verifies the validity of input parameters."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
