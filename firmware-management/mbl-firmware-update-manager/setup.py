@@ -18,7 +18,7 @@ setup(
     name="mbl_FirmwareUpdateManager",
     version="1",
     description="Mbed Linux OS Firmware Update Manager",
-    long_description=read("README"),
+    long_description=read("README.md"),
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",

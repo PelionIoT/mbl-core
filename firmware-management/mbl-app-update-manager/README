@@ -1,7 +1,0 @@
-This script implements mbl application update manager. It is responsible for
-the following:
-* stopping an application
-* running an application
-* installing an application
-* removing an application
-* getting an application identifier
