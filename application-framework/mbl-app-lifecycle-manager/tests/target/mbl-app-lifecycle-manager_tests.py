@@ -8,9 +8,9 @@
 import subprocess
 import os
 import sys
+import importlib
 import mbl.AppLifecycleManager as alm
 import mbl.AppManager as apm
-import importlib
 
 
 MBL_APP_MANAGER = "mbl-app-manager"
