@@ -49,6 +49,7 @@ class AppUpdateManager:
     def stop_container(self, app_id, timeout):
         """
         Stop container using AppLifecycleManager.
+
         :param app_id: App id
         :param timeout: Timeout
         :return:
@@ -74,6 +75,7 @@ class AppUpdateManager:
     def run_container(self, app_id):
         """
         Run container using AppLifecycleManager.
+
         :param app_id: App id
         :return:
                 Error.SUCCESS
@@ -94,6 +96,7 @@ class AppUpdateManager:
     def install_package(self, package_path):
         """
         Install package using AppManager.
+
         :param package_path: Package path to IPK file
         :return:
                 Error.SUCCESS
@@ -115,6 +118,7 @@ class AppUpdateManager:
     def remove_package(self, package_name):
         """
         Remove package using AppManager.
+
         :param package_name: Package name
         :return:
                 Error.SUCCESS
@@ -136,6 +140,7 @@ class AppUpdateManager:
     def get_app_id_from_package(self, package_path):
         """
         Get App id from package using AppManager.
+
         :param package_path: Package path
         :return:
                 Error.SUCCESS, app id
@@ -203,7 +208,7 @@ def install_package_and_run_container(package_path):
 
 def extract_ipks_from_tar(tar_path):
     """
-    Extracts .ipk files from a tar file.
+    Extract .ipk files from a tar file.
 
     Returns a 2-tuple (ipk_paths, error) where ipk_paths is a list of paths to
     extracted .ipk files and error is one of:
@@ -236,6 +241,7 @@ def extract_ipks_from_tar(tar_path):
 
 
 def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
+    """Search for ipks within a tar file."""
     for tar_info in tar:
         if os.path.splitext(tar_info.name)[1] != ".ipk":
             continue
@@ -265,6 +271,7 @@ def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
 
 
 def install_and_run_apps_from_tar(tar_path):
+    """Install and run application contained in a tar file."""
     ipk_paths, ret = extract_ipks_from_tar(tar_path)
     if ret != Error.SUCCESS:
         return ret
@@ -277,7 +284,10 @@ def install_and_run_apps_from_tar(tar_path):
 
 
 class StoreValidFile(argparse.Action):
+    """Utility class used in CLI argument parser scripts."""
+
     def __call__(self, parser, namespace, values, option_string=None):
+        """Perform file validity checks."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
