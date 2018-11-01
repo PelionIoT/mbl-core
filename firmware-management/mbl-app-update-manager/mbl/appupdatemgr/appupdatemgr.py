@@ -12,8 +12,8 @@ import subprocess
 import logging
 import tarfile
 from enum import Enum
-import mbl.AppManager as apm
-import mbl.AppLifecycleManager as alm
+import mbl.appmgr as apm
+import mbl.applcmgr as alm
 
 __version__ = "1.0"
 APP_STOP_TIMEOUT = 3

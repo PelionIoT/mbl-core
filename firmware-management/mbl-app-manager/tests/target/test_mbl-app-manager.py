@@ -168,9 +168,10 @@ class TestMblAppManager:
 
     def test_app_manager_mbl_subpackage(self):
         """
-        Test that AppManager is a subpackage of the "mbl" package.
+        Test that App Manager is a subpackage of the "mbl" package.
 
-        The AppManager subpackage should be accessible via the "mbl" namespace.
+        The App Manager subpackage should be accessible via the "mbl"
+        namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.__import__("mbl.AppManager") is not None
+        assert importlib.__import__("mbl.appmgr") is not None

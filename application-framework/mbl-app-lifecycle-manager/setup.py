@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""setup.py file for MBL AppLifecycleManager package."""
+"""setup.py file for Mbed Linux OS Application Lifecycle Manager package."""
 
 import os
 from setuptools import setup
@@ -15,13 +15,13 @@ def read(fname):
 
 
 setup(
-    name="mbl_AppLifecycleManager",
+    name="mbl_applcmgr",
     version="1",
     description="Mbed Linux OS Application Lifecycle Manager",
-    long_description=read("README"),
+    long_description=read("README.md"),
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
-    packages=["mbl.AppLifecycleManager"],
+    packages=["mbl.applcmgr"],
     zip_safe=False,
 )

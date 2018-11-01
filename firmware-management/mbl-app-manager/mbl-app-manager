@@ -10,7 +10,7 @@ import argparse
 import logging
 import sys
 import os
-import mbl.AppManager as apm
+import mbl.appmgr as apm
 
 __version__ = "1.0.2"
 
