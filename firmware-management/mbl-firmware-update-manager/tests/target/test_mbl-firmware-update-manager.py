@@ -13,8 +13,7 @@ class TestMblFirmwareUpdateManager:
 
     def test_firmware_update_manager_mbl_subpackage(self):
         """
-        Test that Firmware Update Manager is a subpackage of the "mbl"
-        package.
+        Test that Firmware Update Manager is a subpackage of the "mbl" package.
 
         The Firmware Update Manager subpackage should be accessible via the
         "mbl" namespace.

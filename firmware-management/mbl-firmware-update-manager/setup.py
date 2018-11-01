@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-setup.py file for Mbed Linux OS Firmware Update Manager package.
-"""
+"""setup.py file for Mbed Linux OS Firmware Update Manager package."""
 
 import os
 from setuptools import setup
