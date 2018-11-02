@@ -15,7 +15,7 @@ def read(fname):
 
 
 setup(
-    name="mbl_appupdatemgr",
+    name="mbl-app-update-manager",
     version="1",
     description="Mbed Linux OS Application Update Manager",
     long_description=read("README.md"),
