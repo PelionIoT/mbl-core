@@ -22,6 +22,6 @@ setup(
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
-    packages=["mbl.appmgr"],
+    packages=["mbl.app_manager"],
     zip_safe=False,
 )
