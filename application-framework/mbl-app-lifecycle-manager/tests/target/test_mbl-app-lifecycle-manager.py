@@ -10,7 +10,7 @@ import os
 import sys
 import importlib
 import mbl.applcmgr as alm
-import mbl.appmgr as apm
+import mbl.app_manager as apm
 
 
 MBL_APP_MANAGER = "mbl-app-manager"
