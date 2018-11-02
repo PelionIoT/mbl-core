@@ -9,7 +9,7 @@ import subprocess
 import os
 import sys
 import importlib
-import mbl.applcmgr as alm
+import mbl.app_lifecycle_manager as alm
 import mbl.app_manager as apm
 
 
