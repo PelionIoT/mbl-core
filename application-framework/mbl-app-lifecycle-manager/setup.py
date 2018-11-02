@@ -15,7 +15,7 @@ def read(fname):
 
 
 setup(
-    name="mbl_applcmgr",
+    name="mbl-app-lifecycle-manager",
     version="1",
     description="Mbed Linux OS Application Lifecycle Manager",
     long_description=read("README.md"),
