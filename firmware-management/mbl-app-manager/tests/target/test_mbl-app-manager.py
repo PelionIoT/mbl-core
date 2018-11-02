@@ -19,13 +19,6 @@ Basic test flow:
    expected to fail as the expected return code for remove operation is also
    given in the config.
 Note: if any of the above steps behave different than expected - test fail.
-
-In order to run pytest with prints:
-cd /home/app/usr/bin
-./python3 ./pytest.python3-pytest -s ./app_manager_test.py
-
-In order to run pytest without prints:
-./python3 ./pytest.python3-pytest ./app_manager_test.py
 """
 
 import subprocess
