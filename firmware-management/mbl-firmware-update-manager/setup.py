@@ -15,7 +15,7 @@ def read(fname):
 
 
 setup(
-    name="mbl_fmwupdatemgr",
+    name="mbl-firmware-update-manager",
     version="1",
     description="Mbed Linux OS Firmware Update Manager",
     long_description=read("README.md"),
