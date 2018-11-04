@@ -1,0 +1,8 @@
+Package: user-sample-app-package
+Version: 1.0
+Architecture: armv7vet2hf-neon
+Maintainer: Yelena Gordon <yelena.gordon@arm.com>
+Section: admin
+Priority: optional
+Description: This package inclused user sample "Hello world" application.
+
