@@ -19,4 +19,7 @@ class TestMblAppUpdateManager:
         namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.__import__("mbl.app_update_manager") is not None
+        assert (
+            importlib.__import__("mbl.app_update_manager.app_update_manager")
+            is not None
+        )
