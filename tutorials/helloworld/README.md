@@ -7,7 +7,7 @@ Build an image from a Dockerfile
           
 1. cd mbl-core/tutorials/helloworld          
              
-1. Build dockcross (Cross compiling toolchains in Docker images) for arm-v6 platform.             
+1. Build dockcross (Cross compiling toolchains in Docker images).             
    The parant image is defined in Dockerfile: dockcross/linux-armv6.            
    docker build command prepares cross-compilation environment for building             
    user sample application inside the container.            
