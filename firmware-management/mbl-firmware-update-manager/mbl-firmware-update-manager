@@ -12,7 +12,7 @@ import subprocess
 import logging
 import tarfile
 from enum import Enum
-import mbl.firmware_update_manager as fum
+import mbl.firmware_update_manager.firmware_update_manager as fum
 
 
 __version__ = "1.0"
