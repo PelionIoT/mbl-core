@@ -19,13 +19,6 @@ Basic test flow:
    expected to fail as the expected return code for remove operation is also
    given in the config.
 Note: if any of the above steps behave different than expected - test fail.
-
-In order to run pytest with prints:
-cd /home/app/usr/bin
-./python3 ./pytest.python3-pytest -s ./app_manager_test.py
-
-In order to run pytest without prints:
-./python3 ./pytest.python3-pytest ./app_manager_test.py
 """
 
 import subprocess
@@ -168,9 +161,10 @@ class TestMblAppManager:
 
     def test_app_manager_mbl_subpackage(self):
         """
-        Test that AppManager is a subpackage of the "mbl" package.
+        Test that App Manager is a subpackage of the "mbl" package.
 
-        The AppManager subpackage should be accessible via the "mbl" namespace.
+        The App Manager subpackage should be accessible via the "mbl"
+        namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.__import__("mbl.AppManager") is not None
+        assert importlib.__import__("mbl.app_manager") is not None

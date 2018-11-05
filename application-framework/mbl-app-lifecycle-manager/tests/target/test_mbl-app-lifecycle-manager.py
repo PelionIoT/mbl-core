@@ -9,8 +9,8 @@ import subprocess
 import os
 import sys
 import importlib
-import mbl.AppLifecycleManager as alm
-import mbl.AppManager as apm
+import mbl.app_lifecycle_manager as alm
+import mbl.app_manager as apm
 
 
 MBL_APP_MANAGER = "mbl-app-manager"
@@ -109,13 +109,13 @@ class TestAppLifecycleManager:
 
     def test_app_lifecycle_manager_mbl_subpackage(self):
         """
-        Test that AppLifecycleManager is a subpackage of the "mbl" package.
+        Test that App Lifecycle Manager is a subpackage of the "mbl" package.
 
-        The AppLifecycleManager subpackage should be accessible via the "mbl"
-        namespace.
+        The App Lifecycle Manager subpackage should be accessible via the
+        "mbl" namespace.
         """
         # Assert that the package can be imported as a subpackage to
-        assert importlib.__import__("mbl.AppLifecycleManager") is not None
+        assert importlib.__import__("mbl.app_lifecycle_manager") is not None
 
     @staticmethod
     def _run_container(CONTAINER_ID, application_id, check_exit_code):

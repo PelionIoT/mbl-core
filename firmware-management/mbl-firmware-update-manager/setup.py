@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""setup.py file for MBL FirmwareUpdateManager package."""
+"""setup.py file for Mbed Linux OS Firmware Update Manager package."""
 
 import os
 from setuptools import setup
@@ -15,13 +15,13 @@ def read(fname):
 
 
 setup(
-    name="mbl_FirmwareUpdateManager",
+    name="mbl-firmware-update-manager",
     version="1",
     description="Mbed Linux OS Firmware Update Manager",
     long_description=read("README.md"),
     author="Arm Ltd.",
     author_email="",
     license="Apache-2.0",
-    packages=["mbl.FirmwareUpdateManager"],
+    packages=["mbl.firmware_update_manager"],
     zip_safe=False,
 )
