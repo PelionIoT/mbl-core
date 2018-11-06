@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM dockcross/linux-armv6
+FROM dockcross/linux-armv7
 RUN apt-get update
 RUN apt-get install wget
 RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-utils-0.3.6.tar.gz && \
@@ -22,4 +22,4 @@ RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-util
 	rm -rf opkg-utils-0.3.6 opkg-utils-0.3.6.tar.gz
 RUN wget http://ftp.debian.org/debian/pool/main/t/tar/tar_1.30+dfsg-2_amd64.deb && \
 	dpkg -i tar_1.30+dfsg-2_amd64.deb && rm -rf tar_1.30+dfsg-2_amd64.deb
-ENV DEFAULT_DOCKCROSS_IMAGE linux-armv6
+ENV DEFAULT_DOCKCROSS_IMAGE linux-armv7
