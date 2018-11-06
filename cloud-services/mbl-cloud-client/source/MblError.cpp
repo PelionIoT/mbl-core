@@ -61,6 +61,10 @@ const char* MblError_to_str(const MblError error)
         case Error::UpdateErrorUserActionRequired: return "UpdateErrorUserActionRequired";
         case Error::UpdateFatalRebootRequired: return "UpdateFatalRebootRequired";
         case Error::UpdateErrorInvalidHash: return "UpdateErrorInvalidHash";
+
+        case Error::EnrollmentErrorBase: return "EnrollmentErrorBase";
+        case Error::EnrollmentErrorEnd: return "EnrollmentErrorEnd";
+
     }
     return "Unrecognized error code";
 }
@@ -100,6 +104,9 @@ MblError CloudClientError_to_MblError(MbedCloudClient::Error error)
         case MbedCloudClient::UpdateErrorUserActionRequired: return Error::UpdateErrorUserActionRequired;
         case MbedCloudClient::UpdateFatalRebootRequired: return Error::UpdateFatalRebootRequired;
         case MbedCloudClient::UpdateErrorInvalidHash: return Error::UpdateErrorInvalidHash;
+    
+        case MbedCloudClient::EnrollmentErrorBase: return Error::EnrollmentErrorBase;
+        case MbedCloudClient::EnrollmentErrorEnd: return Error::EnrollmentErrorEnd;
     }
     return Error::Unknown;
 }
