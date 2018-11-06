@@ -2,7 +2,7 @@ Package: user-sample-app-package
 Version: 1.0
 Architecture: armv7vet2hf-neon
 Maintainer: Mbed Linux OS team <mbed-linux-team@arm.com>
-Section: admin
+Section: base
 Priority: optional
 Description: This package includes user sample "Hello world" application.
 

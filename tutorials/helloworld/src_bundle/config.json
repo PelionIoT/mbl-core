@@ -1,5 +1,5 @@
 {
-	"ociVersion": "1.0.1-dev",
+	"ociVersion": "1.0",
 	"process": {
 		"terminal": false,
 		"user": {
