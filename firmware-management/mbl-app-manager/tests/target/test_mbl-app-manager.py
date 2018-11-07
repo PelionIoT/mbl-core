@@ -3,23 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Pytest for testing MBL App Manager.
-
-This pytest tests expect a directory "test_files" to exist under
-/home/app/ directory. This directory should contain ipk files and
-test case configuration files (JSON)
-Test parse all configuration files and run each test case.
-Basic test flow:
-1. Remove previous package_name (In case it is already installed on device)
-2. Install package and verify expected return code
-3. If Install should succeed - verify MD5 of all package installed file and
-   compare to expected MD5 value
-4. Remove package and verify expected return code (even if install was
-   expected to fail as the expected return code for remove operation is also
-   given in the config.
-Note: if any of the above steps behave different than expected - test fail.
-"""
+"""Pytest for testing MBL App Manager."""
 
 import subprocess
 import json

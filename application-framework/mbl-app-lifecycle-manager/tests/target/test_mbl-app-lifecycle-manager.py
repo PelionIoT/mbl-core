@@ -3,16 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Pytest for testing mbl app lifecycle manager.
-
-This test file requires the ipk
-"app-lifecycle-manager-test-package_1.0_armv7vet2hf-neon.ipk" to be placed in
-the same directory.
-The ipk is available from:
-https://github.com/ARMmbed/mbl-scratch/tree/64c21a344c4eebd46d7308338d71ba510dc
-20323/mbl-app-lifecycle-manager/tests/data
-"""
+"""Pytest for testing mbl app lifecycle manager."""
 
 import subprocess
 import os

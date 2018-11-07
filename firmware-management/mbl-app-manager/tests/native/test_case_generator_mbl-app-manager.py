@@ -8,7 +8,6 @@ This script generates test files for testing ARM MBL App Manager using pytest.
 
 Test files consist of pairs of .ipk and .json config files.
 Output directory "test_files" holds several of such pairs.
-The output directory "test_files" should be pushed to device to /home/app/
 This script generate 4 test cases: 2 positive tests and 2 negative tests.
 """
 
