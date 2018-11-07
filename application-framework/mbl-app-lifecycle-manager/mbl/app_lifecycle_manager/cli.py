@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""Simple command line interface for mbl app lifecycle manager."""
+
 import argparse
 import logging
 import sys
@@ -129,4 +131,5 @@ def _main():
     return ret.value
 
 
-sys.exit(_main())
+if __name__ == "__main__":
+    _main()

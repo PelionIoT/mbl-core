@@ -24,4 +24,7 @@ setup(
     license="Apache-2.0",
     packages=["mbl.app_manager"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": ["mbl-app-manager = mbl.app_manager.cli:_main"]
+    },
 )

@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""This script manage firmware updates."""
+"""Simple command line interface for mbl firmware update manager."""
 
 import sys
 import argparse
@@ -15,11 +15,14 @@ from enum import Enum
 import mbl.firmware_update_manager.firmware_update_manager as fum
 
 
-__version__ = "1.0"
+__version__ = "1.0.0"
 
 
 class StoreValidFile(argparse.Action):
+    """Utility class used in CLI argument parser scripts."""
+
     def __call__(self, parser, namespace, values, option_string=None):
+        """Perform file validity checks."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
@@ -74,7 +77,7 @@ def _main():
     try:
         args = parser.parse_args()
     except SystemExit:
-        return fum.Error.ERR_INVALID_ARGS
+        return fum.Error.ERR_INVALID_ARGS.value
 
     info_level = logging.DEBUG if args.verbose else logging.INFO
 
@@ -113,4 +116,4 @@ def _main():
 
 
 if __name__ == "__main__":
-    sys.exit(_main().value)
+    _main()

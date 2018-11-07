@@ -24,4 +24,10 @@ setup(
     license="Apache-2.0",
     packages=["mbl.firmware_update_manager"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "mbl-firmware-update-manager = \
+                mbl.firmware_update_manager.cli:_main"
+        ]
+    },
 )

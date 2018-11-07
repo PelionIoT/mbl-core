@@ -24,4 +24,9 @@ setup(
     license="Apache-2.0",
     packages=["mbl.app_update_manager"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "mbl-app-update-manager = mbl.app_update_manager.cli:_main"
+        ]
+    },
 )
