@@ -142,7 +142,7 @@ class TestHostname:
         os.remove(HOSTNAME_USER_FILE)
         self._run_hostname_script()
         hostname = subprocess.run(HOSTNAME_CMD, stdout=subprocess.PIPE)
-        assert hostname.stdout.decode("utf-8").find("mbed_linux_") == 0
+        assert hostname.stdout.decode("utf-8").find("mbed-linux-os-") == 0
 
     def _setup_cfg_hostname(self, hostname_factory, hostname_user=None):
         """setup factory and user configurations."""
