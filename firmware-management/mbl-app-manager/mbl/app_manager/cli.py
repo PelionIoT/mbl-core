@@ -115,7 +115,3 @@ def _main():
     except OSError:
         logger.exception("Operation failed with OSError")
         return 2
-
-
-if __name__ == "__main__":
-    _main()

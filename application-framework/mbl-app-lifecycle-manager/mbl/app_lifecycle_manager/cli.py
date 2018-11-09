@@ -129,7 +129,3 @@ def _main():
     else:
         logger.error("Operation failed: {}".format(ret))
     return ret.value
-
-
-if __name__ == "__main__":
-    _main()
