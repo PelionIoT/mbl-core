@@ -16,10 +16,3 @@ failures and should support rollback to the previous version if an update
 fails. A record of installed firmware should be maintained to support device
 management operations to query the state of device firmware.
 
-
-## License
-
-Please see the [License][mbl-license] document for more information.
-
-
-[mbl-license]: LICENSE
