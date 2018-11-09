@@ -13,6 +13,7 @@ def read(fname):
     """Utility function to read the README file."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+scripts = ["bin/mbl-app-update-manager-daemon"]
 
 setup(
     name="mbl-app-update-manager",
@@ -29,4 +30,5 @@ setup(
             "mbl-app-update-manager = mbl.app_update_manager.cli:_main"
         ]
     },
+    scripts=scripts,
 )
