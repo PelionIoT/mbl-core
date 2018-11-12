@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018, Arm Limited and Contributors. All rights reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
 
-"""This script manage firmware updates."""
+"""Simple command line interface for mbl app update manager."""
 
-import sys
 import argparse
-import os
-import subprocess
 import logging
-import tarfile
-from enum import Enum
-import mbl.firmware_update_manager.firmware_update_manager as fum
+import sys
+import os
+import mbl.app_update_manager.app_update_manager as aupm
 
-
-__version__ = "1.0"
+__version__ = "1.0.0"
 
 
 class StoreValidFile(argparse.Action):
+    """Utility class used in CLI argument parser scripts."""
+
     def __call__(self, parser, namespace, values, option_string=None):
+        """Perform file validity checks."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
@@ -40,23 +37,16 @@ def get_argument_parser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Firmware update manager",
+        description="App update manager",
     )
 
     parser.add_argument(
         "-i",
-        "--install-firmware",
-        metavar="UPDATE_FIRMWARE_TAR_FILE",
+        "--install-packages",
+        metavar="UPDATE_PAYLOAD_TAR_FILE",
         required=True,
         action=StoreValidFile,
-        help="Install firmware from a firmware update tar file and reboot",
-    )
-
-    parser.add_argument(
-        "-s",
-        "--skip-reboot",
-        help="Skip reboot after firmware update",
-        action="store_true",
+        help="Install packages from a firmware update tar file and run them",
     )
 
     parser.add_argument(
@@ -74,7 +64,7 @@ def _main():
     try:
         args = parser.parse_args()
     except SystemExit:
-        return fum.Error.ERR_INVALID_ARGS
+        return aupm.Error.ERR_INVALID_ARGS.value
 
     info_level = logging.DEBUG if args.verbose else logging.INFO
 
@@ -82,35 +72,28 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logger = logging.getLogger("mbl-firmware-update-manager")
-    logger.info("Starting ARM FIRMWARE UPDATE MANAGER: {}".format(__version__))
+    logger = logging.getLogger("mbl-app-update-manager")
+    logger.info("Starting ARM APP UPDATE MANAGER: {}".format(__version__))
     logger.info("Command line arguments:{}".format(args))
 
-    ret = fum.Error.ERR_OPERATION_FAILED
+    ret = aupm.Error.ERR_OPERATION_FAILED
     try:
-        firmware_update_manager = fum.FirmwareUpdateManager()
-        ret = firmware_update_manager.update_firmware(
-            args.install_firmware, args.skip_reboot
-        )
+        ret = aupm.install_and_run_apps_from_tar(args.install_packages)
     except subprocess.CalledProcessError as e:
         logger.exception(
             "Operation failed with subprocess error code: {}".format(
                 e.returncode
             )
         )
-        return fum.Error.ERR_OPERATION_FAILED
+        return aupm.Error.ERR_OPERATION_FAILED
     except OSError:
         logger.exception("Operation failed with OSError")
-        return fum.Error.ERR_OPERATION_FAILED
+        return aupm.Error.ERR_OPERATION_FAILED
     except Exception:
         logger.exception("Operation failed exception")
-        return fum.Error.ERR_OPERATION_FAILED
-    if ret == fum.Error.SUCCESS:
+        return aupm.Error.ERR_OPERATION_FAILED
+    if ret == aupm.Error.SUCCESS:
         logger.info("Operation successful")
     else:
         logger.error("Operation failed: {}".format(ret))
     return ret
-
-
-if __name__ == "__main__":
-    sys.exit(_main().value)

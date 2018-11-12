@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-This script implements mbl app manager for installing, removing and listing
-installed apps using opkg
-"""
+"""Simple command line interface for mbl app manager."""
 
 import argparse
 import logging
@@ -16,7 +13,10 @@ __version__ = "1.0.2"
 
 
 class StoreValidFile(argparse.Action):
+    """Utility class used in CLI argument parser scripts."""
+
     def __call__(self, parser, namespace, values, option_string=None):
+        """Perform file validity checks."""
         prospective_file = values
         if not os.path.isfile(prospective_file):
             raise argparse.ArgumentTypeError(
@@ -30,9 +30,14 @@ class StoreValidFile(argparse.Action):
 
 
 def get_argument_parser():
+    """
+    Return argument parser.
+
+    :return: parser
+    """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="opkg wrapper script",
+        description="App manager",
     )
 
     group = parser.add_mutually_exclusive_group(required=True)
@@ -110,7 +115,3 @@ def _main():
     except OSError:
         logger.exception("Operation failed with OSError")
         return 2
-
-
-if __name__ == "__main__":
-    sys.exit(_main())

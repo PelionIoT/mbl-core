@@ -24,4 +24,9 @@ setup(
     license="Apache-2.0",
     packages=["mbl.app_lifecycle_manager"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "mbl-app-lifecycle-manager = mbl.app_lifecycle_manager.cli:_main"
+        ]
+    },
 )

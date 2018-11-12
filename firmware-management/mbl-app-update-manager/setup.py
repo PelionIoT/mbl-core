@@ -14,6 +14,8 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
+scripts = ["bin/mbl-app-update-manager-daemon"]
+
 setup(
     name="mbl-app-update-manager",
     version="1",
@@ -24,4 +26,10 @@ setup(
     license="Apache-2.0",
     packages=["mbl.app_update_manager"],
     zip_safe=False,
+    entry_points={
+        "console_scripts": [
+            "mbl-app-update-manager = mbl.app_update_manager.cli:_main"
+        ]
+    },
+    scripts=scripts,
 )
