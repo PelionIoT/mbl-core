@@ -14,6 +14,7 @@ int main (void)
   for(i=0; i < NUM_OF_PRINTS; ++i)
   {
       printf("Hello, world\n");
+      fflush(stdout);
       sleep(DELAY_SEC_BETWEEN_PRINTS);
   }
   
