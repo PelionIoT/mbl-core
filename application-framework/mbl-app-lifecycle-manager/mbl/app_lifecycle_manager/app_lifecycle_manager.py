@@ -15,6 +15,7 @@ from enum import Enum
 
 __version__ = "1.0"
 APPS_INSTALL_ROOT_DIR = "/home/app"
+APPS_LOG_DIR = "/var/log/app"
 DEFAULT_SIGTERM_TIMEOUT = 3
 DEFAULT_SIGKILL_TIMEOUT = 1
 SLEEP_INTERVAL = 0.1
@@ -271,13 +272,18 @@ class AppLifecycleManager:
                 "Application ID {}".format(application_id),
             )
             return result
-        self.logger.info("Create container: {}".format(container_id))
-        _, result = self._run_command(
-            ["runc", "create", "--bundle", bundle_path, container_id],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+
+        with ContainerLogFile(self.logger, container_id) as log_file:
+            log_file = log_file or subprocess.DEVNULL
+
+            self.logger.info("Create container: {}".format(container_id))
+            _, result = self._run_command(
+                ["runc", "create", "--bundle", bundle_path, container_id],
+                stdin=subprocess.DEVNULL,
+                stdout=log_file,
+                stderr=log_file,
+            )
+
         if result == Error.ERR_OPERATION_FAILED:
             result = Error.ERR_CREATE_FAILED
         self._log_error_return("_create_container", result, container_id)
@@ -427,3 +433,65 @@ class AppLifecycleManager:
             )
             return output, Error.ERR_OPERATION_FAILED
         return output, Error.SUCCESS
+
+class ContainerLogFile:
+    """
+    Class to encapsulate opening of container log files.
+
+    The point of having this class rather than using plain "open" is that:
+    * It doesn't throw exceptions on failure. If we can't open a container's
+      log file, just log an error and carry on.
+    * It creates the log directory if it doesn't already exist.
+
+    ContainerLogFile is really a "context manager" class (to be used in "with"
+    statements).
+    """
+
+    def __init__(self, logger, container_id):
+        """
+        Create object to be used in "with" statement.
+        """
+        self.logger = logger
+        self.container_id = container_id
+        self.log_path = os.path.join(
+            APPS_LOG_DIR, "{}.log".format(container_id)
+        )
+
+    def __enter__(self):
+        """
+        Open the container log file.
+
+        Returns:
+            A file object if the log file could be opened;
+            None if the log file could not be opened.
+        """
+        try:
+            os.makedirs(APPS_LOG_DIR, exist_ok=True)
+        except OSError as error:
+            self.logger.exception(
+                "Failed to create container log directory {}".format(
+                    APPS_LOG_DIR, error
+                )
+            )
+            self.log_file = None
+            return self.log_file
+
+        try:
+            self.log_file = open(self.log_path, "a")
+            return self.log_file
+        except OSError as error:
+            self.logger.exception(
+                "Failed to open log file {} for container {}".format(
+                    self.log_file, self.container_id, error
+                )
+            )
+            self.log_file = None
+            return self.log_file
+
+    def __exit__(self, type, value, tb):
+        """
+        Close the container log file.
+        """
+        if self.log_file:
+            self.log_file.close()
+        return False
