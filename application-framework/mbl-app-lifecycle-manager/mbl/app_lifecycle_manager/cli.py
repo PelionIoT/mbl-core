@@ -120,10 +120,10 @@ def _main():
             )
     except OSError:
         logger.exception("Operation failed with OSError")
-        return alm.Error.ERR_OPERATION_FAILED
+        return alm.Error.ERR_OPERATION_FAILED.value
     except Exception:
         logger.exception("Operation failed exception")
-        return alm.Error.ERR_OPERATION_FAILED
+        return alm.Error.ERR_OPERATION_FAILED.value
     if ret == alm.Error.SUCCESS:
         logger.info("Operation successful")
     else:
