@@ -101,15 +101,15 @@ def _main():
                 e.returncode
             )
         )
-        return fum.Error.ERR_OPERATION_FAILED
+        return fum.Error.ERR_OPERATION_FAILED.value
     except OSError:
         logger.exception("Operation failed with OSError")
-        return fum.Error.ERR_OPERATION_FAILED
+        return fum.Error.ERR_OPERATION_FAILED.value
     except Exception:
         logger.exception("Operation failed exception")
-        return fum.Error.ERR_OPERATION_FAILED
+        return fum.Error.ERR_OPERATION_FAILED.value
     if ret == fum.Error.SUCCESS:
         logger.info("Operation successful")
     else:
         logger.error("Operation failed: {}".format(ret))
-    return ret
+    return ret.value

@@ -85,15 +85,15 @@ def _main():
                 e.returncode
             )
         )
-        return aupm.Error.ERR_OPERATION_FAILED
+        return aupm.Error.ERR_OPERATION_FAILED.value
     except OSError:
         logger.exception("Operation failed with OSError")
-        return aupm.Error.ERR_OPERATION_FAILED
+        return aupm.Error.ERR_OPERATION_FAILED.value
     except Exception:
         logger.exception("Operation failed exception")
-        return aupm.Error.ERR_OPERATION_FAILED
+        return aupm.Error.ERR_OPERATION_FAILED.value
     if ret == aupm.Error.SUCCESS:
         logger.info("Operation successful")
     else:
         logger.error("Operation failed: {}".format(ret))
-    return ret
+    return ret.value
