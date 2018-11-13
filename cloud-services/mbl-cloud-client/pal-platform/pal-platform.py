@@ -389,7 +389,7 @@ def check_cmd_and_raise(cmd, **kwargs):
     logger.debug(" ".join(cmd))
 
     subprocess.check_call(cmd, **kwargs)
-
+    
 def check_cmd(cmd, **kwargs):
     """
     Wrapper function for subprocess.check_call

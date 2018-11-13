@@ -62,7 +62,11 @@ enum Type {
     UpdateWarningNoActionRequired       = 0x020b,
     UpdateErrorUserActionRequired       = 0x020c,
     UpdateFatalRebootRequired           = 0x020d,
-    UpdateErrorInvalidHash              = 0x020e
+    UpdateErrorInvalidHash              = 0x020e,
+
+    EnrollmentErrorBase                 = 0x0300,
+    EnrollmentErrorEnd                  = 0x0301
+
 };
 } // namespace Error
 

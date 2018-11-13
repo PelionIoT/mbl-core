@@ -29,10 +29,10 @@ void pal_plat_osApplicationReboot(void)
     if (fp != NULL)
     {
         fclose (fp);
-        PAL_LOG(INFO, "Not rebooting the system (application update)\r\n");
+        PAL_LOG_INFO("Not rebooting the system (application update)\r\n");
         return;
     }
     
-    PAL_LOG(INFO, "Rebooting the system\r\n");
+    PAL_LOG_INFO("Rebooting the system\r\n");
     pal_plat_osReboot();
 }

@@ -15,7 +15,7 @@ The sources for the build system macros is located in [common.cmake](./common.cm
 4. ADD_GLOBALDIR(dir_name) - This macro adds a directory "dir_name"  to the include path for all the components. The macro writes the directory inside a file with '-I', the file is added to the C and CXX flags in the toolchain-flags files. [See example GCC-flags file.](Toolchain/GCC/GCC-flags.cmake#L148-#L153)
 
 ## How to use the Build system.
-After deploying the relevant target using the [pal-platform util](./pal-platform-util.md) you will have a new directory named "__targetName" inside this directory there will be a CMakeFile.txt which is actually [mbedCloudClientCmake.txt](./mbedCloudClientCmake.txt). This file gathers all the libraries created by CREATE_LIBRARY and links them with the each of the CREATE_TEST_LIBRARY to create a binary file.
+After deploying the relevant target using the [pal-platform util](./pal-platform-util.md) you will have a new directory named "__targetName" inside this directory there will be a CMakeFile.txt which is actually [mbedCloudClientCmake.txt](./mbedCloudClientCmake.txt). This file gathers all the libraries created by CREATE_LIBRARY and links them with the each of the CREATE_TEST_LIBRARY to create a binary file. 
 Each CMakeLists.txt file needs to call ADDSUBDIRS macro to include his child directories.
 
 Please view  [mbed-client-pal](https://github.com/ARMmbed/mbed-client-pal) repository for example:
@@ -23,3 +23,4 @@ Please view  [mbed-client-pal](https://github.com/ARMmbed/mbed-client-pal) repos
  2. source [CMakeLists.txt](https://github.com/ARMmbed/mbed-client-pal/blob/master/Source/CMakeLists.txt) file
  3. Tests [CMakeLists.txt](https://github.com/ARMmbed/mbed-client-pal/blob/master/Test/CMakeLists.txt) file
 
+ 
