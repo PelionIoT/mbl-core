@@ -434,6 +434,7 @@ class AppLifecycleManager:
             return output, Error.ERR_OPERATION_FAILED
         return output, Error.SUCCESS
 
+
 class ContainerLogFile:
     """
     Class to encapsulate opening of container log files.
@@ -448,9 +449,7 @@ class ContainerLogFile:
     """
 
     def __init__(self, logger, container_id):
-        """
-        Create object to be used in "with" statement.
-        """
+        """Create object to be used in "with" statement."""
         self.logger = logger
         self.container_id = container_id
         self.log_path = os.path.join(
@@ -489,9 +488,7 @@ class ContainerLogFile:
             return self.log_file
 
     def __exit__(self, type, value, tb):
-        """
-        Close the container log file.
-        """
+        """Close the container log file."""
         if self.log_file:
             self.log_file.close()
         return False
