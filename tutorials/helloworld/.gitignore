@@ -1,0 +1,3 @@
+# Directories containing build artefacts
+/release/
+/debug/
