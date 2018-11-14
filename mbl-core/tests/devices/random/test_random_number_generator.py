@@ -1,15 +1,6 @@
-"""Copyright (c) 2018 ARM Limited and Contributors. All rights reserved.
-
-SPDX-License-Identifier: Apache-2.0
-"""
-
-
-import sys
-import subprocess
-import os
-import gzip
-import tempfile
-
+# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
 """The aim of this file is to test the randomness of the OS random generator.
 
@@ -17,6 +8,12 @@ This is done by reading the special file /dev/random which serves as
 pseudorandom number generator.
 
 """
+import sys
+import subprocess
+import os
+import gzip
+import tempfile
+
 RANDOMNESS_SOURCE = "/dev/random"
 
 # helper function(s)

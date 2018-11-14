@@ -9,9 +9,3 @@ delegating installation to separate handlers. A handler for installing
 applications should be included.
 
 
-## License
-
-Please see the [License][mbl-license] document for more information.
-
-
-[mbl-license]: LICENSE
