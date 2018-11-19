@@ -1,5 +1,0 @@
-sys
-subprocess
-os
-gzip
-tempfile
