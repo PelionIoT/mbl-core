@@ -17,8 +17,7 @@ MBL_APP_MANAGER = "mbl-app-manager"
 MBL_APP_LIFECYCLE_MANAGER = "mbl-app-lifecycle-manager"
 IPK_TEST_FILE = os.path.join(
     os.sep,
-    "mnt",
-    "cache",
+    "scratch",
     "app-lifecycle-manager-test-package_1.0_armv7vet2hf-neon.ipk",
 )
 CONTAINER_ID = "test_container_id_1"
