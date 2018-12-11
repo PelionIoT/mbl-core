@@ -22,8 +22,7 @@ setup(
     description="Mbed Linux OS Application Update Manager",
     long_description=read("README.md"),
     author="Arm Ltd.",
-    author_email="",
-    license="Apache-2.0",
+    license="BSD-3-Clause",
     packages=["mbl.app_update_manager"],
     zip_safe=False,
     entry_points={
