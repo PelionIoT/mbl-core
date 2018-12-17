@@ -31,6 +31,7 @@ class Error(Enum):
     ERR_GET_APP_ID_FAILED = 6
     ERR_CONTAINER_DOES_NOT_EXIST = 7
     ERR_INVALID_ARGS = 8
+    ERR_TAR_FAILURE = 9
 
 
 class AppUpdateManager:
@@ -232,34 +233,40 @@ def extract_ipks_from_tar(tar_path):
                 )
             )
         return (ipk_paths, Error.SUCCESS)
-    except TarError:
+    except tarfile.TarError:
         logging.exception(
             "Failed to extract .ipk files from tar archive {}".format(tar_path)
         )
+        return ([], Error.ERR_TAR_FAILURE)
+    except Exception:
+        logging.exception("Invalid tar archive {} content".format(tar_path))
         return ([], Error.ERR_TAR_FAILURE)
 
 
 def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
     """Search for ipks within a tar file."""
     for tar_info in tar:
+        logging.debug(
+            "Processing file {} in update payload tar file {}".format(
+                tar_info.name, tar_path
+            )
+        )
         if os.path.splitext(tar_info.name)[1] != ".ipk":
-            continue
+            raise Exception(
+                "Tar archive {} includes non-IPK file: {}".format(
+                    tar_path, tar_info.name
+                )
+            )
         if not tar_info.isfile():
-            logging.warning(
-                "Ignoring .ipk file {} from update payload tar "
-                "file {} - it is not a regular file".format(
-                    tar_info.name, tar_path
-                )
+            raise Exception(
+                "IPK file {} from update payload tar file {} - is not"
+                "a regular file".format(tar_info.name, tar_path)
             )
-            continue
         if os.path.dirname(tar_info.name):
-            logging.warning(
-                "Ignoring .ipk file {} from update payload tar "
-                "file {} - it has directory components".format(
-                    tar_info.name, tar_path
-                )
+            raise Exception(
+                "IPK file {} from update payload tar file {} has directory"
+                " components".format(tar_info.name, tar_path)
             )
-            continue
         ipk_members.append(tar_info)
         ipk_paths.append(os.path.join(SRC_IPK_PATH, tar_info.name))
         logging.info(

@@ -112,14 +112,36 @@ shodHeader="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# Check if we need to do firmware update or application update
+# Check that udpate payload ($FIRMWARE) is a tar file
+if ! TAR_FILE=$(echo "${FIRMWARE}" | grep .tar$); then
+    echo "Firmware update failed, \"${FIRMWARE}\" is not a tar file"
+    exit 48
+fi
+
+# Check that udpate payload ($FIRMWARE) is not empty
 tar_list_content_cmd="tar -tf"
-if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
+if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}" | sed -e 's/\s\+/\n/g'); then
     echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
     exit 46
 fi
 
-if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+# Check if we need to do firmware update or application update
+
+# Make sure that we have only IPK file(s) in a root directory of the tar
+if APP_FILES=$(echo "${FIRMWARE_FILES}" | grep .ipk$); then
+
+    # Check that udpate payload contains only IPK files
+    if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | grep -v .ipk$); then
+        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, there are non IPK files in udpate payload!"
+        exit 49
+    fi
+
+    # Check that tar doesn't contain directories
+    if DIRS=$(echo "${FIRMWARE_FILES}" | grep /); then
+        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, IPK file(s) should be located in a root directory!"
+        exit 50
+    fi
+    
     # ------------------------------------------------------------------------------
     # Install app updates from payload file
     # ------------------------------------------------------------------------------
@@ -142,62 +164,76 @@ if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     fi
     save_header_or_die "$HEADER"
     exit 0
-fi
 
-# ------------------------------------------------------------------------------
-# Install rootfs update from payload file
-# ------------------------------------------------------------------------------
-# Detect root partitions
-root1=$(get_device_for_label rootfs1)
-exit_on_error "$?"
+elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
 
-root2=$(get_device_for_label rootfs2)
-exit_on_error "$?"
-
-FLAGS=$(get_device_for_label bootflags)
-exit_on_error "$?"
-
-# Find the partition that is currently mounted to /
-activePartition=$(get_active_root_device)
-
-if [ "$activePartition" = "$root1" ]; then
-    activePartitionLabel=rootfs1
-    nextPartition="$root2"
-    nextPartitionLabel=rootfs2
-elif [ "$activePartition" = "$root2" ]; then
-    activePartitionLabel=rootfs2
-    nextPartition="$root1"
-    nextPartitionLabel="rootfs1"
-else
-    echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
-    exit 21
-fi
-
-create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
-ensure_not_mounted_or_die "$nextPartition"
-
-ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
-
-save_header_or_die "$HEADER"
-sync
-
-if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
-    if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
-        echo "Failed to rename boot flag file";
-        exit 25
+    # Check that udpate payload contains only rootfs.tar.xz
+    if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | grep -v '^rootfs\.tar\.xz$'); then
+        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, udpate payload contains \"${OTHER_FILES}\" "
+        exit 51
     fi
-else
-    if ! touch "/mnt/flags/${nextPartitionLabel}"; then
-        echo "Failed to create new boot flag file";
-        exit 26
+    
+    # ------------------------------------------------------------------------------
+    # Install rootfs update from payload file
+    # ------------------------------------------------------------------------------
+    # Detect root partitions
+    root1=$(get_device_for_label rootfs1)
+    exit_on_error "$?"
+
+    root2=$(get_device_for_label rootfs2)
+    exit_on_error "$?"
+
+    FLAGS=$(get_device_for_label bootflags)
+    exit_on_error "$?"
+
+    # Find the partition that is currently mounted to /
+    activePartition=$(get_active_root_device)
+
+    if [ "$activePartition" = "$root1" ]; then
+        activePartitionLabel=rootfs1
+        nextPartition="$root2"
+        nextPartitionLabel=rootfs2
+    elif [ "$activePartition" = "$root2" ]; then
+        activePartitionLabel=rootfs2
+        nextPartition="$root1"
+        nextPartitionLabel="rootfs1"
+    else
+        echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
+        exit 21
     fi
-fi
-sync
+    
+    create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
+    ensure_not_mounted_or_die "$nextPartition"
 
-# Remove do_not_reboot_flag - we need a reboot for rootfs updates
-if ! rm -f /tmp/do_not_reboot; then
-    echo "Failed to remove /tmp/do_not_reboot flag file";
-    exit 27
-fi
+    ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
 
-exit 0
+    save_header_or_die "$HEADER"
+    sync
+
+    if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
+        if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
+            echo "Failed to rename boot flag file";
+            exit 25
+        fi
+    else
+        if ! touch "/mnt/flags/${nextPartitionLabel}"; then
+            echo "Failed to create new boot flag file";
+            exit 26
+        fi
+    fi
+    sync
+
+    # Remove do_not_reboot_flag - we need a reboot for rootfs updates
+    if ! rm -f /tmp/do_not_reboot; then
+        echo "Failed to remove /tmp/do_not_reboot flag file";
+        exit 27
+    fi
+
+    exit 0
+
+else
+
+   echo "Failed to update firmware - invalid update content";
+   exit 28
+   
+fi
