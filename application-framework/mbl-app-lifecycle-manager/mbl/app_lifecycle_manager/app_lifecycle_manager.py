@@ -157,7 +157,7 @@ class AppLifecycleManager:
         """
         Return container state.
 
-        :param container_id:
+        :param container_id: conteiner ID
         :return: container state enum
                  ContainerState.CREATED
                  ContainerState.RUNNING
@@ -182,7 +182,12 @@ class AppLifecycleManager:
         # If container does not exist - runc will return string:
         # "container <container ID> does not exist"
 
-        output, ret = self._run_command(["runc", "state", container_id])
+        # Errors of get state command does not necessary means it is an actual
+        # error. If for example container does not exist because it was never
+        # started - its not an error.
+        # It is up to the caller of this function to decide if logging
+        # is needed.
+        output, ret = self._run_command(["runc", "state", container_id], False)
         if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
                 return ContainerState.DOES_NOT_EXIST
@@ -392,7 +397,7 @@ class AppLifecycleManager:
         """
         self.logger.info("Delete container: {}".format(container_id))
         command = ["runc", "delete", container_id]
-        _, result = self._run_command(command)
+        output, result = self._run_command(command)
         if result != Error.SUCCESS:
             if "does not exist" in output:
                 result = Error.ERR_CONTAINER_DOES_NOT_EXIST
@@ -406,12 +411,15 @@ class AppLifecycleManager:
     def _run_command(
         self,
         command,
+        log_error=True,
         stdin=None,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
     ):
         """
         Run a command using subprocess.run(), with extra logging.
+        In case log_error parameter is True - errors will be logged, if False
+        error will not be logged.
 
         Returns: 2-tuple (output, error) where output is the decoded (as UTF-8)
         stdout of the command if it is captured, and err is one of:
@@ -426,11 +434,12 @@ class AppLifecycleManager:
         if result.stdout:
             output = result.stdout.decode("utf-8")
         if result.returncode != 0:
-            self.logger.warning(
-                "Command {} failed with status {} and output [{}]".format(
-                    command, result.returncode, output
+            if log_error:
+                self.logger.warning(
+                    "Command {} failed with status {} and output [{}]".format(
+                        command, result.returncode, output
+                    )
                 )
-            )
             return output, Error.ERR_OPERATION_FAILED
         return output, Error.SUCCESS
 
