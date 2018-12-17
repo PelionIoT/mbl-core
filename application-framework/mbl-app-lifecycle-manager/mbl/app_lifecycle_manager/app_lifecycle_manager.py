@@ -418,6 +418,7 @@ class AppLifecycleManager:
     ):
         """
         Run a command using subprocess.run(), with extra logging.
+
         In case log_error parameter is True - errors will be logged, if False
         error will not be logged.
 
