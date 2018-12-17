@@ -113,7 +113,7 @@ shodHeader="$1"
 touch /tmp/do_not_reboot
 
 # Check that udpate payload ($FIRMWARE) is a tar file
-if ! TAR_FILE=$(echo "${FIRMWARE}" | grep .tar$); then
+if ! echo "${FIRMWARE}" | grep .tar$; then
     echo "Firmware update failed, \"${FIRMWARE}\" is not a tar file"
     exit 48
 fi
@@ -128,16 +128,16 @@ fi
 # Check if we need to do firmware update or application update
 
 # Make sure that we have only IPK file(s) in a root directory of the tar
-if APP_FILES=$(echo "${FIRMWARE_FILES}" | grep .ipk$); then
+if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     # Check that udpate payload contains only IPK files
     if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | grep -v .ipk$); then
-        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, there are non IPK files in udpate payload!"
+        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, there are non IPK files \"${OTHER_FILES}\" in udpate payload!"
         exit 49
     fi
 
     # Check that tar doesn't contain directories
-    if DIRS=$(echo "${FIRMWARE_FILES}" | grep /); then
+    if echo "${FIRMWARE_FILES}" | grep /; then
         echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, IPK file(s) should be located in a root directory!"
         exit 50
     fi
@@ -165,7 +165,7 @@ if APP_FILES=$(echo "${FIRMWARE_FILES}" | grep .ipk$); then
     save_header_or_die "$HEADER"
     exit 0
 
-elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+elif echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'; then
 
     # Check that udpate payload contains only rootfs.tar.xz
     if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | grep -v '^rootfs\.tar\.xz$'); then
