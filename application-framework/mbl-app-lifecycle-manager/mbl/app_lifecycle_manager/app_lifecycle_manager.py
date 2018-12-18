@@ -188,11 +188,17 @@ class AppLifecycleManager:
         # It is up to the caller of this function to decide if logging
         # is needed.
         output, ret = self._run_command(["runc", "state", container_id], False)
+
+        # runc returns error code = 1 for all errors so we need to check the
+        # output in order to figure out what the error was (e.g. in case
+        # container does not exist).
         if ret == Error.ERR_OPERATION_FAILED:
             if "does not exist" in output:
                 return ContainerState.DOES_NOT_EXIST
             return ContainerState.UNKNOWN
         try:
+            # In case the container exists we will get json from runc which
+            # contains a status field.
             state_data = json.loads(output)
         except (ValueError, TypeError) as error:
             self.logger.exception(
@@ -421,6 +427,8 @@ class AppLifecycleManager:
 
         In case log_error parameter is True - errors will be logged, if False
         error will not be logged.
+        runc returns error code = 1 for all errors so we usually need to check
+        the error output message to figure out what was the error.
 
         Returns: 2-tuple (output, error) where output is the decoded (as UTF-8)
         stdout of the command if it is captured, and err is one of:
