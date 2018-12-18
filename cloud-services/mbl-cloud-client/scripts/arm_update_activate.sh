@@ -112,7 +112,8 @@ shodHeader="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# Check that udpate payload ($FIRMWARE) is not empty
+# Check that udpate payload ($FIRMWARE) is not empty:
+# list files in tar and replace spaces with '\n', so each line of ${FIRMWARE_FILES} will contain a single file.
 tar_list_content_cmd="tar -tf"
 if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}" | sed -e 's/\s\+/\n/g'); then
     echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
@@ -120,8 +121,6 @@ if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}" | sed -e 's/\s\+/\n/
 fi
 
 # Check if we need to do firmware update or application update
-
-# Make sure that we have only IPK file(s) in a root directory of the tar
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     # Check that udpate payload contains only IPK files
@@ -130,9 +129,9 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
         exit 49
     fi
 
-    # Check that tar doesn't contain directories
-    if echo "${FIRMWARE_FILES}" | grep /; then
-        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, IPK file(s) should be located in a root directory!"
+    # Check that IPK files reside in a root of tar arcive
+    if echo "${FIRMWARE_FILES}" | grep '/'; then
+        echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed, IPK file(s) should be located in a root directory of tar file!"
         exit 50
     fi
 
