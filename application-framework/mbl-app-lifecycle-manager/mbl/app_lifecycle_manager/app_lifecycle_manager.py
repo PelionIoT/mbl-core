@@ -157,7 +157,7 @@ class AppLifecycleManager:
         """
         Return container state.
 
-        :param container_id: conteiner ID
+        :param container_id: container ID
         :return: container state enum
                  ContainerState.CREATED
                  ContainerState.RUNNING
@@ -436,7 +436,7 @@ class AppLifecycleManager:
             output = result.stdout.decode("utf-8")
         if result.returncode != 0:
             if log_error:
-                self.logger.warning(
+                self.logger.error(
                     "Command {} failed with status {} and output [{}]".format(
                         command, result.returncode, output
                     )
