@@ -112,12 +112,6 @@ shodHeader="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# Check that udpate payload ($FIRMWARE) is a tar file
-if ! echo "${FIRMWARE}" | grep .tar$; then
-    echo "Firmware update failed, \"${FIRMWARE}\" is not a tar file"
-    exit 48
-fi
-
 # Check that udpate payload ($FIRMWARE) is not empty
 tar_list_content_cmd="tar -tf"
 if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}" | sed -e 's/\s\+/\n/g'); then
