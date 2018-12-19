@@ -103,6 +103,12 @@ shodHeader="$1"
 # $1: IPK full file name
 check_ipk_filename_validity() {
 ipk_filename="$1"
+    # Check IPK extension
+    ext="${ipk_filename##*.}"
+    if [ "$ext" != "ipk" ]; then
+        printf "Check IPK tar filename validity failed: there is a non IPK file %s in udpate payload!\n" "${ipk_filename}"
+        exit 50
+    fi
     ipk_directory_name=$(dirname "${ipk_filename}")
     if ! real_ipk_directory_name=$(realpath "${ipk_directory_name}" 2>/dev/null); then
         echo "realpath failed: tar includes file in not existing directory"
@@ -114,12 +120,14 @@ ipk_filename="$1"
     fi
 }
 
+tar_list_content_cmd="tar -tf"
+
 # Check IPK tar validity
 #
 # $1: Tar file name
 check_ipk_tar_validity() {
 tar_filename="$1"
-    tar_file_list=$(tar -tf "$tar_filename")
+    tar_file_list=$(${tar_list_content_cmd} "$tar_filename")
     for file_in_tar in ${tar_file_list}; do
         check_ipk_filename_validity "${file_in_tar}"
     done
@@ -139,22 +147,11 @@ tar_filename="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# Check that udpate payload ($FIRMWARE) is not empty:
-# list files in tar and replace spaces with '\n', so each line of ${FIRMWARE_FILES} will contain a single file.
-tar_list_content_cmd="tar -tf"
-if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}" | sed -e 's/\s\+/\n/g'); then
-    printf "%s %s failed!\n" "${tar_list_content_cmd}" "${FIRMWARE}"
-    exit 46
-fi
+# list files in udpate payload ($FIRMWARE) tar file
+FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
-
-    # Check IPK extension
-    if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | sed -e 's/\s\+/\n/g' | grep -v .ipk$); then
-        printf "Check IPK tar validity failed: there are non IPK files %s in %s udpate payload!\n" "${OTHER_FILES}" "${FIRMWARE}"
-        exit 50
-    fi
 
     # Check IPK tar validity: all files inside tar shoulf reside in a root of tar arcive
     check_ipk_tar_validity "${FIRMWARE}"
@@ -183,12 +180,6 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     exit 0
 
 elif echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'; then
-
-    # Check that udpate payload contains only rootfs.tar.xz
-    if OTHER_FILES=$(echo "${FIRMWARE_FILES}" | grep -v '^rootfs\.tar\.xz$'); then
-        printf "%s %s failed, udpate payload contains %s\n" "${tar_list_content_cmd}" "${FIRMWARE}" "${OTHER_FILES}"
-        exit 49
-    fi
 
     # ------------------------------------------------------------------------------
     # Install rootfs update from payload file
