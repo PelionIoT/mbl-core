@@ -98,6 +98,41 @@ shodHeader="$1"
     fi
 }
 
+# Check IPK file name validity
+#
+# $1: IPK full file name
+check_ipk_filename_validity() {
+ipk_filename="$1"
+    # Check IPK extension
+    file_extension="${ipk_filename##*.}"
+    if [ "$file_extension" != "ipk" ]; then
+        printf "Check IPK tar filename validity failed: there is a non IPK file %s in udpate payload!\n" "${ipk_filename}"
+        exit 50
+    fi
+    ipk_directory_name=$(dirname "${ipk_filename}")
+    if ! real_ipk_directory_name=$(realpath "${ipk_directory_name}" 2>/dev/null); then
+        echo "realpath failed: tar includes file in not existing directory"
+        exit 52
+    fi
+    if [ "$real_ipk_directory_name" != "$PWD" ]; then
+        printf "IPK directory %s different from the current directory %s. This can happen only if IPK doesn't reside in a root directory of tar" "${real_ipk_directory_name}" "${PWD}"
+        exit 53
+    fi
+}
+
+tar_list_content_cmd="tar -tf"
+
+# Check IPK tar validity
+#
+# $1: Tar file name
+check_ipk_tar_validity() {
+tar_filename="$1"
+    tar_file_list=$(${tar_list_content_cmd} "$tar_filename")
+    for file_in_tar in ${tar_file_list}; do
+        check_ipk_filename_validity "${file_in_tar}"
+    done
+}
+
 
 # ------------------------------------------------------------------------------
 # Main code starts here
@@ -112,14 +147,15 @@ shodHeader="$1"
 # deleted if a reboot is required..
 touch /tmp/do_not_reboot
 
-# Check if we need to do firmware update or application update
-tar_list_content_cmd="tar -tf"
-if ! FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}"); then
-    echo "${tar_list_content_cmd} \"${FIRMWARE}\" failed!"
-    exit 46
-fi
+# list files in udpate payload ($FIRMWARE) tar file
+FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 
-if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
+# Check if we need to do firmware update or application update
+if echo "${FIRMWARE_FILES}" | grep .ipk$; then
+
+    # Check IPK tar validity: all files inside tar shoulf reside in a root of tar arcive
+    check_ipk_tar_validity "${FIRMWARE}"
+
     # ------------------------------------------------------------------------------
     # Install app updates from payload file
     # ------------------------------------------------------------------------------
@@ -142,62 +178,70 @@ if ! ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     fi
     save_header_or_die "$HEADER"
     exit 0
-fi
 
-# ------------------------------------------------------------------------------
-# Install rootfs update from payload file
-# ------------------------------------------------------------------------------
-# Detect root partitions
-root1=$(get_device_for_label rootfs1)
-exit_on_error "$?"
+elif echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'; then
 
-root2=$(get_device_for_label rootfs2)
-exit_on_error "$?"
+    # ------------------------------------------------------------------------------
+    # Install rootfs update from payload file
+    # ------------------------------------------------------------------------------
+    # Detect root partitions
+    root1=$(get_device_for_label rootfs1)
+    exit_on_error "$?"
 
-FLAGS=$(get_device_for_label bootflags)
-exit_on_error "$?"
+    root2=$(get_device_for_label rootfs2)
+    exit_on_error "$?"
 
-# Find the partition that is currently mounted to /
-activePartition=$(get_active_root_device)
+    FLAGS=$(get_device_for_label bootflags)
+    exit_on_error "$?"
 
-if [ "$activePartition" = "$root1" ]; then
-    activePartitionLabel=rootfs1
-    nextPartition="$root2"
-    nextPartitionLabel=rootfs2
-elif [ "$activePartition" = "$root2" ]; then
-    activePartitionLabel=rootfs2
-    nextPartition="$root1"
-    nextPartitionLabel="rootfs1"
-else
-    echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
-    exit 21
-fi
+    # Find the partition that is currently mounted to /
+    activePartition=$(get_active_root_device)
 
-create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
-ensure_not_mounted_or_die "$nextPartition"
-
-ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
-
-save_header_or_die "$HEADER"
-sync
-
-if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
-    if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
-        echo "Failed to rename boot flag file";
-        exit 25
+    if [ "$activePartition" = "$root1" ]; then
+        activePartitionLabel=rootfs1
+        nextPartition="$root2"
+        nextPartitionLabel=rootfs2
+    elif [ "$activePartition" = "$root2" ]; then
+        activePartitionLabel=rootfs2
+        nextPartition="$root1"
+        nextPartitionLabel="rootfs1"
+    else
+        echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
+        exit 21
     fi
-else
-    if ! touch "/mnt/flags/${nextPartitionLabel}"; then
-        echo "Failed to create new boot flag file";
-        exit 26
+
+    create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
+    ensure_not_mounted_or_die "$nextPartition"
+
+    ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
+
+    save_header_or_die "$HEADER"
+    sync
+
+    if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
+        if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
+            echo "Failed to rename boot flag file";
+            exit 25
+        fi
+    else
+        if ! touch "/mnt/flags/${nextPartitionLabel}"; then
+            echo "Failed to create new boot flag file";
+            exit 26
+        fi
     fi
-fi
-sync
+    sync
 
-# Remove do_not_reboot_flag - we need a reboot for rootfs updates
-if ! rm -f /tmp/do_not_reboot; then
-    echo "Failed to remove /tmp/do_not_reboot flag file";
-    exit 27
-fi
+    # Remove do_not_reboot_flag - we need a reboot for rootfs updates
+    if ! rm -f /tmp/do_not_reboot; then
+        echo "Failed to remove /tmp/do_not_reboot flag file";
+        exit 27
+    fi
 
-exit 0
+    exit 0
+
+else
+
+   echo "Failed to update firmware - invalid update content";
+   exit 28
+
+fi
