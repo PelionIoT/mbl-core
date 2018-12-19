@@ -104,8 +104,8 @@ shodHeader="$1"
 check_ipk_filename_validity() {
 ipk_filename="$1"
     # Check IPK extension
-    ext="${ipk_filename##*.}"
-    if [ "$ext" != "ipk" ]; then
+    file_extension="${ipk_filename##*.}"
+    if [ "$file_extension" != "ipk" ]; then
         printf "Check IPK tar filename validity failed: there is a non IPK file %s in udpate payload!\n" "${ipk_filename}"
         exit 50
     fi
