@@ -1,7 +1,7 @@
 # pal-platform
 Repository to hold deployment information for PAL-supported OS's, toolchains, middleware and devices
 
-Current version is 2.0.1, copied from from [pal platfrom 2.0.1 release][pal-platfrom-2-0-1-release].
+Current version is 2.1.1, copied from from [pal platfrom 2.1.1 release][pal-platfrom-2-1-1-release].
 
 ## Table of Contents
 
@@ -10,4 +10,4 @@ Current version is 2.0.1, copied from from [pal platfrom 2.0.1 release][pal-plat
 - [adding a new port to build system](pal-platform-newPort.md)
 
 
-[pal-platfrom-2-0-1-release]:https://github.com/ARMmbed/pal-platform/releases/tag/2.0.1
+[pal-platfrom-2-1-1-release]:https://github.com/ARMmbed/pal-platform/releases/tag/2.1.1
