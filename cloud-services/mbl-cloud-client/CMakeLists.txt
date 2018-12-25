@@ -22,7 +22,7 @@ ADDSUBDIRS()
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
 # platforms we need to support and use those instead
-#add_library(mbedPalInsecureROT "${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client/mbed-client-pal/Examples/PlatformBSP/pal_insecure_ROT.c")
+add_library(mbedPalInsecureROT "${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client/mbed-client-pal/Examples/PlatformBSP/pal_insecure_ROT.c")
 
 # Add these options after all non-mbl-cloud-client bits so they only apply to
 # mbl-cloud-client code
