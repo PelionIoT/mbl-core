@@ -251,7 +251,7 @@ def search_for_ipks_in_tar(tar_path, tar, ipk_paths, ipk_members):
                 tar_info.name, tar_path
             )
         )
-        if tar_info.name.lower().endswith(".ipk"):
+        if not tar_info.name.lower().endswith(".ipk"):
             raise Exception(
                 "Tar archive {} includes non-IPK file: {}".format(
                     tar_path, tar_info.name
