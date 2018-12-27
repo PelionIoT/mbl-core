@@ -179,7 +179,7 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     save_header_or_die "$HEADER"
     exit 0
 
-elif echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'; then
+elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
 
     # ------------------------------------------------------------------------------
     # Install rootfs update from payload file
@@ -241,7 +241,7 @@ elif echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'; then
 
 else
 
-   echo "Failed to update firmware - invalid update content";
+   echo "Failed to update firmware - rootfs.tar.xz is missing from archive file.";
    exit 28
 
 fi
