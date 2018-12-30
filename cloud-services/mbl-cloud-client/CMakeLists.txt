@@ -22,7 +22,8 @@ ADDSUBDIRS()
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
 # platforms we need to support and use those instead
-add_library(mbedPalInsecureROT "${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client/mbed-client-pal/Examples/PlatformBSP/pal_insecure_ROT.c")
+# Currently the compilation flag PAL_USE_HW_ROT is 0, which means that mbedPalInsecureROT library is not supported on HW.
+# If this will be changed a proper implementation will need to be used.
 
 # Add these options after all non-mbl-cloud-client bits so they only apply to
 # mbl-cloud-client code
@@ -80,6 +81,5 @@ target_link_libraries(mbl-cloud-client mbedTrace)
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 
-target_link_libraries(mbl-cloud-client mbedPalInsecureROT)
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)

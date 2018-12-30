@@ -10,7 +10,7 @@ For more information about Mbed Linux OS, please see [meta-mbl][meta-mbl].
 
 ## Mbed cloud client version
 
-Mbed Cloud client current version is [1.4.0][cc-1-4-0].
+Mbed Cloud client current version is [2.1.1][cc-2-1-1].
 
 ## Prerequisites
 
@@ -85,7 +85,7 @@ Please see the [Contributing][mbl-contributing] document for more information.
 
 
 
-[cc-1-4-0]: https://github.com/ARMmbed/mbed-cloud-client/releases/tag/1.4.0
+[cc-2-1-1]: https://github.com/ARMmbed/mbed-cloud-client/releases/tag/2.1.1
 [meta-mbl]: https://github.com/ARMmbed/meta-mbl/blob/master/README.md
 [mbl-license]: LICENSE
 [mbl-contributing]: CONTRIBUTING.md
