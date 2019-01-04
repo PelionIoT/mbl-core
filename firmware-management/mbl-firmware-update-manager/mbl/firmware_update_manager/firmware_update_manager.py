@@ -9,14 +9,33 @@ import subprocess
 import os
 import logging
 from enum import Enum
+import time
+
+import mbl.firmware_update_header as mfuh
 
 __version__ = "1.0"
 
 ARM_UPDATE_ACTIVATE_SCRIPT = os.path.join(
     os.sep, "opt", "arm", "arm_update_activate.sh"
 )
-DUMMY_HEADER_FILE = os.path.join(os.sep, "scratch", "dummy_header_file")
+HEADER_FILE = os.path.join(os.sep, "scratch", "firmware_update_header_file")
 
+def _create_header_data(payload_path):
+    """
+    Create update HEADER file data.
+
+    This is a binary data file that arm_update_activate.sh expects to
+    receive that contains information about the update. The only fields
+    that make sense in this context are the firmware version and firmware hash
+    fields.
+
+    The firmware version is really a UNIX timestamp.
+    """
+    header = mfuh.FirmwareUpdateHeader()
+    header.firmware_version = int(time.time())
+    with open(payload_path, 'rb') as payload:
+        header.firmware_hash = mfuh.calculate_firmware_hash(payload)
+    return header.pack()
 
 class Error(Enum):
     """FirmwareUpdateManager error codes."""
@@ -46,22 +65,23 @@ class FirmwareUpdateManager(object):
                 Error.SUCCESS
                 Error.ERR_OPERATION_FAILED
         """
-        # Create an empty file.
-        # Open a file with writing mode, and then just close it.
-        with open(DUMMY_HEADER_FILE, "w"):
-            pass
+        # Create a "HEADER" file for the update - this is a blob that contains
+        # information about the update
+        with open(HEADER_FILE, "wb") as header_file:
+            header_file.write(_create_header_data(firmware_update_file_path))
+
         command = [
             ARM_UPDATE_ACTIVATE_SCRIPT,
             "--firmware",
             firmware_update_file_path,
             "--header",
-            DUMMY_HEADER_FILE,
+            HEADER_FILE,
         ]
         self.logger.debug("Executing command: {}".format(command))
         result = subprocess.run(
             command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
         )
-        os.remove(DUMMY_HEADER_FILE)
+        os.remove(HEADER_FILE)
         output = ""
         if result.stdout:
             output = result.stdout.decode("utf-8")
@@ -76,3 +96,4 @@ class FirmwareUpdateManager(object):
             self.logger.info("Operation successful, rebooting device...")
             os.system("reboot")
         return Error.SUCCESS
+
