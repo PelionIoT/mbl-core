@@ -1,0 +1,84 @@
+{
+  "ports": [
+    {
+      "protocol": "tcp",
+      "port": "22"
+    },
+    {
+      "protocol": "tcp",
+      "port": "111"
+    },
+    {
+      "protocol": "tcp",
+      "port": "45940"
+    },
+    {
+      "protocol": "tcp6",
+      "port": "22"
+    },
+    {
+      "protocol": "tcp6",
+      "port": "48198"
+    },
+    {
+      "protocol": "tcp6",
+      "port": "111"
+    },
+    {
+      "protocol": "udp",
+      "port": "631"
+    },
+    {
+      "protocol": "udp",
+      "port": "980"
+    },
+    {
+      "protocol": "udp",
+      "port": "52062"
+    },
+    {
+      "protocol": "udp",
+      "port": "5353"
+    },
+    {
+      "protocol": "udp",
+      "port": "57910"
+    },
+    {
+      "protocol": "udp",
+      "port": "68"
+    },
+    {
+      "protocol": "udp",
+      "port": "111"
+    },
+    {
+      "protocol": "udp",
+      "port": "123"
+    },
+    {
+      "protocol": "udp6",
+      "port": "980"
+    },
+    {
+      "protocol": "udp6",
+      "port": "35145"
+    },
+    {
+      "protocol": "udp6",
+      "port": "5353"
+    },
+    {
+      "protocol": "udp6",
+      "port": "58565"
+    },
+    {
+      "protocol": "udp6",
+      "port": "111"
+    },
+    {
+      "protocol": "udp6",
+      "port": "123"
+    }
+  ]
+}
