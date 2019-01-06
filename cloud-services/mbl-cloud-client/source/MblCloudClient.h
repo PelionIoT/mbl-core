@@ -22,6 +22,7 @@
 
 #include "MblError.h"
 #include "MblMutex.h"
+#include "MblCloudConnectResourceBroker.h"
 
 #include <stdint.h>
 
@@ -67,6 +68,7 @@ private:
 
     MbedCloudClient* cloud_client_;
     State state_;
+    MblCloudConnectResourceBroker cloud_connect_resource_broker;
 
     static MblCloudClient* s_instance;
     static MblMutex s_mutex;

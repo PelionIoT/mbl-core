@@ -41,6 +41,7 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
@@ -63,6 +64,7 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
 
 
