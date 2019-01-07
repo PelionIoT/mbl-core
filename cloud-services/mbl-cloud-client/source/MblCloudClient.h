@@ -68,7 +68,9 @@ private:
 
     MbedCloudClient* cloud_client_;
     State state_;
-    MblCloudConnectResourceBroker cloud_connect_resource_broker;
+
+    // Mbl Cloud Connect Resource Broker
+    MblCloudConnectResourceBroker cloud_connect_resource_broker_;
 
     static MblCloudClient* s_instance;
     static MblMutex s_mutex;
