@@ -21,7 +21,6 @@ public:
 
     MblCloudConnectIpcDBus();
     virtual ~MblCloudConnectIpcDBus();
-
 };
 
 } // namespace mbl
