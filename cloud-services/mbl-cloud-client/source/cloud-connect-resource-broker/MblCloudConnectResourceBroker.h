@@ -8,6 +8,7 @@
 #define MblCloudConnectResourceBroker_h_
 
 #include "mbed-cloud-client/MbedCloudClient.h"
+#include "MblCloudConnectIpcDBus.h"
 
 #include "../MblError.h"
 #include "../MblMutex.h"

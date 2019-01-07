@@ -116,7 +116,7 @@ extern "C" char* mbl_trace_prefix_handler(size_t)
     // the mbed-trace library requires a function that allocates its own buffer
     // and returns a pointer to it, this is best we can do without leaking
     // memory. Hopefully the mbed-trace-library's own synchronization is enough.
-    static char buffer[g_time_prefix_buffer_size];
+    thread_local static char buffer[g_time_prefix_buffer_size];
     return make_time_prefix(buffer, sizeof(buffer));
 }
 
