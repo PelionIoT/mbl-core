@@ -36,35 +36,34 @@ def get_argument_parser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description='Open ports checker',
+        description="Open ports checker",
     )
 
     parser.add_argument(
-        '-w',
-        '--white-list-file',
+        "-w",
+        "--white-list-file",
         metavar="FILE",
         action=GetValidFile,
         default=os.path.join(
-            os.path.dirname(__file__),
-            'ports_white_list.json'
+            os.path.dirname(__file__), "ports_white_list.json"
         ),
-        help='Specify ports white list, input is .json file path'
+        help="Specify ports white list, input is .json file path"
     )
 
     parser.add_argument(
-        '-m',
-        '--method',
-        default='netstat',
-        nargs='?',
-        choices=['netstat', 'psutil'],
-        help='Method that used to obtain list of '
-            'open ports (default: %(default)s)'
+        "-m",
+        "--method",
+        default="netstat",
+        nargs="?",
+        choices=["netstat", "psutil"],
+        help="Method that used to obtain list of "
+        "open ports (default: %(default)s)"
     )
     parser.add_argument(
-        '-v',
-        '--verbose',
-        help='Increase output verbosity',
-        action='store_true',
+        "-v",
+        "--verbose",
+        help="Increase output verbosity",
+        action="store_true",
     )
 
     return parser
@@ -77,18 +76,18 @@ def _main():
 
     logging.basicConfig(
         level=info_level,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logger = logging.getLogger('OpenPortsChecker')
-    logger.debug('Command line arguments:{}'.format(args))
+    logger = logging.getLogger("OpenPortsChecker")
+    logger.debug("Command line arguments:{}".format(args))
 
-    if args.method == 'netstat':
+    if args.method == "netstat":
         open_ports_checker = opc.OpenPortsCheckerNetstat(args.white_list_file)
     else:
         open_ports_checker = opc.OpenPortsCheckerPsutil(args.white_list_file)
     ret = open_ports_checker.run_check()
     if ret == opc.Status.SUCCESS:
-        logger.info('Operation successful')
+        logger.info("Operation successful")
     else:
-        logger.error('Operation failed: {}'.format(ret))
+        logger.error("Operation failed: {}".format(ret))
     return ret.value

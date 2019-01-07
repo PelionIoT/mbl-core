@@ -66,13 +66,10 @@ class Connection:
         """
 
         if self.executable is None:
-            output = '{},{}:{}'.format(self.protocol, self.ip, self.port)
+            output = "{},{}:{}".format(self.protocol, self.ip, self.port)
         else:
-            output = '{},{}:{} ({})'.format(
-                self.protocol,
-                self.ip,
-                self.port,
-                self.executable
+            output = "{},{}:{} ({})".format(
+                self.protocol, self.ip, self.port, self.executable
             )
         return output
 
@@ -106,12 +103,10 @@ class OpenPortsChecker:
 
         :param ports_white_list_filename: ports white list .json file name
         """
-        self.logger = logging.getLogger('OpenPortsChecker')
-        self.logger.info(
-            'Version {}'.format(__version__)
-        )
+        self.logger = logging.getLogger("OpenPortsChecker")
+        self.logger.info("Version {}".format(__version__))
         # Load connections white list JSON file
-        with open(ports_white_list_filename, 'r') as in_file:
+        with open(ports_white_list_filename, "r") as in_file:
             self.ports_white_list = json.load(in_file)
 
     def run_check(self):
@@ -124,7 +119,7 @@ class OpenPortsChecker:
         """
         active_connections = self._get_list_of_active_connections()
         self.logger.debug(
-            'Found {} active connections'.format(len(active_connections))
+            "Found {} active connections".format(len(active_connections))
         )
         return self.__check_connections_against_white_list(active_connections)
 
@@ -138,10 +133,10 @@ class OpenPortsChecker:
                  Status.ERROR_BLACK_LISTED_CONNECTION
         """
         check_result = Status.ERROR_BLACK_LISTED_CONNECTION
-        ports = self.ports_white_list['ports']
+        ports = self.ports_white_list["ports"]
         for port in ports:
-            protocol = port['protocol']
-            port = port['port']
+            protocol = port["protocol"]
+            port = port["port"]
             if connection.is_equal(protocol, port):
                 check_result = Status.SUCCESS
                 break
@@ -158,30 +153,33 @@ class OpenPortsChecker:
         :return: Status.SUCCESS
                  Status.ERROR_BLACK_LISTED_CONNECTION
         """
-        self.logger.debug('***Checking connections against white list***')
+        self.logger.debug("***Checking connections against white list***")
         blacklisted_connections = 0
         for connection in connections:
             self.logger.debug(
-                'Checking connection status: {}'.format(connection)
+                "Checking connection status: {}".format(connection)
             )
-            connection_status =\
-                self.__check_connection_against_white_list(connection)
+            connection_status = self.__check_connection_against_white_list(
+                connection
+            )
             self.logger.debug(
-                'Connection status: {}'.format(connection_status)
+                "Connection status: {}".format(connection_status)
             )
             if connection_status != Status.SUCCESS:
                 blacklisted_connections += 1
                 self.logger.info(
-                    'Connection {} is blacklisted'.format(connection)
+                    "Connection {} is blacklisted".format(connection)
                 )
         self.logger.info(
-            'Found {}/{} blacklisted connections'.format(
-                blacklisted_connections,
-                len(connections)
+            "Found {}/{} blacklisted connections".format(
+                blacklisted_connections, len(connections)
             )
         )
-        return Status.SUCCESS if blacklisted_connections == 0 \
+        return (
+            Status.SUCCESS
+            if blacklisted_connections == 0
             else Status.ERROR_BLACK_LISTED_CONNECTION
+        )
 
 
 class OpenPortsCheckerNetstat(OpenPortsChecker):
@@ -197,10 +195,8 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
         :param ports_white_list_filename: ports white list .json file name
         """
         OpenPortsChecker.__init__(self, ports_white_list_filename)
-        self.logger = logging.getLogger('OpenPortsChecker')
-        self.logger.info(
-            'Initializing OpenPortsCheckerNetstat'
-        )
+        self.logger = logging.getLogger("OpenPortsChecker")
+        self.logger.info("Initializing OpenPortsCheckerNetstat")
 
     def _get_list_of_active_connections(self):
         """
@@ -208,18 +204,18 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
 
         :return: List of active connections
         """
-        self.logger.debug('Get list of active connections')
+        self.logger.debug("Get list of active connections")
         active_connections = []
         # Get list of all active IPv4 and IPv6 connections
         # using netstat command
-        command = ['netstat', '-tunl']
+        command = ["netstat", "-tunl"]
         self.logger.debug(
             "Executing command: {}".format(" ".join(command))
         )
         raw_connections = subprocess.check_output(
             command
-        ).decode('utf-8')
-        self.logger.debug('Raw connections list:\n {}'.format(raw_connections))
+        ).decode("utf-8")
+        self.logger.debug("Raw connections list:\n {}".format(raw_connections))
 
         # Parse netstat raw command output
         all_connections = list(raw_connections.split("\n"))
@@ -230,18 +226,19 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
             if len(connection_data) == 0:
                 # Skip last empty line
                 continue
-            self.logger.debug('Found connection: {}'.format(connection_data))
+            self.logger.debug("Found connection: {}".format(connection_data))
             # Parse connection data
             protocol = connection_data[0]
-            ip, port = connection_data[3].rsplit(':', 1)
+            ip, port = connection_data[3].rsplit(":", 1)
             # str() convert string to unicode in python3
             if ipaddress.ip_address(str(ip)).is_loopback:
                 # Skip all loopback connections
                 continue
             my_connection = Connection(protocol, ip, port)
             self.logger.debug(
-                'Adding connection to the connections list: {}'
-                .format(my_connection)
+                "Adding connection to the connections list: {}".format(
+                    my_connection
+                )
             )
             active_connections.append(my_connection)
         return active_connections
@@ -261,10 +258,8 @@ class OpenPortsCheckerPsutil(OpenPortsChecker):
         :param ports_white_list_filename: ports white list .json file name
         """
         OpenPortsChecker.__init__(self, ports_white_list_filename)
-        self.logger = logging.getLogger('OpenPortsChecker')
-        self.logger.info(
-            'Initializing OpenPortsCheckerPsutil'
-        )
+        self.logger = logging.getLogger("OpenPortsChecker")
+        self.logger.info("Initializing OpenPortsCheckerPsutil")
 
     def _get_list_of_active_connections(self):
         """
@@ -273,20 +268,22 @@ class OpenPortsCheckerPsutil(OpenPortsChecker):
         :return: List of active connections
         """
         active_connections = []
-        all_connections = psutil.net_connections('inet')
+        all_connections = psutil.net_connections("inet")
         for connection in all_connections:
-            self.logger.debug('Found connection: {}'.format(connection))
-            if connection.type == socket.SOCK_STREAM and\
-                    connection.status == psutil.CONN_LISTEN:
+            self.logger.debug("Found connection: {}".format(connection))
+            if (
+                connection.type == socket.SOCK_STREAM
+                and connection.status == psutil.CONN_LISTEN
+            ):
                 # TCP listening connection
-                protocol = 'tcp'
+                protocol = "tcp"
             elif connection.type == socket.SOCK_DGRAM:
                 # UDP connection
-                protocol = 'udp'
+                protocol = "udp"
             else:
                 continue
             if connection.family == socket.AF_INET6:
-                protocol += '6'
+                protocol += "6"
             (ip, port) = connection.laddr
             # str() convert string to unicode in python3
             if ipaddress.ip_address(str(ip)).is_loopback:
@@ -296,14 +293,15 @@ class OpenPortsCheckerPsutil(OpenPortsChecker):
             executable = None
             if connection.pid is not None:
                 executable_cmdline = psutil.Process(connection.pid).cmdline()
-                executable = 'PID:{}, exe:{}'.format(
+                executable = "PID:{}, exe:{}".format(
                     connection.pid,
                     executable_cmdline
                 )
             my_connection = Connection(protocol, ip, port, executable)
             self.logger.debug(
-                'Adding connection to the connections list: {}'
-                .format(my_connection)
+                "Adding connection to the connections list: {}".format(
+                    my_connection
+                )
             )
             active_connections.append(my_connection)
         return active_connections

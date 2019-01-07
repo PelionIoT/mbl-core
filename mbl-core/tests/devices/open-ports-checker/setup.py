@@ -28,5 +28,5 @@ setup(
             "open_ports_checker = mbl.open_ports_checker.cli:_main"
         ]
     },
-    include_package_data=True
+    include_package_data=True,
 )
