@@ -31,7 +31,7 @@ try:
 except ImportError:
     pass
 
-__version__ = '1.0'
+__version__ = "1.0"
 
 
 class Status(Enum):
@@ -42,17 +42,18 @@ class Status(Enum):
 
 
 class Connection:
-    """Representation of a single connection"""
+    """Representation of a single connection."""
+
 
     def __init__(self, protocol, ip, port, executable=None):
         """
         Create and initialize connection object.
+
         :param protocol: protocol name
         :param ip: IP address string
         :param port: port value
         :param executable: name of executable process including PID
         """
-
         # str() convert string to unicode in python3
         self.protocol = str(protocol)
         self.ip = str(ip)
@@ -62,9 +63,9 @@ class Connection:
     def __str__(self):
         """
         Convert connection object to string.
+
         :return: string representation of the object
         """
-
         if self.executable is None:
             output = "{},{}:{}".format(self.protocol, self.ip, self.port)
         else:
@@ -82,7 +83,6 @@ class Connection:
         :return: True if both: protocol and port values are equal to the
             object data. Otherwise return False
         """
-
         # Convert to unicode before comparison in order to prevent mixing
         # between unicode and non-unicode strings
         return (self.protocol == str(protocol)) and (self.port == str(port))
@@ -188,6 +188,7 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
 
     Implementation using netstat command.
     """
+
     def __init__(self, ports_white_list_filename):
         """
         Create and initialize OpenPortsCheckerNetstat object.
@@ -209,12 +210,8 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
         # Get list of all active IPv4 and IPv6 connections
         # using netstat command
         command = ["netstat", "-tunl"]
-        self.logger.debug(
-            "Executing command: {}".format(" ".join(command))
-        )
-        raw_connections = subprocess.check_output(
-            command
-        ).decode("utf-8")
+        self.logger.debug("Executing command: {}".format(" ".join(command)))
+        raw_connections = subprocess.check_output(command).decode("utf-8")
         self.logger.debug("Raw connections list:\n {}".format(raw_connections))
 
         # Parse netstat raw command output
@@ -294,8 +291,7 @@ class OpenPortsCheckerPsutil(OpenPortsChecker):
             if connection.pid is not None:
                 executable_cmdline = psutil.Process(connection.pid).cmdline()
                 executable = "PID:{}, exe:{}".format(
-                    connection.pid,
-                    executable_cmdline
+                    connection.pid, executable_cmdline
                 )
             my_connection = Connection(protocol, ip, port, executable)
             self.logger.debug(

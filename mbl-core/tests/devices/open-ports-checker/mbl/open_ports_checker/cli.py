@@ -47,7 +47,7 @@ def get_argument_parser():
         default=os.path.join(
             os.path.dirname(__file__), "ports_white_list.json"
         ),
-        help="Specify ports white list, input is .json file path"
+        help="Specify ports white list, input is .json file path",
     )
 
     parser.add_argument(
@@ -57,7 +57,7 @@ def get_argument_parser():
         nargs="?",
         choices=["netstat", "psutil"],
         help="Method that used to obtain list of "
-        "open ports (default: %(default)s)"
+        "open ports (default: %(default)s)",
     )
     parser.add_argument(
         "-v",
