@@ -57,7 +57,8 @@ def get_argument_parser():
         default='netstat',
         nargs='?',
         choices=['netstat', 'psutil'],
-        help='Method that used to obtain list of open ports (default: %(default)s)'
+        help='Method that used to obtain list of '
+            'open ports (default: %(default)s)'
     )
     parser.add_argument(
         '-v',

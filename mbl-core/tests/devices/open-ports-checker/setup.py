@@ -13,6 +13,7 @@ def read(file_name):
     """Utility function to read the README file."""
     return open(os.path.join(os.path.dirname(__file__), file_name)).read()
 
+
 setup(
     name="open-ports-checker",
     version="1",

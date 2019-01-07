@@ -46,12 +46,13 @@ class Connection:
 
     def __init__(self, protocol, ip, port, executable=None):
         """
-        Create and initialize connection object
+        Create and initialize connection object.
         :param protocol: protocol name
         :param ip: IP address string
         :param port: port value
         :param executable: name of executable process including PID
         """
+
         # str() convert string to unicode in python3
         self.protocol = str(protocol)
         self.ip = str(ip)
@@ -60,9 +61,10 @@ class Connection:
 
     def __str__(self):
         """
-        Convert connection object to string
+        Convert connection object to string.
         :return: string representation of the object
         """
+
         if self.executable is None:
             output = '{},{}:{}'.format(self.protocol, self.ip, self.port)
         else:
@@ -76,12 +78,14 @@ class Connection:
 
     def is_equal(self, protocol, port):
         """
-        Compare if protocol and port values are equual to the object values
+        Compare if protocol and port values are equual to the object values.
+
         :param protocol: protocol name
         :param port: port value
         :return: True if both: protocol and port values are equal to the
             object data. Otherwise return False
         """
+
         # Convert to unicode before comparison in order to prevent mixing
         # between unicode and non-unicode strings
         return (self.protocol == str(protocol)) and (self.port == str(port))
@@ -90,6 +94,7 @@ class Connection:
 class OpenPortsChecker:
     """
     Checker for unwanted open ports.
+
     This is an abstract class, protected method
     _get_list_of_active_connections method should be implemented by
     derived class
@@ -98,6 +103,7 @@ class OpenPortsChecker:
     def __init__(self, ports_white_list_filename):
         """
         Create and initialize OpenPortsChecker object.
+
         :param ports_white_list_filename: ports white list .json file name
         """
         self.logger = logging.getLogger('OpenPortsChecker')
@@ -117,12 +123,15 @@ class OpenPortsChecker:
                  Status.ERROR_BLACK_LISTED_CONNECTION
         """
         active_connections = self._get_list_of_active_connections()
-        self.logger.debug('Found {} active connections'.format(len(active_connections)))
+        self.logger.debug(
+            'Found {} active connections'.format(len(active_connections))
+        )
         return self.__check_connections_against_white_list(active_connections)
 
     def __check_connection_against_white_list(self, connection):
         """
         Check if a single connection is white listed.
+
         :param connection: connection objects to be checked against
             white list
         :return: Status.SUCCESS
@@ -141,6 +150,7 @@ class OpenPortsChecker:
     def __check_connections_against_white_list(self, connections):
         """
         Check list of connections against white list.
+
         If all connections are listed into white list, the function
         returns Status.SUCCESS overwise an error code will be returned.
         :param connections: list of connections objects to be checked against
@@ -176,12 +186,14 @@ class OpenPortsChecker:
 
 class OpenPortsCheckerNetstat(OpenPortsChecker):
     """
-        Checker for unwanted open ports.
-        Implementation using netstat command.
+    Checker for unwanted open ports.
+
+    Implementation using netstat command.
     """
     def __init__(self, ports_white_list_filename):
         """
         Create and initialize OpenPortsCheckerNetstat object.
+
         :param ports_white_list_filename: ports white list .json file name
         """
         OpenPortsChecker.__init__(self, ports_white_list_filename)
@@ -237,13 +249,15 @@ class OpenPortsCheckerNetstat(OpenPortsChecker):
 
 class OpenPortsCheckerPsutil(OpenPortsChecker):
     """
-        Checker for unwanted open ports.
-        Implementation using psutil library.
+    Checker for unwanted open ports.
+
+    Implementation using psutil library.
     """
 
     def __init__(self, ports_white_list_filename):
         """
         Create and initialize OpenPortsCheckerNetstat object.
+
         :param ports_white_list_filename: ports white list .json file name
         """
         OpenPortsChecker.__init__(self, ports_white_list_filename)
@@ -253,6 +267,11 @@ class OpenPortsCheckerPsutil(OpenPortsChecker):
         )
 
     def _get_list_of_active_connections(self):
+        """
+        Get list of all active connections except loopback.
+
+        :return: List of active connections
+        """
         active_connections = []
         all_connections = psutil.net_connections('inet')
         for connection in all_connections:
