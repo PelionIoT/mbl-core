@@ -5,6 +5,7 @@
  */
 
 #include "MblCloudConnectIpcDBus.h"
+
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "CCRB"
