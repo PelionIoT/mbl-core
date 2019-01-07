@@ -44,7 +44,6 @@ class Status(Enum):
 class Connection:
     """Representation of a single connection."""
 
-
     def __init__(self, protocol, ip, port, executable=None):
         """
         Create and initialize connection object.
