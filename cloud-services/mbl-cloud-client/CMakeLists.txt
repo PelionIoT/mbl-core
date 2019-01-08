@@ -44,20 +44,9 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client/factory-configurator-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/fcc-output-info-handler/fcc-output-info-handler)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/key-config-manager/key-config-manager)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-libservice)
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
@@ -85,3 +74,4 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+
