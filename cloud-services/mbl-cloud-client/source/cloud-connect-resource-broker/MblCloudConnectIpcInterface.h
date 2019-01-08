@@ -37,10 +37,13 @@ public:
     // Terminate API skeleton, later on the return value should be changed from int to somehting else
     virtual int Terminate() = 0;
 
+protected:
+    
+    MblCloudConnectIpcInterface(){}
+
 private:
 
     // Prevent instantiating / copy of this class 
-    MblCloudConnectIpcInterface();
     MblCloudConnectIpcInterface(const MblCloudConnectIpcInterface& other);
     MblCloudConnectIpcInterface& operator=(const MblCloudConnectIpcInterface& other);
 };
