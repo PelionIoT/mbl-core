@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+"""Pytest for testing mbl application connectivity to Clod Client."""
+
+import os
+import sys
+import importlib
+import subprocess
+import time
+from pydbus import SessionBus
+from gi.repository import GLib
+
+
+proc = subprocess.Popen(["echo", "TestAppConnectivity"])
+DEFAULT_DBUS_NAME = "mbl.app.test1"
+object_path = "/mbl/app/test1/AppConnectivity1"
+
+PROC_START_TIMEOUT_SEC = 3
+PROC_TERMINATE_TIMEOUT_SEC = 10
+
+
+class TestAppConnectivity:
+    """Test application connectivity main class."""
+
+    @classmethod
+    def setup_class(cls):
+        """Setup any state specific to the execution of the given class."""
+        print("Setup TestAppConnectivity...")
+
+        command = ["mbl-app-lifecycle", "-v"]
+        print("Executing command: {}".format(command))
+
+        proc = subprocess.Popen(command)
+
+        # wait untill service is published on the D-Bus
+        for i in range(PROC_START_TIMEOUT_SEC):
+            time.sleep(1)
+
+        print("Finish executing command: {}".format(command))
+
+        print("Setup TestAppConnectivity end")
+
+    def setup_method(self, method):
+        """Setup any state specific to the execution of the given method."""
+        print("Setup method TestAppConnectivity...")
+        # get the session bus
+        self.bus = SessionBus()
+        print("Setup method TestAppConnectivity end")
+
+    @classmethod
+    def teardown_class(cls):
+        """Teardown everything previously setup using a call to setup_class."""
+        print("Teardown TestAppConnectivity start...")
+
+        try:
+            print("Waiting for App Pydbus process to terminate.")
+            returncode = proc.wait(timeout=PROC_TERMINATE_TIMEOUT_SEC)
+            assert returncode == 0
+
+        except subprocess.TimeoutExpired:
+            print("TimeoutExpired for process wait for termination.")
+            proc.kill()
+            outs, errs = proc.communicate()
+
+        print("Teardown TestAppConnectivity end")
+
+    def test_app_hello(self):
+        """Print Hello."""
+        # get the object
+        the_object = self.bus.get(DEFAULT_DBUS_NAME, object_path=object_path)
+
+        # call Hello method
+        result = the_object.Hello()
+        assert result == "Hello!"
+        print(result)
+
+        return 0
+
+    def test_app_quit_loop(self):
+        """Quit the D-Bus main loop."""
+        # get the object
+        the_object = self.bus.get(DEFAULT_DBUS_NAME)
+
+        # call Stop method
+        result = the_object.Stop()
+        assert result == 0
+
+        return result
