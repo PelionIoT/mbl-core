@@ -25,17 +25,17 @@ namespace mbl {
 
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
 {
-    tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
+    tr_info("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
 
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
-    tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+    tr_info("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
 }
 
 int MblCloudConnectResourceBroker::Init()
 {
-    tr_debug("MblCloudConnectResourceBroker::Init");
+    tr_info("MblCloudConnectResourceBroker::Init");
     int ret = ipcDBus_.Init();
     if(0 != ret) {
         tr_error("Init ipcDBus failed with error %d", ret);
@@ -45,7 +45,7 @@ int MblCloudConnectResourceBroker::Init()
 
 int MblCloudConnectResourceBroker::Terminate()
 {
-    tr_debug("MblCloudConnectResourceBroker::Terminate");
+    tr_info("MblCloudConnectResourceBroker::Terminate");
     int ret = ipcDBus_.Terminate();
     if(0 != ret) {
         tr_error("Terminate ipcDBus failed with error %d", ret);
