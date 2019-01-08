@@ -22,7 +22,7 @@
 
 #include "MblError.h"
 #include "MblMutex.h"
-#include "MblCloudConnectResourceBroker.h"
+#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 
 #include <stdint.h>
 
