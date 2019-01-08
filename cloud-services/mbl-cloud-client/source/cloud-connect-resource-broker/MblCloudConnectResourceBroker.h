@@ -22,9 +22,6 @@
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "MblCloudConnectIpcDBus.h"
 
-#include "../MblError.h"
-#include "../MblMutex.h"
-
 namespace mbl {
 
 class MblCloudConnectResourceBroker {
@@ -33,6 +30,12 @@ public:
 
     MblCloudConnectResourceBroker();
     virtual ~MblCloudConnectResourceBroker();
+
+    // Initialize
+    int Init();
+
+    // Terminate
+    int Terminate();
 
 private:
 

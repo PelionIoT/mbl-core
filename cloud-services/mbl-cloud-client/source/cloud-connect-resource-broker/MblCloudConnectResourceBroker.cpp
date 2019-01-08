@@ -25,14 +25,32 @@ namespace mbl {
 
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
 {
-    tr_info("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
-    ipcDBus_.Init();
+    tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
 
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
-    tr_info("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
-    ipcDBus_.Terminate();
+    tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+}
+
+int MblCloudConnectResourceBroker::Init()
+{
+    tr_debug("MblCloudConnectResourceBroker::Init");
+    int ret = ipcDBus_.Init();
+    if(0 != ret) {
+        tr_error("Init ipcDBus failed with error %d", ret);
+    }
+    return ret;
+}
+
+int MblCloudConnectResourceBroker::Terminate()
+{
+    tr_debug("MblCloudConnectResourceBroker::Terminate");
+    int ret = ipcDBus_.Terminate();
+    if(0 != ret) {
+        tr_error("Terminate ipcDBus failed with error %d", ret);
+    }
+    return ret;
 }
 
 } // namespace mbl
