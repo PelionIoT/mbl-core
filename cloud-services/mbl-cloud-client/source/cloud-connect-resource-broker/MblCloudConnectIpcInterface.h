@@ -23,12 +23,14 @@ namespace mbl {
 
 /*! \file MblCloudConnectIpcInterface.h
  *  \brief MblCloudConnectIpcInterface.
- *  This class provides an interface for all IPC mechanisms
- */
+ *  This class provides an interface for all IPC mechanisms to allow applications to register their own LwM2M resources 
+ *  with the Mbed Cloud for application specific purposes.
+*/
 class MblCloudConnectIpcInterface {
 
 public:
 
+    MblCloudConnectIpcInterface(){}
     virtual ~MblCloudConnectIpcInterface(){};
 
     // Init API skeleton, later on the return value should be changed from int to somehting else
@@ -36,10 +38,6 @@ public:
 
     // Terminate API skeleton, later on the return value should be changed from int to somehting else
     virtual int Terminate() = 0;
-
-protected:
-    
-    MblCloudConnectIpcInterface(){}
 
 private:
 

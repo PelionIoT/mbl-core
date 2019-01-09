@@ -29,7 +29,7 @@ class MblCloudConnectResourceBroker {
 public:
 
     MblCloudConnectResourceBroker();
-    virtual ~MblCloudConnectResourceBroker();
+    ~MblCloudConnectResourceBroker();
 
     // Initialize
     int Init();

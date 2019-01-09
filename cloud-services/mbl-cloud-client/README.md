@@ -12,6 +12,20 @@ For more information about Mbed Linux OS, please see [meta-mbl][meta-mbl].
 
 Mbed Cloud client current version is [2.1.1][cc-2-1-1].
 
+## Log trace level
+
+Log trace level can be set in the function log_init() in log.cpp file.
+
+Valid options are:
+
+TRACE_ACTIVE_LEVEL_ALL    - used to activate all trace levels
+TRACE_ACTIVE_LEVEL_DEBUG  - print all traces same as above
+TRACE_ACTIVE_LEVEL_INFO   - print info,warn and error traces
+TRACE_ACTIVE_LEVEL_WARN   - print warn and error traces
+TRACE_ACTIVE_LEVEL_ERROR  - print only error trace
+TRACE_ACTIVE_LEVEL_CMD    - print only cmd line data
+TRACE_ACTIVE_LEVEL_NONE   - trace nothing
+
 ## Issues
 
 * The mbed-cloud-client library provides error codes asynchronously without any context to determine which request actually failed. This will make it hard to provide services to multiple processes, and may cause issues with tracking the registration state of the device.
