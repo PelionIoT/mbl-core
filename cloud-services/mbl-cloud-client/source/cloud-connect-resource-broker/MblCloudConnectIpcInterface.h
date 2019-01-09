@@ -19,6 +19,8 @@
 #ifndef MblCloudConnectIpcInterface_h_
 #define MblCloudConnectIpcInterface_h_
 
+#include "MblError.h"
+
 namespace mbl {
 
 /*! \file MblCloudConnectIpcInterface.h
@@ -30,20 +32,19 @@ class MblCloudConnectIpcInterface {
 
 public:
 
-    MblCloudConnectIpcInterface(){}
+    MblCloudConnectIpcInterface() = default;
     virtual ~MblCloudConnectIpcInterface(){};
 
-    // Init API skeleton, later on the return value should be changed from int to somehting else
-    virtual int Init() = 0;
-
-    // Terminate API skeleton, later on the return value should be changed from int to somehting else
-    virtual int Terminate() = 0;
+    // Init API skeleton (needed as we are not using exceptions and we can't check for errors from a constructor).
+    virtual MblError Init() = 0;
 
 private:
 
-    // Prevent instantiating / copy of this class 
-    MblCloudConnectIpcInterface(const MblCloudConnectIpcInterface& other);
-    MblCloudConnectIpcInterface& operator=(const MblCloudConnectIpcInterface& other);
+    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    MblCloudConnectIpcInterface(const MblCloudConnectIpcInterface&) = delete;
+    MblCloudConnectIpcInterface & operator = (const MblCloudConnectIpcInterface&) = delete;
+    MblCloudConnectIpcInterface(MblCloudConnectIpcInterface&&) = delete;
+    MblCloudConnectIpcInterface& operator = (MblCloudConnectIpcInterface&&) = delete;    
 };
 
 } // namespace mbl

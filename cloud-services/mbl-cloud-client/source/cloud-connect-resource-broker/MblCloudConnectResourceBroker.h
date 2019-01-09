@@ -20,7 +20,9 @@
 #define MblCloudConnectResourceBroker_h_
 
 #include "mbed-cloud-client/MbedCloudClient.h"
-#include "MblCloudConnectIpcDBus.h"
+#include "MblCloudConnectIpcInterface.h"
+
+#include  <memory>
 
 namespace mbl {
 
@@ -32,14 +34,11 @@ public:
     ~MblCloudConnectResourceBroker();
 
     // Initialize
-    int Init();
-
-    // Terminate
-    int Terminate();
+    MblError Init();
 
 private:
 
-    MblCloudConnectIpcDBus ipcDBus_;
+    std::unique_ptr<MblCloudConnectIpcInterface> ipc_;
  
 };
 

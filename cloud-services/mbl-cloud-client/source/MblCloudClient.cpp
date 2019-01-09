@@ -84,14 +84,7 @@ MblCloudClient::~MblCloudClient()
         s_instance = 0;
     }
 
-    // 2. Terminate cloud connect resource broker. This must be done before 
-    // closing and deleting the MbedCloudClient
-    int ret = cloud_connect_resource_broker_.Terminate();
-    if(0 != ret) {
-        tr_error("Terminate cloud_connect_resource_broker_ failed with error %d", ret);
-    }
-
-    // 3. Close and delete the MbedCloudClient. This must be done before
+    // 2. Close and delete the MbedCloudClient. This must be done before
     // stopping the mbed event loop, otherwise MbedCloudClient's dtor might
     // wait on a mutex that will never be released by the event loop.
     assert(cloud_client_);
@@ -116,9 +109,9 @@ MblError MblCloudClient::run()
         return ccs_err;
     }
 
-    int ret = s_instance->cloud_connect_resource_broker_.Init();
-    if(0 != ret) {
-        tr_error("Init cloud_connect_resource_broker_ failed with error %d", ret);
+    const MblError ccrb_init = s_instance->cloud_connect_resource_broker_.Init();
+    if(0 != ccrb_init) {
+        tr_error("Init cloud_connect_resource_broker_ failed with error %s", MblError_to_str(ccrb_init));
     }
 
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;

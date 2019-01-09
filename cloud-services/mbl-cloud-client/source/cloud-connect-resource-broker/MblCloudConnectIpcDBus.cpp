@@ -26,25 +26,6 @@ namespace mbl {
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 {
     tr_debug("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
-
-    if( __cplusplus == 1 ) {
-        tr_warning("@@@@@@@@@@ pre-C++98");
-    }
-    else if( __cplusplus == 199711L ) {
-        tr_warning("@@@@@@@@@@ C++98");
-    }
-    else if( __cplusplus == 201103L ) {
-        tr_warning("@@@@@@@@@@ C++11");
-    }
-    else if( __cplusplus == 201402L ) {
-        tr_warning("@@@@@@@@@@ C++14");
-    }
-    else if( __cplusplus == 201703L ) {
-        tr_warning("@@@@@@@@@@ C++17");
-    }
-    else {
-        tr_warning("@@@@@@@@@@ N/A");
-    }
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -52,16 +33,10 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
     tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
 }
 
-int MblCloudConnectIpcDBus::Init()
+MblError MblCloudConnectIpcDBus::Init()
 {
     tr_debug("MblCloudConnectIpcDBus::Init");
-    return 0;
-}
-
-int MblCloudConnectIpcDBus::Terminate()
-{
-    tr_debug("MblCloudConnectIpcDBus::Terminate");
-    return 0;
+    return Error::None;
 }
 
 } // namespace mbl

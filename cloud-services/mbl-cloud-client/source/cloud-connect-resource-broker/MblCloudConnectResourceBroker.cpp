@@ -17,13 +17,15 @@
 
 
 #include "MblCloudConnectResourceBroker.h"
+#include "MblCloudConnectIpcDBus.h"
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "CCRB"
 
 namespace mbl {
 
-MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
+MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
+    : ipc_ (std::unique_ptr<MblCloudConnectIpcDBus>(new MblCloudConnectIpcDBus()))
 {
     tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
@@ -31,24 +33,17 @@ MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
     tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+    ipc_.reset();
 }
 
-int MblCloudConnectResourceBroker::Init()
+MblError MblCloudConnectResourceBroker::Init()
 {
     tr_debug("MblCloudConnectResourceBroker::Init");
-    int ret = ipcDBus_.Init();
-    if(0 != ret) {
-        tr_error("Init ipcDBus failed with error %d", ret);
-    }
-    return ret;
-}
 
-int MblCloudConnectResourceBroker::Terminate()
-{
-    tr_debug("MblCloudConnectResourceBroker::Terminate");
-    int ret = ipcDBus_.Terminate();
-    if(0 != ret) {
-        tr_error("Terminate ipcDBus failed with error %d", ret);
+    assert(ipc_);
+    MblError ret = ipc_->Init();
+    if(Error::None != ret) {
+        tr_error("Init ipc failed with error %s", MblError_to_str(ret));
     }
     return ret;
 }

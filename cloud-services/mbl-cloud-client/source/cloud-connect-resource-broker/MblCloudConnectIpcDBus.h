@@ -32,13 +32,10 @@ class MblCloudConnectIpcDBus: public MblCloudConnectIpcInterface {
 public:
 
     MblCloudConnectIpcDBus();
-    virtual ~MblCloudConnectIpcDBus();
+    ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of init(), later on the return value should be changed from int to something else
-    virtual int Init();
-
-    // Implementation of Terminate(), later on the return value should be changed from int to something else
-    virtual int Terminate();
+    // Implementation of init()
+    MblError Init() override;
 };
 
 } // namespace mbl
