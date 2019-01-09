@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Pytest for testing mbl application connectivity to Clod Client."""
+"""Pytest for testing mbl application connectivity to Cloud Client."""
 
 import os
 import sys
@@ -18,7 +18,7 @@ proc = subprocess.Popen(["echo", "TestAppConnectivity"])
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 object_path = "/mbl/app/test1/AppConnectivity1"
 
-PROC_START_TIMEOUT_SEC = 3
+PROC_START_TIMEOUT_SEC = 2
 PROC_TERMINATE_TIMEOUT_SEC = 10
 
 
@@ -35,9 +35,8 @@ class TestAppConnectivity:
 
         proc = subprocess.Popen(command)
 
-        # wait untill service is published on the D-Bus
-        for i in range(PROC_START_TIMEOUT_SEC):
-            time.sleep(1)
+        # time out to enable service to be published on the D-Bus
+        time.sleep(PROC_START_TIMEOUT_SEC)
 
         print("Finish executing command: {}".format(command))
 
@@ -63,7 +62,8 @@ class TestAppConnectivity:
         except subprocess.TimeoutExpired:
             print("TimeoutExpired for process wait for termination.")
             proc.kill()
-            outs, errs = proc.communicate()
+            out, err = proc.communicate()
+            print("Process communicate output: {}, error: {}".format(out, err))
 
         print("Teardown TestAppConnectivity end")
 
@@ -71,11 +71,11 @@ class TestAppConnectivity:
         """Print Hello."""
         # get the object
         the_object = self.bus.get(DEFAULT_DBUS_NAME, object_path=object_path)
-
+        
         # call Hello method
         result = the_object.Hello()
         assert result == "Hello!"
-        print(result)
+        print("Hello method call on D-Bus returned: {}".format(result))
 
         return 0
 

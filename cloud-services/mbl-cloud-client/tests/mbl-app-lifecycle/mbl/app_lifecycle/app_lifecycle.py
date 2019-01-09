@@ -14,20 +14,19 @@ from enum import Enum
 from pydbus.generic import signal
 from pydbus import SessionBus
 from gi.repository import GLib
-import time
 
 __version__ = "1.0"
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 
 
-class Error(Enum):
+class ReturnCode(Enum):
     """AppLifeCycle error codes."""
 
     SUCCESS = 0
     ERR_OPERATION_FAILED = 1
 
 
-class AppLifeCycle(object):
+class AppLifeCycle():
     """
         <node name='/mbl/app/test1'>
             <interface name='mbl.app.test1'>
@@ -38,21 +37,21 @@ class AppLifeCycle(object):
         </node>
     """
 
-    # main loop should be static, since it is used by different contexts
-    loop = GLib.MainLoop()
+    # D-Bus main loop should be static, since it is used by different contexts
+    bus_main_loop = GLib.MainLoop()
 
     def __init__(self):
         """Create AppLifeCycle object."""
         self.logger = logging.getLogger("mbl-app-lifecycle")
-        self.logger.info(
+        self.logger.debug(
             "Creating AppLifeCycle version {}".format(__version__)
         )
-        self.publish_tuples_list = []
+        self.methods_for_publish_on_dbus = []
 
-    def AddToPublish(self, aTuple):
+    def AddToPublish(self, dBusIfObjTuple):
         """Create AppLifeCycle object."""
-        self.publish_tuples_list.append(aTuple)
-        print(aTuple)
+        self.methods_for_publish_on_dbus.append(dBusIfObjTuple)
+        self.logger.info(dBusIfObjTuple)
 
     def Start(self):
         """Start Main loop."""
@@ -60,26 +59,23 @@ class AppLifeCycle(object):
 
         bus = SessionBus()
         self.logger.info(
-            "Publishing objects: {}".format(*(self.publish_tuples_list))
+            "Publishing objects: {}".format(*(self.methods_for_publish_on_dbus))
         )
         self.obj = bus.publish(
-            DEFAULT_DBUS_NAME, AppLifeCycle(), *(self.publish_tuples_list)
+            DEFAULT_DBUS_NAME, AppLifeCycle(),
+            *(self.methods_for_publish_on_dbus)
         )
 
         self.logger.info("Running main loop...")
-        type(self).loop.run()
-        return SUCCESS
+        type(self).bus_main_loop.run()
 
     def Stop(self):
         """Return whatever is passed to it."""
         self.logger.info("Quit the AppLifeCycle main loop")
-        type(self).loop.quit()
+        type(self).bus_main_loop.quit()
         self.logger.info("AFTER Quit the AppLifeCycle main loop")
         return 0
 
-    def __del__(self):
-        """Delete."""
-        self.logger.debug("__del__")
 
 
 class AppConnectivity(AppLifeCycle):
@@ -101,14 +97,14 @@ class AppConnectivity(AppLifeCycle):
     def Start(self):
         """Publish metods on D-Bus and call super Start."""
         self.logger.info("AppConnectivity Start")
-        AppLifeCycle.AddToPublish(self, aTuple=("AppConnectivity1", self))
+        AppLifeCycle.AddToPublish(
+            self, dBusIfObjTuple=("AppConnectivity1", self)
+        )
         AppLifeCycle.Start(self)
 
     def Hello(self):
         """Print Hello."""
-        self.logger.info("Hello!")
-        print("Hello!")
-        return "Hello!"
-
-    def __del__(self):
-        """Delete."""
+        output = "Hello!"
+        self.logger.info(output)
+        print(output)
+        return output

@@ -19,7 +19,7 @@ def get_argument_parser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="App connect to the dbus using pydbus binding",
+        description="Application that used by tests to simulate real application behavior",
     )
 
     parser.add_argument(
@@ -44,22 +44,10 @@ def _main():
     logger = logging.getLogger("mbl-app-pydbus")
     logger.debug("Command line arguments:{}".format(args))
 
-    ret = alc.Error.ERR_OPERATION_FAILED
-    try:
-        app = alc.AppConnectivity()
+    ret = alc.ReturnCode.ERR_OPERATION_FAILED
 
-        logger.info("Call application Start")
-        # start the application main loop
-        ret = app.Start()
+    app = alc.AppConnectivity()
 
-    except OSError:
-        logger.exception("Operation failed with OSError")
-        return alc.Error.ERR_OPERATION_FAILED.value
-    except Exception:
-        logger.exception("Operation failed exception")
-        return alc.Error.ERR_OPERATION_FAILED.value
-    if ret == alc.Error.SUCCESS:
-        logger.info("Operation successful")
-    else:
-        logger.error("Operation failed: {}".format(ret))
-    return ret
+    logger.info("Call application Start")
+    # start the application main loop
+    app.Start()

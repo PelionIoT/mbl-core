@@ -4,6 +4,9 @@ MBL application is running inside virtual environment.
 
 In order to setup virtual environment perform next steps:
 
+1. Copy test application subtree `/mbl-core/cloud-services/mbl-cloud-client/tests/mbl-app-lifecycle`
+   to the device under the `/scratch` partition.
+
 1. Create virtual environment:
    ```shell
    python3 -m venv my_venv
@@ -24,9 +27,10 @@ In order to setup virtual environment perform next steps:
    pip install . --upgrade
    ```
 
-Create session D-Bus:
+Create session D-Bus (temporary solution, untill the D-Bus daemon will run 
+automatically on the device boot):
    ```shell
-   dbus-launch --config-file ./server_client_session.conf
+   dbus-launch --config-file ./ipc.conf
    DBUS_SESSION_BUS_ADDRESS=unix:path=/scratch/mbl-app-lifecycle/mbl/app_lifecycle/server_client_socket,guid=a7b20c57341193b6981973785c34562c
    DBUS_SESSION_BUS_PID=23434
    ```
