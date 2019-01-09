@@ -19,7 +19,8 @@ def get_argument_parser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Application that used by tests to simulate real application behavior",
+        description="Application that used by tests to simulate real \
+            application behavior",
     )
 
     parser.add_argument(

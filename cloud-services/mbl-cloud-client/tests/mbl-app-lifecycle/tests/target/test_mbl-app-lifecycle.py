@@ -71,7 +71,7 @@ class TestAppConnectivity:
         """Print Hello."""
         # get the object
         the_object = self.bus.get(DEFAULT_DBUS_NAME, object_path=object_path)
-        
+
         # call Hello method
         result = the_object.Hello()
         assert result == "Hello!"

@@ -26,15 +26,17 @@ class ReturnCode(Enum):
     ERR_OPERATION_FAILED = 1
 
 
-class AppLifeCycle():
-    """
-        <node name='/mbl/app/test1'>
-            <interface name='mbl.app.test1'>
-                <method name='Stop'>
-                    <arg type='n' name='result' direction='out'/>
-                </method>
-            </interface>
-        </node>
+class AppLifeCycle:
+    """Application life cycle."""
+
+    dbus = """
+<node name='/mbl/app/test1'>
+    <interface name='mbl.app.test1'>
+        <method name='Stop'>
+            <arg type='n' name='result' direction='out'/>
+        </method>
+    </interface>
+</node>
     """
 
     # D-Bus main loop should be static, since it is used by different contexts
@@ -59,10 +61,13 @@ class AppLifeCycle():
 
         bus = SessionBus()
         self.logger.info(
-            "Publishing objects: {}".format(*(self.methods_for_publish_on_dbus))
+            "Publishing objects: {}".format(
+                *(self.methods_for_publish_on_dbus)
+            )
         )
         self.obj = bus.publish(
-            DEFAULT_DBUS_NAME, AppLifeCycle(),
+            DEFAULT_DBUS_NAME,
+            AppLifeCycle(),
             *(self.methods_for_publish_on_dbus)
         )
 
@@ -77,16 +82,17 @@ class AppLifeCycle():
         return 0
 
 
-
 class AppConnectivity(AppLifeCycle):
-    """
-        <node name='/mbl/app/test1/AppConnectivity1'>
-            <interface name='mbl.app.test1.AppConnectivity1'>
-                <method name='Hello'>
-                    <arg type='s' name='result' direction='out'/>
-                </method>
-            </interface>
-        </node>
+    """Application connectivity."""
+
+    dbus = """
+<node name='/mbl/app/test1/AppConnectivity1'>
+    <interface name='mbl.app.test1.AppConnectivity1'>
+        <method name='Hello'>
+            <arg type='s' name='result' direction='out'/>
+        </method>
+    </interface>
+</node>
     """
 
     def __init__(self):
