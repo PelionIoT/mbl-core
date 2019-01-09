@@ -20,12 +20,14 @@
 #include "MblCloudConnectIpcDBus.h"
 #include "mbed-trace/mbed_trace.h"
 
+#include <cassert>
+
 #define TRACE_GROUP "CCRB"
 
 namespace mbl {
 
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
-    : ipc_ (std::unique_ptr<MblCloudConnectIpcDBus>(new MblCloudConnectIpcDBus()))
+    : ipc_ (std::make_unique<MblCloudConnectIpcDBus>())
 {
     tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
@@ -33,7 +35,6 @@ MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
     tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
-    ipc_.reset();
 }
 
 MblError MblCloudConnectResourceBroker::Init()

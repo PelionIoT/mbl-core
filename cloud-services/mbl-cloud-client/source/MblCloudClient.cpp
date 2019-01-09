@@ -110,7 +110,7 @@ MblError MblCloudClient::run()
     }
 
     const MblError ccrb_init = s_instance->cloud_connect_resource_broker_.Init();
-    if(0 != ccrb_init) {
+    if(Error::None != ccrb_init) {
         tr_error("Init cloud_connect_resource_broker_ failed with error %s", MblError_to_str(ccrb_init));
     }
 

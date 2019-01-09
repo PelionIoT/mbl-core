@@ -19,7 +19,6 @@
 #ifndef MblCloudConnectResourceBroker_h_
 #define MblCloudConnectResourceBroker_h_
 
-#include "mbed-cloud-client/MbedCloudClient.h"
 #include "MblCloudConnectIpcInterface.h"
 
 #include  <memory>
