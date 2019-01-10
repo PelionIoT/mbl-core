@@ -33,8 +33,8 @@ class MblCloudConnectIpcInterface {
 public:
 
     MblCloudConnectIpcInterface() = default;
-    virtual ~MblCloudConnectIpcInterface(){};
-
+    virtual ~MblCloudConnectIpcInterface() = default;
+    
     // Init API skeleton (needed as we are not using exceptions and we can't check for errors from a constructor).
     virtual MblError Init() = 0;
 
