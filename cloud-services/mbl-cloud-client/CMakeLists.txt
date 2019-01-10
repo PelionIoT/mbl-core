@@ -18,6 +18,9 @@ SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
 
+# Compile mbl-cloud-client using c++14 standard
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
 ADDSUBDIRS()
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
