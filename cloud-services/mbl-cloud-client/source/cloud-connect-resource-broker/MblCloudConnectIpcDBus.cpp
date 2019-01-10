@@ -25,7 +25,7 @@ namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 {
-    tr_debug("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+    tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
