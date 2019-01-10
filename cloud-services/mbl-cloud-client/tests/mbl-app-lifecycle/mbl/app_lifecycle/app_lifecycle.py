@@ -3,9 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""
-app_lifecycle.py implements application start, stop and connectivity check.
-"""
+"""This script implements application start, stop and connectivity check."""
 
 import sys
 import os
