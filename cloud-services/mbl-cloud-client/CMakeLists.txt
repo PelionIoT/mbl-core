@@ -18,6 +18,9 @@ SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
 
+# Compile mbl-cloud-client using c++14 standard
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+
 ADDSUBDIRS()
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
@@ -43,26 +46,16 @@ add_compile_options(-Wlogical-op)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client/factory-configurator-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/fcc-output-info-handler/fcc-output-info-handler)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/key-config-manager/key-config-manager)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-libservice)
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
 
 
@@ -83,3 +76,4 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+
