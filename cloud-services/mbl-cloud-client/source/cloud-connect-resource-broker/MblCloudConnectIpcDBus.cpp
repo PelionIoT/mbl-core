@@ -17,6 +17,9 @@
 
 #include "MblCloudConnectIpcDBus.h"
 
+#define JSON_IS_AMALGAMATION
+#include "json/json.h"
+#include "json/json-forwards.h"
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "CCRB-IPCDBUS"
@@ -36,6 +39,54 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 MblError MblCloudConnectIpcDBus::Init()
 {
     tr_debug("MblCloudConnectIpcDBus::Init");
+
+    //testing
+    string text ="{ \"people\": [{\"id\": 1, \"name\":\"MIKE\",\"surname\":\"TAYLOR\"}, {\"id\": 2, \"name\":\"TOM\",\"surname\":\"JERRY\"} ]}";
+
+    Json::CharReaderBuilder builder;
+    Json::CharReader * reader = builder.newCharReader();
+
+    Json::Value root;
+    string errors;
+
+    bool parsingSuccessful = reader->parse(text.c_str(), text.c_str() + text.size(), &root, &errors);
+    delete reader;
+
+    if ( !parsingSuccessful )
+    {
+        tr_error("Error parsing the string");
+        return Error::None;
+    }
+
+    for (Json::Value::iterator it = root["name"].begin(); it != root["name"].end(); ++it)
+    {
+        tr_info("Name= %s", (*it)["name"].asString().c_str());
+    }
+    
+    // for( Json::Value::const_iterator outer = root.begin() ; outer != root.end() ; outer++ )
+    // {
+    //     for( Json::Value::const_iterator inner = (*outer).begin() ; inner!= (*outer).end() ; inner++ )
+    //     {
+    //         tr_info("Key: %s, Name= %s", inner.key().va, *inner);
+    //     }
+    // }
+
+    
+    // Json::Value root;
+    // Json::CharReaderBuilder reader;
+    // bool parsingSuccessful = reader.
+    // .parse( text, root );
+    // if ( !parsingSuccessful )
+    // {
+    //     tr_error("Error parsing the string");
+    //     return Error::None;
+    // }
+
+    // const Json::Value mynames = root["people"];
+    // for ( int index = 0; index < mynames.size(); ++index )  
+    // {
+    //     tr_info("Name= %s", mynames[index]);
+    // }
     return Error::None;
 }
 
