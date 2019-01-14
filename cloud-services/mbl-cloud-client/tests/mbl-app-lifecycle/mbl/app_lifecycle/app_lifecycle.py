@@ -17,6 +17,7 @@ __version__ = "1.0"
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_STOP_SIG = "mbl.app.test1.stop"
 
+
 class ReturnCode(Enum):
     """AppLifeCycle error codes."""
 
@@ -55,7 +56,6 @@ class AppLifeCycle:
 
     def Run(self):
         """Run Main loop."""
-
         self.logger.info("Connect D-Bus: {}".format(DEFAULT_DBUS_NAME))
 
         bus = SessionBus()
@@ -77,7 +77,7 @@ class AppLifeCycle:
         type(self).bus_main_loop.run()
 
     def GetPid(self):
-        """Test method: returns incremented input"""
+        """Test method: returns incremented input."""
         self.logger.debug("Application process ID {}".format(os.getpid()))
         return os.getpid()
 

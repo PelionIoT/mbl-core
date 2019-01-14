@@ -83,8 +83,10 @@ class TestAppConnectivity:
             assert returncode == 0
 
         except subprocess.TimeoutExpired:
-            print("TimeoutExpired for process wait for termination, killing "
-                "mbl-app-lifecycle process")
+            print(
+                "TimeoutExpired for process wait for termination, killing "
+                "mbl-app-lifecycle process"
+            )
             self.proc.kill()
             out, err = self.proc.communicate()
             print("Process communicate output: {}, error: {}".format(out, err))

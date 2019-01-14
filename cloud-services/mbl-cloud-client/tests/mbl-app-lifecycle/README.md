@@ -1,8 +1,8 @@
-# MBL applications Cloud Client connectivity.
+# MBL applications Cloud Client connectivity test
 
-MBL application is running inside virtual environment.
+The MBL application runs in a virtual environment.
 
-In order to setup virtual environment perform next steps:
+To set up the virtual environment, perform the following steps:
 
 1. Copy test application subtree `/mbl-core/cloud-services/mbl-cloud-client/tests/mbl-app-lifecycle`
    to the device under the `/scratch` partition.
@@ -17,13 +17,13 @@ In order to setup virtual environment perform next steps:
    source ./my_venv/bin/activate
    ```
 
-1. Install all the nessasary packages inside virtual environment:
+1. Install all the necessary packages in the virtual environment:
    ```shell
    pip install -r requirements.txt
    pip install . --upgrade
    ```
 
-Create session D-Bus (temporary solution, untill the D-Bus deamon will run 
+Create session D-Bus (temporary solution, until the D-Bus deamon will run 
 automatically on the device boot):
    ```shell
    dbus-launch --config-file ./ipc.conf
