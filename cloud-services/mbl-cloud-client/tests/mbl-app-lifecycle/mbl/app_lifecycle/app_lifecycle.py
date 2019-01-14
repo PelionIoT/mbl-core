@@ -15,7 +15,7 @@ from gi.repository import GLib
 
 __version__ = "1.0"
 DEFAULT_DBUS_NAME = "mbl.app.test1"
-
+DBUS_STOP_SIG = "mbl.app.test1.stop"
 
 class ReturnCode(Enum):
     """AppLifeCycle error codes."""
@@ -30,8 +30,8 @@ class AppLifeCycle:
     dbus = """
 <node name='/mbl/app/test1'>
     <interface name='mbl.app.test1'>
-        <method name='Stop'>
-            <arg type='n' name='result' direction='out'/>
+        <method name='GetPid'>
+            <arg type='n' name='pid' direction='out'/>
         </method>
     </interface>
 </node>
@@ -43,22 +43,23 @@ class AppLifeCycle:
     def __init__(self):
         """Create AppLifeCycle object."""
         self.logger = logging.getLogger("mbl-app-lifecycle")
-        self.logger.debug(
+        self.logger.info(
             "Creating AppLifeCycle version {}".format(__version__)
         )
         self.methods_for_publish_on_dbus = []
 
     def AddToPublish(self, dBusIfObjTuple):
-        """Create AppLifeCycle object."""
+        """Add object interfaces to the data to be published on D-Bus."""
         self.methods_for_publish_on_dbus.append(dBusIfObjTuple)
-        self.logger.info(dBusIfObjTuple)
+        self.logger.debug(dBusIfObjTuple)
 
-    def Start(self):
-        """Start Main loop."""
+    def Run(self):
+        """Run Main loop."""
+
         self.logger.info("Connect D-Bus: {}".format(DEFAULT_DBUS_NAME))
 
         bus = SessionBus()
-        self.logger.info(
+        self.logger.debug(
             "Publishing objects: {}".format(
                 *(self.methods_for_publish_on_dbus)
             )
@@ -69,15 +70,23 @@ class AppLifeCycle:
             *(self.methods_for_publish_on_dbus)
         )
 
+        # subscribe for the Stop signal
+        bus.subscribe(object=DBUS_STOP_SIG, signal_fired=self.StopSignal)
+
         self.logger.info("Running main loop...")
         type(self).bus_main_loop.run()
 
-    def Stop(self):
+    def GetPid(self):
+        """Test method: returns incremented input"""
+        self.logger.debug("Application process ID {}".format(os.getpid()))
+        return os.getpid()
+
+    def StopSignal(self):
         """Return whatever is passed to it."""
         self.logger.info("Quit the AppLifeCycle main loop")
+        print("***os.getpid() {}".format(os.getpid()))
+
         type(self).bus_main_loop.quit()
-        self.logger.info("AFTER Quit the AppLifeCycle main loop")
-        return 0
 
 
 class AppConnectivity(AppLifeCycle):
@@ -98,17 +107,16 @@ class AppConnectivity(AppLifeCycle):
         AppLifeCycle.__init__(self)
         self.logger.debug("__init__")
 
-    def Start(self):
-        """Publish metods on D-Bus and call super Start."""
-        self.logger.info("AppConnectivity Start")
+    def Run(self):
+        """Publish metods on D-Bus and call super Run."""
+        self.logger.info("AppConnectivity Run")
         AppLifeCycle.AddToPublish(
             self, dBusIfObjTuple=("AppConnectivity1", self)
         )
-        AppLifeCycle.Start(self)
+        AppLifeCycle.Run(self)
 
     def Hello(self):
         """Print Hello."""
         output = "Hello!"
-        self.logger.info(output)
-        print(output)
+        self.logger.info("{} request processed".format(output))
         return output

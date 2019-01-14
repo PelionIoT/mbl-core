@@ -19,18 +19,18 @@ In order to setup virtual environment perform next steps:
 
 1. Install all the nessasary packages inside virtual environment:
    ```shell
-   pip install pip --upgrade
-   pip install vext
-   pip install vext.gi
-   pip install pydbus
-   pip install pytest
+   pip install -r requirements.txt
    pip install . --upgrade
    ```
 
-Create session D-Bus (temporary solution, untill the D-Bus daemon will run 
+Create session D-Bus (temporary solution, untill the D-Bus deamon will run 
 automatically on the device boot):
    ```shell
    dbus-launch --config-file ./ipc.conf
+   ```
+
+Following is a sample output of session D-Bus creation:
+   ```shell
    DBUS_SESSION_BUS_ADDRESS=unix:path=/scratch/mbl-app-lifecycle/mbl/app_lifecycle/server_client_socket,guid=a7b20c57341193b6981973785c34562c
    DBUS_SESSION_BUS_PID=23434
    ```

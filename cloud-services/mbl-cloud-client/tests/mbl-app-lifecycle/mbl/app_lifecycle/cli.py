@@ -45,10 +45,9 @@ def _main():
     logger = logging.getLogger("mbl-app-pydbus")
     logger.debug("Command line arguments:{}".format(args))
 
-    ret = alc.ReturnCode.ERR_OPERATION_FAILED
-
     app = alc.AppConnectivity()
 
-    logger.info("Call application Start")
-    # start the application main loop
-    app.Start()
+    logger.info("Call application Run")
+    # Start the application main loop. This is a blocking call starting
+    # D-Bus main loop. In order to stop application main loop call app.Stop().
+    app.Run()
