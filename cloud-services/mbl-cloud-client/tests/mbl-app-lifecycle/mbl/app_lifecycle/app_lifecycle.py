@@ -15,7 +15,9 @@ from gi.repository import GLib
 
 __version__ = "1.0"
 DEFAULT_DBUS_NAME = "mbl.app.test1"
-DBUS_STOP_SIG = "mbl.app.test1.stop"
+DBUS_STOP_SIG = "/mbl/app/test1/stop"
+
+bus_main_loop = GLib.MainLoop()
 
 
 class ReturnCode(Enum):
@@ -37,9 +39,6 @@ class AppLifeCycle:
     </interface>
 </node>
     """
-
-    # D-Bus main loop should be static, since it is used by different contexts
-    bus_main_loop = GLib.MainLoop()
 
     def __init__(self):
         """Create AppLifeCycle object."""
@@ -74,7 +73,8 @@ class AppLifeCycle:
         bus.subscribe(object=DBUS_STOP_SIG, signal_fired=self.StopSignal)
 
         self.logger.info("Running main loop...")
-        type(self).bus_main_loop.run()
+        # type(self).bus_main_loop.run()
+        bus_main_loop.run()
 
     def GetPid(self):
         """Test method: returns incremented input."""
@@ -84,9 +84,7 @@ class AppLifeCycle:
     def StopSignal(self):
         """Return whatever is passed to it."""
         self.logger.info("Quit the AppLifeCycle main loop")
-        print("***os.getpid() {}".format(os.getpid()))
-
-        type(self).bus_main_loop.quit()
+        bus_main_loop.quit()
 
 
 class AppConnectivity(AppLifeCycle):

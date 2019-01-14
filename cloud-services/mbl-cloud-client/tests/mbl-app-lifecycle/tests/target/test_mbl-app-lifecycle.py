@@ -80,7 +80,9 @@ class TestAppConnectivity:
             returncode = self.proc.wait(
                 timeout=APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT
             )
-            assert returncode == 0
+            # do not assert if process wait returncode is not 0, process
+            # could terminate before this call
+            print("Process wait returncode: {}".format(returncode))
 
         except subprocess.TimeoutExpired:
             print(
