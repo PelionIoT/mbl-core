@@ -18,7 +18,7 @@ from gi.repository import GLib
 
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
-DBUS_STOP_SIG = "mbl.app.test1.stop"
+DBUS_STOP_SIGNAL = "mbl.app.test1.stop"
 
 DBUS_SERVICE_PUBLISHING_TIME = 2
 APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT = 10
@@ -54,7 +54,7 @@ class TestAppConnectivity:
 
         # get the session bus
         self.bus = SessionBus()
-        self.obj = self.bus.publish(DBUS_STOP_SIG, self)
+        self.obj = self.bus.publish(DBUS_STOP_SIGNAL, self)
 
         command = ["mbl-app-lifecycle", "-v"]
         print("Executing command: {}".format(command))
@@ -90,8 +90,10 @@ class TestAppConnectivity:
                 "mbl-app-lifecycle process"
             )
             self.proc.kill()
-            out, err = self.proc.communicate()
-            print("Process communicate output: {}, error: {}".format(out, err))
+            out_app_lifecycle, err_app_lifecycle = self.proc.communicate()
+            print("Process communicate output: {}, error: {}".format(
+                out_app_lifecycle, err_app_lifecycle)
+            )
             assert 0, "Wait for process terminate: TimeoutExpired"
 
         print("Teardown method TestAppConnectivity end")
