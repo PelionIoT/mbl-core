@@ -3,7 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""This script implements application start, stop and connectivity check."""
+"""
+This script simulate application behavior for tests: application start, stop 
+and D-Bus connectivity check.
+"""
 
 import sys
 import os
@@ -13,11 +16,10 @@ from pydbus.generic import signal
 from pydbus import SessionBus
 from gi.repository import GLib
 
-__version__ = "1.0"
-DEFAULT_DBUS_NAME = "mbl.app.test1"
-DBUS_STOP_SIGNAL_FILTER = "/mbl/app/test1/stop"
 
-bus_main_loop = GLib.MainLoop()
+__version__ = "1.0"
+DBUS_STOP_SIGNAL_FILTER = "/mbl/app/test1/stop"
+DEFAULT_DBUS_NAME = "mbl.app.test1"
 
 
 class ReturnCode(Enum):
@@ -39,6 +41,8 @@ class AppLifeCycle:
     </interface>
 </node>
     """
+
+    bus_main_loop = GLib.MainLoop()
 
     def __init__(self):
         """Create AppLifeCycle object."""
@@ -73,14 +77,18 @@ class AppLifeCycle:
             *(self.methods_for_publish_on_dbus)
         )
 
-        # subscribe for the Stop signal
+        # subscribe to the Stop signal:
+        # object - object path to match on or None to match on all object
+        # paths; signal_fired - callable, invoked when there is a signal
+        # matching the requested data. For more information about subscribe()
+        # method please refer Github:
+        # https://github.com/LEW21/pydbus/blob/master/pydbus/subscription.py
         bus.subscribe(
-            object=DBUS_STOP_SIGNAL_FILTER, 
-            signal_fired=self.StopSignal
+            object=DBUS_STOP_SIGNAL_FILTER, signal_fired=self.StopSignal
         )
 
         self.logger.info("Running main loop...")
-        bus_main_loop.run()
+        AppLifeCycle.bus_main_loop.run()
 
     def GetPid(self):
         """D-Bus test method: returns process Id."""
@@ -88,9 +96,10 @@ class AppLifeCycle:
         self.logger.debug("Application process ID {}".format(pid))
         return pid
 
-    def StopSignal(*args):
+    def StopSignal(self, *args):
         """Stop D-Bus main loop."""
-        bus_main_loop.quit()
+        self.logger.info("Got stop signal, quitting the D-Bus main loop")
+        AppLifeCycle.bus_main_loop.quit()
 
 
 class AppConnectivity(AppLifeCycle):

@@ -80,8 +80,7 @@ class TestAppConnectivity:
             returncode = self.proc.wait(
                 timeout=APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT
             )
-            # do not assert if process wait returncode is not 0, process
-            # could terminate before this call
+            assert returncode == 0
             print("Process wait returncode: {}".format(returncode))
 
         except subprocess.TimeoutExpired:
@@ -91,20 +90,24 @@ class TestAppConnectivity:
             )
             self.proc.kill()
             out_app_lifecycle, err_app_lifecycle = self.proc.communicate()
-            print("Process communicate output: {}, error: {}".format(
-                out_app_lifecycle, err_app_lifecycle)
+            print(
+                "Process communicate stdout: {}, stderr: {}".format(
+                    out_app_lifecycle, err_app_lifecycle
+                )
             )
             assert 0, "Wait for process terminate: TimeoutExpired"
 
         print("Teardown method TestAppConnectivity end")
 
     def test_app_hello(self):
-        """Print Hello."""
+        """Connectivity test: through the D-Bus call Hello method."""
         # get the object
         the_object = self.bus.get(
             DEFAULT_DBUS_NAME, object_path=DBUS_OBJECT_PATH_APP_CONNECTIVITY1
         )
         # call Hello method
         result = the_object.Hello()
-        assert result == "Hello!"
+        assert (
+            result == "Hello!"
+        ), "Hello method call on D-Bus returned wrong value: {}".format(result)
         print("Hello method call on D-Bus returned: {}".format(result))
