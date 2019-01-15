@@ -80,7 +80,11 @@ class TestAppConnectivity:
             returncode = self.proc.wait(
                 timeout=APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT
             )
-            assert returncode == 0
+            assert (
+                returncode == 0
+            ), "Wait for App Pydbus process to terminate returned code {} is not 0".format(
+                returncode
+            )
             print("Process wait returncode: {}".format(returncode))
 
         except subprocess.TimeoutExpired:

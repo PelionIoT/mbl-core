@@ -26,6 +26,7 @@ To set up the virtual environment, perform the following steps:
 Create session D-Bus (temporary solution, until the D-Bus deamon will run 
 automatically on the device boot):
    ```shell
+   cd mbl/app_lifecycle
    dbus-launch --config-file ./ipc.conf
    ```
 
@@ -37,6 +38,7 @@ Following is a sample output of session D-Bus creation:
 
 Run pytests:
    ```shell
+   cd ../..
    DBUS_SESSION_BUS_ADDRESS=unix:path=./mbl/app_lifecycle/server_client_socket DISPLAY=0 pytest
    ```
 
