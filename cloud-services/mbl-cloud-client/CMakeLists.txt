@@ -65,7 +65,7 @@ SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-include_directories(${jsoncpp_INCLUDE_DIRS})
+#include_directories(${jsoncpp_INCLUDE_DIRS})
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
@@ -86,7 +86,6 @@ target_link_libraries(mbl-cloud-client mbedcrypto)
 target_link_libraries(mbl-cloud-client mbedtls)
 target_link_libraries(mbl-cloud-client mbedx509)
 target_link_libraries(mbl-cloud-client mbedTrace)
-#target_link_libraries(mbl-cloud-client jsoncpp)
 target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
