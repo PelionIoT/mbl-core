@@ -42,7 +42,7 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logger = logging.getLogger("mbl-app-pydbus")
+    logger = logging.getLogger("mbl-app-lifecycle")
     logger.debug("Command line arguments:{}".format(args))
 
     app = alc.AppConnectivity()

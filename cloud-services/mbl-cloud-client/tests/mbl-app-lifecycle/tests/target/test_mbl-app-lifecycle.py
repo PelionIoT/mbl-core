@@ -92,7 +92,7 @@ class TestAppConnectivity:
             self.proc.kill()
             out, err = self.proc.communicate()
             print("Process communicate output: {}, error: {}".format(out, err))
-            return TstReturnCode.TEST_FAILED
+            assert 0, "Wait for process terminate: TimeoutExpired"
 
         print("Teardown method TestAppConnectivity end")
 
