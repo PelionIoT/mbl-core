@@ -18,8 +18,7 @@
 #include "MblCloudConnectIpcDBus.h"
 
 #define JSON_IS_AMALGAMATION
-#include "json/json.h"
-#include "json/json-forwards.h"
+#include <json/json.h>
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "CCRB-IPCDBUS"

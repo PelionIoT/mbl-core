@@ -76,4 +76,5 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+link_libraries(${JSONCPP_LIBRARIES})
 
