@@ -22,6 +22,7 @@
 
 #include "MblError.h"
 #include "MblMutex.h"
+#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 
 #include <stdint.h>
 
@@ -67,6 +68,15 @@ private:
 
     MbedCloudClient* cloud_client_;
     State state_;
+
+    // Mbl Cloud Connect Resource Broker
+    // - Parse resource definition JSON file that received from an application as part of the RegisterResources request.
+    // - Handle all requests from applications to MbedCloudClient.
+    // - Handling observers notifications from MbedCloudClient to applications.
+    // - Perform access right checks for all application requests.
+    // - Maintain database of all application resources per application. The database also contains resource properties (for example allowed methods: GET, PUT, POST). The database will NOT contain current resource values.
+    // - Perform multiplexing and de-multiplexing of messages between MbedCloudClient and applications.    
+    MblCloudConnectResourceBroker cloud_connect_resource_broker_;
 
     static MblCloudClient* s_instance;
     static MblMutex s_mutex;
