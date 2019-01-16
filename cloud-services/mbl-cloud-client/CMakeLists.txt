@@ -23,20 +23,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 ADDSUBDIRS()
 
-message("FOUND CONFIG: ${jsoncpp_CONFIG}")
-message("INCLUDE DIRS: ${jsoncpp_INCLUDE_DIRS}")
-message("LIBRARIES: ${jsoncpp_LIBRARIES}")
-
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
-
-message("aaaaaaaaaaaaaaa jsoncpp_CONFIG: ${jsoncpp_CONFIG}")
-message("aaaaaaaaaaaaaaa jsoncpp_INCLUDE_DIRS DIRS: ${jsoncpp_INCLUDE_DIRS}")
-message("aaaaaaaaaaaaaaa jsoncpp_LIBRARIES: ${jsoncpp_LIBRARIES}")
-message("aaaaaaaaaaaaaaa jsoncpp_____________________________________________")
-message("aaaaaaaaaaaaaaa jsoncpp_CONFIG: ${JSONCPP_CONFIG}")
-message("aaaaaaaaaaaaaaa jsoncpp_INCLUDE_DIRS DIRS: ${JSONCPP_INCLUDE_DIRS}")
-message("aaaaaaaaaaaaaaa jsoncpp_LIBRARIES: ${JSONCPP_LIBRARIES}")
 
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the

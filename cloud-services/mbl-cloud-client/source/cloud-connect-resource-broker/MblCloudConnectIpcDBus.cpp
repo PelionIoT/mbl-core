@@ -66,7 +66,7 @@ MblError MblCloudConnectIpcDBus::Init()
         tr_info( "chapter: %d", characters[i]["chapter"].asUInt());
     }
 
-    tr_info("MblCloudConnectIpcDBus::Init 3");    
+    tr_info("MblCloudConnectIpcDBus::Init 4");    
     return Error::None;
 }
 
