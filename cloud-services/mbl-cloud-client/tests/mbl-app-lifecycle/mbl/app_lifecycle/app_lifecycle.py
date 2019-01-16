@@ -52,14 +52,16 @@ class AppLifeCycle:
         self.logger.info(
             "Creating AppLifeCycle version {}".format(__version__)
         )
-        self.methods_for_publish_on_dbus = []
+        self.all_methods_for_publish_on_dbus = []
 
-    def AddToPublish(self, dBusInterface_to_obj_tuple):
+    def AddToPublish(self, methods_for_publish_on_dbus):
         """Add object interfaces to the data to be published on D-Bus."""
-        self.methods_for_publish_on_dbus.append(dBusInterface_to_obj_tuple)
+        self.all_methods_for_publish_on_dbus.append(
+            methods_for_publish_on_dbus
+        )
         self.logger.debug(
             "The following interfaces will be published on D-Bus: {}".format(
-                dBusInterface_to_obj_tuple
+                methods_for_publish_on_dbus
             )
         )
 
@@ -70,13 +72,13 @@ class AppLifeCycle:
         bus = SessionBus()
         self.logger.debug(
             "Publishing following interfaces on D-Bus: {}".format(
-                *(self.methods_for_publish_on_dbus)
+                *(self.all_methods_for_publish_on_dbus)
             )
         )
         self.obj = bus.publish(
             DEFAULT_DBUS_NAME,
             AppLifeCycle(),
-            *(self.methods_for_publish_on_dbus)
+            *(self.all_methods_for_publish_on_dbus)
         )
 
         # subscribe to the Stop signal:
@@ -93,7 +95,11 @@ class AppLifeCycle:
         AppLifeCycle.bus_main_loop.run()
 
     def GetPid(self):
-        """Get process Id D-Bus test method: returns process Id."""
+        """
+        Get process Id D-Bus test method.
+
+        :return: process Id
+        """
         pid = os.getpid()
         self.logger.debug("Application process ID {}".format(pid))
         return pid
@@ -126,12 +132,16 @@ class AppConnectivity(AppLifeCycle):
         """Publish methods on D-Bus and run D-Bus main loop."""
         self.logger.info("AppConnectivity Run")
         AppLifeCycle.AddToPublish(
-            self, dBusInterface_to_obj_tuple=("AppConnectivity1", self)
+            self, methods_for_publish_on_dbus=("AppConnectivity1", self)
         )
         AppLifeCycle.Run(self)
 
     def Hello(self):
-        """Connectivity check D-Bus method: prints and returns 'Hello'."""
+        """
+        Connectivity check D-Bus method.
+
+        :return: 'Hello!'
+        """
         output = "Hello!"
         self.logger.info("{} request processed".format(output))
         return output
