@@ -42,35 +42,35 @@ MblError MblCloudConnectIpcDBus::Init()
     //testing
     string text ="{ \"people\": [{\"id\": 1, \"name\":\"MIKE\",\"surname\":\"TAYLOR\"}, {\"id\": 2, \"name\":\"TOM\",\"surname\":\"JERRY\"} ]}";
 
-tr_info("MblCloudConnectIpcDBus::Init 1");
     Json::CharReaderBuilder builder;
-tr_info("MblCloudConnectIpcDBus::Init 2");    
     Json::CharReader * reader = builder.newCharReader();
-tr_info("MblCloudConnectIpcDBus::Init 3");    
 
     Json::Value root;
     string errors;
 
-tr_info("MblCloudConnectIpcDBus::Init 4");
     bool parsingSuccessful = reader->parse(text.c_str(), text.c_str() + text.size(), &root, &errors);
-tr_info("MblCloudConnectIpcDBus::Init 5");    
     delete reader;
 
-tr_info("MblCloudConnectIpcDBus::Init 6");    
     if ( !parsingSuccessful )
     {
-        tr_info("MblCloudConnectIpcDBus::Init 7");    
         tr_error("Error parsing the string");
         return Error::None;
     }
 
-tr_info("MblCloudConnectIpcDBus::Init 8");    
-    for( Json::Value::iterator itr = root.begin() ; itr != root.end() ; itr++ )
+tr_info("MblCloudConnectIpcDBus::Init 1");
+Json::Value::iterator itr = root.begin();
+tr_info("MblCloudConnectIpcDBus::Init 11");
+itr++;
+tr_info("MblCloudConnectIpcDBus::Init 111");
+if (itr == root.end() )
+{
+    tr_info("MblCloudConnectIpcDBus::Init 1111");
+}
+    //for( Json::Value::iterator itr = root.begin() ; itr != root.end() ; itr++ )
     {
-        tr_info("Name= %s", (*itr)["name"].asString().c_str());
+      //  tr_info("Name= %s", (*itr)["name"].asString().c_str());
     }
-    
-tr_info("MblCloudConnectIpcDBus::Init 9");        
+tr_info("MblCloudConnectIpcDBus::Init 2");    
     return Error::None;
 }
 
