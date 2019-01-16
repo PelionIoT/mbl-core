@@ -20,8 +20,9 @@ DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
 DBUS_STOP_SIGNAL = "mbl.app.test1.stop"
 
-DBUS_SERVICE_PUBLISHING_TIME = 2
-APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT = 10
+DBUS_SERVICE_PUBLISHING_TIME = 1
+DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES = 15
+APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT = 15
 
 
 class TstReturnCode(Enum):
@@ -46,6 +47,7 @@ class TestAppConnectivity:
         </interface>
     </node>
     """
+
     stop_signal = signal()
 
     def setup_method(self, method):
@@ -63,7 +65,20 @@ class TestAppConnectivity:
         print("Finish executing command: {}".format(command))
 
         # time out to enable service to be published on the D-Bus
-        time.sleep(DBUS_SERVICE_PUBLISHING_TIME)
+        for timeout in range(DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES):
+            try:
+                the_object = self.bus.get(
+                    DEFAULT_DBUS_NAME,
+                    object_path=DBUS_OBJECT_PATH_APP_CONNECTIVITY1,
+                )
+                break
+            except GLib.GError:
+                print(
+                    "Waiting for dbus object publication {} seconds".format(
+                        timeout
+                    )
+                )
+                time.sleep(DBUS_SERVICE_PUBLISHING_TIME)
 
         print("Setup method TestAppConnectivity end")
 
@@ -82,9 +97,9 @@ class TestAppConnectivity:
             )
             assert (
                 returncode == 0
-            ), "Wait for App Pydbus process to terminate returned code {} is not 0".format(
-                returncode
-            )
+            ), "Wait for App Pydbus process to terminate returned code {} is"
+            " not 0".format(returncode)
+
             print("Process wait returncode: {}".format(returncode))
 
         except subprocess.TimeoutExpired:

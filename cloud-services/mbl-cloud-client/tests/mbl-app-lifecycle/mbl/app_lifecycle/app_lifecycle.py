@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-This script simulate application behavior for tests: application start, stop 
+D-Bus test application infrastructure script.
+
+This script simulate application behavior for tests: application start, stop
 and D-Bus connectivity check.
 """
 
@@ -91,7 +93,7 @@ class AppLifeCycle:
         AppLifeCycle.bus_main_loop.run()
 
     def GetPid(self):
-        """D-Bus test method: returns process Id."""
+        """Get process Id D-Bus test method: returns process Id."""
         pid = os.getpid()
         self.logger.debug("Application process ID {}".format(pid))
         return pid
@@ -121,7 +123,7 @@ class AppConnectivity(AppLifeCycle):
         self.logger.debug("__init__")
 
     def Run(self):
-        """Publish methods on D-Bus and run D-Bus main loop"""
+        """Publish methods on D-Bus and run D-Bus main loop."""
         self.logger.info("AppConnectivity Run")
         AppLifeCycle.AddToPublish(
             self, dBusInterface_to_obj_tuple=("AppConnectivity1", self)
@@ -129,7 +131,7 @@ class AppConnectivity(AppLifeCycle):
         AppLifeCycle.Run(self)
 
     def Hello(self):
-        """D-Bus method: prints and returns 'Hello'."""
+        """Connectivity check D-Bus method: prints and returns 'Hello'."""
         output = "Hello!"
         self.logger.info("{} request processed".format(output))
         return output
