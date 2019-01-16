@@ -37,7 +37,7 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 
 MblError MblCloudConnectIpcDBus::Init()
 {
-    tr_debug("MblCloudConnectIpcDBus::Init");
+    tr_info("MblCloudConnectIpcDBus::Init");
 
     //testing
     string text ="{ \"people\": [{\"id\": 1, \"name\":\"MIKE\",\"surname\":\"TAYLOR\"}, {\"id\": 2, \"name\":\"TOM\",\"surname\":\"JERRY\"} ]}";
@@ -58,7 +58,6 @@ MblError MblCloudConnectIpcDBus::Init()
     }
 
     for( Json::Value::iterator itr = root.begin() ; itr != root.end() ; itr++ )
-    //for (Json::Value::iterator itr = root["name"].begin(); itr != root["name"].end(); ++itr)
     {
         tr_info("Name= %s", (*itr)["name"].asString().c_str());
     }

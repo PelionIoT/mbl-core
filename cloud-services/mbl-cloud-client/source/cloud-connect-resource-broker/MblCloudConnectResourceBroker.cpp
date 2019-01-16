@@ -39,7 +39,7 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 
 MblError MblCloudConnectResourceBroker::Init()
 {
-    tr_debug("MblCloudConnectResourceBroker::Init");
+    tr_info("MblCloudConnectResourceBroker::Init");
 
     assert(ipc_);
     MblError ret = ipc_->Init();
