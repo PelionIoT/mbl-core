@@ -39,16 +39,15 @@ MblError MblCloudConnectIpcDBus::Init()
 {
     tr_info("MblCloudConnectIpcDBus::Init");
 
-    //testing
-    string text ="{ \"people\": [{\"id\": 1, \"name\":\"MIKE\",\"surname\":\"TAYLOR\"}, {\"id\": 2, \"name\":\"TOM\",\"surname\":\"JERRY\"} ]}";
+    string text ="{ \"book\":\"Alice in Wonderland\", \"year\":1865, \"characters\": [{\"name\":\"Jabberwock\", \"chapter\":1}, {\"name\":\"Cheshire Cat\", \"chapter\":6}, {\"name\":\"Mad Hatter\", \"chapter\":7} ]}";
 
     Json::CharReaderBuilder builder;
     Json::CharReader * reader = builder.newCharReader();
 
-    Json::Value root;
+    Json::Value obj;
     string errors;
 
-    bool parsingSuccessful = reader->parse(text.c_str(), text.c_str() + text.size(), &root, &errors);
+    bool parsingSuccessful = reader->parse(text.c_str(), text.c_str() + text.size(), &obj, &errors);
     delete reader;
 
     if ( !parsingSuccessful )
@@ -57,20 +56,17 @@ MblError MblCloudConnectIpcDBus::Init()
         return Error::None;
     }
 
-tr_info("MblCloudConnectIpcDBus::Init 1");
-Json::Value::iterator itr = root.begin();
-tr_info("MblCloudConnectIpcDBus::Init 11");
-itr++;
-tr_info("MblCloudConnectIpcDBus::Init 111");
-if (itr == root.end() )
-{
-    tr_info("MblCloudConnectIpcDBus::Init 1111");
-}
-    //for( Json::Value::iterator itr = root.begin() ; itr != root.end() ; itr++ )
+    tr_info( "Book: %s", obj["book"].asString().c_str() );
+    tr_info( "Year: %d", obj["year"].asUInt() );
+    const Json::Value& characters = obj["characters"]; // array of characters
+
+    for (Json::Value::ArrayIndex i = 0; i < characters.size(); i++)
     {
-      //  tr_info("Name= %s", (*itr)["name"].asString().c_str());
+        tr_info( "name: %s", characters[i]["name"].asString().c_str());
+        tr_info( "chapter: %d", characters[i]["chapter"].asUInt());
     }
-tr_info("MblCloudConnectIpcDBus::Init 2");    
+
+    tr_info("MblCloudConnectIpcDBus::Init 3");    
     return Error::None;
 }
 
