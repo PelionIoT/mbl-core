@@ -17,8 +17,6 @@
 
 #include "MblCloudConnectIpcDBus.h"
 
-#include <json/json.h>
-#include <json/reader.h>
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "CCRB-IPCDBUS"
@@ -37,36 +35,7 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 
 MblError MblCloudConnectIpcDBus::Init()
 {
-    tr_info("MblCloudConnectIpcDBus::Init");
-
-    string text ="{ \"book\":\"Alice in Wonderland\", \"year\":1865, \"characters\": [{\"name\":\"Jabberwock\", \"chapter\":1}, {\"name\":\"Cheshire Cat\", \"chapter\":6}, {\"name\":\"Mad Hatter\", \"chapter\":7} ]}";
-
-    Json::CharReaderBuilder builder;
-    Json::CharReader * reader = builder.newCharReader();
-
-    Json::Value obj;
-    string errors;
-
-    bool parsingSuccessful = reader->parse(text.c_str(), text.c_str() + text.size(), &obj, &errors);
-    delete reader;
-
-    if ( !parsingSuccessful )
-    {
-        tr_error("Error parsing the string");
-        return Error::None;
-    }
-
-    tr_info( "Book: %s", obj["book"].asString().c_str() );
-    tr_info( "Year: %d", obj["year"].asUInt() );
-    const Json::Value& characters = obj["characters"]; // array of characters
-
-    for (Json::Value::ArrayIndex i = 0; i < characters.size(); i++)
-    {
-        tr_info( "name: %s", characters[i]["name"].asString().c_str());
-        tr_info( "chapter: %d", characters[i]["chapter"].asUInt());
-    }
-
-    tr_info("MblCloudConnectIpcDBus::Init 4");    
+    tr_debug("MblCloudConnectIpcDBus::Init");
     return Error::None;
 }
 

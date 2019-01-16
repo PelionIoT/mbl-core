@@ -26,7 +26,6 @@ ADDSUBDIRS()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
-
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
 # platforms we need to support and use those instead
 # Currently the compilation flag PAL_USE_HW_ROT is 0, which means that mbedPalInsecureROT library is not supported on HW.
@@ -53,7 +52,6 @@ SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-#include_directories(${jsoncpp_INCLUDE_DIRS})
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
@@ -82,3 +80,4 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+
