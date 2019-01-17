@@ -40,13 +40,36 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 MblError MblCloudConnectResourceBroker::Init()
 {
     tr_debug("MblCloudConnectResourceBroker::Init");
+    return Error::None;
+}
 
+void* MblCloudConnectResourceBroker::Thread_Function(void* ccrb_instance_ptr)
+{
+	assert(ccrb_instance_ptr);
     assert(ipc_);
-    MblError ret = ipc_->Init();
-    if(Error::None != ret) {
-        tr_error("Init ipc failed with error %s", MblError_to_str(ret));
+
+	MblCloudConnectResourceBroker *ccrb_ptr = static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
+
+    MblError status = ccrb_ptr->Init();
+    if(Error::None != status) {
+        tr_error("ccrb::Init failed with error %s", MblError_to_str(status));
+        pthread_exit(NULL);
     }
-    return ret;
+
+    status = ipc_->Init();
+    if(Error::None != status) {
+        tr_error("ipc::Init failed with error %s", MblError_to_str(status));
+        pthread_exit(NULL);
+    }
+
+    status = ipc_->Run();
+    if(Error::None != status) {
+        tr_error("ipc::Run failed with error %s", MblError_to_str(status));
+        pthread_exit(NULL);
+    }
+
+    pthread_exit(NULL);
+    // pthread_exit does "return"
 }
 
 } // namespace mbl

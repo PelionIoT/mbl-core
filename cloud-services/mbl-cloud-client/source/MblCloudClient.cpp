@@ -27,6 +27,8 @@
 #include <cassert>
 #include <csignal>
 #include <unistd.h>
+#include <pthreads.h>
+
 
 #include MBED_CLOUD_CLIENT_USER_CONFIG_FILE
 
@@ -109,10 +111,15 @@ MblError MblCloudClient::run()
         return ccs_err;
     }
 
-    const MblError ccrb_init = s_instance->cloud_connect_resource_broker_.Init();
-    if(Error::None != ccrb_init) {
-        tr_error("Init cloud_connect_resource_broker_ failed with error %s", MblError_to_str(ccrb_init));
-    }
+    const int thread_create_err = pthread_create(
+            &ccrb_thread_,
+            nullptr,
+            MblCloudConnectResourceBroker::Thread_Function(),
+            &cloud_connect_resource_broker_
+        );
+    if(0 != thread_create_err)
+    	// handle linux error
+        // return
 
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {
