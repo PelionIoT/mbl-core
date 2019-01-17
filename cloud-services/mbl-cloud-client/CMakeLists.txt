@@ -23,6 +23,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 ADDSUBDIRS()
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
+
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
 # platforms we need to support and use those instead
 # Currently the compilation flag PAL_USE_HW_ROT is 0, which means that mbedPalInsecureROT library is not supported on HW.
@@ -69,6 +72,7 @@ target_link_libraries(mbl-cloud-client mbedcrypto)
 target_link_libraries(mbl-cloud-client mbedtls)
 target_link_libraries(mbl-cloud-client mbedx509)
 target_link_libraries(mbl-cloud-client mbedTrace)
+target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
