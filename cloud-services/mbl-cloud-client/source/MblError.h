@@ -33,7 +33,7 @@ enum Type {
     ShutdownRequested                   = 0x0006,
     ThreadCreationFailed                = 0x0007,
     ThreadJoiningFailed                 = 0x0008,
-    ThreadFinishingFailed               = 0x0008,
+    ThreadFinishingFailed               = 0x0009,
 
 
     ConnectAlreadyExists                = 0x0100,

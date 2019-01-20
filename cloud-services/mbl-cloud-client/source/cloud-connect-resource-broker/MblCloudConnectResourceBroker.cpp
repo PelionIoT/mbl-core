@@ -50,7 +50,8 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
     assert(ccrb_instance_ptr);
     tr_info("MblCloudConnectResourceBroker::thread_function");
 
-    const MblCloudConnectResourceBroker *ccrb_ptr = static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
+    MblCloudConnectResourceBroker * const ccrb_ptr =
+        static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
 
     MblError status = ccrb_ptr->init();
     if(Error::None != status) {

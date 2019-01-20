@@ -18,8 +18,8 @@
 #include "MblCloudConnectIpcDBus.h"
 
 #include "mbed-trace/mbed_trace.h"
+#include <cassert>
 #include <pthread.h>
-#include <cassert.h>
 #include <unistd.h>
 
 #define TRACE_GROUP "CCRB-IPCDBUS"
