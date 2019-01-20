@@ -27,6 +27,7 @@
 namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
+    : should_finish_asap (false) //flag should_finish_asap will BE REMOVED SOONLY
 {
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
@@ -37,31 +38,32 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 {
-    tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
+    tr_info("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
 }
 
-MblError MblCloudConnectIpcDBus::Init()
+MblError MblCloudConnectIpcDBus::init()
 {
-    tr_debug("MblCloudConnectIpcDBus::Init");
+    tr_info("MblCloudConnectIpcDBus::init");
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::Run()
+MblError MblCloudConnectIpcDBus::run()
 {
-    tr_debug("MblCloudConnectIpcDBus::Run");
+    tr_info("MblCloudConnectIpcDBus::run");
 
-    while not should finish
+    // Simulates event-loop (TO BE REMOVED SOONLY)
+    while(!should_finish_asap)
     {
-        sleep
-        print
+        sleep(2);
+        tr_debug("event loop is alive");
     }
 
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::ThreadJoin(void** args)
+MblError MblCloudConnectIpcDBus::thread_join(void** args)
 {
-    tr_info("MblCloudConnectIpcDBus::ThreadJoin");
+    tr_info("MblCloudConnectIpcDBus::thread_join");
 
     const int thread_join_err = pthread_join(ipc_thread_id, args);
     if(0 != thread_join_err)
@@ -85,9 +87,12 @@ MblError MblCloudConnectIpcDBus::ThreadJoin(void** args)
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::ThreadFinish()
+MblError MblCloudConnectIpcDBus::thread_finish()
 {
-    set flag to FINISH!;
+    tr_info("MblCloudConnectIpcDBus::thread_finish");
+
+    // temporary not thread safe solution (TO BE REMOVED SOONLY)
+    should_finish_asap = true;
     return Error::None;
 }
 

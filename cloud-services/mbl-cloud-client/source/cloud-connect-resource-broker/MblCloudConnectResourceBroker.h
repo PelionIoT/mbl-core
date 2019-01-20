@@ -37,17 +37,17 @@ public:
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 
-    // Initialize
-    MblError Init();
+    // initialize ccrb instance
+    MblError init();
 
-    // the caller thread will be joined with the IPC thread
-    MblError ThreadJoin(void **args);
+    // the caller thread will join with the IPC thread
+    MblError thread_join(void **args);
 
     // signals to the IPC thread that it should finish ASAP
-    MblError ThreadFinish();
+    MblError thread_finish();
 
-    // thread function
-    static void *ThreadFunction(void *ccrb_instance_ptr);
+    // thread main function
+    static void *thread_function(void *ccrb_instance_ptr);
 
 private:
 

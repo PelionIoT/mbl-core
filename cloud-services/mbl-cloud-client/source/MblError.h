@@ -31,8 +31,10 @@ enum Type {
     SignalsInitSigaction                = 0x0004,
     DeviceUnregistered                  = 0x0005,
     ShutdownRequested                   = 0x0006,
-	ThreadCreationFailed                = 0x0007,
-	ThreadJoiningFailed                 = 0x0008,
+    ThreadCreationFailed                = 0x0007,
+    ThreadJoiningFailed                 = 0x0008,
+    ThreadFinishingFailed               = 0x0008,
+
 
     ConnectAlreadyExists                = 0x0100,
     ConnectBootstrapFailed              = 0x0101,

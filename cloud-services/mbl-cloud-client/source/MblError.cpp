@@ -31,6 +31,7 @@ const char* MblError_to_str(const MblError error)
         case Error::ShutdownRequested: return "Shutdown requested";
         case Error::ThreadCreationFailed: return "Thread creation failed";
         case Error::ThreadJoiningFailed: return "Thread joining failed";
+        case Error::ThreadFinishingFailed: return "Thread finishing failed";
 
         case Error::ConnectAlreadyExists: return "ConnectAlreadyExists";
         case Error::ConnectBootstrapFailed: return "ConnectBootstrapFailed";

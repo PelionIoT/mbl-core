@@ -35,17 +35,22 @@ public:
     MblCloudConnectIpcInterface() = default;
     virtual ~MblCloudConnectIpcInterface() = default;
     
-    // Init API skeleton (needed as we are not using exceptions and we can't check for errors from a constructor).
-    virtual MblError Init() = 0;
+    // initialize IPC instance
+    // return Error::None if succeeded, error TBD error code otherwise
+    virtual MblError init() = 0;
 
-    // runs IPC event-loop
-    virtual MblError Run() = 0;
+    // Runs IPC event-loop
+    // return Error::None if succeeded, error TBD error code otherwise
+    virtual MblError run() = 0;
 
-    // joins with the thread
-    virtual MblError ThreadJoin(void **args) = 0;
+    // The caller thread will join with the IPC thread
+    // param[in] args - output parameter that will contain thread output data
+    // return Error::None if succeeded, Error::ThreadJoiningFailed otherwise
+    virtual MblError thread_join(void **args) = 0;
 
-    // signals to the IPC thread that it should finish ASAP
-    virtual MblError ThreadFinish() = 0;
+    // Signals to the IPC thread that it should finish ASAP
+    // return Error::None if succeeded, Error::ThreadFinishingFailed otherwise
+    virtual MblError thread_finish() = 0;
 
 private:
 

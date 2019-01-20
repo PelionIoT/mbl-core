@@ -35,20 +35,23 @@ public:
     MblCloudConnectIpcDBus();
     ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of Init()
-    MblError Init() override;
+    // Implementation of init()
+    MblError init() override;
 
-    // Implementation of Run()
-    MblError Run() override;
+    // Implementation of run()
+    MblError run() override;
 
-    // the caller thread will be joined with the IPC thread
-    MblError ThreadJoin(void **args) override;
+    // Implementation of thread_join()
+    MblError thread_join(void **args) override;
 
-    // signals to the IPC thread that it should finish ASAP
-    MblError ThreadFinish() override;
+    // Implementation of thread_finish()
+    MblError thread_finish() override;
 
 private:
     pthread_t ipc_thread_id;
+
+    // temporary not thread safe solution (TO BE REMOVED SOONLY)
+    volatile bool should_finish_asap;
 };
 
 } // namespace mbl

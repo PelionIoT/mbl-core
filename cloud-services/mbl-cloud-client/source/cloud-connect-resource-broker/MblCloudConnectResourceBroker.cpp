@@ -31,30 +31,30 @@ namespace mbl {
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
     : ipc_ (nullptr)
 {
-    tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
+    tr_info("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
 
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
-    tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+    tr_info("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
 }
 
-MblError MblCloudConnectResourceBroker::Init()
+MblError MblCloudConnectResourceBroker::init()
 {
-    tr_debug("MblCloudConnectResourceBroker::Init");
+    tr_info("MblCloudConnectResourceBroker::init");
     return Error::None;
 }
 
-// static function
-void* MblCloudConnectResourceBroker::ThreadFunction(void* ccrb_instance_ptr)
+void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
 {
     assert(ccrb_instance_ptr);
+    tr_info("MblCloudConnectResourceBroker::thread_function");
 
     const MblCloudConnectResourceBroker *ccrb_ptr = static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
 
-    MblError status = ccrb_ptr->Init();
+    MblError status = ccrb_ptr->init();
     if(Error::None != status) {
-        tr_error("ccrb::Init failed with error %s", MblError_to_str(status));
+        tr_error("ccrb::init failed with error %s", MblError_to_str(status));
         pthread_exit(NULL);
     }
 
@@ -64,15 +64,15 @@ void* MblCloudConnectResourceBroker::ThreadFunction(void* ccrb_instance_ptr)
     // create _ipc instance
     ccrb_ptr->ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
 
-    status = ccrb_ptr->ipc_->Init();
+    status = ccrb_ptr->ipc_->init();
     if(Error::None != status) {
-        tr_error("ipc::Init failed with error %s", MblError_to_str(status));
+        tr_error("ipc::init failed with error %s", MblError_to_str(status));
         pthread_exit(NULL);
     }
 
-    status = ccrb_ptr->ipc_->Run();
+    status = ccrb_ptr->ipc_->run();
     if(Error::None != status) {
-        tr_error("ipc::Run failed with error %s", MblError_to_str(status));
+        tr_error("ipc::run failed with error %s", MblError_to_str(status));
         pthread_exit(NULL);
     }
 
@@ -80,18 +80,18 @@ void* MblCloudConnectResourceBroker::ThreadFunction(void* ccrb_instance_ptr)
     // pthread_exit does "return"
 }
 
-MblError MblCloudConnectResourceBroker::ThreadJoin(void **args)
+MblError MblCloudConnectResourceBroker::thread_join(void **args)
 {
     assert(ipc_);
-    tr_debug("MblCloudConnectResourceBroker::ThreadJoin");
-    return ipc_->ThreadJoin(args);
+    tr_info("MblCloudConnectResourceBroker::thread_join");
+    return ipc_->thread_join(args);
 }
 
-MblError MblCloudConnectResourceBroker::ThreadFinish()
+MblError MblCloudConnectResourceBroker::thread_finish()
 {
     assert(ipc_);
-    tr_debug("MblCloudConnectResourceBroker::ThreadFinish");
-    return ipc_->ThreadFinish();
+    tr_info("MblCloudConnectResourceBroker::thread_finish");
+    return ipc_->thread_finish();
 }
 
 } // namespace mbl
