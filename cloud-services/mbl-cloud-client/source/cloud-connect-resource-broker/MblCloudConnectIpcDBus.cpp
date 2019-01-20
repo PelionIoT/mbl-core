@@ -55,7 +55,7 @@ MblError MblCloudConnectIpcDBus::run()
     while(!should_finish_asap)
     {
         tr_info("event loop is alive");
-        sleep(2);
+        sleep(1);
     }
 
     return Error::None;

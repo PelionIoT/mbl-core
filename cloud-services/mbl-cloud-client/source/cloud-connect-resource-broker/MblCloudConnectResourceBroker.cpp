@@ -76,6 +76,8 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
         pthread_exit(nullptr);
     }
 
+    tr_info("MblCloudConnectResourceBroker::thread_function finished");
+
     pthread_exit(nullptr);
     // pthread_exit does "return"
 }
