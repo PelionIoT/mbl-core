@@ -112,7 +112,7 @@ MblError MblCloudClient::run()
 
     pthread_t ccrb_thread_id = 0; // variable is not really used
 
-    // create pthread thread
+    // create new thread which will run CCRB
     const int thread_create_err = pthread_create(
             &ccrb_thread_id,
             nullptr, // thread is created with default attributes
@@ -124,7 +124,6 @@ MblError MblCloudClient::run()
         // thread creation failed, print errno value and exit
         const int thread_create_errno = errno;
 
-        // handle linux error
         std::fprintf(
             stderr,
             "Thread creation failed (%s)!\n",
@@ -146,7 +145,7 @@ MblError MblCloudClient::run()
             const MblError finish_err = s_instance->cloud_connect_resource_broker_.thread_finish();
             if(Error::None == finish_err)
             {
-                // ccrb thread was signaled to finish asap
+                // ccrb thread was signaled to finish asap. now join with it.
                 const MblError join_err = s_instance->cloud_connect_resource_broker_.thread_join(nullptr);
                 if(Error::None != join_err)
                 {

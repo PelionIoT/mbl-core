@@ -23,7 +23,6 @@
 
 #include  <memory>
 
-
 namespace mbl {
 
 class MblCloudConnectResourceBroker {
@@ -31,22 +30,25 @@ class MblCloudConnectResourceBroker {
 public:
 
     // Currently, this constructor is called from MblCloudClient thread.
-    // Might change in future. If we shall need to call constructor from ccrb thread,
-    // change MblCloudClient::cloud_connect_resource_broker_ instance member
-    // to be pointer and call constructor from ccrb thread thread function
+    // Might change in future. If we shall need to call the constructor from the
+    // ccrb thread, change MblCloudClient::cloud_connect_resource_broker_ instance
+    // member to be a pointer and call the constructor from ccrb thread thread_function
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 
     // initialize ccrb instance
     MblError init();
 
-    // the caller thread will join with the IPC thread
+    // The caller thread will join with the IPC thread
+    // param[in] args - output parameter that will contain thread output data
+    // return Error::None if succeeded, Error::ThreadJoiningFailed otherwise
     MblError thread_join(void **args);
 
-    // signals to the IPC thread that it should finish ASAP
+    // Signals to the IPC thread that it should finish ASAP
+    // return Error::None if succeeded, Error::ThreadFinishingFailed otherwise
     MblError thread_finish();
 
-    // thread main function
+    // Thread main function.
     static void *thread_function(void *ccrb_instance_ptr);
 
 private:

@@ -22,7 +22,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
-#define TRACE_GROUP "CCRB-IPCDBUS"
+#define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl {
 
@@ -32,7 +32,7 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
     // constructor runs on IPC thread context
-    // store thread ID
+    // store thread ID, always succeeding function
     ipc_thread_id = pthread_self();
 }
 
@@ -54,14 +54,15 @@ MblError MblCloudConnectIpcDBus::run()
     // Simulates event-loop (TO BE REMOVED SOONLY)
     while(!should_finish_asap)
     {
-        sleep(2);
         tr_info("event loop is alive");
+        sleep(2);
     }
 
     return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::thread_join(void** args)
+// param[in] args can be NULL
 {
     tr_info("MblCloudConnectIpcDBus::thread_join");
 
@@ -71,7 +72,6 @@ MblError MblCloudConnectIpcDBus::thread_join(void** args)
         // thread joining failed, print errno value and exit
         const int thread_join_errno = errno;
 
-        // handle linux error
         std::fprintf(
             stderr,
             "Thread joining failed (%s)!\n",

@@ -35,7 +35,6 @@ enum Type {
     ThreadJoiningFailed                 = 0x0008,
     ThreadFinishingFailed               = 0x0009,
 
-
     ConnectAlreadyExists                = 0x0100,
     ConnectBootstrapFailed              = 0x0101,
     ConnectInvalidParameters            = 0x0102,

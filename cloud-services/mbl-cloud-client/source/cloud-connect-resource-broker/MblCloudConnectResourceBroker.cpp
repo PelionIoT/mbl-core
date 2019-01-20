@@ -23,8 +23,7 @@
 #include <cassert>
 #include <pthread.h>
 
-
-#define TRACE_GROUP "CCRB"
+#define TRACE_GROUP "ccrb"
 
 namespace mbl {
 
@@ -56,32 +55,33 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
     MblError status = ccrb_ptr->init();
     if(Error::None != status) {
         tr_error("ccrb::init failed with error %s", MblError_to_str(status));
-        pthread_exit(NULL);
+        pthread_exit(nullptr);
     }
 
     // verify that ccrb_ptr->ipc_ was not created yet
     assert(nullptr == ccrb_ptr->ipc_);
 
-    // create _ipc instance
+    // create ipc instance
     ccrb_ptr->ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
 
     status = ccrb_ptr->ipc_->init();
     if(Error::None != status) {
         tr_error("ipc::init failed with error %s", MblError_to_str(status));
-        pthread_exit(NULL);
+        pthread_exit(nullptr);
     }
 
     status = ccrb_ptr->ipc_->run();
     if(Error::None != status) {
         tr_error("ipc::run failed with error %s", MblError_to_str(status));
-        pthread_exit(NULL);
+        pthread_exit(nullptr);
     }
 
-    pthread_exit(NULL);
+    pthread_exit(nullptr);
     // pthread_exit does "return"
 }
 
 MblError MblCloudConnectResourceBroker::thread_join(void **args)
+// param[in] args can be NULL
 {
     assert(ipc_);
     tr_info("MblCloudConnectResourceBroker::thread_join");
