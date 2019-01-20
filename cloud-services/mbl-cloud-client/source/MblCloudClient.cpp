@@ -140,7 +140,23 @@ MblError MblCloudClient::run()
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {
         if (g_shutdown_signal) {
-            tr_warn("Recieved signal \"%s\", shutting down", strsignal(g_shutdown_signal));
+            tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
+
+            // try stop asap ccrb thread
+            const MblError finish_err = s_instance->cloud_connect_resource_broker_.thread_finish();
+            if(Error::None == finish_err)
+            {
+                // ccrb thread was signaled to finish asap
+                const MblError join_err = s_instance->cloud_connect_resource_broker_.thread_join(nullptr);
+                if(Error::None != join_err)
+                {
+                    tr_err("Joining CCRB thread failed! (%s)", MblError_to_str(join_err));
+                }
+            }
+            else{
+                tr_err("Sending finish signal to CCRB thread failed! (%s)", MblError_to_str(finish_err));
+            }
+
             return Error::ShutdownRequested;
         }
 
