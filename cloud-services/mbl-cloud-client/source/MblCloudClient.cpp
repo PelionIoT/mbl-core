@@ -117,7 +117,7 @@ MblError MblCloudClient::run()
             &ccrb_thread_id,
             nullptr, // thread is created with default attributes
             MblCloudConnectResourceBroker::thread_function,
-            &cloud_connect_resource_broker_
+            &(s_instance->cloud_connect_resource_broker_)
         );
     if(0 != thread_create_err)
     {
