@@ -18,6 +18,9 @@
 #include "MblCloudConnectIpcDBus.h"
 
 #include "mbed-trace/mbed_trace.h"
+#include <pthread.h>
+#include <cassert.h>
+#include <unistd.h>
 
 #define TRACE_GROUP "CCRB-IPCDBUS"
 
@@ -26,6 +29,10 @@ namespace mbl {
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 {
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+
+	// constructor runs on IPC thread context
+    // store thread ID
+	ipc_thread_id = pthread_self();
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -39,4 +46,50 @@ MblError MblCloudConnectIpcDBus::Init()
     return Error::None;
 }
 
+MblError MblCloudConnectIpcDBus::Run()
+{
+    tr_debug("MblCloudConnectIpcDBus::Run");
+
+    while not should finish
+	{
+    	sleep
+		print
+	}
+
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::ThreadJoin(void** args)
+{
+    tr_info("MblCloudConnectIpcDBus::ThreadJoin");
+
+    const int thread_join_err = pthread_join(ipc_thread_id, args);
+    if(0 != thread_join_err)
+    {
+        // thread joining failed, print errno value and exit
+        const int thread_join_errno = errno;
+
+        // handle linux error
+        std::fprintf(
+			stderr,
+			"Thread joining failed (%s)!\n",
+			strerror(thread_join_errno));
+
+		tr_err(
+            "Thread joining failed (%s)!\n",
+            strerror(thread_join_errno));
+
+        return Error::ThreadJoiningFailed;
+    }
+
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::ThreadFinish()
+{
+    set flag to FINISH!;
+	return Error::None;
+}
+
 } // namespace mbl
+

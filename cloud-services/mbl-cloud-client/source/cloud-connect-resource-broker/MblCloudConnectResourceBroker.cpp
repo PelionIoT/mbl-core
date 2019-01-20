@@ -21,13 +21,15 @@
 #include "mbed-trace/mbed_trace.h"
 
 #include <cassert>
+#include <pthread.h>
+
 
 #define TRACE_GROUP "CCRB"
 
 namespace mbl {
 
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
-    : ipc_ (std::make_unique<MblCloudConnectIpcDBus>())
+    : ipc_ (nullptr)
 {
     tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
@@ -43,12 +45,12 @@ MblError MblCloudConnectResourceBroker::Init()
     return Error::None;
 }
 
-void* MblCloudConnectResourceBroker::Thread_Function(void* ccrb_instance_ptr)
+// static function
+void* MblCloudConnectResourceBroker::ThreadFunction(void* ccrb_instance_ptr)
 {
 	assert(ccrb_instance_ptr);
-    assert(ipc_);
 
-	MblCloudConnectResourceBroker *ccrb_ptr = static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
+	const MblCloudConnectResourceBroker *ccrb_ptr = static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
 
     MblError status = ccrb_ptr->Init();
     if(Error::None != status) {
@@ -56,13 +58,19 @@ void* MblCloudConnectResourceBroker::Thread_Function(void* ccrb_instance_ptr)
         pthread_exit(NULL);
     }
 
-    status = ipc_->Init();
+    // verify that ccrb_ptr->ipc_ was not created yet
+    assert(nullptr == ccrb_ptr->ipc_);
+
+    // create _ipc instance
+    ccrb_ptr->ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
+
+    status = ccrb_ptr->ipc_->Init();
     if(Error::None != status) {
         tr_error("ipc::Init failed with error %s", MblError_to_str(status));
         pthread_exit(NULL);
     }
 
-    status = ipc_->Run();
+    status = ccrb_ptr->ipc_->Run();
     if(Error::None != status) {
         tr_error("ipc::Run failed with error %s", MblError_to_str(status));
         pthread_exit(NULL);
@@ -72,4 +80,19 @@ void* MblCloudConnectResourceBroker::Thread_Function(void* ccrb_instance_ptr)
     // pthread_exit does "return"
 }
 
+MblError MblCloudConnectResourceBroker::ThreadJoin(void **args)
+{
+    assert(ipc_);
+    tr_debug("MblCloudConnectResourceBroker::ThreadJoin");
+    return ipc_->ThreadJoin(args);
+}
+
+MblError MblCloudConnectResourceBroker::ThreadFinish()
+{
+    assert(ipc_);
+    tr_debug("MblCloudConnectResourceBroker::ThreadFinish");
+    return ipc_->ThreadFinish();
+}
+
 } // namespace mbl
+

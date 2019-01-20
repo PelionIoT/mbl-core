@@ -23,29 +23,35 @@
 
 #include  <memory>
 
+
 namespace mbl {
 
 class MblCloudConnectResourceBroker {
 
 public:
 
-	// Currently, this constructor is called from MblCloudClient thread. Might change in future.
-	// If we shall need to call constructor from ccrb thread,
-	// change MblCloudClient::cloud_connect_resource_broker_ instance member to be pointer
-	// and call constructor from ccrb thread thread function
+	// Currently, this constructor is called from MblCloudClient thread.
+	// Might change in future. If we shall need to call constructor from ccrb thread,
+	// change MblCloudClient::cloud_connect_resource_broker_ instance member
+	// to be pointer and call constructor from ccrb thread thread function
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 
     // Initialize
     MblError Init();
 
-    // CCRB thread function
-    static void *Thread_Function(void *ccrb_instance_ptr);
+    // the caller thread will be joined with the IPC thread
+    MblError ThreadJoin(void **args);
+
+    // signals to the IPC thread that it should finish ASAP
+    MblError ThreadFinish();
+
+    // thread function
+    static void *ThreadFunction(void *ccrb_instance_ptr);
 
 private:
 
     std::unique_ptr<MblCloudConnectIpcInterface> ipc_;
- 
 };
 
 } // namespace mbl

@@ -27,7 +27,6 @@
 #include <cassert>
 #include <csignal>
 #include <unistd.h>
-#include <pthreads.h>
 
 
 #include MBED_CLOUD_CLIENT_USER_CONFIG_FILE
@@ -111,15 +110,32 @@ MblError MblCloudClient::run()
         return ccs_err;
     }
 
+    pthread_t ccrb_thread_id = 0; // variable is not really used
+
+    // create pthread thread
     const int thread_create_err = pthread_create(
-            &ccrb_thread_,
-            nullptr,
+            &ccrb_thread_id,
+            nullptr, // thread is created with default attributes
             MblCloudConnectResourceBroker::Thread_Function(),
             &cloud_connect_resource_broker_
         );
     if(0 != thread_create_err)
-    	// handle linux error
-        // return
+    {
+    	// thread creation failed, print errno value and exit
+        const int thread_create_errno = errno;
+
+        // handle linux error
+        std::fprintf(
+            stderr,
+            "Thread creation failed (%s)!\n",
+                strerror(thread_create_errno));
+
+        tr_err(
+            "Thread creation failed (%s)!\n",
+            strerror(thread_create_errno));
+
+        return Error::ThreadCreationFailed;
+    }
 
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {

@@ -20,6 +20,7 @@
 #define MblCloudConnectIpcDBus_h_
 
 #include "MblCloudConnectIpcInterface.h"
+#include <pthread.h>
 
 namespace mbl {
 
@@ -34,8 +35,20 @@ public:
     MblCloudConnectIpcDBus();
     ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of init()
+    // Implementation of Init()
     MblError Init() override;
+
+    // Implementation of Run()
+    MblError Run() override;
+
+    // the caller thread will be joined with the IPC thread
+    MblError ThreadJoin(void **args) override;
+
+    // signals to the IPC thread that it should finish ASAP
+    MblError ThreadFinish() override;
+
+private:
+    pthread_t ipc_thread_id;
 };
 
 } // namespace mbl

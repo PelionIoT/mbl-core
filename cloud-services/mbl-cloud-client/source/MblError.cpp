@@ -29,6 +29,8 @@ const char* MblError_to_str(const MblError error)
         case Error::SignalsInitSigaction: return "Failed to register signal handler";
         case Error::DeviceUnregistered: return "Device became unregistered";
         case Error::ShutdownRequested: return "Shutdown requested";
+        case Error::ThreadCreationFailed: return "Thread creation failed";
+        case Error::ThreadJoiningFailed: return "Thread joining failed";
 
         case Error::ConnectAlreadyExists: return "ConnectAlreadyExists";
         case Error::ConnectBootstrapFailed: return "ConnectBootstrapFailed";

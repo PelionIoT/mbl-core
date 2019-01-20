@@ -75,10 +75,6 @@ private:
     // (TBD: might be changed to be a pointer, not member instance.
     MblCloudConnectResourceBroker cloud_connect_resource_broker_;
 
-    // thread id of the cloud connect resource broker thread
-    pthread_t ccrb_thread_;
-
-
     static MblCloudClient* s_instance;
     static MblMutex s_mutex;
 };

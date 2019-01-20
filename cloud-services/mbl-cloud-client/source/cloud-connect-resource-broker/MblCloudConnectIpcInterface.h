@@ -38,6 +38,15 @@ public:
     // Init API skeleton (needed as we are not using exceptions and we can't check for errors from a constructor).
     virtual MblError Init() = 0;
 
+    // runs IPC event-loop
+    virtual MblError Run() = 0;
+
+    // joins with the thread
+    virtual MblError ThreadJoin(void **args) = 0;
+
+    // signals to the IPC thread that it should finish ASAP
+    virtual MblError ThreadFinish() = 0;
+
 private:
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
