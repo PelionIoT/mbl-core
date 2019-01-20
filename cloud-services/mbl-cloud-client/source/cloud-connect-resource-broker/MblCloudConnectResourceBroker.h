@@ -30,10 +30,10 @@ class MblCloudConnectResourceBroker {
 
 public:
 
-	// Currently, this constructor is called from MblCloudClient thread.
-	// Might change in future. If we shall need to call constructor from ccrb thread,
-	// change MblCloudClient::cloud_connect_resource_broker_ instance member
-	// to be pointer and call constructor from ccrb thread thread function
+    // Currently, this constructor is called from MblCloudClient thread.
+    // Might change in future. If we shall need to call constructor from ccrb thread,
+    // change MblCloudClient::cloud_connect_resource_broker_ instance member
+    // to be pointer and call constructor from ccrb thread thread function
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 

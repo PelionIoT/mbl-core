@@ -30,9 +30,9 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 {
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
-	// constructor runs on IPC thread context
+    // constructor runs on IPC thread context
     // store thread ID
-	ipc_thread_id = pthread_self();
+    ipc_thread_id = pthread_self();
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -51,10 +51,10 @@ MblError MblCloudConnectIpcDBus::Run()
     tr_debug("MblCloudConnectIpcDBus::Run");
 
     while not should finish
-	{
-    	sleep
-		print
-	}
+    {
+        sleep
+        print
+    }
 
     return Error::None;
 }
@@ -71,11 +71,11 @@ MblError MblCloudConnectIpcDBus::ThreadJoin(void** args)
 
         // handle linux error
         std::fprintf(
-			stderr,
-			"Thread joining failed (%s)!\n",
-			strerror(thread_join_errno));
+            stderr,
+            "Thread joining failed (%s)!\n",
+            strerror(thread_join_errno));
 
-		tr_err(
+        tr_err(
             "Thread joining failed (%s)!\n",
             strerror(thread_join_errno));
 
@@ -88,7 +88,7 @@ MblError MblCloudConnectIpcDBus::ThreadJoin(void** args)
 MblError MblCloudConnectIpcDBus::ThreadFinish()
 {
     set flag to FINISH!;
-	return Error::None;
+    return Error::None;
 }
 
 } // namespace mbl
