@@ -79,7 +79,7 @@ private:
  * - runs CCRB main functionality loop.  
  * 
  * @param ccrb_instance_ptr address of CCRB instance that should run. 
- * @return void* thread output buffer. 
+ * @return void* thread output buffer - not used.
  */
     static void *thread_function(void *ccrb_instance_ptr);
 

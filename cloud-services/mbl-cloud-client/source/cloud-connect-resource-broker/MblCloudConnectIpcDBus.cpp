@@ -27,13 +27,13 @@
 namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
-    : exit_loop (false) // temporary flag exit_loop will be removed soon
+    : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
     // constructor runs on IPC thread context
     // store thread ID, always succeeding function
-    ipc_thread_id = pthread_self();
+    ipc_thread_id_ = pthread_self();
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -58,7 +58,7 @@ MblError MblCloudConnectIpcDBus::run()
     tr_info("MblCloudConnectIpcDBus::run");
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
-    while(!exit_loop)
+    while(!exit_loop_)
     {
         tr_info("event loop is alive");
         sleep(1);
@@ -73,8 +73,7 @@ MblError MblCloudConnectIpcDBus::stop()
     
     MblError stop_ipc_err = stop_event_loop();
     if(Error::None != stop_ipc_err){
-        tr_err("Sending finish signal to IPC thread failed! (%s)", MblError_to_str(stop_ipc_err));
-        return stop_ipc_err;
+        tr_err("Stopping IPC event-loop failed! (%s)", MblError_to_str(stop_ipc_err));
     }
 
     return stop_ipc_err;
@@ -82,12 +81,13 @@ MblError MblCloudConnectIpcDBus::stop()
 
 MblError MblCloudConnectIpcDBus::stop_event_loop()
 {
-    tr_info("MblCloudConnectIpcDBus::thread_join");
+    tr_info("MblCloudConnectIpcDBus::stop_event_loop");
 
-    // temporary not thread safe solution that should be removed soon
-    exit_loop = true;
+    // temporary not thread safe solution that should be removed soon.
+    // signal to event-loop that it should finish.
+    exit_loop_ = true;
 
-    const int thread_join_err = pthread_join(ipc_thread_id, nullptr);
+    const int thread_join_err = pthread_join(ipc_thread_id_, nullptr);
     if(0 != thread_join_err)
     {
         // thread joining failed, print errno value and exit

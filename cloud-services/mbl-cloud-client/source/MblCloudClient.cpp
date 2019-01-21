@@ -125,6 +125,7 @@ MblError MblCloudClient::run()
             const MblError ccrb_stop_err = s_instance->cloud_connect_resource_broker_.stop();
             if(Error::None != ccrb_stop_err) {
                 tr_err("Stopping CCRB module failed! (%s)", MblError_to_str(ccrb_stop_err));
+                return ccrb_stop_err;
             }
 
             return Error::ShutdownRequested;

@@ -41,6 +41,8 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 
 MblError MblCloudConnectResourceBroker::start()
 {
+    tr_info("MblCloudConnectResourceBroker::start");
+
     pthread_t ccrb_thread_id = 0; // variable is not really used
 
     // create new thread which will run IPC event loop
@@ -67,12 +69,18 @@ MblError MblCloudConnectResourceBroker::start()
 
 MblError MblCloudConnectResourceBroker::stop()
 {
-    MblError stop_ipc_err = ipc_->stop();
-    if(Error::None != stop_ipc_err){
-        tr_err("Stopping IPC loop failed! (%s)", MblError_to_str(stop_ipc_err));
+    MblError status = ipc_->de_init();
+    if(Error::None != status){
+        tr_err("Deinitializng IPC failed! (%s)", MblError_to_str(status));
+        return status;
     }
 
-    return stop_ipc_err;
+    status = ipc_->stop();
+    if(Error::None != status){
+        tr_err("Stopping IPC failed! (%s)", MblError_to_str(status));
+    }
+
+    return status;
 }
 
 MblError MblCloudConnectResourceBroker::init()
@@ -126,7 +134,6 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
     }
 
     tr_info("MblCloudConnectResourceBroker::thread_function finished");
-
     pthread_exit(nullptr);
     // pthread_exit does "return"
 }
