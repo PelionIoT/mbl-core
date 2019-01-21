@@ -41,7 +41,31 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 MblError MblCloudConnectResourceBroker::init()
 {
     tr_info("MblCloudConnectResourceBroker::init");
-    return Error::None;
+
+    // verify that ipc_ member was not created yet
+    assert(nullptr == ipc_);
+
+    // create ipc instance
+    ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
+
+    MblError status = ipc_->init();
+    if(Error::None != status) {
+        tr_error("ipc::init failed with error %s", MblError_to_str(status));
+    }
+
+    return status;
+}
+
+MblError MblCloudConnectResourceBroker::run()
+{
+    assert(ipc_);
+
+    MblError status = ipc_->run();
+    if(Error::None != status) {
+        tr_error("ipc::run failed with error %s", MblError_to_str(status));
+    }
+
+    return status;
 }
 
 void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
@@ -58,21 +82,9 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
         pthread_exit(nullptr);
     }
 
-    // verify that ccrb_ptr->ipc_ was not created yet
-    assert(nullptr == ccrb_ptr->ipc_);
-
-    // create ipc instance
-    ccrb_ptr->ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
-
-    status = ccrb_ptr->ipc_->init();
+    status = ccrb_ptr->run();
     if(Error::None != status) {
-        tr_error("ipc::init failed with error %s", MblError_to_str(status));
-        pthread_exit(nullptr);
-    }
-
-    status = ccrb_ptr->ipc_->run();
-    if(Error::None != status) {
-        tr_error("ipc::run failed with error %s", MblError_to_str(status));
+        tr_error("ccrb::run failed with error %s", MblError_to_str(status));
         pthread_exit(nullptr);
     }
 

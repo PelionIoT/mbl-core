@@ -39,6 +39,10 @@ public:
     // initialize ccrb instance
     MblError init();
 
+    // run ccrb
+    MblError run();
+
+
     // The caller thread will join with the IPC thread
     // param[in] args - output parameter that will contain thread output data
     // return Error::None if succeeded, Error::ThreadJoiningFailed otherwise
