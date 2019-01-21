@@ -40,10 +40,9 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 
 MblError MblCloudConnectResourceBroker::init()
 {
-    tr_info("MblCloudConnectResourceBroker::init");
-
     // verify that ipc_ member was not created yet
     assert(nullptr == ipc_);
+    tr_info("MblCloudConnectResourceBroker::init");
 
     // create ipc instance
     ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
@@ -59,6 +58,7 @@ MblError MblCloudConnectResourceBroker::init()
 MblError MblCloudConnectResourceBroker::run()
 {
     assert(ipc_);
+    tr_info("MblCloudConnectResourceBroker::run");
 
     MblError status = ipc_->run();
     if(Error::None != status) {
