@@ -38,6 +38,9 @@ public:
     // Implementation of MblCloudConnectIpcInterface::init()
     MblError init() override;
 
+    // Implementation of MblCloudConnectIpcInterface::de_init()
+    MblError de_init() override;
+
     // Implementation of MblCloudConnectIpcInterface::run()
     MblError run() override;
 

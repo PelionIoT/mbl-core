@@ -67,7 +67,12 @@ MblError MblCloudConnectResourceBroker::start()
 
 MblError MblCloudConnectResourceBroker::stop()
 {
-    return _ipc->stop();
+    MblError stop_ipc_err = ipc_->stop();
+    if(Error::None != stop_ipc_err){
+        tr_err("Stopping IPC loop failed! (%s)", MblError_to_str(stop_ipc_err));
+    }
+
+    return stop_ipc_err;
 }
 
 MblError MblCloudConnectResourceBroker::init()

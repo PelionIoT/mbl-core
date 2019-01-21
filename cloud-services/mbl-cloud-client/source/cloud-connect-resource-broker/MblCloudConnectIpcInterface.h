@@ -42,6 +42,13 @@ public:
     virtual MblError init() = 0;
 
 /**
+ * @brief Deinitializes IPC mechanism.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    virtual MblError de_init() = 0;
+
+/**
  * @brief Runs IPC event-loop.
  * 
  * @return MblError returns value Error::None if function succeeded, or error code otherwise.

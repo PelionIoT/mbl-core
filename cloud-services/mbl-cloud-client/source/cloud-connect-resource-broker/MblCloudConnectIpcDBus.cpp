@@ -47,6 +47,12 @@ MblError MblCloudConnectIpcDBus::init()
     return Error::None;
 }
 
+MblError MblCloudConnectIpcDBus::de_init()
+{
+    tr_info("MblCloudConnectIpcDBus::de_init");
+    return Error::None;
+}
+
 MblError MblCloudConnectIpcDBus::run()
 {
     tr_info("MblCloudConnectIpcDBus::run");
