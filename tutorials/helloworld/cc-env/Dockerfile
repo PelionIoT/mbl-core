@@ -5,7 +5,7 @@
 FROM dockcross/linux-armv7
 # opkg-utils uses "--sort" option of tar. This option was introduced in tar version 1.28.
 # We need to use tar from jessie-backports in order to satisfy that.
-RUN echo 'deb http://http.debian.net/debian jessie-backports main contrib non-free' > /etc/apt/sources.list.d/jessie-backports.list && \
+RUN echo 'deb http://deb.debian.org/debian jessie-backports main contrib non-free' > /etc/apt/sources.list.d/jessie-backports.list && \
 	apt-get update
 RUN apt-get install -t jessie-backports tar
 RUN apt-get install wget
