@@ -17,7 +17,7 @@ from gi.repository import GLib
 
 
 DBUS_SESSION_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
-DISPLAY = 0  # Dont look for bus-address in x-windows environment
+DISPLAY = "0"  # Don't look for bus-address in x-windows environment
 
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
@@ -58,8 +58,8 @@ class TestAppConnectivity:
         print("Setup method TestAppConnectivity...")
 
         # get the session bus
-        os.environ['DISPLAY'] = DISPLAY
-        os.environ['DBUS_SESSION_BUS_ADDRESS'] = DBUS_SESSION_BUS_ADDRESS
+        os.environ["DISPLAY"] = DISPLAY
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_SESSION_BUS_ADDRESS
         self.bus = SessionBus()
         self.obj = self.bus.publish(DBUS_STOP_SIGNAL, self)
 
@@ -72,7 +72,7 @@ class TestAppConnectivity:
         # time out to enable service to be published on the D-Bus
         for timeout in range(DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES):
             try:
-                self.the_object = self.bus.get(
+                self.app_connectivity_obj = self.bus.get(
                     DEFAULT_DBUS_NAME,
                     object_path=DBUS_OBJECT_PATH_APP_CONNECTIVITY1,
                 )
@@ -85,7 +85,7 @@ class TestAppConnectivity:
                 )
                 time.sleep(DBUS_SERVICE_PUBLISHING_TIME)
 
-        assert self.the_object, "Couldn't get {} DBus obj".format(
+        assert self.app_connectivity_obj, "Couldn't get {} DBus obj".format(
             DBUS_OBJECT_PATH_APP_CONNECTIVITY1
         )
         print("Setup method TestAppConnectivity end")
@@ -129,7 +129,7 @@ class TestAppConnectivity:
     def test_app_hello(self):
         """Connectivity test: through the D-Bus call Hello method."""
         # call Hello method
-        result = self.the_object.Hello()
+        result = self.app_connectivity_obj.Hello()
         assert (
             result == "Hello!"
         ), "Hello method call on D-Bus returned wrong value: {}".format(result)
