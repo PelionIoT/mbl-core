@@ -53,7 +53,7 @@ public:
  * 
  * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
-    MblError stop() = 0;
+    virtual MblError stop() = 0;
 
 private:
 

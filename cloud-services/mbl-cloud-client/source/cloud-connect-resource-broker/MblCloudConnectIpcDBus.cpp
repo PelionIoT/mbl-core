@@ -47,9 +47,9 @@ MblError MblCloudConnectIpcDBus::init()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::start()
+MblError MblCloudConnectIpcDBus::run()
 {
-    tr_info("MblCloudConnectIpcDBus::start");
+    tr_info("MblCloudConnectIpcDBus::run");
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop)
@@ -65,16 +65,10 @@ MblError MblCloudConnectIpcDBus::stop()
 {
     tr_info("MblCloudConnectIpcDBus::stop");
     
-    MblError stop_ipc_err = thread_finish();
+    MblError stop_ipc_err = stop_event_loop();
     if(Error::None != stop_ipc_err){
         tr_err("Sending finish signal to IPC thread failed! (%s)", MblError_to_str(stop_ipc_err));
         return stop_ipc_err;
-    }
-
-    // ipc thread was signaled to finish. now join with it.
-    stop_ipc_err = thread_join(nullptr);
-    if(Error::None != stop_ipc_err){
-        tr_err("Joining IPC thread failed! (%s)", MblError_to_str(stop_ipc_err));
     }
 
     return stop_ipc_err;
