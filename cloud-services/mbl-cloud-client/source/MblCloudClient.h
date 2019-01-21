@@ -70,9 +70,6 @@ private:
     State state_;
 
     // Mbl Cloud Connect Resource Broker member
-    // - Manage requests from applications to MbedCloudClient.
-    // - Handle observers notifications from MbedCloudClient to applications.
-    // (TBD: might be changed to be a pointer, not member instance.
     MblCloudConnectResourceBroker cloud_connect_resource_broker_;
 
     static MblCloudClient* s_instance;

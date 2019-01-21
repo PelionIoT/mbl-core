@@ -124,11 +124,6 @@ MblError MblCloudClient::run()
         // thread creation failed, print errno value and exit
         const int thread_create_errno = errno;
 
-        std::fprintf(
-            stderr,
-            "Thread creation failed (%s)!\n",
-                strerror(thread_create_errno));
-
         tr_err(
             "Thread creation failed (%s)!\n",
             strerror(thread_create_errno));

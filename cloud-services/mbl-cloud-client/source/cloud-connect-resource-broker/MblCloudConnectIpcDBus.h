@@ -24,9 +24,9 @@
 
 namespace mbl {
 
-/*! \file MblCloudConnectIpcDBus.h
- *  \brief MblCloudConnectIpcDBus.
- *  This class provides an implementation for D-Bus IPC mechanism
+/**
+ * @brief This class provides an implementation for D-Bus IPC mechanism.
+ * Implements MblCloudConnectIpcInterface interface. 
  */
 class MblCloudConnectIpcDBus: public MblCloudConnectIpcInterface {
 
@@ -49,9 +49,14 @@ public:
 
 private:
     pthread_t ipc_thread_id;
-
-    // temporary not thread safe solution (TO BE REMOVED SOONLY)
-    volatile bool should_finish_asap;
+ 
+    /**
+     * @brief temporary solution for exiting from simulated event-loop that should be removed after we introduce real sd-bus event-loop.
+     * 
+     * Now we just use this boolean flag, that signals, that the thread should exit from simulated event-loop.
+     * In future we shall replace this flag with real mechanism, that will allow exiting from real sd-bus event-loop.
+     */
+    volatile bool exit_loop;
 };
 
 } // namespace mbl

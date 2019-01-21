@@ -23,11 +23,11 @@
 
 namespace mbl {
 
-/*! \file MblCloudConnectIpcInterface.h
- *  \brief MblCloudConnectIpcInterface.
- *  This class provides an interface for all IPC mechanisms to allow applications to register their own LwM2M resources 
- *  with the Mbed Cloud for application specific purposes.
-*/
+/**
+ * @brief Mbl Cloud Connect Ipc Interface.
+ * This class provides an interface for all IPC mechanisms that allow comminication of CCRB module with OS IPC mechanism.
+ * 
+ */
 class MblCloudConnectIpcInterface {
 
 public:
@@ -35,21 +35,33 @@ public:
     MblCloudConnectIpcInterface() = default;
     virtual ~MblCloudConnectIpcInterface() = default;
     
-    // initialize IPC instance
-    // return Error::None if succeeded, error TBD error code otherwise
+/**
+ * @brief Initialize IPC instance.
+ * 
+ * @return MblError has value Error::None if function succeeded, or error code otherwise.
+ */
     virtual MblError init() = 0;
 
-    // Runs IPC event-loop
-    // return Error::None if succeeded, error TBD error code otherwise
+/**
+ * @brief Runs IPC event-loop.
+ * 
+ * @return MblError has value Error::None if function succeeded, or error code otherwise.
+ */
     virtual MblError run() = 0;
 
-    // The caller thread will join with the IPC thread
-    // param[in] args - output parameter that will contain thread output data
-    // return Error::None if succeeded, Error::ThreadJoiningFailed otherwise
+/**
+ * @brief Function joins the caller thread with the IPC thread.
+ * 
+ * @param args output parameter that will contain thread output data. args can be NULL.
+ * @return MblError has value Error::None if function succeeded, or Error::ThreadJoiningFailed otherwise.
+ */
     virtual MblError thread_join(void **args) = 0;
 
-    // Signals to the IPC thread that it should finish ASAP
-    // return Error::None if succeeded, Error::ThreadFinishingFailed otherwise
+/**
+ * @brief Signals to the IPC thread that it should finish ASAP
+ * 
+ * @return MblError has value Error::None if function succeeded, or Error::ThreadFinishingFailed otherwise.
+ */
     virtual MblError thread_finish() = 0;
 
 private:

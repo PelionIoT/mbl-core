@@ -25,6 +25,13 @@
 
 namespace mbl {
 
+/**
+ * @brief Class implements functionality of Mbl Cloud Connect Resource Broker (CCRB). 
+ * Main functionality: 
+ * - receive and manage requests from applications to MbedCloudClient.
+ * - send observers notifications from MbedCloudClient to applications.
+ * 
+ */
 class MblCloudConnectResourceBroker {
 
 public:
@@ -36,23 +43,49 @@ public:
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 
-    // initialize ccrb instance
+/**
+ * @brief Initializes CCRB instance. 
+ * In details: 
+ * - calls IPC module init function.  
+ * 
+ * @return MblError has value Error::None if function succeeded, or error code otherwise. 
+ */
     MblError init();
 
-    // run ccrb
+/**
+ * @brief Runs CCRB module's main functionality loop. 
+ * In details: 
+ * - runs IPC module's main functionality loop.  
+ * 
+ * @return MblError has value Error::None if function succeeded, or error code otherwise. 
+ */
     MblError run();
 
 
-    // The caller thread will join with the IPC thread
-    // param[in] args - output parameter that will contain thread output data
-    // return Error::None if succeeded, Error::ThreadJoiningFailed otherwise
+/**
+ * @brief Function joins the caller thread with the IPC thread. 
+ * 
+ * @param args output parameter that will contain thread output data. args can be NULL.
+ * @return MblError has value Error::None if function succeeded, or Error::ThreadJoiningFailed otherwise.
+ */
     MblError thread_join(void **args);
 
-    // Signals to the IPC thread that it should finish ASAP
-    // return Error::None if succeeded, Error::ThreadFinishingFailed otherwise
+ /**
+ * @brief Signals to the IPC thread that it should finish ASAP.
+ * 
+ * @return MblError has value Error::None if function succeeded, or Error::ThreadFinishingFailed otherwise.
+ */   
     MblError thread_finish();
 
-    // Thread main function.
+/**
+ * @brief Thread main function.
+ * In details: 
+ * - initializes CCRB module.
+ * - runs CCRB main functionality loop.  
+ * 
+ * @param ccrb_instance_ptr address of CCRB instance that should run. 
+ * @return void* thread output buffer.  
+ */
     static void *thread_function(void *ccrb_instance_ptr);
 
 private:

@@ -27,7 +27,7 @@
 namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
-    : should_finish_asap (false) //flag should_finish_asap will BE REMOVED SOONLY
+    : exit_loop (false) // temporary flag exit_loop will be removed soon
 {
     tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
@@ -51,8 +51,8 @@ MblError MblCloudConnectIpcDBus::run()
 {
     tr_info("MblCloudConnectIpcDBus::run");
 
-    // Simulates event-loop (TO BE REMOVED SOONLY)
-    while(!should_finish_asap)
+    // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
+    while(!exit_loop)
     {
         tr_info("event loop is alive");
         sleep(1);
@@ -72,11 +72,6 @@ MblError MblCloudConnectIpcDBus::thread_join(void** args)
         // thread joining failed, print errno value and exit
         const int thread_join_errno = errno;
 
-        std::fprintf(
-            stderr,
-            "Thread joining failed (%s)!\n",
-            strerror(thread_join_errno));
-
         tr_err(
             "Thread joining failed (%s)!\n",
             strerror(thread_join_errno));
@@ -91,8 +86,8 @@ MblError MblCloudConnectIpcDBus::thread_finish()
 {
     tr_info("MblCloudConnectIpcDBus::thread_finish");
 
-    // temporary not thread safe solution (TO BE REMOVED SOONLY)
-    should_finish_asap = true;
+    // temporary not thread safe solution that should be removed soon
+    exit_loop = true;
     return Error::None;
 }
 
