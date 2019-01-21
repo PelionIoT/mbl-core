@@ -25,8 +25,7 @@ namespace mbl {
 
 /**
  * @brief Mbl Cloud Connect Ipc Interface.
- * This class provides an interface for all IPC mechanisms that allow comminication of CCRB module with OS IPC mechanism.
- * 
+ * This class provides an interface for all IPC mechanisms that allow IPC comminication between CCRB and client applications.
  */
 class MblCloudConnectIpcInterface {
 
@@ -34,35 +33,27 @@ public:
 
     MblCloudConnectIpcInterface() = default;
     virtual ~MblCloudConnectIpcInterface() = default;
-    
+
 /**
- * @brief Initialize IPC instance.
+ * @brief Initializes IPC mechanism.
  * 
- * @return MblError has value Error::None if function succeeded, or error code otherwise.
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
     virtual MblError init() = 0;
 
 /**
  * @brief Runs IPC event-loop.
  * 
- * @return MblError has value Error::None if function succeeded, or error code otherwise.
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
     virtual MblError run() = 0;
 
 /**
- * @brief Function joins the caller thread with the IPC thread.
+ * @brief Stops IPC event-loop.
  * 
- * @param args output parameter that will contain thread output data. args can be NULL.
- * @return MblError has value Error::None if function succeeded, or Error::ThreadJoiningFailed otherwise.
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
-    virtual MblError thread_join(void **args) = 0;
-
-/**
- * @brief Signals to the IPC thread that it should finish ASAP
- * 
- * @return MblError has value Error::None if function succeeded, or Error::ThreadFinishingFailed otherwise.
- */
-    virtual MblError thread_finish() = 0;
+    MblError stop() = 0;
 
 private:
 

@@ -35,19 +35,24 @@ public:
     MblCloudConnectIpcDBus();
     ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of init()
+    // Implementation of MblCloudConnectIpcInterface::init()
     MblError init() override;
 
-    // Implementation of run()
+    // Implementation of MblCloudConnectIpcInterface::run()
     MblError run() override;
 
-    // Implementation of thread_join()
-    MblError thread_join(void **args) override;
-
-    // Implementation of thread_finish()
-    MblError thread_finish() override;
+    // Implementation of MblCloudConnectIpcInterface::stop()
+    MblError stop() override;
 
 private:
+
+/**
+ * @brief Function stops IPC event loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStoppingFailed otherwise.
+ */
+    MblError stop_event_loop();
+
     pthread_t ipc_thread_id;
  
     /**

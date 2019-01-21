@@ -27,6 +27,7 @@
 
 namespace mbl {
 
+// Currently, this constructor is called from MblCloudClient thread.
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
     : ipc_ (nullptr)
 {
@@ -36,6 +37,37 @@ MblCloudConnectResourceBroker::MblCloudConnectResourceBroker()
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
     tr_info("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+}
+
+MblError MblCloudConnectResourceBroker::start()
+{
+    pthread_t ccrb_thread_id = 0; // variable is not really used
+
+    // create new thread which will run IPC event loop
+    const int thread_create_err = pthread_create(
+            &ccrb_thread_id,
+            nullptr, // thread is created with default attributes
+            MblCloudConnectResourceBroker::thread_function,
+            this
+        );
+    if(0 != thread_create_err)
+    {
+        // thread creation failed, print errno value and exit
+        const int thread_create_errno = errno;
+
+        tr_err(
+            "Thread creation failed (%s)!\n",
+            strerror(thread_create_errno));
+
+        return Error::CCRBStartingFailed;
+    }
+
+    return Error::None;
+}
+
+MblError MblCloudConnectResourceBroker::stop()
+{
+    return _ipc->stop();
 }
 
 MblError MblCloudConnectResourceBroker::init()
@@ -92,21 +124,6 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
 
     pthread_exit(nullptr);
     // pthread_exit does "return"
-}
-
-MblError MblCloudConnectResourceBroker::thread_join(void **args)
-// param[in] args can be NULL
-{
-    assert(ipc_);
-    tr_info("MblCloudConnectResourceBroker::thread_join");
-    return ipc_->thread_join(args);
-}
-
-MblError MblCloudConnectResourceBroker::thread_finish()
-{
-    assert(ipc_);
-    tr_info("MblCloudConnectResourceBroker::thread_finish");
-    return ipc_->thread_finish();
 }
 
 } // namespace mbl

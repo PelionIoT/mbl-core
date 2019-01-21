@@ -110,25 +110,10 @@ MblError MblCloudClient::run()
         return ccs_err;
     }
 
-    pthread_t ccrb_thread_id = 0; // variable is not really used
-
-    // create new thread which will run CCRB
-    const int thread_create_err = pthread_create(
-            &ccrb_thread_id,
-            nullptr, // thread is created with default attributes
-            MblCloudConnectResourceBroker::thread_function,
-            &(s_instance->cloud_connect_resource_broker_)
-        );
-    if(0 != thread_create_err)
-    {
-        // thread creation failed, print errno value and exit
-        const int thread_create_errno = errno;
-
-        tr_err(
-            "Thread creation failed (%s)!\n",
-            strerror(thread_create_errno));
-
-        return Error::ThreadCreationFailed;
+    // start running CCRB module
+    const MblError ccrb_start_err = s_instance->cloud_connect_resource_broker_.start();
+    if(Error::None != ccrb_start_err) {
+        return ccrb_start_err;
     }
 
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
@@ -136,19 +121,10 @@ MblError MblCloudClient::run()
         if (g_shutdown_signal) {
             tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
 
-            // try stop asap ccrb thread
-            const MblError finish_err = s_instance->cloud_connect_resource_broker_.thread_finish();
-            if(Error::None == finish_err)
-            {
-                // ccrb thread was signaled to finish asap. now join with it.
-                const MblError join_err = s_instance->cloud_connect_resource_broker_.thread_join(nullptr);
-                if(Error::None != join_err)
-                {
-                    tr_err("Joining CCRB thread failed! (%s)", MblError_to_str(join_err));
-                }
-            }
-            else{
-                tr_err("Sending finish signal to CCRB thread failed! (%s)", MblError_to_str(finish_err));
+            // stop running CCRB module
+            const MblError ccrb_stop_err = s_instance->cloud_connect_resource_broker_.stop();
+            if(Error::None != ccrb_stop_err) {
+                tr_err("Stopping CCRB module failed! (%s)", MblError_to_str(ccrb_stop_err));
             }
 
             return Error::ShutdownRequested;

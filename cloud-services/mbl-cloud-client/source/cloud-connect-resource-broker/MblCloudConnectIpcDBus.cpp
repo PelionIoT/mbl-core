@@ -47,10 +47,10 @@ MblError MblCloudConnectIpcDBus::init()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::run()
+MblError MblCloudConnectIpcDBus::start()
 {
-    tr_info("MblCloudConnectIpcDBus::run");
-
+    tr_info("MblCloudConnectIpcDBus::start");
+    
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop)
     {
@@ -61,12 +61,33 @@ MblError MblCloudConnectIpcDBus::run()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::thread_join(void** args)
-// param[in] args can be NULL
+MblError MblCloudConnectIpcDBus::stop()
+{
+    tr_info("MblCloudConnectIpcDBus::stop");
+    
+    MblError stop_ipc_err = thread_finish();
+    if(Error::None != stop_ipc_err){
+        tr_err("Sending finish signal to IPC thread failed! (%s)", MblError_to_str(stop_ipc_err));
+        return stop_ipc_err;
+    }
+
+    // ipc thread was signaled to finish. now join with it.
+    stop_ipc_err = thread_join(nullptr);
+    if(Error::None != stop_ipc_err){
+        tr_err("Joining IPC thread failed! (%s)", MblError_to_str(stop_ipc_err));
+    }
+
+    return stop_ipc_err;
+}
+
+MblError MblCloudConnectIpcDBus::stop_event_loop()
 {
     tr_info("MblCloudConnectIpcDBus::thread_join");
 
-    const int thread_join_err = pthread_join(ipc_thread_id, args);
+    // temporary not thread safe solution that should be removed soon
+    exit_loop = true;
+
+    const int thread_join_err = pthread_join(ipc_thread_id, nullptr);
     if(0 != thread_join_err)
     {
         // thread joining failed, print errno value and exit
@@ -76,18 +97,9 @@ MblError MblCloudConnectIpcDBus::thread_join(void** args)
             "Thread joining failed (%s)!\n",
             strerror(thread_join_errno));
 
-        return Error::ThreadJoiningFailed;
+        return Error::CCRBStoppingFailed;
     }
 
-    return Error::None;
-}
-
-MblError MblCloudConnectIpcDBus::thread_finish()
-{
-    tr_info("MblCloudConnectIpcDBus::thread_finish");
-
-    // temporary not thread safe solution that should be removed soon
-    exit_loop = true;
     return Error::None;
 }
 

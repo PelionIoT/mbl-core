@@ -31,9 +31,6 @@ enum Type {
     SignalsInitSigaction                = 0x0004,
     DeviceUnregistered                  = 0x0005,
     ShutdownRequested                   = 0x0006,
-    ThreadCreationFailed                = 0x0007,
-    ThreadJoiningFailed                 = 0x0008,
-    ThreadFinishingFailed               = 0x0009,
 
     ConnectAlreadyExists                = 0x0100,
     ConnectBootstrapFailed              = 0x0101,
@@ -68,8 +65,11 @@ enum Type {
     UpdateErrorInvalidHash              = 0x020e,
 
     EnrollmentErrorBase                 = 0x0300,
-    EnrollmentErrorEnd                  = 0x0301
+    EnrollmentErrorEnd                  = 0x0301,
 
+    // CCRB errors
+    CCRBStartingFailed                  = 0x0400,
+    CCRBStoppingFailed                  = 0x0401,
 };
 } // namespace Error
 

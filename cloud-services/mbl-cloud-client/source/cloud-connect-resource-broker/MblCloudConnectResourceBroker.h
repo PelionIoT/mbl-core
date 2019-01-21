@@ -30,61 +30,56 @@ namespace mbl {
  * Main functionality: 
  * - receive and manage requests from applications to MbedCloudClient.
  * - send observers notifications from MbedCloudClient to applications.
- * 
  */
 class MblCloudConnectResourceBroker {
 
 public:
 
-    // Currently, this constructor is called from MblCloudClient thread.
-    // Might change in future. If we shall need to call the constructor from the
-    // ccrb thread, change MblCloudClient::cloud_connect_resource_broker_ instance
-    // member to be a pointer and call the constructor from ccrb thread thread_function
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
 
 /**
- * @brief Initializes CCRB instance. 
+ * @brief Starts CCRB.
  * In details: 
- * - calls IPC module init function.  
+ * - initializes CCRB instance and runs event-loop.
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStartingFailed otherwise. 
+ */
+    MblError start();
+
+/**
+ * @brief Stops CCRB.
+ * In details: 
+ * - stops CCRB event-loop.
+ * - deinitializes CCRB instance.
  * 
- * @return MblError has value Error::None if function succeeded, or error code otherwise. 
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStoppingFailed otherwise. 
+ */
+    MblError stop();
+
+private:
+
+/**
+ * @brief Initializes CCRB instance.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
     MblError init();
 
 /**
- * @brief Runs CCRB module's main functionality loop. 
- * In details: 
- * - runs IPC module's main functionality loop.  
+ * @brief Runs CCRB event-loop.
  * 
- * @return MblError has value Error::None if function succeeded, or error code otherwise. 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
  */
     MblError run();
 
-
 /**
- * @brief Function joins the caller thread with the IPC thread. 
- * 
- * @param args output parameter that will contain thread output data. args can be NULL.
- * @return MblError has value Error::None if function succeeded, or Error::ThreadJoiningFailed otherwise.
- */
-    MblError thread_join(void **args);
-
- /**
- * @brief Signals to the IPC thread that it should finish ASAP.
- * 
- * @return MblError has value Error::None if function succeeded, or Error::ThreadFinishingFailed otherwise.
- */   
-    MblError thread_finish();
-
-/**
- * @brief Thread main function.
+ * @brief CCRB thread main function.
  * In details: 
  * - initializes CCRB module.
  * - runs CCRB main functionality loop.  
  * 
  * @param ccrb_instance_ptr address of CCRB instance that should run. 
- * @return void* thread output buffer.  
+ * @return void* thread output buffer. 
  */
     static void *thread_function(void *ccrb_instance_ptr);
 
