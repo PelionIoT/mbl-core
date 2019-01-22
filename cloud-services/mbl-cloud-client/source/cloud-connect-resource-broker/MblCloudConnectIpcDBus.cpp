@@ -60,9 +60,10 @@ MblError MblCloudConnectIpcDBus::run()
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_)
     {
-        // tr_info("event loop is alive");
         sleep(1);
     }
+
+    tr_info("MblCloudConnectIpcDBus::run: event loop is finished");
 
     return Error::None;
 }
@@ -70,18 +71,6 @@ MblError MblCloudConnectIpcDBus::run()
 MblError MblCloudConnectIpcDBus::stop()
 {
     tr_info("MblCloudConnectIpcDBus::stop");
-    
-    MblError stop_ipc_err = stop_event_loop();
-    if(Error::None != stop_ipc_err){
-        tr_err("Stopping IPC event-loop failed! (%s)", MblError_to_str(stop_ipc_err));
-    }
-
-    return stop_ipc_err;
-}
-
-MblError MblCloudConnectIpcDBus::stop_event_loop()
-{
-    tr_info("MblCloudConnectIpcDBus::stop_event_loop");
 
     // temporary not thread safe solution that should be removed soon.
     // signal to event-loop that it should finish.

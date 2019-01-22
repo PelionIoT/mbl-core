@@ -49,13 +49,7 @@ public:
 
 private:
 
-/**
- * @brief Function stops IPC event loop.
- * 
- * @return MblError returns value Error::None if function succeeded, or Error::CCRBStopFailed otherwise.
- */
-    MblError stop_event_loop();
-
+    // thread id of the IPC thread
     pthread_t ipc_thread_id_;
  
     

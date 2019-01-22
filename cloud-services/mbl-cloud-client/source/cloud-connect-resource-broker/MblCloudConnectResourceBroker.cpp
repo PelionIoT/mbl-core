@@ -134,8 +134,7 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
     }
 
     tr_info("MblCloudConnectResourceBroker::thread_function finished");
-    pthread_exit(nullptr);
-    // pthread_exit does "return"
+    pthread_exit(nullptr); // pthread_exit does "return"
 }
 
 } // namespace mbl
