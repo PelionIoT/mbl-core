@@ -18,14 +18,22 @@
 #include "MblCloudConnectIpcDBus.h"
 
 #include "mbed-trace/mbed_trace.h"
+#include <cassert>
+#include <pthread.h>
+#include <unistd.h>
 
-#define TRACE_GROUP "CCRB-IPCDBUS"
+#define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
+    : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
-    tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+    tr_debug("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+
+    // constructor runs on IPC thread context
+    // store thread ID, always succeeding function
+    ipc_thread_id_ = pthread_self();
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -33,10 +41,56 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
     tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
 }
 
-MblError MblCloudConnectIpcDBus::Init()
+MblError MblCloudConnectIpcDBus::init()
 {
-    tr_debug("MblCloudConnectIpcDBus::Init");
+    tr_info("MblCloudConnectIpcDBus::init");
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::de_init()
+{
+    tr_info("MblCloudConnectIpcDBus::de_init");
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::run()
+{
+    tr_info("MblCloudConnectIpcDBus::run");
+    
+    // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
+    while(!exit_loop_)
+    {
+        sleep(1);
+    }
+
+    tr_info("MblCloudConnectIpcDBus::run: event loop is finished");
+
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::stop()
+{
+    tr_info("MblCloudConnectIpcDBus::stop");
+
+    // temporary not thread safe solution that should be removed soon.
+    // signal to event-loop that it should finish.
+    exit_loop_ = true;
+
+    const int thread_join_err = pthread_join(ipc_thread_id_, nullptr);
+    if(0 != thread_join_err)
+    {
+        // thread joining failed, print errno value and exit
+        const int thread_join_errno = errno;
+
+        tr_err(
+            "Thread joining failed (%s)!\n",
+            strerror(thread_join_errno));
+
+        return Error::CCRBStopFailed;
+    }
+
     return Error::None;
 }
 
 } // namespace mbl
+

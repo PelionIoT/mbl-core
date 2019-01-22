@@ -65,6 +65,8 @@ const char* MblError_to_str(const MblError error)
         case Error::EnrollmentErrorBase: return "EnrollmentErrorBase";
         case Error::EnrollmentErrorEnd: return "EnrollmentErrorEnd";
 
+        case Error::CCRBStartFailed: return "CCRBStartFailed";
+        case Error::CCRBStopFailed: return "CCRBStopFailed";
     }
     return "Unrecognized error code";
 }

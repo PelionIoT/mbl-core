@@ -21,13 +21,15 @@
 #include "mbed-trace/mbed_trace.h"
 
 #include <cassert>
+#include <pthread.h>
 
-#define TRACE_GROUP "CCRB"
+#define TRACE_GROUP "ccrb"
 
 namespace mbl {
 
+// Currently, this constructor is called from MblCloudClient thread.
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
-    : ipc_ (std::make_unique<MblCloudConnectIpcDBus>())
+    : ipc_ (nullptr)
 {
     tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
@@ -37,16 +39,103 @@ MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
     tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
 }
 
-MblError MblCloudConnectResourceBroker::Init()
+MblError MblCloudConnectResourceBroker::start()
 {
-    tr_debug("MblCloudConnectResourceBroker::Init");
+    tr_info("MblCloudConnectResourceBroker::start");
 
-    assert(ipc_);
-    MblError ret = ipc_->Init();
-    if(Error::None != ret) {
-        tr_error("Init ipc failed with error %s", MblError_to_str(ret));
+    pthread_t ccrb_thread_id = 0; // variable is not really used
+
+    // create new thread which will run IPC event loop
+    const int thread_create_err = pthread_create(
+            &ccrb_thread_id,
+            nullptr, // thread is created with default attributes
+            MblCloudConnectResourceBroker::thread_function,
+            this
+        );
+    if(0 != thread_create_err)
+    {
+        // thread creation failed, print errno value and exit
+        const int thread_create_errno = errno;
+
+        tr_err(
+            "Thread creation failed (%s)!\n",
+            strerror(thread_create_errno));
+
+        return Error::CCRBStartFailed;
     }
-    return ret;
+
+    return Error::None;
+}
+
+MblError MblCloudConnectResourceBroker::stop()
+{
+    MblError status = ipc_->stop();
+    if(Error::None != status){
+        tr_err("Stopping IPC failed! (%s)", MblError_to_str(status));
+        return status;
+    }
+
+    status = ipc_->de_init();
+    if(Error::None != status){
+        tr_err("Deinitializng IPC failed! (%s)", MblError_to_str(status));
+    }
+
+    return status;
+}
+
+MblError MblCloudConnectResourceBroker::init()
+{
+    // verify that ipc_ member was not created yet
+    assert(nullptr == ipc_);
+    tr_info("MblCloudConnectResourceBroker::init");
+
+    // create ipc instance
+    ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
+
+    MblError status = ipc_->init();
+    if(Error::None != status) {
+        tr_error("ipc::init failed with error %s", MblError_to_str(status));
+    }
+
+    return status;
+}
+
+MblError MblCloudConnectResourceBroker::run()
+{
+    assert(ipc_);
+    tr_info("MblCloudConnectResourceBroker::run");
+
+    MblError status = ipc_->run();
+    if(Error::None != status) {
+        tr_error("ipc::run failed with error %s", MblError_to_str(status));
+    }
+
+    return status;
+}
+
+void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
+{
+    assert(ccrb_instance_ptr);
+    tr_info("MblCloudConnectResourceBroker::thread_function");
+
+    MblCloudConnectResourceBroker * const ccrb_ptr =
+        static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
+
+    MblError status = ccrb_ptr->init();
+    if(Error::None != status) {
+        tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
+        pthread_exit(nullptr);
+    }
+
+    status = ccrb_ptr->run();
+    if(Error::None != status) {
+        tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
+        pthread_exit(nullptr);
+    }
+
+    tr_info("MblCloudConnectResourceBroker::thread_function finished");
+    pthread_exit(nullptr); // pthread_exit does "return"
 }
 
 } // namespace mbl
+

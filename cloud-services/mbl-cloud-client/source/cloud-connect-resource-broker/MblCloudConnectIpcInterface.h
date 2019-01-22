@@ -23,20 +23,44 @@
 
 namespace mbl {
 
-/*! \file MblCloudConnectIpcInterface.h
- *  \brief MblCloudConnectIpcInterface.
- *  This class provides an interface for all IPC mechanisms to allow applications to register their own LwM2M resources 
- *  with the Mbed Cloud for application specific purposes.
-*/
+/**
+ * @brief Mbl Cloud Connect Ipc Interface.
+ * This class provides an interface for all IPC mechanisms that allow IPC comminication between CCRB and client applications.
+ */
 class MblCloudConnectIpcInterface {
 
 public:
 
     MblCloudConnectIpcInterface() = default;
     virtual ~MblCloudConnectIpcInterface() = default;
-    
-    // Init API skeleton (needed as we are not using exceptions and we can't check for errors from a constructor).
-    virtual MblError Init() = 0;
+
+/**
+ * @brief Initializes IPC mechanism.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    virtual MblError init() = 0;
+
+/**
+ * @brief Deinitializes IPC mechanism.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    virtual MblError de_init() = 0;
+
+/**
+ * @brief Runs IPC event-loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    virtual MblError run() = 0;
+
+/**
+ * @brief Stops IPC event-loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    virtual MblError stop() = 0;
 
 private:
 
