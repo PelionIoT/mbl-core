@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 #################################################################################
-#  Copyright 2016-2018 ARM Ltd.
+# Copyright (c) 2016-2018 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
