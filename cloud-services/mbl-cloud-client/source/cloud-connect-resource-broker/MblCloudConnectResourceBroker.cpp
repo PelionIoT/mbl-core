@@ -69,15 +69,15 @@ MblError MblCloudConnectResourceBroker::start()
 
 MblError MblCloudConnectResourceBroker::stop()
 {
-    MblError status = ipc_->de_init();
+    MblError status = ipc_->stop();
     if(Error::None != status){
-        tr_err("Deinitializng IPC failed! (%s)", MblError_to_str(status));
+        tr_err("Stopping IPC failed! (%s)", MblError_to_str(status));
         return status;
     }
 
-    status = ipc_->stop();
+    status = ipc_->de_init();
     if(Error::None != status){
-        tr_err("Stopping IPC failed! (%s)", MblError_to_str(status));
+        tr_err("Deinitializng IPC failed! (%s)", MblError_to_str(status));
     }
 
     return status;
@@ -123,13 +123,13 @@ void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
 
     MblError status = ccrb_ptr->init();
     if(Error::None != status) {
-        tr_error("ccrb::init failed with error %s", MblError_to_str(status));
+        tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit(nullptr);
     }
 
     status = ccrb_ptr->run();
     if(Error::None != status) {
-        tr_error("ccrb::run failed with error %s", MblError_to_str(status));
+        tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit(nullptr);
     }
 
