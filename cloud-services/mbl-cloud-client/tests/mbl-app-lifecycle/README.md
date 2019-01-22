@@ -22,7 +22,7 @@ To set up the virtual environment, perform the following steps:
    source ./my_venv/bin/activate
    ```
 
-1. Upgrade pip to latest version (18.1)
+1. Upgrade pip to latest version
     ```
     pip install --upgrade pip
     ```
