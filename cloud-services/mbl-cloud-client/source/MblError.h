@@ -68,8 +68,8 @@ enum Type {
     EnrollmentErrorEnd                  = 0x0301,
 
     // CCRB errors
-    CCRBStartingFailed                  = 0x0400,
-    CCRBStoppingFailed                  = 0x0401,
+    CCRBStartFailed                     = 0x0400,
+    CCRBStopFailed                      = 0x0401,
 };
 } // namespace Error
 

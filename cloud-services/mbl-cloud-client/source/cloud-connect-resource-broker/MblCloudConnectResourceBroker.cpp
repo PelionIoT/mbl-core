@@ -31,12 +31,12 @@ namespace mbl {
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
     : ipc_ (nullptr)
 {
-    tr_info("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
+    tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
 }
 
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
-    tr_info("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+    tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
 }
 
 MblError MblCloudConnectResourceBroker::start()
@@ -61,7 +61,7 @@ MblError MblCloudConnectResourceBroker::start()
             "Thread creation failed (%s)!\n",
             strerror(thread_create_errno));
 
-        return Error::CCRBStartingFailed;
+        return Error::CCRBStartFailed;
     }
 
     return Error::None;

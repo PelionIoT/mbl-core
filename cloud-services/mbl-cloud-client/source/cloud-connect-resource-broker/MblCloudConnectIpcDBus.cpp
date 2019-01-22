@@ -29,7 +29,7 @@ namespace mbl {
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
     : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
-    tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+    tr_debug("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
 
     // constructor runs on IPC thread context
     // store thread ID, always succeeding function
@@ -38,7 +38,7 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 {
-    tr_info("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
+    tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
 }
 
 MblError MblCloudConnectIpcDBus::init()
@@ -60,7 +60,7 @@ MblError MblCloudConnectIpcDBus::run()
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_)
     {
-        tr_info("event loop is alive");
+        // tr_info("event loop is alive");
         sleep(1);
     }
 
@@ -97,7 +97,7 @@ MblError MblCloudConnectIpcDBus::stop_event_loop()
             "Thread joining failed (%s)!\n",
             strerror(thread_join_errno));
 
-        return Error::CCRBStoppingFailed;
+        return Error::CCRBStopFailed;
     }
 
     return Error::None;

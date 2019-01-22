@@ -42,7 +42,7 @@ public:
  * @brief Starts CCRB.
  * In details: 
  * - initializes CCRB instance and runs event-loop.
- * @return MblError returns value Error::None if function succeeded, or Error::CCRBStartingFailed otherwise. 
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStartFailed otherwise. 
  */
     MblError start();
 
@@ -52,7 +52,7 @@ public:
  * - stops CCRB event-loop.
  * - deinitializes CCRB instance.
  * 
- * @return MblError returns value Error::None if function succeeded, or Error::CCRBStoppingFailed otherwise. 
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStopFailed otherwise. 
  */
     MblError stop();
 

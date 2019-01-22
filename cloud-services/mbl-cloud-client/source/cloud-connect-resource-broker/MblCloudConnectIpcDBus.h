@@ -52,7 +52,7 @@ private:
 /**
  * @brief Function stops IPC event loop.
  * 
- * @return MblError returns value Error::None if function succeeded, or Error::CCRBStoppingFailed otherwise.
+ * @return MblError returns value Error::None if function succeeded, or Error::CCRBStopFailed otherwise.
  */
     MblError stop_event_loop();
 
