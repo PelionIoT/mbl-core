@@ -51,7 +51,7 @@ class TestAppConnectivity:
     stop_signal = signal()
 
     def setup_method(self, method):
-        """Setup any state specific to the execution of the given method."""
+        """Initalize the D-Bus and run lifesycle application."""
         print("Setup method TestAppConnectivity...")
 
         # get the session bus
@@ -83,7 +83,7 @@ class TestAppConnectivity:
         print("Setup method TestAppConnectivity end")
 
     def teardown_method(self, method):
-        """Teardown method: stop the D-Bus main loop."""
+        """Terminate lifesycle application and stop the D-Bus main loop."""
         print("Teardown method TestAppConnectivity start...")
 
         print("Stopping mbl-app-lifecycle main loop")
