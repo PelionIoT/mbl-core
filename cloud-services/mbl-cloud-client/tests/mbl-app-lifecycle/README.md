@@ -7,6 +7,8 @@ To set up the virtual environment, perform the following steps:
 1. Copy test application subtree `/mbl-core/cloud-services/mbl-cloud-client/tests/mbl-app-lifecycle`
    to the device under the `/scratch` partition.
    
+1. Make sure the device has internet connection 
+
 1. Enter mbl-app-lifecycle directory
    ```shell
     cd /scratch/mbl-app-lifecycle
