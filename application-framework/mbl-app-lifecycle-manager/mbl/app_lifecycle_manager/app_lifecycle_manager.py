@@ -481,6 +481,7 @@ class ContainerLogFile:
         Returns:
             A file object if the log file could be opened;
             None if the log file could not be opened.
+
         """
         try:
             os.makedirs(APPS_LOG_DIR, exist_ok=True)
