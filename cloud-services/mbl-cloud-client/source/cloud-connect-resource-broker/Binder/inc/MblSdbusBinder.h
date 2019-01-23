@@ -36,15 +36,17 @@ public:
     MblSdbusBinder() = default;
     ~MblSdbusBinder() = default;
     
-    MblError Init();
-    MblError Finalize();
+    MblError init();
+    MblError de_init();
 
     // DBUS callbacks
     static int RegisterResourcesHandler(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+
 private:
     enum class Status {INITALIZED, FINALIZED};
     struct MblSdbus {
-        sd_bus *bus;
+        sd_bus *bus = nullptr;
+        sd_bus_slot *bus_slot= nullptr;         // TODO : needed?
     };
     
     struct MblSdbus sdbus_;

@@ -25,25 +25,24 @@ extern "C" {
 // FIXME: uncomment later
 //#include "mbed-trace/mbed_trace.h"
 
-#define TRACE_GROUP "CCRB-DBUS"
+#define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl
 {
 
-
-MblError MblSdbusBinder::Init()
+MblError MblSdbusBinder::init()
 {
     sd_bus *bus = NULL;
     MblError status;
 
-    tr_debug("MblCloudConnectIpcDBus::Init");
+    tr_debug(__func__);
 
     if (status_ == Status::INITALIZED)
     {
         return MblError::AlreadyInitialized;
     }
 
-    if (BusInit(&sdbus_.bus) != 0){
+    if (bus_init(sdbus_.bus, sdbus_.bus_slot) != 0){
         return MblError::SdBusError;
     }
 
@@ -52,7 +51,7 @@ MblError MblSdbusBinder::Init()
     return MblError::None;
 }
 
-MblError MblSdbusBinder::Finalize()
+MblError MblSdbusBinder::de_init()
 {
     tr_debug("MblCloudConnectIpcDBus::Finalize");
     return MblError::None;

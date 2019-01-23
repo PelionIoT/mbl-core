@@ -21,6 +21,6 @@
 
 #include <systemd/sd-bus.h>
 
-int BusInit(sd_bus *bus, sd_bus_slot *slot);
+int bus_init(sd_bus *bus, sd_bus_slot *slot);
 
 #endif // MblSdbusLowLevel_h_

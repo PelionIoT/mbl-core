@@ -1,3 +1,6 @@
 # Python
 __pycache__/
 *.pyc
+CMakeFiles/
+CMakeCache.txt
+*Binder/build/

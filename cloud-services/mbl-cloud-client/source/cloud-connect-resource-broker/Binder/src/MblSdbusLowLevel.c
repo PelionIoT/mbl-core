@@ -20,7 +20,7 @@
 // FIXME: uncomment later
 //#include "mbed-trace/mbed_trace.h"
 
-#define TRACE_GROUP "CCRB-DBUS"
+#define TRACE_GROUP "ccrb-dbus"
 
 
 int RegisterResourcesHandler(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
@@ -40,10 +40,9 @@ static const sd_bus_vtable calculator_vtable[] = {
     SD_BUS_VTABLE_END
 };
 
-int BusInit(sd_bus *bus, sd_bus_slot *slot)
+int bus_init(sd_bus *bus, sd_bus_slot *slot)
 {
     int r = sd_bus_open_user(&bus);
-    bus = NULL;
     if (r < 0){
         return r;
     }
@@ -60,6 +59,12 @@ int BusInit(sd_bus *bus, sd_bus_slot *slot)
                                  NULL);
     if (r < 0) {
         return r;
+    }
+
+    r = sd_bus_get_unique_name(bus, &unique);
+    if (r < 0) {
+        log_error_errno(r, "Failed to get unique name: %m");
+        goto fail;
     }
 
     /* Take a well-known service name so that clients can find us */

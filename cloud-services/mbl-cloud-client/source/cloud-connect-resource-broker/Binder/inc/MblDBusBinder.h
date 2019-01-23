@@ -38,8 +38,8 @@ public:
     MblDBusBinder() = default;
     virtual ~MblDBusBinder() = default;
     
-    virtual MblError Init() = 0;
-    virtual MblError Finalize() = 0;
+    virtual MblError init() = 0;
+    virtual MblError de_init() = 0;
 
 private:
 
