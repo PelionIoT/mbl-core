@@ -11,20 +11,22 @@ import codecs
 import socket
 import struct
 from enum import Enum
+import mbl.open_ports_checker.connection as connection
 
-# List of TCP state values can be found here: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/net/tcp_states.h?id=HEAD
+# List of TCP state values can be found here:
+# https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/net/tcp_states.h?id=HEAD
 TCP_STATES = {
-    "01":"ESTABLISHED",
-    "02":"SYN_SENT",
-    "03":"SYN_RECV",
-    "04":"FIN_WAIT1",
-    "05":"FIN_WAIT2",
-    "06":"TIME_WAIT",
-    "07":"CLOSE",
-    "08":"CLOSE_WAIT",
-    "09":"LAST_ACK",
-    "0A":"LISTEN",
-    "0B":"CLOSING"
+    "01" : "ESTABLISHED",
+    "02" : "SYN_SENT",
+    "03" : "SYN_RECV",
+    "04" : "FIN_WAIT1",
+    "05" : "FIN_WAIT2",
+    "06" : "TIME_WAIT",
+    "07" : "CLOSE",
+    "08" : "CLOSE_WAIT",
+    "09" : "LAST_ACK",
+    "0A" : "LISTEN",
+    "0B" : "CLOSING"
 }
 
 PROC_ENTRY = os.path.join(os.sep, "proc")
@@ -51,7 +53,6 @@ def hex_to_dec(s):
         :param s: string in hexadecimal format
         :return: string in decimal format
     """
-
     return str(int(s, 16))
 
 
@@ -62,7 +63,6 @@ def parse_ipv4_address(ipv4_hex):
         :param ipv4_hex: IPv4 string in hex format
         :return: IPv4Address object
     """
-
     ipv4 = int(ipv4_hex, 16)
     # pack IPv4 address in system native byte order, 4-byte integer
     packed = struct.pack("=L", ipv4)
@@ -78,14 +78,13 @@ def parse_ipv6_address(ipv6_hex):
         :param ipv6_hex: IPv6 string in hex format
         :return: IPv6Address object
     """
-
     # convert IPv6 address in ASCII hex format into binary format
     binary = codecs.decode(ipv6_hex, "hex")
     # unpack IPv6 address into 4 32-bit integers in big endian / network
     # byte order
-    unpacked = struct.unpack('!LLLL', binary)
+    unpacked = struct.unpack("!LLLL", binary)
     # re-pack IPv6 address as 4 32-bit integers in system native byte order
-    repacked = struct.pack('@IIII', *unpacked)
+    repacked = struct.pack("@IIII", *unpacked)
     # convert the IPv6 address from binary to text form
     ascii_ipv6_address = socket.inet_ntop(socket.AF_INET6, repacked)
     return ipaddress.ip_address(ascii_ipv6_address)
@@ -99,8 +98,7 @@ def parse_ipv4_address_port_pair(raw_address):
         :return: IPv4 address
         :return: port number
     """
-
-    host, port = raw_address.split(':')
+    host, port = raw_address.split(":")
     return parse_ipv4_address(host), hex_to_dec(port)
 
 
@@ -112,20 +110,18 @@ def parse_ipv6_address_port_pair(raw_address):
         :return: IPv6 address
         :return: port number
     """
-
-    host, port = raw_address.split(':')
+    host, port = raw_address.split(":")
     return parse_ipv6_address(host), hex_to_dec(port)
 
 
 def load_socket_table(proc_entry):
-    """ 
+    """
     Read the table of network sockets.
 
     Read the raw table of network sockets from /proc/net.
         :param proc_entry: PROC_ENTRY_XXX file system entry
         :return: Socket table in raw format
     """
-
     with open(proc_entry, "r") as f:
         content = f.readlines()
         # Remove the header
@@ -143,7 +139,6 @@ def get_pids_from_inode(inode):
         :param inode: inode
         :return: List of PIDs
     """
-
     inode_pids = []
     # set up a list object to store valid pids
     pids = [pid for pid in os.listdir(PROC_ENTRY) if pid.isdigit()]
@@ -175,7 +170,6 @@ def get_exe_name(pid):
         :param pid: PID value
         :return: executable name or None if cannot read the executable name
     """
-
     try:
         exe_name = os.readlink(os.path.join(PROC_ENTRY, pid, "exe"))
     except OSError:
@@ -192,7 +186,6 @@ def netstat_tcp4():
 
         :return: List of connections
     """
-
     tcp4_socket_table = load_socket_table(PROC_ENTRY_TCP4)
     result = []
     for line in tcp4_socket_table:
@@ -214,11 +207,17 @@ def netstat_tcp4():
         inode = socket_data[ProcFileSystem.NET_INODE.value]
         # Get PIDs from inode
         pids = get_pids_from_inode(inode)
-        
+
         for pid in pids:
             exe_name = get_exe_name(pid)
-            line = ["tcp4", local_address, local_port, pid, exe_name]
-            result.append(line)
+            my_connection = connection.Connection(
+                "tcp4",
+                local_address,
+                local_port,
+                pid,
+                exe_name
+            )
+            result.append(my_connection)
     return result
 
 
@@ -231,7 +230,6 @@ def netstat_udp4():
 
         :return: List of connections
     """
-
     udp4_socket_table = load_socket_table(PROC_ENTRY_UDP4)
 
     result = []
@@ -249,12 +247,17 @@ def netstat_udp4():
         inode = socket_data[ProcFileSystem.NET_INODE.value]
         # Get PIDs from inode
         pids = get_pids_from_inode(inode)
-        
+
         for pid in pids:
             exe_name = get_exe_name(pid)
-            line = ["udp4", local_address, local_port, pid, exe_name]
-            result.append(line)
-
+            my_connection = connection.Connection(
+                "udp4",
+                local_address,
+                local_port,
+                pid,
+                exe_name
+            )
+            result.append(my_connection)
     return result
 
 
@@ -267,7 +270,6 @@ def netstat_tcp6():
 
         :return: List of connections
     """
-
     tcp6_socket_table = load_socket_table(PROC_ENTRY_TCP6)
     result = []
     for line in tcp6_socket_table:
@@ -289,11 +291,17 @@ def netstat_tcp6():
         inode = socket_data[ProcFileSystem.NET_INODE.value]
         # Get PIDs from inode
         pids = get_pids_from_inode(inode)
-        
+
         for pid in pids:
             exe_name = get_exe_name(pid)
-            line = ["tcp6", local_address, local_port, pid, exe_name]
-            result.append(line)
+            my_connection = connection.Connection(
+                "tcp6",
+                local_address,
+                local_port,
+                pid,
+                exe_name
+            )
+            result.append(my_connection)
     return result
 
 
@@ -306,7 +314,6 @@ def netstat_udp6():
 
         :return: List of connections
     """
-
     udp6_socket_table = load_socket_table(PROC_ENTRY_UDP6)
 
     result = []
@@ -324,12 +331,17 @@ def netstat_udp6():
         inode = socket_data[ProcFileSystem.NET_INODE.value]
         # Get PIDs from inode
         pids = get_pids_from_inode(inode)
-        
+
         for pid in pids:
             exe_name = get_exe_name(pid)
-            line = ["udp6", local_address, local_port, pid, exe_name]
-            result.append(line)
-
+            my_connection = connection.Connection(
+                "udp6",
+                local_address,
+                local_port,
+                pid,
+                exe_name
+            )
+            result.append(my_connection)
     return result
 
 
@@ -342,7 +354,6 @@ def netstat_raw():
 
         :return: List of connections
     """
-
     raw_socket_table = load_socket_table(PROC_ENTRY_PACKET)
 
     result = []
@@ -354,11 +365,17 @@ def netstat_raw():
         inode = socket_data[ProcFileSystem.NET_PACKET_INODE.value]
         # Get PIDs from inode
         pids = get_pids_from_inode(inode)
-        
+
         for pid in pids:
             exe_name = get_exe_name(pid)
-            line = ["raw", None, None, pid, exe_name]
-            result.append(line)
+            my_connection = connection.Connection(
+                "raw",
+                None,
+                None,
+                pid,
+                exe_name
+            )
+            result.append(my_connection)
     return result
 
 

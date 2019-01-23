@@ -45,20 +45,11 @@ def get_argument_parser():
         metavar="FILE",
         action=GetValidFile,
         default=os.path.join(
-            os.path.dirname(__file__), "ports_white_list.json"
+            os.path.dirname(__file__), "white_list.json"
         ),
         help="Specify ports white list, input is .json file path",
     )
 
-    parser.add_argument(
-        "-m",
-        "--method",
-        default="netstat",
-        nargs="?",
-        choices=["netstat", "psutil"],
-        help="Method that used to obtain list of "
-        "open ports (default: %(default)s)",
-    )
     parser.add_argument(
         "-v",
         "--verbose",
@@ -81,13 +72,10 @@ def _main():
     logger = logging.getLogger("OpenPortsChecker")
     logger.debug("Command line arguments:{}".format(args))
 
-    if args.method == "netstat":
-        open_ports_checker = opc.OpenPortsCheckerNetstat(args.white_list_file)
-    else:
-        open_ports_checker = opc.OpenPortsCheckerPsutil(args.white_list_file)
+    open_ports_checker = opc.OpenPortsChecker(args.white_list_file)
     ret = open_ports_checker.run_check()
     if ret == opc.Status.SUCCESS:
         logger.info("Operation successful")
     else:
-        logger.error("Operation failed: {}".format(ret))
+        logger.error("Found black listed connections: {}".format(ret))
     return ret.value

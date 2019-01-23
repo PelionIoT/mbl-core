@@ -10,7 +10,7 @@ from setuptools import setup
 
 
 def read(file_name):
-    """Utility function to read the README file."""
+    """Read the README file."""
     return open(os.path.join(os.path.dirname(__file__), file_name)).read()
 
 
