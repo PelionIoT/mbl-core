@@ -19,7 +19,7 @@ class Connection:
         :param executable: name of executable process
         """
 
-        assert(not(protocol is None))
+        assert(protocol is not None)
         self.protocol = protocol
         self.ip = ip
         self.port = port
@@ -47,8 +47,8 @@ class Connection:
             object data. Otherwise return False
         """
 
-        assert(not(protocol is None))
-        assert(not(port is None))
+        assert(protocol is not None)
+        assert(port is not None)
         return (self.protocol == protocol) and (self.port == port)
 
     def is_equal_executable(self, executable):
@@ -59,5 +59,5 @@ class Connection:
         :return: True if executable name is equal to the object data value.
             Otherwise return False
         """
-        assert(not(executable is None))
+        assert(executable is not None)
         return (self.executable == executable)
