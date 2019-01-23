@@ -1,5 +1,5 @@
 This script implements a tool that checks that device under test does not listen on any
-unwanted network ports.
+unwanted network ports. This script requires root permission.
 The configuration file allows to define the following rules:
 1. List of processes that allowed to open any TCP/UDP port. This option can be used if an
    application listening on a random port or if an application listening on raw sockets.
