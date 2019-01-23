@@ -16,8 +16,9 @@ from pydbus import SessionBus
 from gi.repository import GLib
 
 
-DBUS_SESSION_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
-DISPLAY = "0"  # Don't look for bus-address in x-windows environment
+DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
+DISPLAY = "0"
+# find the existing bus address on the X display (X11) environment
 
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
@@ -59,7 +60,7 @@ class TestAppConnectivity:
 
         # get the session bus
         os.environ["DISPLAY"] = DISPLAY
-        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_SESSION_BUS_ADDRESS
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_CLOUD_BUS_ADDRESS
         self.bus = SessionBus()
         self.obj = self.bus.publish(DBUS_STOP_SIGNAL, self)
 
