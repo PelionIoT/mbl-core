@@ -109,6 +109,11 @@ MblError MblCloudClient::run()
         return ccs_err;
     }
 
+    const MblError ccrb_init = s_instance->cloud_connect_resource_broker_.Init();
+    if(Error::None != ccrb_init) {
+        tr_error("Init cloud_connect_resource_broker_ failed with error %s", MblError_to_str(ccrb_init));
+    }
+
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {
         if (g_shutdown_signal) {

@@ -112,11 +112,9 @@ extern "C" void mbl_trace_print_handler(const char* const str)
  */
 extern "C" char* mbl_trace_prefix_handler(size_t)
 {
-    // Using a static buffer here makes the function non-thread safe, but since
-    // the mbed-trace library requires a function that allocates its own buffer
-    // and returns a pointer to it, this is best we can do without leaking
-    // memory. Hopefully the mbed-trace-library's own synchronization is enough.
-    static char buffer[g_time_prefix_buffer_size];
+    // The mbed-trace library requires a function that allocates its own buffer
+    // and returns a pointer to it. Use "thread_local" to make it thread safe.
+    thread_local static char buffer[g_time_prefix_buffer_size];
     return make_time_prefix(buffer, sizeof(buffer));
 }
 
