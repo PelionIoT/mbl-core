@@ -28,7 +28,7 @@ class TestAppLifecycleManager:
 
     @classmethod
     def setup_class(cls):
-        """Setup any state specific to the execution of the given class."""
+        """Set up any state specific to the execution of the given class."""
         print("\nSetup TestAppLifecycleManager")
         cls.app_lifecycle_mgr = alm.AppLifecycleManager()
         cls.app_mgr = apm.AppManager()
