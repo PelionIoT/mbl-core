@@ -1,4 +1,0 @@
-; Add check for Apache-2.0 license and remove check for BSD-3-Clause
-[mbl-licensing-checker]
-add-select = D300
-add-ignore = D301
