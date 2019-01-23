@@ -17,8 +17,9 @@ from gi.repository import GLib
 
 
 DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
-DISPLAY = "0"
+
 # find the existing bus address on the X display (X11) environment
+DISPLAY = "0"
 
 DEFAULT_DBUS_NAME = "mbl.app.test1"
 DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
