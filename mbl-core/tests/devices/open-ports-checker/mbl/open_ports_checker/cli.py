@@ -45,7 +45,7 @@ def get_argument_parser():
         metavar="FILE",
         action=GetValidFile,
         default=os.path.join(
-            os.path.dirname(__file__), "white_list.json"
+            os.path.dirname(os.path.abspath(__file__)), "white_list.json"
         ),
         help="Specify ports white list, input is .json file path",
     )
