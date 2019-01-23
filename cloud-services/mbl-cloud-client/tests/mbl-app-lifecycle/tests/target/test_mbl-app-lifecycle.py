@@ -51,7 +51,7 @@ class TestAppConnectivity:
     stop_signal = signal()
 
     def setup_method(self, method):
-        """Setup any state specific to the execution of the given method."""
+        """Set up any state specific to the execution of the given method."""
         print("Setup method TestAppConnectivity...")
 
         # get the session bus
