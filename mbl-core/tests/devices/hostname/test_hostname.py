@@ -69,7 +69,7 @@ class TestHostname:
     def test_hostname_no_factory_modify_user_config(
         self, new_hostname="hostname_test_change_usr_cfg"
     ):
-        """check modify user defined hostname."""
+        """Check modify user defined hostname."""
         # Setup: remove factory configuration and add user configuration
         #
         self._setup_cfg_hostname("hostname_fact_test")
@@ -83,7 +83,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").strip() == new_hostname
 
     def test_hostname_factory_cfg_exist_add_usr_cfg(self):
-        """check add user configuration when factory configuration exist."""
+        """Check add user configuration when factory configuration exist."""
         # Setup: remove user configuration and add factory configuration
         #
         self._setup_cfg_hostname("hostname_fact_test")
@@ -97,7 +97,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").strip() == self.hostname_orig
 
     def test_hostname_factory_cfg_exist_modify_usr_cfg(self):
-        """check modify user configuration when factory configuration exist."""
+        """Check modify user configuration when factory configuration exist."""
         # Setup: add factory and user configurations
         #
         self._setup_cfg_hostname("hostname_fact_test", "hostname_usr_test")
@@ -113,7 +113,7 @@ class TestHostname:
         )
 
     def test_hostname_factory_cfg_exist_remove_user_config(self):
-        """check remove user configuration when factory configuration exist."""
+        """Check remove user configuration when factory configuration exist."""
         # Setup: add factory and user configurations
         #
         self._setup_cfg_hostname("hostname_fact_test", "hostname_usr_test")
@@ -126,7 +126,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").strip() == "hostname_fact_test"
 
     def test_hostname_no_factory_cfg_remove_user_config(self):
-        """remove of user configuration when no factory hostname defined."""
+        """Remove of user configuration when no factory hostname defined."""
         # Setup: remove factory and add user hostname configurations
         #
         if os.path.isfile(HOSTNAME_FACTORY_FILE):
@@ -145,7 +145,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").find("mbed-linux-os-") == 0
 
     def _setup_cfg_hostname(self, hostname_factory, hostname_user=None):
-        """setup factory and user configurations."""
+        """Set up factory and user configurations."""
         if hostname_factory is None:
             if os.path.isfile(HOSTNAME_FACTORY_FILE):
                 os.remove(HOSTNAME_FACTORY_FILE)
@@ -168,7 +168,7 @@ class TestHostname:
             assert hostname.stdout.decode("utf-8").strip() == hostname_factory
 
     def _restore_hostname(self):
-        """restore the original configuration."""
+        """Restore the original configuration."""
         if self.hostname_user is not None:
             with open(HOSTNAME_USER_FILE, "w") as f:
                 f.write(self.hostname_user)
@@ -186,7 +186,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").strip() == self.hostname_orig
 
     def _run_hostname_script(self):
-        """set hostname by running /etc/init.d/hostname.sh."""
+        """Set hostname by running /etc/init.d/hostname.sh."""
         p = subprocess.Popen(
             SET_HOSTNAME_CMD,
             stdin=subprocess.PIPE,

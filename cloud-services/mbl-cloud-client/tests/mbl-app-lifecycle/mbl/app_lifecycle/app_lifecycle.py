@@ -138,7 +138,7 @@ class AppConnectivity(AppLifeCycle):
 
     def Hello(self):
         """
-        Connectivity check D-Bus method.
+        Check D-Bus connectivity.
 
         :return: 'Hello!'
         """

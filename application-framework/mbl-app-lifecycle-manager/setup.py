@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""setup.py file for Mbed Linux OS Application Lifecycle Manager package."""
+"""Mbed Linux OS Application Lifecycle Manager package setup.py file."""
 
 import os
 from setuptools import setup
 
 
 def read(fname):
-    """Utility function to read the README file."""
+    """Read the content of a file."""
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
