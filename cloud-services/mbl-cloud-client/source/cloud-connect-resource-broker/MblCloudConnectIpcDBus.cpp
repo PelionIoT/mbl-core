@@ -22,6 +22,8 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include <systemd/sd-bus.h>
+
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl {
@@ -51,6 +53,17 @@ MblError MblCloudConnectIpcDBus::de_init()
 
 MblError MblCloudConnectIpcDBus::run()
 {
+
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_message *m = NULL;
+    sd_bus *bus = NULL;
+    const char *path;
+    
+    /* Connect to the system bus */
+    sd_bus_open_system(&bus);
+    
+
+
     tr_info("%s", __PRETTY_FUNCTION__);
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
