@@ -24,9 +24,7 @@ class Status(Enum):
 
 
 class OpenPortsChecker:
-    """
-    Checker for unwanted open ports.
-    """
+    """Checker for unwanted open ports."""
 
     def __init__(self, white_list_filename):
         """

@@ -16,17 +16,17 @@ import mbl.open_ports_checker.connection as connection
 # List of TCP state values can be found here:
 # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/net/tcp_states.h?id=HEAD
 TCP_STATES = {
-    "01" : "ESTABLISHED",
-    "02" : "SYN_SENT",
-    "03" : "SYN_RECV",
-    "04" : "FIN_WAIT1",
-    "05" : "FIN_WAIT2",
-    "06" : "TIME_WAIT",
-    "07" : "CLOSE",
-    "08" : "CLOSE_WAIT",
-    "09" : "LAST_ACK",
-    "0A" : "LISTEN",
-    "0B" : "CLOSING"
+    "01": "ESTABLISHED",
+    "02": "SYN_SENT",
+    "03": "SYN_RECV",
+    "04": "FIN_WAIT1",
+    "05": "FIN_WAIT2",
+    "06": "TIME_WAIT",
+    "07": "CLOSE",
+    "08": "CLOSE_WAIT",
+    "09": "LAST_ACK",
+    "0A": "LISTEN",
+    "0B": "CLOSING"
 }
 
 PROC_ENTRY = os.path.join(os.sep, "proc")
@@ -211,11 +211,7 @@ def netstat_tcp4():
         for pid in pids:
             exe_name = get_exe_name(pid)
             my_connection = connection.Connection(
-                "tcp4",
-                local_address,
-                local_port,
-                pid,
-                exe_name
+                "tcp4", local_address, local_port, pid, exe_name
             )
             result.append(my_connection)
     return result
@@ -251,11 +247,7 @@ def netstat_udp4():
         for pid in pids:
             exe_name = get_exe_name(pid)
             my_connection = connection.Connection(
-                "udp4",
-                local_address,
-                local_port,
-                pid,
-                exe_name
+                "udp4", local_address, local_port, pid, exe_name
             )
             result.append(my_connection)
     return result
@@ -295,11 +287,7 @@ def netstat_tcp6():
         for pid in pids:
             exe_name = get_exe_name(pid)
             my_connection = connection.Connection(
-                "tcp6",
-                local_address,
-                local_port,
-                pid,
-                exe_name
+                "tcp6", local_address, local_port, pid, exe_name
             )
             result.append(my_connection)
     return result
@@ -335,11 +323,7 @@ def netstat_udp6():
         for pid in pids:
             exe_name = get_exe_name(pid)
             my_connection = connection.Connection(
-                "udp6",
-                local_address,
-                local_port,
-                pid,
-                exe_name
+                "udp6", local_address, local_port, pid, exe_name
             )
             result.append(my_connection)
     return result
@@ -369,11 +353,7 @@ def netstat_raw():
         for pid in pids:
             exe_name = get_exe_name(pid)
             my_connection = connection.Connection(
-                "raw",
-                None,
-                None,
-                pid,
-                exe_name
+                "raw", None, None, pid, exe_name
             )
             result.append(my_connection)
     return result
@@ -391,6 +371,8 @@ def netstat():
     https://unix.stackexchange.com/questions/226276/read-proc-to-know-if-a-process-has-opened-a-port
         :return: List of connections
     """
+    uid = os.getuid()
+    assert uid == 0, "This script must run as root"
     tcp4_list = netstat_tcp4()
     udp4_list = netstat_udp4()
     tcp6_list = netstat_tcp6()
