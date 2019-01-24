@@ -15,7 +15,8 @@
 	],
 	"settings": {
 		"files.associations": {
-			"sd-bus.h": "c"
+			"sd-bus.h": "c",
+			"assert.h": "c"
 		}
 	}
 }

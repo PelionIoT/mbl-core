@@ -21,9 +21,12 @@
 
 #include "MblError.h"
 #include <stdint.h>
+#include <inttypes.h>
+
 // FIXME : remove later
 #define tr_info(s)
 #define tr_debug(s)
+#define tr_error(s)
 
 namespace mbl {
 
@@ -40,6 +43,8 @@ public:
     
     virtual MblError init() = 0;
     virtual MblError de_init() = 0;
+    virtual MblError start() = 0;
+    virtual MblError stop() = 0;
 
 private:
 

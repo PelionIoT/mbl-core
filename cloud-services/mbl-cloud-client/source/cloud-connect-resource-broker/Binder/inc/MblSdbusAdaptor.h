@@ -16,11 +16,21 @@
  */
 
 
-#ifndef MblSdbusLowLevel_h_
-#define MblSdbusLowLevel_h_
+#ifndef MblSdbusAdaptor_h_
+#define MblSdbusAdaptor_h_
 
-#include <systemd/sd-bus.h>
 
-int bus_init(sd_bus *bus, sd_bus_slot *slot);
 
-#endif // MblSdbusLowLevel_h_
+
+typedef struct MblSdbusCallbacks
+{
+     int (*register_resources_callback)(const char *);
+}MblSdbusCallbacks;
+
+
+int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks);
+int32_t SdBusAdaptor_finalize();
+int32_t SdBusAdaptor_run();
+int32_t SdBusAdaptor_stop();
+
+#endif // MblSdbusAdaptor_h_

@@ -15,34 +15,51 @@
  * limitations under the License.
  */
 
+
 #include "MblSdbusBinder.h"
 
 extern "C" {
 #include <systemd/sd-bus.h>
-#include "MblSdbusLowLevel.h"
+#include "MblSdbusAdaptor.h"
 }
+
+#include <string>
 
 // FIXME: uncomment later
 //#include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
+
+
 namespace mbl
 {
 
+int MblSdbusBinder::register_resources_callback(const char *_json_file) 
+{
+    std::string json(_json_file);
+    return 0;
+}
+
+
+MblSdbusBinder::MblSdbusBinder()
+{
+    tr_debug(__PRETTY_FUNCTION__);
+
+    // set callbacks
+    callbacks_.register_resources_callback = register_resources_callback;
+}
+
 MblError MblSdbusBinder::init()
 {
-    sd_bus *bus = NULL;
-    MblError status;
+    tr_debug(__PRETTY_FUNCTION__);
 
-    tr_debug(__func__);
-
-    if (status_ == Status::INITALIZED)
+    if (Status::INITALIZED == status_ )
     {
         return MblError::AlreadyInitialized;
     }
 
-    if (bus_init(sdbus_.bus, sdbus_.bus_slot) != 0){
+    if (SdBusAdaptor_init(&callbacks_) != 0){
         return MblError::SdBusError;
     }
 
@@ -53,8 +70,31 @@ MblError MblSdbusBinder::init()
 
 MblError MblSdbusBinder::de_init()
 {
-    tr_debug("MblCloudConnectIpcDBus::Finalize");
+    tr_debug(__PRETTY_FUNCTION__);
+
+    status_ = Status::FINALIZED;
     return MblError::None;
+}
+
+MblError MblSdbusBinder::start()
+{
+    if (status_ != Status::INITALIZED){
+        return MblError::NotInitialized;
+    }
+
+    int32_t r = SdBusAdaptor_run();
+    if (r != 0) {
+        return MblError::SdBusError;
+    }
+
+    return MblError::None;
+}
+
+MblError MblSdbusBinder::stop()
+{
+    if (status_ != Status::INITALIZED){
+        return MblError::NotInitialized;
+    }    
 }
 
 } // namespace mbl

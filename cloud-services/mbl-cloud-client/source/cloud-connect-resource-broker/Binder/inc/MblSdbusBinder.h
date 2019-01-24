@@ -20,8 +20,9 @@
 #define MblSdbusBinder_h_
 
 #include "MblDBusBinder.h"
-#include "systemd/sd-bus.h"
-#include <mutex>
+extern "C" {
+    #include "MblSdbusAdaptor.h"
+}
 
 namespace mbl {
 
@@ -33,27 +34,26 @@ class MblSdbusBinder : MblDBusBinder{
 
 public:
 
-    MblSdbusBinder() = default;
+    MblSdbusBinder();
     ~MblSdbusBinder() = default;
     
     MblError init();
     MblError de_init();
-
-    // DBUS callbacks
-    static int RegisterResourcesHandler(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+    MblError start();
+    MblError stop();
 
 private:
     enum class Status {INITALIZED, FINALIZED};
-    struct MblSdbus {
-        sd_bus *bus = nullptr;
-        sd_bus_slot *bus_slot= nullptr;         // TODO : needed?
-    };
     
-    struct MblSdbus sdbus_;
-    std::mutex mtx_;    
     Status status_ = Status::FINALIZED;
 
-    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    MblSdbusCallbacks callbacks_;
+
+    // D-BUS callbacks
+    static int register_resources_callback(const char *json_file);
+
+    // No copying or moving 
+    // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     MblSdbusBinder(const MblSdbusBinder&) = delete;
     MblSdbusBinder & operator = (const MblSdbusBinder&) = delete;
     MblSdbusBinder(MblSdbusBinder&&) = delete;

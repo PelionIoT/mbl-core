@@ -66,7 +66,8 @@ enum Type {
 
     // TODO - move later somewhere else (internal errors)
     AlreadyInitialized                  = 0x0300,
-    SdBusError                          = 0x0301,
+    NotInitialized                      = 0x0301,
+    SdBusError                          = 0x0302,
 
     EnrollmentErrorBase                 = 0x0400,
     EnrollmentErrorEnd                  = 0x0401

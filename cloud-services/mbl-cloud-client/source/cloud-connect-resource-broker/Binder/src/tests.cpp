@@ -5,6 +5,7 @@ TEST(SquareRootTest, PositiveNos) {
     printf("Starting...\n");
     mbl::MblSdbusBinder binder; 
     ASSERT_EQ(binder.init(), mbl::MblError::None);
+    ASSERT_EQ(binder.start(), mbl::MblError::None);
 }
  
 extern "C" int start_service();
