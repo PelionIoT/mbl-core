@@ -68,8 +68,11 @@ enum Type {
     UpdateErrorConnection               = 0x0211,
 
     EnrollmentErrorBase                 = 0x0300,
-    EnrollmentErrorEnd                  = 0x0301
+    EnrollmentErrorEnd                  = 0x0301,
 
+    // CCRB errors
+    CCRBStartFailed                     = 0x0400,
+    CCRBStopFailed                      = 0x0401,
 };
 } // namespace Error
 
