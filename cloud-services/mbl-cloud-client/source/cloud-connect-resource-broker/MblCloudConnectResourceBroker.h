@@ -66,6 +66,13 @@ private:
     MblError init();
 
 /**
+ * @brief Deinitializes CCRB instance.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    MblError de_init();
+
+/**
  * @brief Runs CCRB event-loop.
  * 
  * @return MblError returns value Error::None if function succeeded, or error code otherwise.
@@ -78,14 +85,20 @@ private:
  * - initializes CCRB module.
  * - runs CCRB main functionality loop.  
  * 
- * @param ccrb_instance_ptr address of CCRB instance that should run. 
+ * @param ccrb address of CCRB instance that should run. 
  * @return void* thread output buffer - not used.
  */
-    static void *thread_function(void *ccrb_instance_ptr);
+    static void *ccrb_main(void *ccrb);
 
 private:
 
-    std::unique_ptr<MblCloudConnectIpcInterface> ipc_;
+    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    MblCloudConnectResourceBroker(const MblCloudConnectResourceBroker&) = delete;
+    MblCloudConnectResourceBroker & operator = (const MblCloudConnectResourceBroker&) = delete;
+    MblCloudConnectResourceBroker(MblCloudConnectResourceBroker&&) = delete;
+    MblCloudConnectResourceBroker& operator = (MblCloudConnectResourceBroker&&) = delete;  
+
+    std::unique_ptr<MblCloudConnectIpcInterface> ipc_ = nullptr;
 };
 
 } // namespace mbl

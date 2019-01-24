@@ -29,7 +29,7 @@ namespace mbl {
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
     : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
-    tr_debug("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     // constructor runs on IPC thread context
     // store thread ID, always succeeding function
@@ -38,24 +38,24 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 {
-    tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 MblError MblCloudConnectIpcDBus::init()
 {
-    tr_info("MblCloudConnectIpcDBus::init");
+    tr_info("%s", __PRETTY_FUNCTION__);
     return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::de_init()
 {
-    tr_info("MblCloudConnectIpcDBus::de_init");
+    tr_info("%s", __PRETTY_FUNCTION__);
     return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::run()
 {
-    tr_info("MblCloudConnectIpcDBus::run");
+    tr_info("%s", __PRETTY_FUNCTION__);
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_)
@@ -63,14 +63,14 @@ MblError MblCloudConnectIpcDBus::run()
         sleep(1);
     }
 
-    tr_info("MblCloudConnectIpcDBus::run: event loop is finished");
+    tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);
 
     return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::stop()
 {
-    tr_info("MblCloudConnectIpcDBus::stop");
+    tr_info("%s", __PRETTY_FUNCTION__);
 
     // temporary not thread safe solution that should be removed soon.
     // signal to event-loop that it should finish.

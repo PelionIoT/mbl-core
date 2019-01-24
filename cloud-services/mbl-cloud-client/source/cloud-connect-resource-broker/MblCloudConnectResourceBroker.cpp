@@ -29,19 +29,18 @@ namespace mbl {
 
 // Currently, this constructor is called from MblCloudClient thread.
 MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
-    : ipc_ (nullptr)
 {
-    tr_debug("MblCloudConnectResourceBroker::MblCloudConnectResourceBroker");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
 {
-    tr_debug("MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 MblError MblCloudConnectResourceBroker::start()
 {
-    tr_info("MblCloudConnectResourceBroker::start");
+    tr_info("%s", __PRETTY_FUNCTION__);
 
     pthread_t ccrb_thread_id = 0; // variable is not really used
 
@@ -49,7 +48,7 @@ MblError MblCloudConnectResourceBroker::start()
     const int thread_create_err = pthread_create(
             &ccrb_thread_id,
             nullptr, // thread is created with default attributes
-            MblCloudConnectResourceBroker::thread_function,
+            MblCloudConnectResourceBroker::ccrb_main,
             this
         );
     if(0 != thread_create_err)
@@ -69,15 +68,18 @@ MblError MblCloudConnectResourceBroker::start()
 
 MblError MblCloudConnectResourceBroker::stop()
 {
+    assert(ipc_);
+    tr_info("%s", __PRETTY_FUNCTION__);
+
     MblError status = ipc_->stop();
     if(Error::None != status){
-        tr_err("Stopping IPC failed! (%s)", MblError_to_str(status));
+        tr_err("ipc::stop failed! (%s)", MblError_to_str(status));
         return status;
     }
 
-    status = ipc_->de_init();
+    status = de_init();
     if(Error::None != status){
-        tr_err("Deinitializng IPC failed! (%s)", MblError_to_str(status));
+        tr_err("ccrb::de_init failed! (%s)", MblError_to_str(status));
     }
 
     return status;
@@ -87,7 +89,7 @@ MblError MblCloudConnectResourceBroker::init()
 {
     // verify that ipc_ member was not created yet
     assert(nullptr == ipc_);
-    tr_info("MblCloudConnectResourceBroker::init");
+    tr_info("%s", __PRETTY_FUNCTION__);
 
     // create ipc instance
     ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
@@ -100,10 +102,23 @@ MblError MblCloudConnectResourceBroker::init()
     return status;
 }
 
+MblError MblCloudConnectResourceBroker::de_init()
+{
+    assert(ipc_);
+    tr_info("%s", __PRETTY_FUNCTION__);
+
+    MblError status = ipc_->de_init();
+    if(Error::None != status) {
+        tr_error("ipc::de_init failed with error %s", MblError_to_str(status));
+    }
+
+    return status;
+}
+
 MblError MblCloudConnectResourceBroker::run()
 {
     assert(ipc_);
-    tr_info("MblCloudConnectResourceBroker::run");
+    tr_info("%s", __PRETTY_FUNCTION__);
 
     MblError status = ipc_->run();
     if(Error::None != status) {
@@ -113,27 +128,27 @@ MblError MblCloudConnectResourceBroker::run()
     return status;
 }
 
-void* MblCloudConnectResourceBroker::thread_function(void* ccrb_instance_ptr)
+void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
 {
-    assert(ccrb_instance_ptr);
-    tr_info("MblCloudConnectResourceBroker::thread_function");
+    assert(ccrb);
+    tr_info("%s", __PRETTY_FUNCTION__);
 
-    MblCloudConnectResourceBroker * const ccrb_ptr =
-        static_cast<MblCloudConnectResourceBroker*>(ccrb_instance_ptr);
+    MblCloudConnectResourceBroker * const this_ccrb =
+        static_cast<MblCloudConnectResourceBroker*>(ccrb);
 
-    MblError status = ccrb_ptr->init();
+    MblError status = this_ccrb->init();
     if(Error::None != status) {
         tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit(nullptr);
     }
 
-    status = ccrb_ptr->run();
+    status = this_ccrb->run();
     if(Error::None != status) {
         tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit(nullptr);
     }
 
-    tr_info("MblCloudConnectResourceBroker::thread_function finished");
+    tr_info("%s thread function finished", __PRETTY_FUNCTION__);
     pthread_exit(nullptr); // pthread_exit does "return"
 }
 
