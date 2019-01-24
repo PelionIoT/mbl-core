@@ -76,8 +76,8 @@ MblError MblCloudConnectResourceBroker::stop()
     if(Error::None != ipc_stop_err) {
         tr_err("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
 
-        // FIXME: Currently, if ipc was not succefully signalled, we return error.
-        //        Required to add "relase resources best effort" functionality.
+        // FIXME: Currently, if ipc was not successfully signalled, we return error.
+        //        Required to add "release resources best effort" functionality.
         return Error::CCRBStopFailed;
     }
 
@@ -87,7 +87,7 @@ MblError MblCloudConnectResourceBroker::stop()
     // will return N via pthread_exit(N), value of pointer thread_status will be equal N.
     void *thread_status = nullptr;     // do not dereference the pointer!
 
-    // ipc was succefully signalled to stop, join with thread.
+    // ipc was succesfully signalled to stop, join with thread.
     const int thread_join_err = pthread_join(ipc_thread_id_, &thread_status);
     // FIXME: Currently, we use pthread_join without timeout. 
     //        Required to use pthread_join with timeout.
@@ -99,11 +99,11 @@ MblError MblCloudConnectResourceBroker::stop()
             strerror(thread_join_errno));
         
         // FIXME: Currently, if pthread_join fails, we return error.
-        //        Required to add "relase resources best effort" functionality.
+        //        Required to add "release resources best effort" functionality.
         return Error::CCRBStopFailed;
     }
 
-    // thread was succefully joined, handle thread_status. Thread_status will contain 
+    // thread was succesfully joined, handle thread_status. Thread_status will contain 
     // value that was returned via pthread_Exit(MblError) from ccrb main function.
     MblError ret_value = (MblError)(uintptr_t)(thread_status);
     if(Error::None != ret_value) {

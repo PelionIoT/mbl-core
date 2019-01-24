@@ -42,6 +42,13 @@ MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 MblError MblCloudConnectIpcDBus::init()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
+
+    // FIXME: temporary - remove code bellow
+    sd_bus *bus = NULL;
+    int bus_open_status = sd_bus_open_system(&bus);
+    tr_info("sd_bus_open_system returned %d", bus_open_status);
+    // FIXME: temporary - remove code above
+
     return Error::None;
 }
 
@@ -53,17 +60,6 @@ MblError MblCloudConnectIpcDBus::de_init()
 
 MblError MblCloudConnectIpcDBus::run()
 {
-
-    sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_bus_message *m = NULL;
-    sd_bus *bus = NULL;
-    const char *path;
-    
-    /* Connect to the system bus */
-    sd_bus_open_system(&bus);
-    
-
-
     tr_info("%s", __PRETTY_FUNCTION__);
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
