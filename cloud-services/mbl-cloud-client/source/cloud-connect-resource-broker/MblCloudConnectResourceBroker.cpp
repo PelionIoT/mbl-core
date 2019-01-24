@@ -179,17 +179,17 @@ void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
     MblError status = this_ccrb->init();
     if(Error::None != status) {
         tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit(static_cast<uintptr_t>(Error::CCRBStartFailed));
+        pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
     }
 
     status = this_ccrb->run();
     if(Error::None != status) {
         tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit(static_cast<uintptr_t>(status));
+        pthread_exit((void*)(uintptr_t)status);
     }
 
     tr_info("%s thread function finished", __PRETTY_FUNCTION__);
-    pthread_exit(static_cast<uintptr_t>(Error::None)); // pthread_exit does "return"
+    pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
 } // namespace mbl
