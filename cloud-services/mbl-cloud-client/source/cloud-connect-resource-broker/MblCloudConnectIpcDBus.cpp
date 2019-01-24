@@ -18,25 +18,70 @@
 #include "MblCloudConnectIpcDBus.h"
 
 #include "mbed-trace/mbed_trace.h"
+#include <cassert>
+#include <pthread.h>
+#include <unistd.h>
 
-#define TRACE_GROUP "CCRB-IPCDBUS"
+#include <systemd/sd-bus.h>
+
+#define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl {
 
 MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
+    : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
-    tr_info("MblCloudConnectIpcDBus::MblCloudConnectIpcDBus");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
 {
-    tr_debug("MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus");
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblError MblCloudConnectIpcDBus::Init()
+MblError MblCloudConnectIpcDBus::init()
 {
-    tr_debug("MblCloudConnectIpcDBus::Init");
+    tr_info("%s", __PRETTY_FUNCTION__);
+
+    // FIXME: temporary - remove code bellow
+    sd_bus *bus = NULL;
+    int bus_open_status = sd_bus_open_system(&bus);
+    tr_info("sd_bus_open_system returned %d", bus_open_status);
+    // FIXME: temporary - remove code above
+
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::de_init()
+{
+    tr_info("%s", __PRETTY_FUNCTION__);
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::run()
+{
+    tr_info("%s", __PRETTY_FUNCTION__);
+    
+    // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
+    while(!exit_loop_) {
+        sleep(1);
+    }
+
+    tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);
+
+    return Error::None;
+}
+
+MblError MblCloudConnectIpcDBus::stop()
+{
+    tr_info("%s", __PRETTY_FUNCTION__);
+
+    // temporary not thread safe solution that should be removed soon.
+    // signal to event-loop that it should finish.
+    exit_loop_ = true;
+
     return Error::None;
 }
 
 } // namespace mbl
+

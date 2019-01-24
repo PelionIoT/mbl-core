@@ -20,12 +20,13 @@
 #define MblCloudConnectIpcDBus_h_
 
 #include "MblCloudConnectIpcInterface.h"
+#include <pthread.h>
 
 namespace mbl {
 
-/*! \file MblCloudConnectIpcDBus.h
- *  \brief MblCloudConnectIpcDBus.
- *  This class provides an implementation for D-Bus IPC mechanism
+/**
+ * @brief This class provides an implementation for D-Bus IPC mechanism.
+ * Implements MblCloudConnectIpcInterface interface. 
  */
 class MblCloudConnectIpcDBus: public MblCloudConnectIpcInterface {
 
@@ -34,8 +35,24 @@ public:
     MblCloudConnectIpcDBus();
     ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of init()
-    MblError Init() override;
+    // Implementation of MblCloudConnectIpcInterface::init()
+    MblError init() override;
+
+    // Implementation of MblCloudConnectIpcInterface::de_init()
+    MblError de_init() override;
+
+    // Implementation of MblCloudConnectIpcInterface::run()
+    MblError run() override;
+
+    // Implementation of MblCloudConnectIpcInterface::stop()
+    MblError stop() override;
+
+private:
+   
+    // Temporary solution for exiting from simulated event-loop that should be removed after we introduce real sd-bus event-loop.
+    // Now we just use this boolean flag, that signals, that the thread should exit from simulated event-loop.
+    // In future we shall replace this flag with real mechanism, that will allow exiting from real sd-bus event-loop.
+    volatile bool exit_loop_;
 };
 
 } // namespace mbl

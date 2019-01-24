@@ -80,4 +80,6 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+# link with systemd to get D-Bus libs
+target_link_libraries(mbl-cloud-client systemd)
 

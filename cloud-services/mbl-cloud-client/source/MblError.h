@@ -65,8 +65,11 @@ enum Type {
     UpdateErrorInvalidHash              = 0x020e,
 
     EnrollmentErrorBase                 = 0x0300,
-    EnrollmentErrorEnd                  = 0x0301
+    EnrollmentErrorEnd                  = 0x0301,
 
+    // CCRB errors
+    CCRBStartFailed                     = 0x0400,
+    CCRBStopFailed                      = 0x0401,
 };
 } // namespace Error
 
