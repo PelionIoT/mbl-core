@@ -98,6 +98,10 @@ private:
     MblCloudConnectResourceBroker(MblCloudConnectResourceBroker&&) = delete;
     MblCloudConnectResourceBroker& operator = (MblCloudConnectResourceBroker&&) = delete;  
 
+    // thread id of the IPC thread
+    pthread_t ipc_thread_id_ = 0;
+
+    // pointer to ipc binder instance
     std::unique_ptr<MblCloudConnectIpcInterface> ipc_ = nullptr;
 };
 

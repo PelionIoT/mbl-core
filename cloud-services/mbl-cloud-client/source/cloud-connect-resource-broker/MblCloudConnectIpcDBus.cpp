@@ -30,10 +30,6 @@ MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
     : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-
-    // constructor runs on IPC thread context
-    // store thread ID, always succeeding function
-    ipc_thread_id_ = pthread_self();
 }
 
 MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
@@ -58,8 +54,7 @@ MblError MblCloudConnectIpcDBus::run()
     tr_info("%s", __PRETTY_FUNCTION__);
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
-    while(!exit_loop_)
-    {
+    while(!exit_loop_) {
         sleep(1);
     }
 
@@ -75,19 +70,6 @@ MblError MblCloudConnectIpcDBus::stop()
     // temporary not thread safe solution that should be removed soon.
     // signal to event-loop that it should finish.
     exit_loop_ = true;
-
-    const int thread_join_err = pthread_join(ipc_thread_id_, nullptr);
-    if(0 != thread_join_err)
-    {
-        // thread joining failed, print errno value and exit
-        const int thread_join_errno = errno;
-
-        tr_err(
-            "Thread joining failed (%s)!\n",
-            strerror(thread_join_errno));
-
-        return Error::CCRBStopFailed;
-    }
 
     return Error::None;
 }
