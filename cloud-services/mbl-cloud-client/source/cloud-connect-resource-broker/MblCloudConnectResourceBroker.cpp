@@ -105,10 +105,12 @@ MblError MblCloudConnectResourceBroker::stop()
 
     // thread was succefully joined, handle thread_status. Thread_status will contain 
     // value that was returned via pthread_Exit(MblError) from ccrb main function.
-    MblError ret_value = static_cast<MblError>(thread_status);
+    MblError ret_value = (MblError)(uintptr_t)(thread_status);
     if(Error::None != ret_value) {
         tr_err("ccrb_main() failed! (%s)", MblError_to_str(ret_value));
     }       
+
+    tr_info("ccrb_main() exit status = (%s)", MblError_to_str(ret_value));
 
     const MblError de_init_err = de_init();
     if(Error::None != de_init_err) {
