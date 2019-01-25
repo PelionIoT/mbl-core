@@ -40,27 +40,24 @@ def main():
     pass_re = re.compile(".*::.*::.*PASSED")
     fail_re = re.compile(".*::.*::.*FAILED")
 
+    lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
+    pass_str = " RESULT=PASS>"
+    fail_str = " RESULT=FAIL>"
+
     # Look for the results file and process it if it exists
     if os.path.isfile(options.input):
-        file = open(options.input)
-        for line in file:
-            if pass_re.search(line):
-                name = line.split("::", 1)[1].split(" ")[0]
-                results.append(
-                    "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-                    + name
-                    + " RESULT=PASS>"
-                )
-            elif fail_re.search(line):
-                name = line.split("::", 1)[1].split(" ")[0]
-                results.append(
-                    "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-                    + name
-                    + " RESULT=FAIL>"
-                )
-            else:
-                # skip the line
-                pass
+        with open(options.input) as file:
+            for line in file:
+                if pass_re.search(line):
+                    name = line.split("::", 1)[1].split(" ")[0]
+                    results.append(
+                        "{} {} {}".format(lava_signal, name, pass_str)
+                    )
+                elif fail_re.search(line):
+                    name = line.split("::", 1)[1].split(" ")[0]
+                    results.append(
+                        "{} {} {}".format(lava_signal, name, fail_str)
+                    )
     else:
         print("Input File not found")
 
