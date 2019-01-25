@@ -1,6 +1,6 @@
 # Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
-# #
-# # SPDX-License-Identifier: BSD-3-Clause
+#
+# SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
@@ -36,7 +36,7 @@ run:
         - pytest -v ./$COMPONENT | tee /tmp/test_venv/results.txt
 
         # Turn the pytest results into a format the LAVA requires
-        - python3 ./ci/lava/dependencies/send_pytest_results_to_lava.py --input /tmp/test_venv/results.txt
+        - python3 ./ci/lava/dependencies/send_pytest_results_to_lava.py /tmp/test_venv/results.txt
 
         # Perform optional TEARDOWN actions
         - $TEARDOWN
