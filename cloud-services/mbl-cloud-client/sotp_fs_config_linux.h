@@ -1,3 +1,8 @@
+/* Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #ifndef PAL_HEADER_SOTP_FS_LINUX
 #define PAL_HEADER_SOTP_FS_LINUX
 
