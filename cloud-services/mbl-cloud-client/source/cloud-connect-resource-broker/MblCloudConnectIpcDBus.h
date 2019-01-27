@@ -24,6 +24,8 @@
 
 namespace mbl {
 
+class MblCloudConnectResourceBroker;
+
 /**
  * @brief This class provides an implementation for D-Bus IPC mechanism.
  * Implements MblCloudConnectIpcInterface interface. 
@@ -32,7 +34,7 @@ class MblCloudConnectIpcDBus: public MblCloudConnectIpcInterface {
 
 public:
 
-    MblCloudConnectIpcDBus();
+    MblCloudConnectIpcDBus(MblCloudConnectResourceBroker &ccrb);
     ~MblCloudConnectIpcDBus() override;
 
     // Implementation of MblCloudConnectIpcInterface::init()
@@ -53,6 +55,8 @@ private:
     // Now we just use this boolean flag, that signals, that the thread should exit from simulated event-loop.
     // In future we shall replace this flag with real mechanism, that will allow exiting from real sd-bus event-loop.
     volatile bool exit_loop_;
+
+    MblCloudConnectResourceBroker &ccrb_;
 };
 
 } // namespace mbl

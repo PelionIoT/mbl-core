@@ -20,8 +20,10 @@
 #define MblCloudConnectResourceBroker_h_
 
 #include "MblCloudConnectIpcInterface.h"
+#include "MblCloudConnectTypes.h"
 
 #include  <memory>
+
 
 namespace mbl {
 
@@ -34,9 +36,12 @@ namespace mbl {
 class MblCloudConnectResourceBroker {
 
 public:
-
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
+
+/////////////////////////////////////////////////////////////////////
+// MblCloudConnectResourceBroker to MblCloudClient API
+/////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Starts CCRB.
@@ -55,6 +60,46 @@ public:
  * @return MblError returns value Error::None if function succeeded, or Error::CCRBStopFailed otherwise. 
  */
     MblError stop();
+
+
+
+/////////////////////////////////////////////////////////////////////
+// MblCloudConnectResourceBroker to MblCloudConnectIpcDBus API
+/////////////////////////////////////////////////////////////////////
+
+    MblCloudConnectOpStatus register_resources_start(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const std::string &json);
+
+    MblCloudConnectOpStatus deregister_resources_start(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const uint64_t access_token);
+
+    MblCloudConnectOpStatus add_resource_instances_start(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const uint64_t access_token, 
+        const std::string &resource_path, 
+        const std::vector<uint32_t> &resource_instance_ids);
+
+    MblCloudConnectOpStatus remove_resource_instances_start(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const uint64_t access_token, 
+        const std::string &resource_path, 
+        const std::vector<uint32_t> &resource_instance_ids);
+
+    MblCloudConnectOpStatus set_resource_value(
+        const uint64_t access_token, 
+        const std::vector<MblCloudConnect_ResourcePath_Value_Type> &input_values, 
+        std::vector<MblCloudConnect_ResourcePath_Status> &output_set_statuses);
+
+    MblCloudConnectOpStatus get_resource_value(
+        const uint64_t access_token, 
+        const std::vector<MblCloudConnect_ResourcePath_Type> &input_paths,
+        std::vector<MblCloudConnect_ResourcePath_Value_Type_Status> &output_get_values);
 
 private:
 

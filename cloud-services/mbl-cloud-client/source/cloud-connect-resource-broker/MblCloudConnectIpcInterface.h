@@ -19,7 +19,10 @@
 #ifndef MblCloudConnectIpcInterface_h_
 #define MblCloudConnectIpcInterface_h_
 
+#include <vector>
+
 #include "MblError.h"
+#include "MblCloudConnectTypes.h"
 
 namespace mbl {
 
@@ -62,6 +65,36 @@ public:
  */
     virtual MblError stop() = 0;
 
+/**
+ * @brief Sends registration request status to the destination application. 
+ * 
+ * @param appl_context 
+ * @param ipc_conn_handle 
+ * @param access_token 
+ * @param reg_statuses 
+ * @return MblCloudConnectOpStatus 
+ */
+virtual MblCloudConnectOpStatus update_registration_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const uint64_t access_token,
+        const std::vector<MblCloudConnect_ResourcePath_Status> &reg_statuses) = 0;
+
+virtual MblCloudConnectOpStatus update_deregistration_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const std::vector<MblCloudConnect_ResourcePath_Status> &dereg_statuses) = 0;
+
+virtual MblCloudConnectOpStatus update_add_resource_instance_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const std::vector<MblCloudConnect_ResourcePath_Status> &add_statuses) = 0;
+
+virtual MblCloudConnectOpStatus update_remove_resource_instance_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const std::vector<MblCloudConnect_ResourcePath_Status> &remove_statuses) = 0;
+ 
 private:
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)

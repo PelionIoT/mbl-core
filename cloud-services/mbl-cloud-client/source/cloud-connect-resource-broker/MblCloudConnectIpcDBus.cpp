@@ -28,8 +28,9 @@
 
 namespace mbl {
 
-MblCloudConnectIpcDBus::MblCloudConnectIpcDBus()
-    : exit_loop_ (false) // temporary flag exit_loop_ will be removed soon
+MblCloudConnectIpcDBus::MblCloudConnectIpcDBus(MblCloudConnectResourceBroker &ccrb)
+    : exit_loop_ (false), // temporary flag exit_loop_ will be removed soon
+      ccrb_ (ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }

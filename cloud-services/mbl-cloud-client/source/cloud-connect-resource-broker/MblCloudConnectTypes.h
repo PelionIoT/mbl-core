@@ -1,0 +1,94 @@
+
+/*
+ * Copyright (c) 2019 ARM Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ * Licensed under the Apache License, Version 2.0 (the License); you may
+ * not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an AS IS BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+#ifndef MblCloudConnectTypes_h_
+#define MblCloudConnectTypes_h_
+
+#include  <stdint.h>
+#include  <vector>
+
+namespace mbl {
+
+/**
+ * @brief Mbl Cloud Connect operation status 
+ * 
+ */
+enum MblCloudConnectOpStatus {
+    Success   = 0x0000,
+    Failure   = 0x0001
+};
+
+/**
+ * @brief Mbl Cloud Connect resource data type.
+ * Currently supported LwM2M resource data types. 
+ */
+    enum MblCloudConnectResourceDataType {
+        INVALID   = 0x0,
+        STRING    = 0x1,
+        INTEGER   = 0x2,
+        FLOAT     = 0x3,
+        BOOLEAN   = 0x4,
+        OPAQUE    = 0x5,
+        TIME      = 0x6,
+        OBJLINK   = 0x7,
+    };
+    
+/**
+ * @brief [resource_path, resource_data_value, resource_data_type] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Value_Type
+    {
+        std::string path;
+        std::vector<uint8_t> data_value;
+        MblCloudConnectResourceDataType data_type;
+    };
+
+/**
+ * @brief [resource_path, resource_data_type] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Type
+    {
+        std::string path;
+        MblCloudConnectResourceDataType data_type;
+    };
+
+/**
+ * @brief [resource_path, resource_data_value, resource_data_type, operation_status] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Value_Type_Status
+    {
+        std::string path;
+        std::vector<uint8_t> data_value;
+        MblCloudConnectResourceDataType data_type;
+        MblCloudConnectOpStatus operation_status;
+    };
+
+/**
+ * @brief [resource_path, operation_status] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Status
+    {
+        std::string path;
+        MblCloudConnectResourceDataType operation_status;
+    };
+
+} //namespace mbl
+
+
+#endif // MblCloudConnectTypes_h_

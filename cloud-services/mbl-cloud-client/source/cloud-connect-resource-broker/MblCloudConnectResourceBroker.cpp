@@ -130,8 +130,8 @@ MblError MblCloudConnectResourceBroker::init()
     assert(nullptr == ipc_);
     tr_info("%s", __PRETTY_FUNCTION__);
 
-    // create ipc instance
-    ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
+    // create ipc instance and pass ccrb instance to constructor
+    ipc_ = std::make_unique<MblCloudConnectIpcDBus>(*this);
 
     MblError status = ipc_->init();
     if(Error::None != status) {
