@@ -50,7 +50,8 @@ private:
     MblSdbusCallbacks callbacks_;
 
     // D-BUS callbacks
-    static int register_resources_callback(const char *json_file);
+    static int register_resources_callback(const char *json_filem, CCRBStatus *ccrb_status);
+    static int deregister_resources_callback(const char *access_token, CCRBStatus *ccrb_status);
 
     // No copying or moving 
     // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)

@@ -35,12 +35,17 @@ extern "C" {
 namespace mbl
 {
 
-int MblSdbusBinder::register_resources_callback(const char *_json_file) 
+int MblSdbusBinder::register_resources_callback(const char *json_file, CCRBStatus *ccrb_status) 
 {
-    std::string json(_json_file);
+    std::string json(json_file);    
     return 0;
 }
 
+int MblSdbusBinder::deregister_resources_callback(const char *access_token, CCRBStatus *ccrb_status)
+{
+    std::string json(access_token);
+    return 0;
+}
 
 MblSdbusBinder::MblSdbusBinder()
 {
@@ -48,6 +53,7 @@ MblSdbusBinder::MblSdbusBinder()
 
     // set callbacks
     callbacks_.register_resources_callback = register_resources_callback;
+    callbacks_.deregister_resources_callback = deregister_resources_callback;
 }
 
 MblError MblSdbusBinder::init()

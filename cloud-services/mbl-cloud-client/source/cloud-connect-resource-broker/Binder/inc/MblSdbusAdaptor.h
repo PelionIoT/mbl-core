@@ -15,17 +15,26 @@
  * limitations under the License.
  */
 
-
 #ifndef MblSdbusAdaptor_h_
 #define MblSdbusAdaptor_h_
 
+// Positive values for status, negative values for errors
+typedef enum CCRBStatus
+{
+    //Errors
 
+    //Success
+    CCRB_STATUS_SUCCESS = 0,
 
+    //Status
+    CCRB_STATUS_IN_PROGRESS = 2,
+} CCRBStatus;
 
 typedef struct MblSdbusCallbacks
 {
-     int (*register_resources_callback)(const char *);
-}MblSdbusCallbacks;
+    int (*register_resources_callback)(const char *, CCRBStatus *);
+    int (*deregister_resources_callback)(const char *, CCRBStatus *);
+} MblSdbusCallbacks;
 
 
 int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks);

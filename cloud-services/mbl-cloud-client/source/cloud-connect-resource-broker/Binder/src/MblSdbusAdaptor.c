@@ -65,23 +65,38 @@ static MblSdContext ctx;
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
-static int register_resources_handler(
+static int register_resources_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     tr_debug(__PRETTY_FUNCTION__);
     MblSdContext *ctx = (MblSdContext*)userdata;
     const char *str;
+    CCRBStatus ccrb_status;
 
-#TODO:
-# validate app registered expected interface on bus?
+    // TODO:
+    // validate app registered expected interface on bus?
 
     int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
-    ctx->sdbus.callbacks.register_resources_callback(str);
+    ctx->sdbus.callbacks.register_resources_callback(str, &ccrb_status);
  
     return 0;
 }
 
-int name_owner_changed_match_handler(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+static int deregister_resources_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug(__PRETTY_FUNCTION__);
+    MblSdContext *ctx = (MblSdContext*)userdata;
+    const char *str;
+    CCRBStatus ccrb_status;
+
+    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
+    ctx->sdbus.callbacks.deregister_resources_callback(str, &ccrb_status);
+ 
+    return 0;
+}
+
+int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     // This signal indicates that the owner of a name has changed. 
     // It's also the signal to use to detect the appearance of new names on the bus.
@@ -97,16 +112,42 @@ int name_owner_changed_match_handler(sd_bus_message *m, void *userdata, sd_bus_e
     return 0;
 }
 
+// TODO: Move to a new file dedicated for vtable
 static const sd_bus_vtable calculator_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
+    // This message contains JSON file with resources to be registered.
+    //
+    // Input:
+    // Argument	    Type	Description
+    // 0	        STRING	JSON file (encoded UTF-8)
+    //
+    // Output:
+    // Argument	    Type	Description
+    // 0	        INT32	CCRBStatus
     SD_BUS_METHOD(
         "RegisterResources",
         "s", 
-        "",
-        register_resources_handler,
+        "u",
+        register_resources_callback,
         SD_BUS_VTABLE_UNPRIVILEGED),
 
+
+    // This message de-register all previously registered resources for supplied access-token.
+    //
+    // Input:
+    // Argument	    Type	Description
+    // 0	        STRING	access-token string
+    //
+    // Output:
+    // Argument	    Type	Description
+    // 0	        INT32	CCRBStatus
+    SD_BUS_METHOD(
+        "DeRegisterResources",
+        "s", 
+        "u",
+        deregister_resources_callback,
+        SD_BUS_VTABLE_UNPRIVILEGED),
     SD_BUS_VTABLE_END
 };
 
@@ -177,7 +218,7 @@ static int32_t SdBusAdaptor_bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *c
     r = sd_bus_add_match(
         bus, NULL, 
         "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
-        name_owner_changed_match_handler, 
+        name_owner_changed_match_callback, 
         &ctx);
     if (r < 0) {
         goto on_failure;
