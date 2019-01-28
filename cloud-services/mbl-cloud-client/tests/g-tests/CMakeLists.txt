@@ -9,8 +9,6 @@ set(CMAKE_SYSTEM_PROCESSOR arm)
 
 project(mblCcrbTests)
 
-# Compile CCRB gtests using c++14 standard
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 add_compile_options(-Werror)
 add_compile_options(-Wall)
@@ -26,8 +24,7 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 
-#include_directories(${GTEST_INCLUDE_DIRS})
-include_directories(${SYSTEMD_INCLUDE_DIRS})
+#include_directories(${SYSTEMD_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
 
 
@@ -36,18 +33,18 @@ FILE(GLOB MBL_CCRB_TESTS_SRC
 )
 
 
-add_executable(run-gtests ${MBL_CCRB_TESTS_SRC})
+add_executable(gtest-mbl-cloud-client ${MBL_CCRB_TESTS_SRC})
 
-set_target_properties (run-gtests PROPERTIES
+set_target_properties (gtest-mbl-cloud-client PROPERTIES
    CXX_STANDARD 14
    CXX_STANDARD_REQUIRED TRUE
    CXX_EXTENSIONS FALSE
 )
 
 
-target_link_libraries(run-gtests libgtest_main.a)
-target_link_libraries(run-gtests libgtest.a)
-target_link_libraries(run-gtests libmbedCcrb.a)
-target_link_libraries(run-gtests systemd)
-target_link_libraries(run-gtests pthread)
+target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
+target_link_libraries(gtest-mbl-cloud-client libgtest.a)
+target_link_libraries(gtest-mbl-cloud-client libmbedCcrb.a)
+target_link_libraries(gtest-mbl-cloud-client systemd)
+target_link_libraries(gtest-mbl-cloud-client pthread)
 
