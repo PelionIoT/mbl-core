@@ -52,17 +52,20 @@ class FirmwareUpdateHeader:
       supports.
     """
 
-    __SIZEOF_SHA512 = int(512 / 8)
-    __SIZEOF_GUID = int(128 / 8)
-    __HEADER_MAGIC = 0x5a51b3d4
+    _SIZEOF_SHA512 = int(512 / 8)
+    _SIZEOF_GUID = int(128 / 8)
+
+    # Fixed number that should always be in a HEADER blob's "magic" field -
+    # used to verify that the blob we're given is actually a HEADER blob.
+    _HEADER_MAGIC = 0x5a51b3d4
 
     HEADER_FORMAT_VERSION = 2
 
     # Note - HEADER format doesn't account for the CRC field or the variable
     # length firmware_signature field. These two fields are at the end of the
     # structure and are dealt with separately.
-    __HEADER_FORMAT = ">2I2Q{}s{}sI".format(__SIZEOF_SHA512, __SIZEOF_GUID)
-    __CRC_FORMAT = ">I"
+    _HEADER_FORMAT = ">2I2Q{}s{}sI".format(_SIZEOF_SHA512, _SIZEOF_GUID)
+    _CRC_FORMAT = ">I"
 
     def __init__(self):
         """
@@ -73,18 +76,18 @@ class FirmwareUpdateHeader:
         manually set fields that are not used.
         """
 
-        self.__header_struct = struct.Struct(self.__HEADER_FORMAT)
-        self.__header_size = self.__header_struct.size
+        self._header_struct = struct.Struct(self._HEADER_FORMAT)
+        self._header_size = self._header_struct.size
 
-        self.__crc_struct = struct.Struct(self.__CRC_FORMAT)
-        self.__crc_size = self.__crc_struct.size
+        self._crc_struct = struct.Struct(self._CRC_FORMAT)
+        self._crc_size = self._crc_struct.size
 
-        self.__header_and_crc_size = self.__header_size + self.__crc_size
+        self._header_and_crc_size = self._header_size + self._crc_size
 
         self.firmware_version = 0
         self.firmware_size = 0
-        self.firmware_hash = bytes(self.__SIZEOF_SHA512)
-        self.campaign_id = bytes(self.__SIZEOF_GUID)
+        self.firmware_hash = bytes(self._SIZEOF_SHA512)
+        self.campaign_id = bytes(self._SIZEOF_GUID)
         self.firmware_signature = bytes(0)
 
     def unpack(self, data):
@@ -103,10 +106,10 @@ class FirmwareUpdateHeader:
         Returns: None
         """
 
-        if len(data) < self.__header_and_crc_size:
+        if len(data) < self._header_and_crc_size:
             raise FormatError(
-                "Data is too short (expecting at least {}B)".format(
-                    self.__header_and_crc_size
+                "Data is too short (expecting at least {}B, received {}B)".format(
+                    self._header_and_crc_size, len(data)
                 )
             )
 
@@ -118,25 +121,27 @@ class FirmwareUpdateHeader:
             self.firmware_hash,
             self.campaign_id,
             firmware_signature_size,
-        ) = self.__header_struct.unpack(data[: self.__header_size])
+        ) = self._header_struct.unpack(data[: self._header_size])
 
-        (header_crc,) = self.__crc_struct.unpack(
-            data[self.__header_size : self.__header_and_crc_size]
+        (header_crc,) = self._crc_struct.unpack(
+            data[self._header_size : self._header_and_crc_size]
         )
 
-        if header_magic != self.__HEADER_MAGIC:
+        if header_magic != self._HEADER_MAGIC:
             raise FormatError(
                 "Invalid header magic value 0x{:x} (should be 0x{:x})".format(
-                    header_magic, self.__HEADER_MAGIC
+                    header_magic, self._HEADER_MAGIC
                 )
             )
 
         if header_version != self.HEADER_FORMAT_VERSION:
             raise FormatError(
-                "Unsupported header version {}".format(header_version)
+                "Unsupported header version {}. Version supported: {}".format(
+                    header_version, self.HEADER_FORMAT_VERSION
+                )
             )
 
-        correct_crc = _calculate_crc(data[: self.__header_size])
+        correct_crc = _calculate_crc(data[: self._header_size])
         if header_crc != correct_crc:
             raise FormatError(
                 "Invalid header CRC field {:#x} (should be {:#x})".format(
@@ -145,15 +150,15 @@ class FirmwareUpdateHeader:
             )
 
         if firmware_signature_size:
-            total_size = self.__header_and_crc_size + firmware_signature_size
+            total_size = self._header_and_crc_size + firmware_signature_size
             if len(data) < total_size:
                 raise FormatError(
-                    "Data is too short (expecting at least {}B with {}B for firmware signature)".format(
-                        total_size, firmware_signature_size
+                    "Data is too short (expecting at least {}B with {}B for firmware signature; received {}B)".format(
+                        total_size, firmware_signature_size, len(data)
                     )
                 )
             self.firmware_signature = data[
-                self.__header_and_crc_size : total_size
+                self._header_and_crc_size : total_size
             ]
 
     def pack(self):
@@ -164,12 +169,12 @@ class FirmwareUpdateHeader:
             bytearray object containing the HEADER blob.
         """
         data = bytearray(
-            self.__header_and_crc_size + len(self.firmware_signature)
+            self._header_and_crc_size + len(self.firmware_signature)
         )
-        self.__header_struct.pack_into(
+        self._header_struct.pack_into(
             data,
             0,
-            self.__HEADER_MAGIC,
+            self._HEADER_MAGIC,
             self.HEADER_FORMAT_VERSION,
             self.firmware_version,
             self.firmware_size,
@@ -178,12 +183,12 @@ class FirmwareUpdateHeader:
             len(self.firmware_signature),
         )
 
-        self.__crc_struct.pack_into(
+        self._crc_struct.pack_into(
             data,
-            self.__header_size,
-            _calculate_crc(data[0 : self.__header_size]),
+            self._header_size,
+            _calculate_crc(data[0 : self._header_size]),
         )
-        data[self.__header_and_crc_size :] = self.firmware_signature
+        data[self._header_and_crc_size :] = self.firmware_signature
         return data
 
 

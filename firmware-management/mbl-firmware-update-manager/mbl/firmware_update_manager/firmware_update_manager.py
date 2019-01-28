@@ -20,22 +20,6 @@ ARM_UPDATE_ACTIVATE_SCRIPT = os.path.join(
 )
 HEADER_FILE = os.path.join(os.sep, "scratch", "firmware_update_header_file")
 
-def _create_header_data(payload_path):
-    """
-    Create update HEADER file data.
-
-    This is a binary data file that arm_update_activate.sh expects to
-    receive that contains information about the update. The only fields
-    that make sense in this context are the firmware version and firmware hash
-    fields.
-
-    The firmware version is really a UNIX timestamp.
-    """
-    header = mfuh.FirmwareUpdateHeader()
-    header.firmware_version = int(time.time())
-    with open(payload_path, 'rb') as payload:
-        header.firmware_hash = mfuh.calculate_firmware_hash(payload)
-    return header.pack()
 
 class Error(Enum):
     """FirmwareUpdateManager error codes."""
@@ -43,6 +27,8 @@ class Error(Enum):
     SUCCESS = 0
     ERR_INVALID_ARGS = 1
     ERR_OPERATION_FAILED = 2
+    ERR_IO = 3
+    ERR_UPDATE_HEADER_FORMAT = 4
 
 
 class FirmwareUpdateManager(object):
@@ -67,8 +53,20 @@ class FirmwareUpdateManager(object):
         """
         # Create a "HEADER" file for the update - this is a blob that contains
         # information about the update
-        with open(HEADER_FILE, "wb") as header_file:
-            header_file.write(_create_header_data(firmware_update_file_path))
+        (header_data, err) = self._create_header_data(
+            firmware_update_file_path
+        )
+        if err != Error.SUCCESS:
+            return err
+
+        try:
+            with open(HEADER_FILE, "wb") as header_file:
+                header_file.write(header_data)
+        except IOError:
+            self.logger.exception(
+                'Failed to write HEADER data to file "{}"'.format(HEADER_FILE)
+            )
+            return Error.ERR_IO
 
         command = [
             ARM_UPDATE_ACTIVATE_SCRIPT,
@@ -97,3 +95,27 @@ class FirmwareUpdateManager(object):
             os.system("reboot")
         return Error.SUCCESS
 
+    def _create_header_data(payload_path):
+        """
+        Create update HEADER file data.
+
+        This is a binary data file that arm_update_activate.sh expects to
+        receive that contains information about the update. The only fields
+        that make sense in this context are the firmware version and firmware hash
+        fields.
+
+        The firmware version is really a UNIX timestamp.
+        """
+        try:
+            header = mfuh.FirmwareUpdateHeader()
+            header.firmware_version = int(time.time())
+            with open(payload_path, "rb") as payload:
+                header.firmware_hash = mfuh.calculate_firmware_hash(payload)
+            header_data = header.pack()
+        except IOError:
+            self.logger.exception("IOError when creating HEADER file data")
+            return (bytearray(), Error.ERR_IO)
+        except mfuh.FormatError:
+            self.logger.exception("FormatError when creating HEADER file data")
+            return (bytearray(), Error.ERR_UPDATE_HEADER_FORMAT)
+        return (header_data, Error.SUCCESS)
