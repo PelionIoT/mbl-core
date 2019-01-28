@@ -30,8 +30,6 @@ extern "C" {
 
 #define TRACE_GROUP "ccrb-dbus"
 
-
-
 namespace mbl
 {
 
@@ -56,6 +54,7 @@ MblSdbusBinder::MblSdbusBinder()
     callbacks_.deregister_resources_callback = deregister_resources_callback;
 }
 
+
 MblError MblSdbusBinder::init()
 {
     tr_debug(__PRETTY_FUNCTION__);
@@ -64,11 +63,12 @@ MblError MblSdbusBinder::init()
     {
         return MblError::AlreadyInitialized;
     }
-
+    
     if (SdBusAdaptor_init(&callbacks_) != 0){
         return MblError::SdBusError;
     }
 
+    // initalize mailbox
     // must be last line!
     status_ = Status::INITALIZED;
     return MblError::None;

@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/runTests",
-            "args": [],
+            "args": [ "--gtest_filter=*SendReceiveHelloMessage*" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [ ],

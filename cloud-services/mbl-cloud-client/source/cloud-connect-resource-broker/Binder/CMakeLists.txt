@@ -20,6 +20,7 @@ add_executable(runTests
     ${CMAKE_SOURCE_DIR}/src/bus-service.c
     ${CMAKE_SOURCE_DIR}/src/MblSdbusBinder.cpp
     ${CMAKE_SOURCE_DIR}/src/MblSdbusAdaptor.c
+    ${CMAKE_SOURCE_DIR}/src/MblSdbusPipe.c
     )
     
 set_target_properties (runTests PROPERTIES
