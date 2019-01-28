@@ -21,7 +21,6 @@ project(mblCloudClient)
 # Compile mbl-cloud-client using c++14 standard
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
-
 ADDSUBDIRS()
 
 find_package(PkgConfig REQUIRED)
@@ -56,16 +55,16 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-tr
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
-# 1. compile CCRB and Binder into static lib
+# Create a CCRB static library
 
 FILE(GLOB MBL_CCRB_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
-# create static library "mbedCcrb"
+# Create static library "mbedCcrb"
 add_library(mbedCcrb STATIC "${MBL_CCRB_SRC}")
 
 
-# 2. create the Cloud Client executable without CCRB
+# Create the Cloud Client executable without CCRB
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -77,9 +76,7 @@ add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
 
-# link with CCRB static library
 target_link_libraries(mbl-cloud-client mbedCcrb)
-
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 target_link_libraries(mbl-cloud-client factory-configurator-client)
 target_link_libraries(mbl-cloud-client pal)
@@ -97,5 +94,4 @@ target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
 # link with systemd to get D-Bus libs
 target_link_libraries(mbl-cloud-client systemd)
-
 
