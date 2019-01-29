@@ -21,46 +21,46 @@
 
 namespace mbl {
 
-MblResourceDataValue::MblResourceDataValue()
-: data_type_ (MblCloudConnectResourceDataType::INVALID)
-{
-}
-
 MblResourceDataValue::MblResourceDataValue(const std::string &str)
 : string_data_value_(str),
-  data_type_ (MblCloudConnectResourceDataType::STRING) 
+  data_type_ (MblResourceDataType::STRING) 
 {
 }
 
 MblResourceDataValue::MblResourceDataValue(int64_t integer)
 : integer_data_value_(integer),
-  data_type_ (MblCloudConnectResourceDataType::INTEGER)
+  data_type_ (MblResourceDataType::INTEGER)
 {
+}
+
+MblResourceDataType get_resource_data_value_type();
+{
+    return data_type_;
 }
 
 void MblResourceDataValue::set_value(const std::string &str) 
 {
-    assert(data_type_ == MblCloudConnectResourceDataType::INVALID);
-    data_type_ = MblCloudConnectResourceDataType::STRING;
+    assert(data_type_ == MblResourceDataType::INVALID);
+    data_type_ = MblResourceDataType::STRING;
     string_data_value_ = str;        
 }
 
 void MblResourceDataValue::set_value(int64_t integer)
 {
-    assert(data_type_ == MblCloudConnectResourceDataType::INVALID);
-    data_type_ = MblCloudConnectResourceDataType::INTEGER;
+    assert(data_type_ == MblResourceDataType::INVALID);
+    data_type_ = MblResourceDataType::INTEGER;
     integer_data_value_ = integer;        
 }
 
 std::string MblResourceDataValue::get_value_string() 
 {
-    assert(data_type_ == MblCloudConnectResourceDataType::STRING);
+    assert(data_type_ == MblResourceDataType::STRING);
     return string_data_value_;        
 }
 
 int64_t MblResourceDataValue::get_value_integer()
 {
-    assert(data_type_ == MblCloudConnectResourceDataType::INTEGER);
+    assert(data_type_ == MblResourceDataType::INTEGER);
     return integer_data_value_;        
 }
 

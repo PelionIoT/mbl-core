@@ -31,7 +31,7 @@ namespace mbl {
  * @brief Mbl Cloud Connect resource data type.
  * Currently supported LwM2M resource data types. 
  */
-    enum class MblCloudConnectResourceDataType {
+    enum class MblResourceDataType {
         INVALID   = 0x0,
         STRING    = 0x1,
         INTEGER   = 0x2,
@@ -48,7 +48,7 @@ namespace mbl {
 class MblResourceDataValue {
 public:
 
-    MblResourceDataValue();
+    MblResourceDataValue() = default;
 
 /**
  * @brief Construct a new Mbl Resource Data Value object and 
@@ -63,6 +63,12 @@ public:
  * @param integer data that should be stored.
  */
     MblResourceDataValue(int64_t integer);
+
+/**
+ * @brief Gets resource value data type. 
+ * @return MblResourceDataType resource value data type. 
+ */
+    MblResourceDataType get_resource_data_value_type();
 
 /**
  * @brief Stores provided string. 
@@ -97,7 +103,7 @@ private:
     int64_t integer_data_value_;
 
     // stores type of stored data
-    MblCloudConnectResourceDataType data_type_ = MblCloudConnectResourceDataType::INVALID;
+    MblResourceDataType data_type_ = MblResourceDataType::INVALID;
 
     // currently we don't have pointers in class members, so we can allow default ctor's 
     // and assign operators without worry.  
@@ -119,7 +125,7 @@ private:
     struct MblCloudConnect_ResourcePath_Type
     {
         std::string path;
-        MblCloudConnectResourceDataType data_type;
+        MblResourceDataType data_type;
     };
 
 /**
