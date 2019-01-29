@@ -30,7 +30,18 @@ include_directories(${INCLUDE_DIRS})
 
 include_directories(${INCLUDE_DIRECTORIES})
 
+#include_directories("/home/yelgor01/mbl/mbl-max/mbl-master_PQ331/build-mbl/tmp-mbl-glibc/work/armv7vet2hf-neon-oe-linux-gnueabi/ccrb-test/1.0-r0/git/cloud-services/mbl-cloud-client/source/")
+#include_directories("/home/yelgor01/mbl/mbl-max/mbl-master_PQ331/build-mbl/tmp-mbl-glibc/work/armv7vet2hf-neon-oe-linux-gnueabi/ccrb-test/1.0-r0/git/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/")
+
+message(STATUS "@@@CMAKE_CURRENT_SOURCE_DIR='${CMAKE_CURRENT_SOURCE_DIR}'")
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../source)
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../source/cloud-connect-resource-broker)
+
+include_directories(${CCRB_INCLUDE_DIRS})
+message(STATUS "@@@CCRB_INCLUDE_DIRS='${CCRB_INCLUDE_DIRS}'")
+
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+message(STATUS "@@@DIRS: ")
 foreach(dir ${dirs})
   message(STATUS "@@@DIR='${dir}'")
 endforeach()

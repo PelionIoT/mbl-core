@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h> // googletest header file
 #include <string>
-//#include "MblCloudConnectResourceBroker.h"
+#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 
 using std::string;
 
@@ -14,7 +14,7 @@ const char *actualValTrue  = "hello gtest";
 const char *actualValFalse = "hello world";
 const char *expectVal      = "hello gtest";
 
-//MblCloudConnectResourceBroker cloud_connect_resource_broker;
+MblCloudConnectResourceBroker cloud_connect_resource_broker;
 
 TEST(StrCompare, CStrEqual) {
     EXPECT_STREQ(expectVal, actualValTrue);
