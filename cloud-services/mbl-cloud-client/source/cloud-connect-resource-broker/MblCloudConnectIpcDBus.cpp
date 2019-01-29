@@ -91,6 +91,7 @@ MblError MblCloudConnectIpcDBus::update_registration_status(
     const MblError )
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::update_deregistration_status(
@@ -99,6 +100,7 @@ MblError MblCloudConnectIpcDBus::update_deregistration_status(
     const MblError )
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::update_add_resource_instance_status(
@@ -107,6 +109,7 @@ MblError MblCloudConnectIpcDBus::update_add_resource_instance_status(
     const MblError )
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectIpcDBus::update_remove_resource_instance_status(
@@ -115,6 +118,7 @@ MblError MblCloudConnectIpcDBus::update_remove_resource_instance_status(
     const MblError )
 {
     // empty for now
+    return Error::None;
 }
 
 } // namespace mbl

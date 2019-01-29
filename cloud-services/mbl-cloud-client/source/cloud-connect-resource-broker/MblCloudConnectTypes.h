@@ -32,7 +32,7 @@ namespace mbl {
  * @brief Mbl Cloud Connect resource data type.
  * Currently supported LwM2M resource data types. 
  */
-    enum MblCloudConnectResourceDataType {
+    enum class MblCloudConnectResourceDataType {
         INVALID   = 0x0,
         STRING    = 0x1,
         INTEGER   = 0x2,

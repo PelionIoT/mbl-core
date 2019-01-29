@@ -204,6 +204,7 @@ MblError MblCloudConnectResourceBroker::register_resources_start(
         const std::string &)
 {
     // empty for now
+    return Error::None;
 }
 
 
@@ -213,6 +214,7 @@ MblError MblCloudConnectResourceBroker::deregister_resources_start(
         const std::string )
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectResourceBroker::add_resource_instances_start(
@@ -223,6 +225,7 @@ MblError MblCloudConnectResourceBroker::add_resource_instances_start(
         const std::vector<uint16_t> &)
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectResourceBroker::remove_resource_instances_start(
@@ -233,6 +236,7 @@ MblError MblCloudConnectResourceBroker::remove_resource_instances_start(
     const std::vector<uint16_t> &)
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectResourceBroker::set_resource_values(
@@ -241,6 +245,7 @@ MblError MblCloudConnectResourceBroker::set_resource_values(
     std::vector<MblCloudConnect_ResourcePath_Status> &)
 {
     // empty for now
+    return Error::None;
 }
 
 MblError MblCloudConnectResourceBroker::get_resource_values(
@@ -249,6 +254,7 @@ MblError MblCloudConnectResourceBroker::get_resource_values(
     std::vector<MblCloudConnect_ResourcePath_Value_Status> &)
 {
     // empty for now
+    return Error::None;
 }
 
 } // namespace mbl

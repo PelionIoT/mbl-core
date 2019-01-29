@@ -19,7 +19,6 @@
 #define MblResourceDataValue_h_
 
 #include <stdint.h>
-
 #include "MblCloudConnectTypes.h"
 
 namespace mbl {
