@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h> // googletest header file
 #include <string>
-//#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
+//#include "MblCloudConnectResourceBroker.h"
 
 using std::string;
 

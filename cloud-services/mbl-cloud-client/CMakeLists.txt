@@ -13,7 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cmake_minimum_required (VERSION 2.8)
+#cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.9)
 SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
@@ -48,6 +49,7 @@ add_compile_options(-Wlogical-op)
 
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 
@@ -62,7 +64,12 @@ FILE(GLOB MBL_CCRB_SRC
 )
 # Create static library "mbedCcrb"
 add_library(mbedCcrb STATIC "${MBL_CCRB_SRC}")
+target_include_directories(mbedCcrb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS " ** dir='${dir}'")
+endforeach()
 
 # Create the Cloud Client executable without CCRB
 FILE(GLOB MBL_CLOUD_CLIENT_SRC

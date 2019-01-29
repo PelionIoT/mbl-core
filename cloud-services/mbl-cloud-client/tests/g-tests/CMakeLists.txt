@@ -24,9 +24,16 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 
-#include_directories(${SYSTEMD_INCLUDE_DIRS})
+include_directories(${SYSTEMD_INCLUDE_DIRS})
+include_directories(${MBEDCCRB_INCLUDE_DIRS})
 include_directories(${INCLUDE_DIRS})
 
+include_directories(${INCLUDE_DIRECTORIES})
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+  message(STATUS "@@@DIR='${dir}'")
+endforeach()
 
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
