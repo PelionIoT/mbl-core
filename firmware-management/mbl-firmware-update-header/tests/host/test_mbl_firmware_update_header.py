@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Tests the mbl.firmware_update_header module."""
+
 import os
 import pytest
 import io
@@ -235,17 +237,20 @@ def test_pack_header(test_case):
     data = header.pack()
     assert data == test_case["data"]
 
+
 def test_pack_invalid_firmware_hash():
     header = uh.FirmwareUpdateHeader()
     header.firmware_hash = b"\x00\x00\x00\x00"
     with pytest.raises(uh.FormatError, match=r"size"):
         data = header.pack()
 
+
 def test_pack_invalid_campaign_id():
     header = uh.FirmwareUpdateHeader()
     header.campaign_id = b"\x00\x00\x00\x00"
     with pytest.raises(uh.FormatError, match=r"size"):
         data = header.pack()
+
 
 def test_calculate_firmware_hash():
     firmware_stream = io.BytesIO(b"test data")

@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Sets up the mbl.firmware_update_header module."""
+
 from setuptools import setup
 
 setup(

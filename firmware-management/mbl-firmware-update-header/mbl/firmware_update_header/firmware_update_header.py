@@ -3,25 +3,15 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Provides utilities for reading/writing firmware update HEADER data."""
+
 import hashlib
 import struct
 import zlib
 
 
-def _calculate_crc(header_bytes):
-    """
-    Calculate value of a HEADER blob's CRC field.
-
-    Args:
-    * header_bytes(bytes/bytearray): bytes of the HEADER blob up to, but not
-      including, the CRC field itself.
-    """
-
-    return zlib.crc32(header_bytes) & 0xffffffff
-
-
 class FormatError(Exception):
-    """Type for firmware update header format errors"""
+    """Type for firmware update header format errors."""
 
     pass
 
@@ -50,6 +40,7 @@ class FirmwareUpdateHeader:
     Class constants:
     * HEADER_FORMAT_VERSION (int): version of HEADER format that this class
       supports.
+
     """
 
     _SIZEOF_SHA512 = int(512 / 8)
@@ -57,7 +48,7 @@ class FirmwareUpdateHeader:
 
     # Fixed number that should always be in a HEADER blob's "magic" field -
     # used to verify that the blob we're given is actually a HEADER blob.
-    _HEADER_MAGIC = 0x5a51b3d4
+    _HEADER_MAGIC = 0x5A51B3D4
 
     HEADER_FORMAT_VERSION = 2
 
@@ -71,11 +62,10 @@ class FirmwareUpdateHeader:
         """
         Create a FirmwareUpdateHeader object.
 
-        After creation, the each of the FirmwareUpdateHeader's attributes will be
-        zeroed, so in order to create a valid HEADER it is not necessary to
+        After creation, the each of the FirmwareUpdateHeader's attributes will
+        be zeroed, so in order to create a valid HEADER it is not necessary to
         manually set fields that are not used.
         """
-
         self._header_struct = struct.Struct(self._HEADER_FORMAT)
         self._header_size = self._header_struct.size
 
@@ -104,11 +94,12 @@ class FirmwareUpdateHeader:
         * data (bytes/bytearray): the binary data of a HEADER file.
 
         Returns: None
-        """
 
+        """
         if len(data) < self._header_and_crc_size:
             raise FormatError(
-                "Data is too short (expecting at least {}B, received {}B)".format(
+                "Data is too short "
+                "(expecting at least {}B, received {}B)".format(
                     self._header_and_crc_size, len(data)
                 )
             )
@@ -153,7 +144,9 @@ class FirmwareUpdateHeader:
             total_size = self._header_and_crc_size + firmware_signature_size
             if len(data) < total_size:
                 raise FormatError(
-                    "Data is too short (expecting at least {}B with {}B for firmware signature; received {}B)".format(
+                    "Data is too short "
+                    "(expecting at least {}B with {}B for firmware signature; "
+                    "received {}B)".format(
                         total_size, firmware_signature_size, len(data)
                     )
                 )
@@ -167,19 +160,20 @@ class FirmwareUpdateHeader:
 
         Returns:
             bytearray object containing the HEADER blob.
+
         """
         if len(self.firmware_hash) != self._SIZEOF_SHA512:
             raise FormatError(
                 "Firmware hash has incorrect size: "
                 "should be {}B, received {}B".format(
-                self._SIZEOF_SHA512, len(self.firmware_hash)
+                    self._SIZEOF_SHA512, len(self.firmware_hash)
                 )
             )
 
         if len(self.campaign_id) != self._SIZEOF_GUID:
             raise FormatError(
-                    "Campaign ID has incorrect size: "
-                    "should be {}B, received {}B".format(
+                "Campaign ID has incorrect size: "
+                "should be {}B, received {}B".format(
                     self._SIZEOF_GUID, len(self.campaign_id)
                 )
             )
@@ -209,9 +203,7 @@ class FirmwareUpdateHeader:
 
 
 def calculate_firmware_hash(firmware_stream):
-    """
-    Calculate the firmware hash for the given stream.
-    """
+    """Calculate the firmware hash for the given stream."""
     buffer = bytearray(1024 * 128)
     hasher = hashlib.sha256()
     while True:
@@ -220,3 +212,14 @@ def calculate_firmware_hash(firmware_stream):
             break
         hasher.update(buffer[0:read])
     return hasher.digest()
+
+
+def _calculate_crc(header_bytes):
+    """
+    Calculate value of a HEADER blob's CRC field.
+
+    Args:
+    * header_bytes(bytes/bytearray): bytes of the HEADER blob up to, but not
+      including, the CRC field itself.
+    """
+    return zlib.crc32(header_bytes) & 0xFFFFFFFF
