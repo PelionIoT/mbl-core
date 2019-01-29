@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Connection data encapsulation calass."""
+"""Connection data encapsulation class."""
 
 
 class Connection:
