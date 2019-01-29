@@ -101,8 +101,8 @@ class FirmwareUpdateManager(object):
 
         This is a binary data file that arm_update_activate.sh expects to
         receive that contains information about the update. The only fields
-        that make sense in this context are the firmware version and firmware hash
-        fields.
+        that make sense in this context are the firmware version and firmware
+        hash fields.
 
         The firmware version is really a UNIX timestamp.
         """

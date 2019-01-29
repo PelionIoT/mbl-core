@@ -196,7 +196,7 @@ class FirmwareUpdateHeader:
         # Pad our sha256 firmware hash to fill up the struct's firmware_hash
         # field which has space for a sha512 hash
         firmware_hash_512 = bytearray(self._SIZEOF_SHA512)
-        firmware_hash_512[0:self._SIZEOF_SHA256] = self.firmware_hash
+        firmware_hash_512[0 : self._SIZEOF_SHA256] = self.firmware_hash
 
         data = bytearray(
             self._header_and_crc_size + len(self.firmware_signature)
