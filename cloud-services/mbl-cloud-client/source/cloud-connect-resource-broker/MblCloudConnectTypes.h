@@ -80,6 +80,70 @@ namespace mbl {
         MblError operation_status;
     };
 
+
+
+/**
+ * @brief Class that implements resource data value holder. 
+ */
+class MblResourceDataValue {
+public:
+
+    MblResourceDataValue();
+
+/**
+ * @brief Construct a new Mbl Resource Data Value object and 
+ * stores provided string.
+ * @param str data that should be stored.
+ */
+    MblResourceDataValue(const std::string &str);
+
+/**
+ * @brief Construct a new Mbl Resource Data Value object and 
+ * stores provided integer.
+ * @param integer data that should be stored.
+ */
+    MblResourceDataValue(int64_t integer);
+
+/**
+ * @brief Stores provided string. 
+ * 
+ * @param str data that should be stored.
+ */
+    void set_value(const std::string &str); 
+
+/**
+ * @brief Stores provided integer.
+ * @param integer data that should be stored.
+ */
+    void set_value(int64_t integer);
+
+/**
+ * @brief Gets the value of stored string.  
+ * @return std::string returned value.
+ */
+    std::string get_value_string();
+
+/**
+ * @brief Gets the value of stored integer.  
+ * @return int64_t returned value.
+ */
+    int64_t get_value_integer();
+    
+private:
+    // for current moment we use simple implementation for integer and string.
+    // When we shall have more types, consider using union or byte array for 
+    // storing different types. 
+    std::string string_data_value_;
+    int64_t integer_data_value_;
+
+    // stores type of stored data
+    MblCloudConnectResourceDataType data_type_ = MblCloudConnectResourceDataType::INVALID;
+
+    // currently we don't have pointers in class members, so we can allow default ctor's 
+    // and assign operators without worry.  
+};
+
+
 } //namespace mbl
 
 

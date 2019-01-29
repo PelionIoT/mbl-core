@@ -183,7 +183,8 @@ public:
  *        resource path which value should be set to the reqired value.
  * @param output_set_statuses output vector of tuples from the format
  *        [resource_path, operation_status]. Each tuple in the vector will 
- *        contain status for the resource value set operation. 
+ *        contain status for the resource value set operation for each resource 
+ *        in the input_values vector.  
  * @return MblError returns Error::None if all resources can be accessed according 
  *         to the provided access_token, or error code otherwise.
  */
@@ -204,7 +205,7 @@ public:
  * @param output_get_values output vector of tuples from the format
  *        [resource_path, resource_typed_data_value, operation_status]. Each 
  *        tuple in the vector will contain resource value and status af the get operation 
- *        for the resources in input_paths vector.
+ *        for the resources in the input_paths vector.
  * @return MblError returns Error::None if all resources can be accessed according 
  *         to the provided access_token, or error code otherwise.
  */
