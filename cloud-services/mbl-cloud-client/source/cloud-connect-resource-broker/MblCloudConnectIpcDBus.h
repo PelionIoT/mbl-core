@@ -49,6 +49,33 @@ public:
     // Implementation of MblCloudConnectIpcInterface::stop()
     MblError stop() override;
 
+    // Implementation of MblCloudConnectIpcInterface::update_registration_status
+    MblError update_registration_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const std::string access_token,
+        const MblError reg_status) override;
+
+    // Implementation of MblCloudConnectIpcInterface::update_deregistration_status
+    MblError update_deregistration_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const MblError dereg_status) override;
+
+    // Implementation of MblCloudConnectIpcInterface::update_add_resource_instance_status
+    MblError update_add_resource_instance_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const MblError add_status) override;
+
+    // Implementation of MblCloudConnectIpcInterface::update_remove_resource_instance_status
+    MblError update_remove_resource_instance_status(
+        const uintptr_t appl_context, 
+        const uintptr_t ipc_conn_handle, 
+        const MblError remove_status) override;
+
+
+
 private:
    
     // Temporary solution for exiting from simulated event-loop that should be removed after we introduce real sd-bus event-loop.

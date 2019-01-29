@@ -194,5 +194,62 @@ void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
+
+
+
+
+MblError MblCloudConnectResourceBroker::register_resources_start(
+        const uintptr_t , 
+        const uintptr_t , 
+        const std::string &)
+{
+    // empty for now
+}
+
+
+MblError MblCloudConnectResourceBroker::deregister_resources_start(
+        const uintptr_t , 
+        const uintptr_t , 
+        const std::string )
+{
+    // empty for now
+}
+
+MblError MblCloudConnectResourceBroker::add_resource_instances_start(
+        const uintptr_t , 
+        const uintptr_t , 
+        const std::string , 
+        const std::string &, 
+        const std::vector<uint16_t> &)
+{
+    // empty for now
+}
+
+MblError MblCloudConnectResourceBroker::remove_resource_instances_start(
+    const uintptr_t , 
+    const uintptr_t , 
+    const std::string , 
+    const std::string &, 
+    const std::vector<uint16_t> &)
+{
+    // empty for now
+}
+
+MblError MblCloudConnectResourceBroker::set_resource_values(
+    const std::string , 
+    const std::vector<MblCloudConnect_ResourcePath_Value> &, 
+    std::vector<MblCloudConnect_ResourcePath_Status> &)
+{
+    // empty for now
+}
+
+MblError MblCloudConnectResourceBroker::get_resource_values(
+    const std::string , 
+    const std::vector<MblCloudConnect_ResourcePath_Type> &,
+    std::vector<MblCloudConnect_ResourcePath_Value_Status> &)
+{
+    // empty for now
+}
+
 } // namespace mbl
 
