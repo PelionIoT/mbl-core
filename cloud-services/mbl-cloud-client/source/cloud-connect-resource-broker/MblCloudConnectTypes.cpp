@@ -33,7 +33,7 @@ MblResourceDataValue::MblResourceDataValue(int64_t integer)
 {
 }
 
-MblResourceDataType get_resource_data_value_type();
+MblResourceDataType MblResourceDataValue::get_resource_data_value_type();
 {
     return data_type_;
 }
