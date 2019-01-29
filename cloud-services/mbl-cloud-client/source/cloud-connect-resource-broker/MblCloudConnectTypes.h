@@ -44,45 +44,6 @@ namespace mbl {
     };
     
 /**
- * @brief [resource_path, resource_typed_data_value] tuple.
- */
-    struct MblCloudConnect_ResourcePath_Value
-    {
-        std::string path;
-        MblResourceDataValue typed_data_value;
-    };
-
-/**
- * @brief [resource_path, resource_data_type] tuple.
- */
-    struct MblCloudConnect_ResourcePath_Type
-    {
-        std::string path;
-        MblCloudConnectResourceDataType data_type;
-    };
-
-/**
- * @brief [resource_path, resource_typed_data_value, operation_status] tuple.
- */
-    struct MblCloudConnect_ResourcePath_Value_Status
-    {
-        std::string path;
-        MblResourceDataValue typed_data_value;
-        MblError operation_status;
-    };
-
-/**
- * @brief [resource_path, operation_status] tuple.
- */
-    struct MblCloudConnect_ResourcePath_Status
-    {
-        std::string path;
-        MblError operation_status;
-    };
-
-
-
-/**
  * @brief Class that implements resource data value holder. 
  */
 class MblResourceDataValue {
@@ -144,6 +105,43 @@ private:
 };
 
 
+/**
+ * @brief [resource_path, resource_typed_data_value] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Value
+    {
+        std::string path;
+        MblResourceDataValue typed_data_value;
+    };
+
+/**
+ * @brief [resource_path, resource_data_type] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Type
+    {
+        std::string path;
+        MblCloudConnectResourceDataType data_type;
+    };
+
+/**
+ * @brief [resource_path, resource_typed_data_value, operation_status] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Value_Status
+    {
+        std::string path;
+        MblResourceDataValue typed_data_value;
+        MblError operation_status;
+    };
+
+/**
+ * @brief [resource_path, operation_status] tuple.
+ */
+    struct MblCloudConnect_ResourcePath_Status
+    {
+        std::string path;
+        MblError operation_status;
+    };
+    
 } //namespace mbl
 
 

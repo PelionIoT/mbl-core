@@ -27,14 +27,14 @@ MblResourceDataValue::MblResourceDataValue()
 }
 
 MblResourceDataValue::MblResourceDataValue(const std::string &str)
-: data_type_ (MblCloudConnectResourceDataType::STRING),
-    string_data_value_(str) 
+: string_data_value_(str),
+  data_type_ (MblCloudConnectResourceDataType::STRING) 
 {
 }
 
 MblResourceDataValue::MblResourceDataValue(int64_t integer)
-: data_type_ (MblCloudConnectResourceDataType::INTEGER),
-    integer_data_value_(integer)
+: integer_data_value_(integer),
+  data_type_ (MblCloudConnectResourceDataType::INTEGER)
 {
 }
 
