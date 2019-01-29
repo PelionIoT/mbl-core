@@ -39,7 +39,7 @@ class Connection:
 
     def is_equal_port(self, protocol, port):
         """
-        Compare if protocol and port values are equual to the object values.
+        Compare if protocol and port values are equal to the object values.
 
         :param protocol: protocol name
         :param port: port value
