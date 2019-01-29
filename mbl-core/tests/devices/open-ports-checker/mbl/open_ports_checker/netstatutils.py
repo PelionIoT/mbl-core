@@ -26,7 +26,7 @@ TCP_STATES = {
     "08": "CLOSE_WAIT",
     "09": "LAST_ACK",
     "0A": "LISTEN",
-    "0B": "CLOSING"
+    "0B": "CLOSING",
 }
 
 PROC_ENTRY = os.path.join(os.sep, "proc")
