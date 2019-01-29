@@ -52,7 +52,7 @@ class Connection:
 
     def is_equal_executable(self, executable):
         """
-        Compare if executable name is equual to the object value.
+        Compare if executable name is equal to the object value.
 
         :param executable: executable name
         :return: True if executable name is equal to the object data value.
