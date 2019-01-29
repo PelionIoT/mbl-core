@@ -24,7 +24,6 @@
 #include  <vector>
 
 #include  "MblError.h"
-#include  "MblResourceDataValue.h"
 
 namespace mbl {
 
@@ -141,7 +140,7 @@ private:
         std::string path;
         MblError operation_status;
     };
-    
+
 } //namespace mbl
 
 
