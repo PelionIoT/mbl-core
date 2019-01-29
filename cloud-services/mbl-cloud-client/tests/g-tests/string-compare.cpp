@@ -4,9 +4,10 @@
 * SPDX-License-Identifier: BSD-3-Clause
 */
 
+//#include "MblCloudClient.h"
+#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 #include <gtest/gtest.h> // googletest header file
 #include <string>
-#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 
 using std::string;
 
@@ -14,7 +15,7 @@ const char *actualValTrue  = "hello gtest";
 const char *actualValFalse = "hello world";
 const char *expectVal      = "hello gtest";
 
-MblCloudConnectResourceBroker cloud_connect_resource_broker;
+//MblCloudClient::run()
 
 TEST(StrCompare, CStrEqual) {
     EXPECT_STREQ(expectVal, actualValTrue);

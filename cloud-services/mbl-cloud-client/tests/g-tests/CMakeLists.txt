@@ -33,6 +33,26 @@ include_directories(${INCLUDE_DIRS})
 include_directories(${CCRB_INCLUDE_DIR1})
 include_directories(${CCRB_INCLUDE_DIR2})
 
+include_directories(${MBED_CLOUD_CLIENT_DIR})
+include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap/mbed-coap)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
+
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
+
  
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 message(STATUS "@@@DIRS: ")
@@ -41,10 +61,23 @@ foreach(dir ${dirs})
 endforeach()
 
 
+
+# Create the Cloud Client executable
+FILE(GLOB MBL_CLOUD_CLIENT_SRC
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/cloud-connect-resource-broker/*.cpp"
+)
+
+# Create static library "mblCloudClient"
+add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
+
+
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-
 add_executable(gtest-mbl-cloud-client ${MBL_CCRB_TESTS_SRC})
 
 set_target_properties (gtest-mbl-cloud-client PROPERTIES
@@ -56,7 +89,8 @@ set_target_properties (gtest-mbl-cloud-client PROPERTIES
 
 target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
 target_link_libraries(gtest-mbl-cloud-client libgtest.a)
-target_link_libraries(gtest-mbl-cloud-client libmbedCcrb.a)
+target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
+target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client systemd)
 target_link_libraries(gtest-mbl-cloud-client pthread)
 

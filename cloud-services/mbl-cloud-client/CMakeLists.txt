@@ -57,39 +57,37 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-tr
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
-# Create a CCRB static library
-
-FILE(GLOB MBL_CCRB_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
-)
-# Create static library "mbedCcrb"
-add_library(mbedCcrb STATIC "${MBL_CCRB_SRC}")
-target_include_directories(mbedCcrb PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 foreach(dir ${dirs})
   message(STATUS " ** dir='${dir}'")
 endforeach()
 
-# Create the Cloud Client executable without CCRB
+# Create the Cloud Client executable
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
-add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
+# Create static library "mblCloudClient"
+add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
+
+add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
 
-target_link_libraries(mbl-cloud-client mbedCcrb)
+#target_link_libraries(mbl-cloud-client mbedCcrb)
+
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 target_link_libraries(mbl-cloud-client factory-configurator-client)
 target_link_libraries(mbl-cloud-client pal)
 target_link_libraries(mbl-cloud-client mbedcrypto)
 target_link_libraries(mbl-cloud-client mbedtls)
 target_link_libraries(mbl-cloud-client mbedx509)
+
 target_link_libraries(mbl-cloud-client mbedTrace)
 target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
