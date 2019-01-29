@@ -23,16 +23,10 @@
 #include  <stdint.h>
 #include  <vector>
 
-namespace mbl {
+#include  "MblError.h"
+#include  "MblResourceDataValue.h"
 
-/**
- * @brief Mbl Cloud Connect operation status 
- * 
- */
-enum MblCloudConnectOpStatus {
-    Success   = 0x0000,
-    Failure   = 0x0001
-};
+namespace mbl {
 
 /**
  * @brief Mbl Cloud Connect resource data type.
@@ -50,13 +44,12 @@ enum MblCloudConnectOpStatus {
     };
     
 /**
- * @brief [resource_path, resource_data_value, resource_data_type] tuple.
+ * @brief [resource_path, resource_typed_data_value] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Value_Type
+    struct MblCloudConnect_ResourcePath_Value
     {
         std::string path;
-        std::vector<uint8_t> data_value;
-        MblCloudConnectResourceDataType data_type;
+        MblResourceDataValue typed_data_value;
     };
 
 /**
@@ -69,14 +62,13 @@ enum MblCloudConnectOpStatus {
     };
 
 /**
- * @brief [resource_path, resource_data_value, resource_data_type, operation_status] tuple.
+ * @brief [resource_path, resource_typed_data_value, operation_status] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Value_Type_Status
+    struct MblCloudConnect_ResourcePath_Value_Status
     {
         std::string path;
-        std::vector<uint8_t> data_value;
-        MblCloudConnectResourceDataType data_type;
-        MblCloudConnectOpStatus operation_status;
+        MblResourceDataValue typed_data_value;
+        MblError operation_status;
     };
 
 /**
@@ -85,7 +77,7 @@ enum MblCloudConnectOpStatus {
     struct MblCloudConnect_ResourcePath_Status
     {
         std::string path;
-        MblCloudConnectResourceDataType operation_status;
+        MblError operation_status;
     };
 
 } //namespace mbl

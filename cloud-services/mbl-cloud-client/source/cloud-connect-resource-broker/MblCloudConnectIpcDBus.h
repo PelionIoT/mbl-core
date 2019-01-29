@@ -56,6 +56,8 @@ private:
     // In future we shall replace this flag with real mechanism, that will allow exiting from real sd-bus event-loop.
     volatile bool exit_loop_;
 
+    // this class must have a reference that should be always valid to the CCRB instance. 
+    // reference class member satisfy this condition.   
     MblCloudConnectResourceBroker &ccrb_;
 };
 
