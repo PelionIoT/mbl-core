@@ -95,7 +95,7 @@ class FirmwareUpdateManager(object):
             os.system("reboot")
         return Error.SUCCESS
 
-    def _create_header_data(payload_path):
+    def _create_header_data(self, payload_path):
         """
         Create update HEADER file data.
 

@@ -43,7 +43,15 @@ class FirmwareUpdateHeader:
 
     """
 
+    # The HEADER's firmware_hash field has space for a sha512 hash but the
+    # hashes that are currently used are sha256. We'll treat the hashes as
+    # sha256s except when they're being read/written from/to binary blobs. When
+    # we read the firmware_hash field we'll trim the result down to sha256 size
+    # and when we write the firmware_hash field we'll pad the hash up to sha512
+    # size.
     _SIZEOF_SHA512 = int(512 / 8)
+    _SIZEOF_SHA256 = int(256 / 8)
+
     _SIZEOF_GUID = int(128 / 8)
 
     # Fixed number that should always be in a HEADER blob's "magic" field -
@@ -76,7 +84,7 @@ class FirmwareUpdateHeader:
 
         self.firmware_version = 0
         self.firmware_size = 0
-        self.firmware_hash = bytes(self._SIZEOF_SHA512)
+        self.firmware_hash = bytes(self._SIZEOF_SHA256)
         self.campaign_id = bytes(self._SIZEOF_GUID)
         self.firmware_signature = bytes(0)
 
@@ -109,10 +117,17 @@ class FirmwareUpdateHeader:
             header_version,
             self.firmware_version,
             self.firmware_size,
-            self.firmware_hash,
+            firmware_hash_512,
             self.campaign_id,
             firmware_signature_size,
         ) = self._header_struct.unpack(data[: self._header_size])
+
+        # Cut down the struct's firmware_hash field (which has space for a
+        # sha512 hash) to the size of a sha256 hash because we actually only
+        # use sha256
+        self.firmware_hash = firmware_hash_512[: self._SIZEOF_SHA256]
+        if not all(b == 0 for b in firmware_hash_512[self._SIZEOF_SHA256 :]):
+            raise FormatError("Invalid sha256 value in firmware_hash field")
 
         (header_crc,) = self._crc_struct.unpack(
             data[self._header_size : self._header_and_crc_size]
@@ -162,11 +177,11 @@ class FirmwareUpdateHeader:
             bytearray object containing the HEADER blob.
 
         """
-        if len(self.firmware_hash) != self._SIZEOF_SHA512:
+        if len(self.firmware_hash) != self._SIZEOF_SHA256:
             raise FormatError(
                 "Firmware hash has incorrect size: "
                 "should be {}B, received {}B".format(
-                    self._SIZEOF_SHA512, len(self.firmware_hash)
+                    self._SIZEOF_SHA256, len(self.firmware_hash)
                 )
             )
 
@@ -178,6 +193,11 @@ class FirmwareUpdateHeader:
                 )
             )
 
+        # Pad our sha256 firmware hash to fill up the struct's firmware_hash
+        # field which has space for a sha512 hash
+        firmware_hash_512 = bytearray(self._SIZEOF_SHA512)
+        firmware_hash_512[0:self._SIZEOF_SHA256] = self.firmware_hash
+
         data = bytearray(
             self._header_and_crc_size + len(self.firmware_signature)
         )
@@ -188,7 +208,7 @@ class FirmwareUpdateHeader:
             self.HEADER_FORMAT_VERSION,
             self.firmware_version,
             self.firmware_size,
-            self.firmware_hash,
+            firmware_hash_512,
             self.campaign_id,
             len(self.firmware_signature),
         )
