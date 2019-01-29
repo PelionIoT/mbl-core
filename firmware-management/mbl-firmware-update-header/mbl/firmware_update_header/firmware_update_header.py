@@ -168,6 +168,22 @@ class FirmwareUpdateHeader:
         Returns:
             bytearray object containing the HEADER blob.
         """
+        if len(self.firmware_hash) != self._SIZEOF_SHA512:
+            raise FormatError(
+                "Firmware hash has incorrect size: "
+                "should be {}B, received {}B".format(
+                self._SIZEOF_SHA512, len(self.firmware_hash)
+                )
+            )
+
+        if len(self.campaign_id) != self._SIZEOF_GUID:
+            raise FormatError(
+                    "Campaign ID has incorrect size: "
+                    "should be {}B, received {}B".format(
+                    self._SIZEOF_GUID, len(self.campaign_id)
+                )
+            )
+
         data = bytearray(
             self._header_and_crc_size + len(self.firmware_signature)
         )
