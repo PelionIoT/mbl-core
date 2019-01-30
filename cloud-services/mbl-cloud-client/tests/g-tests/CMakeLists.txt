@@ -35,18 +35,17 @@ include_directories(${CCRB_INCLUDE_DIR2})
 
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-client)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap/mbed-coap)
 
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap/mbed-coap)
 
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
 
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
@@ -63,16 +62,16 @@ endforeach()
 
 
 # Create the Cloud Client executable
-FILE(GLOB MBL_CLOUD_CLIENT_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/cloud-connect-resource-broker/*.cpp"
-)
+#FILE(GLOB MBL_CLOUD_CLIENT_SRC
+#    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.c"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.cpp"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.c"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.cpp"
+#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/cloud-connect-resource-broker/*.cpp"
+#)
 
 # Create static library "mblCloudClient"
-add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
+#add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
 
 FILE(GLOB MBL_CCRB_TESTS_SRC

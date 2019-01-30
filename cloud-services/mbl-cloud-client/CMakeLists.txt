@@ -74,6 +74,8 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
 
 # Create static library "mblCloudClient"
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
+target_link_libraries(mblCloudClient, mbedCloudClient)
+
 
 add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
