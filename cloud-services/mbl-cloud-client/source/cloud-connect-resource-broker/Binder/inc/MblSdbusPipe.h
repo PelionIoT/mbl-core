@@ -21,7 +21,7 @@
 
 #include <poll.h>
 
-
+#define RAW_MSG_SIZE 100
 // bi directional unnamed-pipes mailbox
 // fdtab[0] is used to send messages to ccrb thread
 // fdtab[1] is used to send replies from ccrb thread
@@ -31,30 +31,31 @@ typedef struct MblSdbusPipe {
     struct pollfd   pollfd[2];    // Store polling file descriptors on the pipe
 }MblSdbusPipe;   
 
-typedef struct MblSdbusPipeMsg_dummy {
-    char    msg[100];
-}MblSdbusPipeMsg_dummy;
+typedef struct MblSdbusPipeMsg_raw {
+    char    bytes[RAW_MSG_SIZE];
+}MblSdbusPipeMsg_raw;
 
 // Keep this enumerator
 typedef enum MblSdbusPipeMsgType {
-    PIPE_MSG_TYPE_DUMMY = 0,      // TODO: delete this one later
+    PIPE_MSG_TYPE_RAW = 0,      // TODO: delete this one later ?
+    PIPE_MSG_TYPE_EXIT = 1,     // exit
 
-    PIPE_MSG_TYPE_LAST      // This must be the last one!
+    PIPE_MSG_TYPE_LAST          // This must be the last one!
 }MblSdbusPipeMsgType;
 
 typedef struct MblSdbusPipeMsg {
-    MblSdbusPipeMsgType         msg_type;
+    MblSdbusPipeMsgType     type;
     union 
     {
-        MblSdbusPipeMsg_dummy   dummy_msg;
-    }data;    
+        MblSdbusPipeMsg_raw  raw;
+    }msg;    
 }MblSdbusPipeMsg;
 
 
 int MblSdbusPipe_create(MblSdbusPipe *pipe_object);
 int MblSdbusPipe_destroy(MblSdbusPipe *pipe_object);
-int MblSdbusPipe_send_message(MblSdbusPipe *pipe_object , MblSdbusPipeMsg *msg) ;
-int MblSdbusPipe_message_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **msg);
+int MblSdbusPipe_msg_send(MblSdbusPipe *pipe_object , MblSdbusPipeMsg *msg) ;
+int MblSdbusPipe_msg_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **msg);
 
 
 #endif // MblSdbusPipe_h_

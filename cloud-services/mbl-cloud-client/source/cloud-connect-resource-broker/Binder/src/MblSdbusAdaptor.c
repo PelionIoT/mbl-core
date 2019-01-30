@@ -82,6 +82,16 @@ static int register_resources_callback(
     return 0;
 }
 
+
+static int pipe_incoming_msg_callback(
+    sd_event_source *s, 
+    int fd,
+ 	uint32_t revents,
+    void *userdata)
+{
+    int a = 7;
+}
+
 static int deregister_resources_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
@@ -96,7 +106,7 @@ static int deregister_resources_callback(
     return 0;
 }
 
-int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     // This signal indicates that the owner of a name has changed. 
     // It's also the signal to use to detect the appearance of new names on the bus.
@@ -156,7 +166,7 @@ static int32_t SdBusAdaptor_event_loop_init(MblSdEventLoop *sd_event_loop)
     tr_debug(__PRETTY_FUNCTION__);
     sd_event *loop = NULL;
     int32_t r = 0;
-
+    
     r = sd_event_default(&loop);
     if (r < 0){
         goto on_failure;
@@ -170,6 +180,7 @@ on_failure:
     sd_event_unref(loop);
     return r;
 }
+
 
 static int32_t SdBusAdaptor_event_loop_finalize(MblSdEventLoop *sd_event_loop)
 {
@@ -246,6 +257,8 @@ static int32_t SdBusAdaptor_bus_finalize(MblSdbus *sdbus)
     return r;
 }
 
+////////////////////////////////////// API //////////////////////////
+////////////////////////////////////////////////////////////////////
 int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks)
 {
     SdBusAdaptor_bus_init(&ctx.sdbus, callbacks);
@@ -256,6 +269,12 @@ int32_t SdBusAdaptor_finalize()
 {
     SdBusAdaptor_bus_finalize(&ctx.sdbus);
     SdBusAdaptor_event_loop_finalize(&ctx.sdev_loop);
+}
+
+int32_t SdBusAdaptor_attach_pipe_fd(int fd)
+{
+    sd_event_source *event_source;    
+    return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
 }
 
 int32_t SdBusAdaptor_run() 

@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
+#define _GNU_SOURCE             /* See feature_test_macros(7) */
 
-#include <inttypes.h>
-#include <stdbool.h>
 #include <assert.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>              /* Obtain O_* constant definitions */
+#include <unistd.h>
 
 #include "MblSdbusPipe.h"
 
@@ -34,7 +34,7 @@ int MblSdbusPipe_create(MblSdbusPipe *pipe_object)
     int r;
     memset (pipe_object, 0, sizeof(pipe_object));
 
-    r = pipe(pipe_object->pipefd);
+    r = pipe2(pipe_object->pipefd, O_NONBLOCK);
     if (r != 0){
         return r;
     }
@@ -73,12 +73,12 @@ int MblSdbusPipe_destroy(MblSdbusPipe *pipe_object)
 }
 
 
-int MblSdbusPipe_send_message(MblSdbusPipe *pipe_object , MblSdbusPipeMsg *_msg) 
+int MblSdbusPipe_msg_send(MblSdbusPipe *pipe_object , MblSdbusPipeMsg *_msg) 
 {
     int r;
     MblSdbusPipeMsg *msg = NULL;
 
-    if (_msg->msg_type >= PIPE_MSG_TYPE_LAST){
+    if (_msg->type >= PIPE_MSG_TYPE_LAST){
         return -1;
     }
     msg = (MblSdbusPipeMsg*)malloc(sizeof(MblSdbusPipeMsg));
@@ -124,9 +124,8 @@ on_failure:
     return r;
 }
 
-
 // receiver must free message
-int MblSdbusPipe_message_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_msg)
+int MblSdbusPipe_msg_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_msg)
 {
     int r;
     MblSdbusPipeMsg *msg;
@@ -159,44 +158,3 @@ int MblSdbusPipe_message_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_
     *_msg = msg;
     return 0;
 }
-
-// int readfd;
-// int writefd;
-
-// // initialize readfd & writefd, ...
-// // e.g. with: open(2), socket(2), pipe(2), dup(2) syscalls
-
-// struct pollfd fdtab[2];
-
-// memset (fdtab, 0, sizeof(fdtab)); // not necessary, but I am paranoid
-
-// // first slot for readfd polled for input
-// fdtab[0].fd = readfd;
-// fdtab[0].events = POLLIN;
-// fdtab[0].revents = 0;
-
-// // second slot with writefd polled for output
-// fdtab[1].fd = writefd;
-// fdtab[1].events = POLLOUT;
-// fdtab[1].revents = 0;
-
-// // do the poll(2) syscall with a 100 millisecond timeout
-// int retpoll = poll(fdtab, 2, 100);
-
-// if (retpoll > 0) {
-//    if (fdtab[0].revents & POLLIN) {
-//       /* read from readfd, 
-//          since you can read from it without being blocked */
-//    }
-//    if (fdtab[1].revents & POLLOUT) {
-//       /* write to writefd,
-//          since you can write to it without being blocked */
-//    }
-// }
-// else if (retpoll == 0) {
-//    /* the poll has timed out, nothing can be read or written */
-// }
-// else {
-//    /* the poll failed */
-//    perror("poll failed");
-// }
