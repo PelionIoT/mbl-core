@@ -38,7 +38,7 @@ typedef struct MblSdbusCallbacks
 
 
 int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks);
-int32_t SdBusAdaptor_finalize();
+int32_t SdBusAdaptor_deinit();
 int32_t SdBusAdaptor_run();
 int32_t SdBusAdaptor_stop();
 int32_t SdBusAdaptor_attach_pipe_fd(int fd);

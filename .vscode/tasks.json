@@ -5,24 +5,27 @@
             "label": "cmake",
             "type": "shell",
             "options": {
-                "cwd": "${workspaceRoot}/build"
+                "cwd": "${workspaceRoot}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/build"
             },
             "command": "cmake",
             "args": [
-                "${workspaceRoot}"
+                "${workspaceRoot}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/"
             ],
             "group": "build",
             "presentation": {
                 "reveal": "always",
                 "panel": "new"
-            }
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
         },
         {
             "label": "make",
             "type": "shell",
             "command": "make",
             "options": {
-                "cwd": "${workspaceRoot}/build"
+                "cwd": "${workspaceRoot}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/build"
             },
             "args": [
                 "-j",

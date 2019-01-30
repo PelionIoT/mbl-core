@@ -22,6 +22,7 @@
 #include "MblDBusBinder.h"
 extern "C" {
     #include "MblSdbusAdaptor.h"
+    #include "MblSdbusPipe.h"
 }
 
 namespace mbl {
@@ -38,7 +39,7 @@ public:
     ~MblSdbusBinder() = default;
     
     MblError init();
-    MblError de_init();
+    MblError deinit();
     MblError start();
     MblError stop();
 
@@ -48,7 +49,8 @@ private:
     Status status_ = Status::FINALIZED;
 
     MblSdbusCallbacks callbacks_;
-    MblSdbusPipe event_loop_requests_pipe;
+    MblSdbusPipe input_messages_;
+    MblSdbusPipe output_messages_;
 
     // D-BUS callbacks
     static int register_resources_callback(const char *json_filem, CCRBStatus *ccrb_status);

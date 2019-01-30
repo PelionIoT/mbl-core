@@ -42,7 +42,7 @@ public:
     virtual ~MblDBusBinder() = default;
     
     virtual MblError init() = 0;
-    virtual MblError de_init() = 0;
+    virtual MblError deinit() = 0;
     virtual MblError start() = 0;
     virtual MblError stop() = 0;
 

@@ -110,11 +110,11 @@ static void* ccrm_thread_start(void* _data)
     else if (binder.start() != mbl::MblError::None) {
          exit_code = -3;
     }
-    binder.de_init();
+    binder.deinit();
     pthread_exit((void*)exit_code);
 }
 
-
+/*
 //FIXME: remove asserts whenever need to clean finalize child thread
 TEST(Sdbus, StartStopWithPipeMsg) { 
     pthread_t   tid;
@@ -142,4 +142,9 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     ASSERT_EQ(MblSdbusPipe_destroy(&data.pipe), 0);
     pthread_exit((void*)0);
 }
+*/
 
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();    
+}

@@ -265,7 +265,7 @@ int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks)
     SdBusAdaptor_event_loop_init(&ctx.sdev_loop);
 }
 
-int32_t SdBusAdaptor_finalize()
+int32_t SdBusAdaptor_deinit()
 {
     SdBusAdaptor_bus_finalize(&ctx.sdbus);
     SdBusAdaptor_event_loop_finalize(&ctx.sdev_loop);

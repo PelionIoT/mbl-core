@@ -56,7 +56,7 @@ MblSdbusBinder::MblSdbusBinder()
 }
 
 
-MblError MblSdbusBinder::init(/*MblSdbusPipe &pipe*/)
+MblError MblSdbusBinder::init()
 {
     tr_debug(__PRETTY_FUNCTION__);
 
@@ -69,15 +69,34 @@ MblError MblSdbusBinder::init(/*MblSdbusPipe &pipe*/)
         return MblError::SdBusError;
     }
 
-    // initalize mailbox
-    // must be last line!
+    if (MblSdbusPipe_create(&input_messages_) != 0){
+        return MblError::SdBusError;
+    }
+
+    if (MblSdbusPipe_create(&output_messages_) != 0){
+        return MblError::SdBusError;
+    }
+
     status_ = Status::INITALIZED;
     return MblError::None;
 }
 
-MblError MblSdbusBinder::de_init()
+// FIXME = do best effort
+MblError MblSdbusBinder::deinit()
 {
     tr_debug(__PRETTY_FUNCTION__);
+
+    if (SdBusAdaptor_deinit() != 0){
+        return MblError::SdBusError;
+    }
+
+    if (MblSdbusPipe_destroy(&input_messages_) != 0){
+        return MblError::SdBusError;
+    }
+
+    if (MblSdbusPipe_destroy(&output_messages_) != 0){
+        return MblError::SdBusError;
+    }
 
     status_ = Status::FINALIZED;
     return MblError::None;
