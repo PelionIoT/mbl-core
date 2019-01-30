@@ -31,76 +31,76 @@ namespace mbl {
  * @brief Mbl Cloud Connect resource data type.
  * Currently supported LwM2M resource data types. 
  */
-    enum class MblResourceDataType {
-        INVALID   = 0x0,
-        STRING    = 0x1,
-        INTEGER   = 0x2,
-        FLOAT     = 0x3,
-        BOOLEAN   = 0x4,
-        OPAQUE    = 0x5,
-        TIME      = 0x6,
-        OBJLINK   = 0x7,
-    };
+enum class MblResourceDataType {
+    INVALID   = 0x0,
+    STRING    = 0x1,
+    INTEGER   = 0x2,
+    FLOAT     = 0x3,
+    BOOLEAN   = 0x4,
+    OPAQUE    = 0x5,
+    TIME      = 0x6,
+    OBJLINK   = 0x7,
+};
     
 /**
  * @brief Class that implements resource data value holder. 
  */
-class MblResourceDataValue {
+class MblResourceData {
 public:
 
-    MblResourceDataValue() = default;
+    MblResourceData() = default;
 
 /**
  * @brief Construct a new Mbl Resource Data Value object and 
  * stores provided string.
- * @param str data that should be stored.
+ * @param initial_value data that should be stored.
  */
-    MblResourceDataValue(const std::string &str);
+    MblResourceData(const std::string &initial_value);
 
 /**
  * @brief Construct a new Mbl Resource Data Value object and 
  * stores provided integer.
- * @param integer data that should be stored.
+ * @param initial_value data that should be stored.
  */
-    MblResourceDataValue(int64_t integer);
+    MblResourceData(int64_t initial_value);
 
 /**
  * @brief Gets resource value data type. 
- * @return MblResourceDataType resource value data type. 
+ * @return MblResourceDataType resource value data type 
  */
-    MblResourceDataType get_resource_data_value_type();
+    MblResourceDataType get_data_type() const;
 
 /**
  * @brief Stores provided string. 
  * 
- * @param str data that should be stored.
+ * @param value data that should be stored.
  */
-    void set_value(const std::string &str); 
+    void set_value(const std::string &value); 
 
 /**
  * @brief Stores provided integer.
- * @param integer data that should be stored.
+ * @param value data that should be stored.
  */
-    void set_value(int64_t integer);
+    void set_value(int64_t value);
 
 /**
  * @brief Gets the value of stored string.  
  * @return std::string returned value.
  */
-    std::string get_value_string();
+    std::string get_value_string() const;
 
 /**
  * @brief Gets the value of stored integer.  
  * @return int64_t returned value.
  */
-    int64_t get_value_integer();
+    int64_t get_value_integer() const;
     
 private:
     // for current moment we use simple implementation for integer and string.
     // When we shall have more types, consider using union or byte array for 
     // storing different types. 
-    std::string string_data_value_;
-    int64_t integer_data_value_;
+    std::string string_value_;
+    int64_t integer_value_;
 
     // stores type of stored data
     MblResourceDataType data_type_ = MblResourceDataType::INVALID;
@@ -113,39 +113,39 @@ private:
 /**
  * @brief [resource_path, resource_typed_data_value] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Value
-    {
-        std::string path;
-        MblResourceDataValue typed_data_value;
-    };
+struct MblCloudConnect_ResourcePath_Value
+{
+    std::string path;
+    MblResourceData typed_data_value;
+};
 
 /**
  * @brief [resource_path, resource_data_type] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Type
-    {
-        std::string path;
-        MblResourceDataType data_type;
-    };
+struct MblCloudConnect_ResourcePath_Type
+{
+    std::string path;
+    MblResourceDataType data_type;
+};
 
 /**
  * @brief [resource_path, resource_typed_data_value, operation_status] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Value_Status
-    {
-        std::string path;
-        MblResourceDataValue typed_data_value;
-        MblError operation_status;
-    };
+struct MblCloudConnect_ResourcePath_Value_Status
+{
+    std::string path;
+    MblResourceData typed_data_value;
+    MblError operation_status;
+};
 
 /**
  * @brief [resource_path, operation_status] tuple.
  */
-    struct MblCloudConnect_ResourcePath_Status
-    {
-        std::string path;
-        MblError operation_status;
-    };
+struct MblCloudConnect_ResourcePath_Status
+{
+    std::string path;
+    MblError operation_status;
+};
 
 } //namespace mbl
 

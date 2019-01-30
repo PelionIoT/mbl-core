@@ -198,7 +198,7 @@ void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
 
 
 
-MblError MblCloudConnectResourceBroker::register_resources_start(
+MblError MblCloudConnectResourceBroker::register_resources_async(
         const uintptr_t , 
         const uintptr_t , 
         const std::string &)
@@ -208,7 +208,7 @@ MblError MblCloudConnectResourceBroker::register_resources_start(
 }
 
 
-MblError MblCloudConnectResourceBroker::deregister_resources_start(
+MblError MblCloudConnectResourceBroker::deregister_resources_async(
         const uintptr_t , 
         const uintptr_t , 
         const std::string )
@@ -217,7 +217,7 @@ MblError MblCloudConnectResourceBroker::deregister_resources_start(
     return Error::None;
 }
 
-MblError MblCloudConnectResourceBroker::add_resource_instances_start(
+MblError MblCloudConnectResourceBroker::add_resource_instances_async(
         const uintptr_t , 
         const uintptr_t , 
         const std::string , 
@@ -228,7 +228,7 @@ MblError MblCloudConnectResourceBroker::add_resource_instances_start(
     return Error::None;
 }
 
-MblError MblCloudConnectResourceBroker::remove_resource_instances_start(
+MblError MblCloudConnectResourceBroker::remove_resource_instances_async(
     const uintptr_t , 
     const uintptr_t , 
     const std::string , 

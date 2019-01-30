@@ -21,47 +21,47 @@
 
 namespace mbl {
 
-MblResourceDataValue::MblResourceDataValue(const std::string &str)
-: string_data_value_(str),
+MblResourceData::MblResourceData(const std::string &initial_value)
+: string_value_(initial_value),
   data_type_ (MblResourceDataType::STRING) 
 {
 }
 
-MblResourceDataValue::MblResourceDataValue(int64_t integer)
-: integer_data_value_(integer),
+MblResourceData::MblResourceData(int64_t initial_value)
+: integer_value_(initial_value),
   data_type_ (MblResourceDataType::INTEGER)
 {
 }
 
-MblResourceDataType MblResourceDataValue::get_resource_data_value_type()
+MblResourceDataType MblResourceData::get_data_type()
 {
     return data_type_;
 }
 
-void MblResourceDataValue::set_value(const std::string &str) 
+void MblResourceData::set_value(const std::string &value) 
 {
     assert(data_type_ == MblResourceDataType::INVALID);
     data_type_ = MblResourceDataType::STRING;
-    string_data_value_ = str;        
+    string_value_ = value;        
 }
 
-void MblResourceDataValue::set_value(int64_t integer)
+void MblResourceData::set_value(int64_t value)
 {
     assert(data_type_ == MblResourceDataType::INVALID);
     data_type_ = MblResourceDataType::INTEGER;
-    integer_data_value_ = integer;        
+    integer_value_ = value;        
 }
 
-std::string MblResourceDataValue::get_value_string() 
+std::string MblResourceData::get_value_string() 
 {
     assert(data_type_ == MblResourceDataType::STRING);
-    return string_data_value_;        
+    return string_value_;        
 }
 
-int64_t MblResourceDataValue::get_value_integer()
+int64_t MblResourceData::get_value_integer()
 {
     assert(data_type_ == MblResourceDataType::INTEGER);
-    return integer_data_value_;        
+    return integer_value_;        
 }
 
 }

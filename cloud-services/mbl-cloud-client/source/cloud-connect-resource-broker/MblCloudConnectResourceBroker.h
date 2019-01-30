@@ -40,7 +40,7 @@ public:
     ~MblCloudConnectResourceBroker();
 
 /////////////////////////////////////////////////////////////////////
-// MblCloudConnectResourceBroker to MblCloudClient API
+// API to be used by MblCloudClient class
 /////////////////////////////////////////////////////////////////////
 
 /**
@@ -64,20 +64,18 @@ public:
     MblError stop();
 
 
-
 /////////////////////////////////////////////////////////////////////
-// MblCloudConnectResourceBroker to MblCloudConnectIpcDBus API
+// API to be used by MblCloudConnectIpcInterface derivaed class 
 /////////////////////////////////////////////////////////////////////
 
 /**
- * @brief Starts registration request of the resource set in the Cloud.  
+ * @brief Starts asynchronous registration request of the resource set 
+ * in the Cloud.  
  * This function parses the input json file, and creates resource objects 
  * from it. Created objects pends for the registration to the Cloud. 
  * CCRB will send the final status of the registration to the application 
  * (when it will be ready) by calling update_registration_status API. 
  * 
- * @param appl_context parameter that will be returned to the client 
- * application in update_registration_status API.
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should get update_registration_status message.
  * @param appl_resource_definition_json json file that describes resources 
@@ -87,20 +85,18 @@ public:
  *         parsed and the registration request was sent to the Cloud for 
  *         the processing, or error code otherwise. 
  */
-    MblError register_resources_start(
-        const uintptr_t appl_context, 
+    MblError register_resources_async(
         const uintptr_t ipc_conn_handle, 
         const std::string &appl_resource_definition_json);
 
 /**
- * @brief Starts deregistration request of the resource set from the Cloud.  
+ * @brief Starts asynchronous deregistration request of the resource set 
+ * from the Cloud.  
  * This function starts deregistration procedure of all resources that are
  * "owned" by access_token. CCRB will send the final status of the 
  * deregistration to the application (when it will be ready) by calling 
  * update_deregistration_status API. 
  * 
- * @param appl_context parameter that will be returned to the client 
- * application in update_deregistration_status API.
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token that defines set of resources that should be 
@@ -108,21 +104,19 @@ public:
  * @return MblError returns Error::None if the deregistration request 
  *         was sent to the Cloud for the processing, or error code otherwise. 
  */
-    MblError deregister_resources_start(
-        const uintptr_t appl_context, 
+    MblError deregister_resources_async(
         const uintptr_t ipc_conn_handle, 
-        const std::string access_token);
+        const std::string &access_token);
 
 /**
- * @brief Starts resource instances addition request to the Cloud.  
+ * @brief Starts resource instances addition asynchronous request to 
+ * the Cloud.  
  * This function starts resource instances addition procedure of all 
  * resources instances that are provided in resource_instance_ids. 
  * CCRB will send the final status of the resource instances addition 
  * to the application (when it will be ready) by calling 
  * update_add_resource_instance_status API.
  * 
- * @param appl_context parameter that will be returned to the client 
- * application in update_add_resource_instance_status API.
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token used for access control to the resource which path 
@@ -136,23 +130,21 @@ public:
  *         request was sent to the Cloud for the processing, or error 
  *         code otherwise.
  */
-    MblError add_resource_instances_start(
-        const uintptr_t appl_context, 
+    MblError add_resource_instances_async(
         const uintptr_t ipc_conn_handle, 
-        const std::string access_token, 
+        const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
 
 /**
- * @brief Starts resource instances remove request from the Cloud.  
+ * @brief Starts resource instances remove asynchronous request 
+ * from the Cloud.  
  * This function starts resource instances remove procedure of all 
  * resources instances that are provided in resource_instance_ids. 
  * CCRB will send the final status of the resource instances removal 
  * to the application (when it will be ready) by calling 
  * update_remove_resource_instance_status API.
  * 
- * @param appl_context parameter that will be returned to the client 
- * application in update_remove_resource_instance_status API.
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token used for access control to the resource which path 
@@ -166,10 +158,9 @@ public:
  *         request was sent to the Cloud for the processing, or error 
  *         code otherwise.
  */
-    MblError remove_resource_instances_start(
-        const uintptr_t appl_context, 
+    MblError remove_resource_instances_async(
         const uintptr_t ipc_conn_handle, 
-        const std::string access_token, 
+        const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
 
@@ -180,7 +171,7 @@ public:
  *        from input_values vector. 
  * @param input_values vector of tuples from the format
  *        [resource_path, resource_typed_data_value]. Each tuple in vector defines
- *        resource path which value should be set to the reqired value.
+ *        path of the resource who's value should be set to the input value.
  * @param output_set_statuses output vector of tuples from the format
  *        [resource_path, operation_status]. Each tuple in the vector will 
  *        contain status for the resource value set operation for each resource 
@@ -189,7 +180,7 @@ public:
  *         to the provided access_token, or error code otherwise.
  */
     MblError set_resource_values(
-        const std::string access_token, 
+        const std::string &access_token, 
         const std::vector<MblCloudConnect_ResourcePath_Value> &input_values, 
         std::vector<MblCloudConnect_ResourcePath_Status> &output_set_statuses);
 
@@ -204,13 +195,13 @@ public:
  *        gotten.
  * @param output_get_values output vector of tuples from the format
  *        [resource_path, resource_typed_data_value, operation_status]. Each 
- *        tuple in the vector will contain resource value and status af the get operation 
- *        for the resources in the input_paths vector.
+ *        tuple in the vector will contain output resource value and status of 
+ *        the get operation for the resources in the input_paths vector.
  * @return MblError returns Error::None if all resources can be accessed according 
  *         to the provided access_token, or error code otherwise.
  */
     MblError get_resource_values(
-        const std::string access_token, 
+        const std::string &access_token, 
         const std::vector<MblCloudConnect_ResourcePath_Type> &input_paths,
         std::vector<MblCloudConnect_ResourcePath_Value_Status> &output_get_values);
 

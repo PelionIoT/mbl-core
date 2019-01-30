@@ -68,9 +68,7 @@ public:
 /**
  * @brief Sends registration request final status to the destination client application. 
  * This function sends a final status of the registration request, that was initiated 
- * by a client application via calling register_resources_start API. 
- * @param appl_context is a parameter passed to the register_resources_start API by the client 
- *        application.
+ * by a client application via calling register_resources_async API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
  *        that should be notified.
  * @param access_token is a token that should be used by the client application in all APIs that 
@@ -82,17 +80,14 @@ public:
  *         or error code otherwise. 
  */
 virtual MblError update_registration_status(
-        const uintptr_t appl_context, 
         const uintptr_t ipc_conn_handle, 
-        const std::string access_token,
+        const std::string &access_token,
         const MblError reg_status) = 0;
 
 /**
  * @brief Sends deregistration request final status to the destination client application. 
  * This function sends a final status of the deregistration request, that was initiated 
- * by a client application via calling deregister_resources_start API. 
- * @param appl_context is a parameter passed to the deregister_resources_start API by the client 
- *        application.
+ * by a client application via calling deregister_resources_async API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
  *        that should be notified.
  * @param dereg_status FIXME
@@ -100,16 +95,13 @@ virtual MblError update_registration_status(
  *         or error code otherwise. 
  */
 virtual MblError update_deregistration_status(
-        const uintptr_t appl_context, 
         const uintptr_t ipc_conn_handle, 
         const MblError dereg_status) = 0;
 
 /**
  * @brief Sends resource instances addition request final status to the destination client application. 
  * This function sends a final status of the resource instances addition request, that was initiated 
- * by a client application via calling add_resource_instances_start API. 
- * @param appl_context is a parameter passed to the add_resource_instances_start API by the client 
- *        application.
+ * by a client application via calling add_resource_instances_async API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
  *        that should be notified.
  * @param add_status FIXME
@@ -117,16 +109,13 @@ virtual MblError update_deregistration_status(
  *         or error code otherwise. 
  */
 virtual MblError update_add_resource_instance_status(
-        const uintptr_t appl_context, 
         const uintptr_t ipc_conn_handle, 
         const MblError add_status) = 0;
 
 /**
  * @brief Sends resource instances removal request final status to the destination client application. 
  * This function sends a final status of the resource instances removal request, that was initiated 
- * by a client application via calling remove_resource_instances_start API. 
- * @param appl_context is a parameter passed to the remove_resource_instances_start API by the client 
- *        application.
+ * by a client application via calling remove_resource_instances_async API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
  *        that should be notified.
  * @param remove_status FIXME
@@ -134,7 +123,6 @@ virtual MblError update_add_resource_instance_status(
  *         or error code otherwise. 
  */
 virtual MblError update_remove_resource_instance_status(
-        const uintptr_t appl_context, 
         const uintptr_t ipc_conn_handle, 
         const MblError remove_status) = 0;
  
