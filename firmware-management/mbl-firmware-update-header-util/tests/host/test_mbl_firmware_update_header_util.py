@@ -9,7 +9,7 @@ import os
 import pytest
 import io
 
-import mbl.firmware_update_header as uh
+import mbl.firmware_update_header_util as uh
 
 GOOD_TEST_CASES = [
     {

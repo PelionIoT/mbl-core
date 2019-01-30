@@ -3,16 +3,16 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Sets up the mbl.firmware_update_header module."""
+"""Sets up the mbl.firmware_update_header_util module."""
 
 from setuptools import setup
 
 setup(
-    name="mbl-firmware-update-header",
+    name="mbl-firmware-update-header-util",
     version="1",
     description="Mbed Linux OS firmware update HEADER blob utils library",
     author="Arm Ltd.",
     license="BSD-3-Clause",
-    packages=["mbl.firmware_update_header"],
+    packages=["mbl.firmware_update_header_util"],
     zip_safe=False,
 )

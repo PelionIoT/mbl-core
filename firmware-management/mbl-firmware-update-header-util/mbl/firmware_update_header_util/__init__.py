@@ -5,4 +5,4 @@
 
 """Provides utilities for reading/writing firmware update HEADER data."""
 
-from .firmware_update_header import *
+from .firmware_update_header_util import *

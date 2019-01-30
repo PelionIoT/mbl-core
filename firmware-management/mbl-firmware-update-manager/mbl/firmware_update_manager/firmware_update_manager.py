@@ -11,7 +11,7 @@ import logging
 from enum import Enum
 import time
 
-import mbl.firmware_update_header as mfuh
+import mbl.firmware_update_header_util as mfuh
 
 __version__ = "1.0"
 
