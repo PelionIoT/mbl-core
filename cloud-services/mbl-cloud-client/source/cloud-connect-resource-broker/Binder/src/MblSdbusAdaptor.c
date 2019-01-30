@@ -113,7 +113,7 @@ int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_
 }
 
 // TODO: Move to a new file dedicated for vtable
-static const sd_bus_vtable calculator_vtable[] = {
+static const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
     // This message contains JSON file with resources to be registered.
@@ -198,7 +198,7 @@ static int32_t SdBusAdaptor_bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *c
                                  &slot,
                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                                 calculator_vtable,
+                                 cloud_connect_service_vtable,
                                  &ctx);
     if (r < 0) {
         goto on_failure;
