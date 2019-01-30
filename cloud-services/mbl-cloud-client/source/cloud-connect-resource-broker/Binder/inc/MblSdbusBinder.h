@@ -48,6 +48,7 @@ private:
     Status status_ = Status::FINALIZED;
 
     MblSdbusCallbacks callbacks_;
+    MblSdbusPipe event_loop_requests_pipe;
 
     // D-BUS callbacks
     static int register_resources_callback(const char *json_filem, CCRBStatus *ccrb_status);

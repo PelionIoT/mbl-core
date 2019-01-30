@@ -21,6 +21,7 @@
 extern "C" {
 #include <systemd/sd-bus.h>
 #include "MblSdbusAdaptor.h"
+#include "MblSdbusPipe.h"
 }
 
 #include <string>
@@ -55,7 +56,7 @@ MblSdbusBinder::MblSdbusBinder()
 }
 
 
-MblError MblSdbusBinder::init()
+MblError MblSdbusBinder::init(/*MblSdbusPipe &pipe*/)
 {
     tr_debug(__PRETTY_FUNCTION__);
 

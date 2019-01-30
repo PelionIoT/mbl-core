@@ -74,7 +74,7 @@ static void* writer_thread_start(void *_pipe)
     pthread_exit((void*)0);
 }
 
-TEST(Sdbus, SendReceiveDummyMessageMultiThread) {
+TEST(Sdbus, SendReceiveRawMessageMultiThread) {
     pthread_t   tid1,tid2;
     MblSdbusPipe pipe;    
     int *retval;
@@ -99,17 +99,20 @@ static void* ccrm_thread_start(void* _data)
 {
     mbl::MblSdbusBinder binder;
     ccrm_thread_data *data = (ccrm_thread_data*)_data;    
+    uintptr_t exit_code = 0;
 
-    if ((binder.init() != mbl::MblError::None) ||
-        (sem_post(&data->sem) != 0) ||
-        (binder.start() != mbl::MblError::None))
-    {
-        binder.de_init();
-        pthread_exit((void*)-1);
+    if (binder.init() != mbl::MblError::None){
+        exit_code = -1;
     }
-    pthread_exit((void*)0);
+    else if (sem_post(&data->sem) != 0){
+         exit_code = -2;
+    }
+    else if (binder.start() != mbl::MblError::None) {
+         exit_code = -3;
+    }
+    binder.de_init();
+    pthread_exit((void*)exit_code);
 }
-
 
 
 //FIXME: remove asserts whenever need to clean finalize child thread
@@ -118,20 +121,21 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     int *retval;
     MblSdbusPipeMsg msg;
     ccrm_thread_data data;
-    assert_
+    
     ASSERT_EQ(MblSdbusPipe_create(&data.pipe), 0);
-
+    memset(&msg, 0, sizeof(msg));
+    
     // Lets simulate : current thread is mbl-cloud-client thread 
     // which creates ccrm thread in the next line
-    ASSERT_EQ(sem_init(&data.sem, 0, 0), 0);  //init to 0
-    ASSERT_EQ(pthread_create(&tid, NULL, ccrm_thread_start, &data), 0);    
+    ASSERT_EQ(sem_init(&data.sem, 0, 0), 0);  //init to 0 to wait for created thread signal    
+    ASSERT_EQ(pthread_create(&tid, NULL, ccrm_thread_start, &data), 0); 
     ASSERT_EQ(sem_wait(&data.sem), 0);  //wait for server to start
-    memset(&msg, 0, sizeof(msg));
+            
+    //send mesage in pipe, no need to fill data - just signal exit
     msg.type = PIPE_MSG_TYPE_EXIT;
-    ASSERT_EQ(MblSdbusPipe_msg_send(&data.pipe, &msg, 0);
+    ASSERT_EQ(MblSdbusPipe_msg_send(&data.pipe, &msg), 0);
 
-    // FIXME: all pthread join must be converted to pthread_timedjoin_np
-    // 
+    // FIXME: all pthread join must be converted to pthread_timedjoin_np    
     ASSERT_EQ(pthread_join(tid, (void**)&retval), 0); 
     ASSERT_EQ((uintptr_t)retval, 0);
     ASSERT_EQ(sem_destroy(&data.sem), 0);
@@ -139,7 +143,3 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     pthread_exit((void*)0);
 }
 
-int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();    
-}
