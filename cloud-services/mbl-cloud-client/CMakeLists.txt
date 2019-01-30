@@ -69,19 +69,25 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
+    #"${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
+)
+
+# Create the Cloud Client executable
+FILE(GLOB MBL_CCRB_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
 
+
 # Create static library "mblCloudClient"
-add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
-target_link_libraries(mblCloudClient, mbedCloudClient)
+add_library(mblCcrb STATIC "${MBL_CLOUD_CLIENT_SRC}")
+add_library(mblCcrb1 SHARED "${MBL_CLOUD_CLIENT_SRC}")
 
 
 add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
 
-#target_link_libraries(mbl-cloud-client mbedCcrb)
+target_link_libraries(mbl-cloud-client mblCcrb)
 
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 target_link_libraries(mbl-cloud-client factory-configurator-client)
