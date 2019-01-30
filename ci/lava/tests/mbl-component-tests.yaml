@@ -33,13 +33,13 @@ run:
         - $SETUP
 
         # Run pytest
-        - pytest -v ./$COMPONENT | tee /tmp/test_venv/results.txt
+        - pytest -v --junitxml=./$COMPONENT.xml ./$COMPONENT
 
         # Turn the pytest results into a format the LAVA requires
-        - python3 ./ci/lava/dependencies/send_pytest_results_to_lava.py /tmp/test_venv/results.txt
+        - python3 ./ci/lava/dependencies/send_junit_results_to_lava.py ./$COMPONENT.xml
 
         # Perform optional TEARDOWN actions
         - $TEARDOWN
 
         # Cleanup
-        - /bin/rm //tmp/test_venv/results.txt
+        - /bin/rm ./$COMPONENT.xml
