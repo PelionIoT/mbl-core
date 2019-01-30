@@ -86,8 +86,7 @@ MblError MblCloudConnectIpcDBus::stop()
 
 MblError MblCloudConnectIpcDBus::update_registration_status(
     const uintptr_t , 
-    const uintptr_t , 
-    const std::string ,
+    const std::string &,
     const MblError )
 {
     // empty for now
@@ -95,7 +94,6 @@ MblError MblCloudConnectIpcDBus::update_registration_status(
 }
 
 MblError MblCloudConnectIpcDBus::update_deregistration_status(
-    const uintptr_t , 
     const uintptr_t , 
     const MblError )
 {
@@ -105,7 +103,6 @@ MblError MblCloudConnectIpcDBus::update_deregistration_status(
 
 MblError MblCloudConnectIpcDBus::update_add_resource_instance_status(
     const uintptr_t , 
-    const uintptr_t , 
     const MblError )
 {
     // empty for now
@@ -113,7 +110,6 @@ MblError MblCloudConnectIpcDBus::update_add_resource_instance_status(
 }
 
 MblError MblCloudConnectIpcDBus::update_remove_resource_instance_status(
-    const uintptr_t , 
     const uintptr_t , 
     const MblError )
 {

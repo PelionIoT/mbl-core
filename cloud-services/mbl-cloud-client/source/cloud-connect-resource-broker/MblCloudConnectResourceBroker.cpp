@@ -200,7 +200,6 @@ void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
 
 MblError MblCloudConnectResourceBroker::register_resources_async(
         const uintptr_t , 
-        const uintptr_t , 
         const std::string &)
 {
     // empty for now
@@ -210,8 +209,7 @@ MblError MblCloudConnectResourceBroker::register_resources_async(
 
 MblError MblCloudConnectResourceBroker::deregister_resources_async(
         const uintptr_t , 
-        const uintptr_t , 
-        const std::string )
+        const std::string &)
 {
     // empty for now
     return Error::None;
@@ -219,8 +217,7 @@ MblError MblCloudConnectResourceBroker::deregister_resources_async(
 
 MblError MblCloudConnectResourceBroker::add_resource_instances_async(
         const uintptr_t , 
-        const uintptr_t , 
-        const std::string , 
+        const std::string &, 
         const std::string &, 
         const std::vector<uint16_t> &)
 {
@@ -230,8 +227,7 @@ MblError MblCloudConnectResourceBroker::add_resource_instances_async(
 
 MblError MblCloudConnectResourceBroker::remove_resource_instances_async(
     const uintptr_t , 
-    const uintptr_t , 
-    const std::string , 
+    const std::string &, 
     const std::string &, 
     const std::vector<uint16_t> &)
 {
@@ -240,7 +236,7 @@ MblError MblCloudConnectResourceBroker::remove_resource_instances_async(
 }
 
 MblError MblCloudConnectResourceBroker::set_resource_values(
-    const std::string , 
+    const std::string &, 
     const std::vector<MblCloudConnect_ResourcePath_Value> &, 
     std::vector<MblCloudConnect_ResourcePath_Status> &)
 {
@@ -249,7 +245,7 @@ MblError MblCloudConnectResourceBroker::set_resource_values(
 }
 
 MblError MblCloudConnectResourceBroker::get_resource_values(
-    const std::string , 
+    const std::string &, 
     const std::vector<MblCloudConnect_ResourcePath_Type> &,
     std::vector<MblCloudConnect_ResourcePath_Value_Status> &)
 {

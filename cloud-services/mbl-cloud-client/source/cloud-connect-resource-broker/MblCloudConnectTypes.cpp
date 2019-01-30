@@ -33,7 +33,7 @@ MblResourceData::MblResourceData(int64_t initial_value)
 {
 }
 
-MblResourceDataType MblResourceData::get_data_type()
+MblResourceDataType MblResourceData::get_data_type() const
 {
     return data_type_;
 }
@@ -52,13 +52,13 @@ void MblResourceData::set_value(int64_t value)
     integer_value_ = value;        
 }
 
-std::string MblResourceData::get_value_string() 
+std::string MblResourceData::get_value_string() const
 {
     assert(data_type_ == MblResourceDataType::STRING);
     return string_value_;        
 }
 
-int64_t MblResourceData::get_value_integer()
+int64_t MblResourceData::get_value_integer() const
 {
     assert(data_type_ == MblResourceDataType::INTEGER);
     return integer_value_;        
