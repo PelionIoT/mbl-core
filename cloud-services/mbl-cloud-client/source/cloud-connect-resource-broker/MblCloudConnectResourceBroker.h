@@ -19,7 +19,7 @@
 #ifndef MblCloudConnectResourceBroker_h_
 #define MblCloudConnectResourceBroker_h_
 
-#include "MblCloudConnectIpcInterface.h"
+#include "MblCloudConnectIpcDBus.h"
 #include "MblCloudConnectTypes.h"
 
 #include  <memory>
@@ -34,7 +34,7 @@ namespace mbl {
  * - send observers notifications from MbedCloudClient to applications.
  */
 class MblCloudConnectResourceBroker {
-
+friend MblCloudConnectIpcDBus;
 public:
     MblCloudConnectResourceBroker();
     ~MblCloudConnectResourceBroker();
@@ -63,9 +63,35 @@ public:
  */
     MblError stop();
 
+private:
+
+/**
+ * @brief Initializes CCRB instance.
+ * 
+ * @return MblError returns value Error::None if function succeeded, 
+ *         or error code otherwise.
+ */
+    MblError init();
+
+/**
+ * @brief Deinitializes CCRB instance.
+ * 
+ * @return MblError returns value Error::None if function succeeded, 
+ *         or error code otherwise.
+ */
+    MblError de_init();
+
+/**
+ * @brief Runs CCRB event-loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, 
+ *         or error code otherwise.
+ */
+    MblError run();
+
 
 /////////////////////////////////////////////////////////////////////
-// API to be used by MblCloudConnectIpcInterface derivaed class 
+// API to be used by MblCloudConnectIpcDBus derivaed class 
 /////////////////////////////////////////////////////////////////////
 
 /**
@@ -165,71 +191,36 @@ public:
         const std::vector<uint16_t> &resource_instance_ids);
 
 /**
- * @brief Set resource values for multiple resources. 
+ * @brief Set resources values for multiple resources. 
  *
  * @param access_token token used for access control to the resources pointed 
  *        from input_values vector. 
- * @param input_values vector of tuples from the format
- *        [resource_path, resource_typed_data_value]. Each tuple in vector defines
- *        path of the resource who's value should be set to the input value.
- * @param output_set_statuses output vector of tuples from the format
- *        [resource_path, operation_status]. Each tuple in the vector will 
- *        contain status for the resource value set operation for each resource 
- *        in the input_values vector.  
+ * @param inout_data vector of entries that provides input and output parameters
+ *        for set operation. 
+ *        input  params: resource_data_
+ *        output params: set_operation_status_
  * @return MblError returns Error::None if all resources can be accessed according 
  *         to the provided access_token, or error code otherwise.
  */
-    MblError set_resource_values(
+    MblError set_resources_values(
         const std::string &access_token, 
-        const std::vector<MblCloudConnect_ResourcePath_Value> &input_values, 
-        std::vector<MblCloudConnect_ResourcePath_Status> &output_set_statuses);
+        std::vector<ResourceSetOperation> &inout_get_operations);
 
 /**
- * @brief Get resource values from multiple resources. 
+ * @brief Get resources values from multiple resources. 
  *
  * @param access_token token used for access control to the resources pointed 
  *        from input_paths vector. 
- * @param input_paths vector of tuples from the format 
- *        [resource_path, resource_data_type]. Each tuple in vector defines
- *        resource path and data type of the resource value that should be
- *        gotten.
- * @param output_get_values output vector of tuples from the format
- *        [resource_path, resource_typed_data_value, operation_status]. Each 
- *        tuple in the vector will contain output resource value and status of 
- *        the get operation for the resources in the input_paths vector.
+ * @param inout_data vector of entries that provides input and output parameters
+ *        for set operation. 
+ *        input  params: resource_data_.path and resource_data_.type 
+ *        output params: resource_data_.value and get_operation_status
  * @return MblError returns Error::None if all resources can be accessed according 
  *         to the provided access_token, or error code otherwise.
  */
-    MblError get_resource_values(
+    MblError get_resources_values(
         const std::string &access_token, 
-        const std::vector<MblCloudConnect_ResourcePath_Type> &input_paths,
-        std::vector<MblCloudConnect_ResourcePath_Value_Status> &output_get_values);
-
-private:
-
-/**
- * @brief Initializes CCRB instance.
- * 
- * @return MblError returns value Error::None if function succeeded, 
- *         or error code otherwise.
- */
-    MblError init();
-
-/**
- * @brief Deinitializes CCRB instance.
- * 
- * @return MblError returns value Error::None if function succeeded, 
- *         or error code otherwise.
- */
-    MblError de_init();
-
-/**
- * @brief Runs CCRB event-loop.
- * 
- * @return MblError returns value Error::None if function succeeded, 
- *         or error code otherwise.
- */
-    MblError run();
+        std::vector<ResourceGetOperation> &inout_set_operations);
 
 /**
  * @brief CCRB thread main function.
@@ -241,6 +232,9 @@ private:
  * @return void* thread output buffer - not used.
  */
     static void *ccrb_main(void *ccrb);
+
+
+// FIX return MblError description !!!!!!!!!!!!!!!!!!!!!!!!!
 
 private:
 
@@ -254,7 +248,7 @@ private:
     pthread_t ipc_thread_id_ = 0;
 
     // pointer to ipc binder instance
-    std::unique_ptr<MblCloudConnectIpcInterface> ipc_ = nullptr;
+    std::unique_ptr<MblCloudConnectIpcDBus> ipc_ = nullptr;
 };
 
 } // namespace mbl

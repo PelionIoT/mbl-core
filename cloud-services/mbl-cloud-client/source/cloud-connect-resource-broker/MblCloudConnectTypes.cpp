@@ -21,46 +21,60 @@
 
 namespace mbl {
 
-MblResourceData::MblResourceData(const std::string &initial_value)
-: string_value_(initial_value),
-  data_type_ (MblResourceDataType::STRING) 
+ResourceData::ResourceData(
+    const std::string &path, 
+    const ResourceDataType type)
+: path_(path),
+  data_type_ (type) 
 {
+    // leave value not initialized
 }
 
-MblResourceData::MblResourceData(int64_t initial_value)
-: integer_value_(initial_value),
-  data_type_ (MblResourceDataType::INTEGER)
+ResourceData::ResourceData(
+    const std::string &path, 
+    const std::string &initial_value)
+: path_(path)
+  string_value_(initial_value),
+  data_type_ (ResourceDataType::STRING) 
+{ }
+
+ResourceData::ResourceData(const std::string &path, int64_t initial_value)
+: path_(path),
+  integer_value_(initial_value),
+  data_type_ (ResourceDataType::INTEGER)
+{ }
+
+const std::string& ResourceData::get_path() const
 {
+    return path_;        
 }
 
-MblResourceDataType MblResourceData::get_data_type() const
+ResourceDataType ResourceData::get_data_type() const
 {
     return data_type_;
 }
 
-void MblResourceData::set_value(const std::string &value) 
+void ResourceData::set_value(const std::string &value) 
 {
-    assert(data_type_ == MblResourceDataType::INVALID);
-    data_type_ = MblResourceDataType::STRING;
+    assert(data_type_ == ResourceDataType::STRING);
     string_value_ = value;        
 }
 
-void MblResourceData::set_value(int64_t value)
+void ResourceData::set_value(int64_t value)
 {
-    assert(data_type_ == MblResourceDataType::INVALID);
-    data_type_ = MblResourceDataType::INTEGER;
+    assert(data_type_ == ResourceDataType::INTEGER);
     integer_value_ = value;        
 }
 
-std::string MblResourceData::get_value_string() const
+const std::string& ResourceData::get_value_string() const
 {
-    assert(data_type_ == MblResourceDataType::STRING);
+    assert(data_type_ == ResourceDataType::STRING);
     return string_value_;        
 }
 
-int64_t MblResourceData::get_value_integer() const
+int64_t ResourceData::get_value_integer() const
 {
-    assert(data_type_ == MblResourceDataType::INTEGER);
+    assert(data_type_ == ResourceDataType::INTEGER);
     return integer_value_;        
 }
 

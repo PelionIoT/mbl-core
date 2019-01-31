@@ -235,19 +235,17 @@ MblError MblCloudConnectResourceBroker::remove_resource_instances_async(
     return Error::None;
 }
 
-MblError MblCloudConnectResourceBroker::set_resource_values(
-    const std::string &, 
-    const std::vector<MblCloudConnect_ResourcePath_Value> &, 
-    std::vector<MblCloudConnect_ResourcePath_Status> &)
+MblError MblCloudConnectResourceBroker::set_resources_values(
+        const std::string &access_token, 
+        std::vector<ResourceSetOperation> &inout_data)
 {
     // empty for now
     return Error::None;
 }
 
-MblError MblCloudConnectResourceBroker::get_resource_values(
-    const std::string &, 
-    const std::vector<MblCloudConnect_ResourcePath_Type> &,
-    std::vector<MblCloudConnect_ResourcePath_Value_Status> &)
+MblError MblCloudConnectResourceBroker::get_resources_values(
+        const std::string &access_token, 
+        std::vector<ResourceGetOperation> &inout_data)
 {
     // empty for now
     return Error::None;

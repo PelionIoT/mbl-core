@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019 ARM Ltd.
  *
@@ -24,17 +23,18 @@
 #include  <vector>
 
 #include  "MblError.h"
+#include  "CloudConnectTypes.h"
 
 namespace mbl {
 
 /**
- * @brief Mbl Cloud Connect resource data type.
+ * @brief Cloud Connect resource data type.
  * Currently supported LwM2M resource data types. 
  */
-enum class MblResourceDataType {
+enum class ResourceDataType {
     INVALID   = 0x0,
-    STRING    = 0x1,
-    INTEGER   = 0x2,
+    STRING    = 0x1,  // uses std::string
+    INTEGER   = 0x2,  // uses int64_t
     FLOAT     = 0x3,
     BOOLEAN   = 0x4,
     OPAQUE    = 0x5,
@@ -45,40 +45,59 @@ enum class MblResourceDataType {
 /**
  * @brief Class that implements resource data value holder. 
  */
-class MblResourceData {
+class ResourceData {
 public:
 
-    MblResourceData() = default;
-
 /**
- * @brief Construct a new Mbl Resource Data Value object and 
- * stores provided string.
- * @param initial_value data that should be stored.
- */
-    MblResourceData(const std::string &initial_value);
-
-/**
- * @brief Construct a new Mbl Resource Data Value object and 
- * stores provided integer.
- * @param initial_value data that should be stored.
- */
-    MblResourceData(int64_t initial_value);
-
-/**
- * @brief Gets resource value data type. 
- * @return MblResourceDataType resource value data type 
- */
-    MblResourceDataType get_data_type() const;
-
-/**
- * @brief Stores provided string. 
+ * @brief Construct a new Resource Data object with 
+ * uninitialized value. The value should be set strictly according to the
+ * type provided during construction.    
  * 
+ * @param path resource path
+ * @param type resource value type
+ */
+    ResourceData(const std::string &path, const ResourceDataType type);
+
+/**
+ * @brief Construct a new Resource Data object and 
+ * stores provided string. From the moment this object can store only string.
+ *  
+ * @param path resource path
+ * @param initial_value data that should be stored.
+ */
+    ResourceData(const std::string &path, const std::string &initial_value);
+
+/**
+ * @brief Construct a new Resource Data object and stores 
+ * provided integer. From the moment this object can store only integer.
+ * 
+ * @param path resource path
+ * @param initial_value data that should be stored.
+ */
+    ResourceData(const std::string &path, int64_t initial_value);
+
+/**
+ * @brief Gets stored resource path.  
+ * @return std::string resource path.
+ */
+    const std::string& get_path() const;
+
+/**
+ * @brief Gets resource data type. 
+ * @return ResourceDataType resource value data type 
+ */
+    ResourceDataType get_data_type() const;
+
+/**
+ * @brief Stores provided string data. 
+ * This API should be used if object was constructed to store string.
  * @param value data that should be stored.
  */
     void set_value(const std::string &value); 
 
 /**
- * @brief Stores provided integer.
+ * @brief Stores provided integer data.
+ * This API should be used if object was constructed to store integer.
  * @param value data that should be stored.
  */
     void set_value(int64_t value);
@@ -87,7 +106,7 @@ public:
  * @brief Gets the value of stored string.  
  * @return std::string returned value.
  */
-    std::string get_value_string() const;
+    const std::string& get_value_string() const;
 
 /**
  * @brief Gets the value of stored integer.  
@@ -96,6 +115,8 @@ public:
     int64_t get_value_integer() const;
     
 private:
+    const std::string path_;
+
     // for current moment we use simple implementation for integer and string.
     // When we shall have more types, consider using union or byte array for 
     // storing different types. 
@@ -103,49 +124,44 @@ private:
     int64_t integer_value_;
 
     // stores type of stored data
-    MblResourceDataType data_type_ = MblResourceDataType::INVALID;
+    ResourceDataType data_type_ = ResourceDataType::INVALID;
 
     // currently we don't have pointers in class members, so we can allow default ctor's 
     // and assign operators without worry.  
 };
 
-
-/**
- * @brief [resource_path, resource_typed_data_value] tuple.
- */
-struct MblCloudConnect_ResourcePath_Value
+struct ResourceSetOperation
 {
-    std::string path;
-    MblResourceData typed_data_value;
+    /**
+     * @brief Construct a new container for set operation. 
+     * @param input_data input data for set operation
+     */
+    ResourceSetOperation(
+        const ResourceData &input_data)
+    : input_data_(input_data) 
+    {}
+
+    const ResourceData input_data_; // set operation input data
+    CloudConnectStatus output_status_ = FAILED; // set operation output status
 };
 
-/**
- * @brief [resource_path, resource_data_type] tuple.
- */
-struct MblCloudConnect_ResourcePath_Type
+struct ResourceGetOperation
 {
-    std::string path;
-    MblResourceDataType data_type;
+    /**
+     * @brief Construct a new container for get operation. 
+     * @param get_input_path path of the resource who's value is required.
+     * @param get_input_type type of the resource data.
+     */
+    ResourceGetOperation(
+        const std::string &input_path, 
+        const ResourceDataType input_type)
+    : inout_data_(input_path, input_type) 
+    {}
+
+    ResourceData inout_data_;// get operation input and output data
+    CloudConnectStatus output_status_ = FAILED; // get operation output status
 };
 
-/**
- * @brief [resource_path, resource_typed_data_value, operation_status] tuple.
- */
-struct MblCloudConnect_ResourcePath_Value_Status
-{
-    std::string path;
-    MblResourceData typed_data_value;
-    MblError operation_status;
-};
-
-/**
- * @brief [resource_path, operation_status] tuple.
- */
-struct MblCloudConnect_ResourcePath_Status
-{
-    std::string path;
-    MblError operation_status;
-};
 
 } //namespace mbl
 

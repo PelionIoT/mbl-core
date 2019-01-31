@@ -19,7 +19,6 @@
 #ifndef MblCloudConnectIpcDBus_h_
 #define MblCloudConnectIpcDBus_h_
 
-#include "MblCloudConnectIpcInterface.h"
 #include <pthread.h>
 
 namespace mbl {
@@ -27,49 +26,110 @@ namespace mbl {
 class MblCloudConnectResourceBroker;
 
 /**
- * @brief This class provides an implementation for D-Bus IPC mechanism.
- * Implements MblCloudConnectIpcInterface interface. 
+ * @brief Implements an interface to the D-Bus IPC.
+ * This class provides an implementation for the handlers that 
+ * will allow comminication between Pelion Cloud Connect D-Bus 
+ * service and client applications.
  */
-class MblCloudConnectIpcDBus: public MblCloudConnectIpcInterface {
+class MblCloudConnectIpcDBus {
 
 public:
 
     MblCloudConnectIpcDBus(MblCloudConnectResourceBroker &ccrb);
     ~MblCloudConnectIpcDBus() override;
 
-    // Implementation of MblCloudConnectIpcInterface::init()
-    MblError init() override;
+/**
+ * @brief Initializes IPC mechanism.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    MblError init();
 
-    // Implementation of MblCloudConnectIpcInterface::de_init()
-    MblError de_init() override;
+/**
+ * @brief Deinitializes IPC mechanism.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    MblError de_init();
 
-    // Implementation of MblCloudConnectIpcInterface::run()
-    MblError run() override;
+/**
+ * @brief Runs IPC event-loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    MblError run();
 
-    // Implementation of MblCloudConnectIpcInterface::stop()
-    MblError stop() override;
+/**
+ * @brief Stops IPC event-loop.
+ * 
+ * @return MblError returns value Error::None if function succeeded, or error code otherwise.
+ */
+    MblError stop();
 
-    // Implementation of MblCloudConnectIpcInterface::update_registration_status
+/**
+ * @brief Sends registration request final status to the destination client application. 
+ * This function sends a final status of the registration request, that was initiated 
+ * by a client application via calling register_resources_async API. 
+ * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
+ *        that should be notified.
+ * @param access_token is a token that should be used by the client application in all APIs that 
+ *        access (in any way) to the registered set of resources. Value of this argument 
+ *        should be used by the client application only if registration was successfull 
+ *        for all resources.
+ * @param reg_status FIXME
+ * @return MblError returns Error::None if the message was successfully delivered, 
+ *         or error code otherwise. 
+ */
     MblError update_registration_status(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token,
-        const MblError reg_status) override;
+        const MblError reg_status);
 
-    // Implementation of MblCloudConnectIpcInterface::update_deregistration_status
-    MblError update_deregistration_status(
+/**
+ * @brief Sends deregistration request final status to the destination client application. 
+ * This function sends a final status of the deregistration request, that was initiated 
+ * by a client application via calling deregister_resources_async API. 
+ * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
+ *        that should be notified.
+ * @param dereg_status FIXME
+ * @return MblError returns Error::None if the message was successfully delivered, 
+ *         or error code otherwise. 
+ */
+virtual MblError update_deregistration_status(
         const uintptr_t ipc_conn_handle, 
-        const MblError dereg_status) override;
+        const MblError dereg_status);
 
-    // Implementation of MblCloudConnectIpcInterface::update_add_resource_instance_status
-    MblError update_add_resource_instance_status(
+/**
+ * @brief Sends resource instances addition request final status to the destination client application. 
+ * This function sends a final status of the resource instances addition request, that was initiated 
+ * by a client application via calling add_resource_instances_async API. 
+ * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
+ *        that should be notified.
+ * @param add_status FIXME
+ * @return MblError returns Error::None if the message was successfully delivered, 
+ *         or error code otherwise. 
+ */
+virtual MblError update_add_resource_instance_status(
         const uintptr_t ipc_conn_handle, 
-        const MblError add_status) override;
+        const MblError add_status);
 
-    // Implementation of MblCloudConnectIpcInterface::update_remove_resource_instance_status
-    MblError update_remove_resource_instance_status(
+/**
+ * @brief Sends resource instances removal request final status to the destination client application. 
+ * This function sends a final status of the resource instances removal request, that was initiated 
+ * by a client application via calling remove_resource_instances_async API. 
+ * @param ipc_conn_handle is a handle to the IPC unique connection information of the application 
+ *        that should be notified.
+ * @param remove_status FIXME
+ * @return MblError returns Error::None if the message was successfully delivered, 
+ *         or error code otherwise. 
+ */
+virtual MblError update_remove_resource_instance_status(
         const uintptr_t ipc_conn_handle, 
-        const MblError remove_status) override;
+        const MblError remove_status);
 
+// FIX return MblError description !!!!!!!!!!!!!!!!!!!!!!!!!
+
+// FIX ALL FIXME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 private:
@@ -82,6 +142,12 @@ private:
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
     MblCloudConnectResourceBroker &ccrb_;
+
+    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    MblCloudConnectIpcDBus(const MblCloudConnectIpcDBus&) = delete;
+    MblCloudConnectIpcDBus & operator = (const MblCloudConnectIpcDBus&) = delete;
+    MblCloudConnectIpcDBus(MblCloudConnectIpcDBus&&) = delete;
+    MblCloudConnectIpcDBus& operator = (MblCloudConnectIpcDBus&&) = delete;    
 };
 
 } // namespace mbl
