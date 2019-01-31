@@ -85,7 +85,7 @@ public:
  * @return MblError returns Error::None if the message was successfully delivered, 
  *         or error code otherwise. 
  */
-virtual MblError update_deregistration_status(
+    MblError update_deregistration_status(
         const uintptr_t ipc_conn_handle, 
         const MblError dereg_status);
 
@@ -99,7 +99,7 @@ virtual MblError update_deregistration_status(
  * @return MblError returns Error::None if the message was successfully delivered, 
  *         or error code otherwise. 
  */
-virtual MblError update_add_resource_instance_status(
+    MblError update_add_resource_instance_status(
         const uintptr_t ipc_conn_handle, 
         const MblError add_status);
 
@@ -113,7 +113,7 @@ virtual MblError update_add_resource_instance_status(
  * @return MblError returns Error::None if the message was successfully delivered, 
  *         or error code otherwise. 
  */
-virtual MblError update_remove_resource_instance_status(
+    MblError update_remove_resource_instance_status(
         const uintptr_t ipc_conn_handle, 
         const MblError remove_status);
 
