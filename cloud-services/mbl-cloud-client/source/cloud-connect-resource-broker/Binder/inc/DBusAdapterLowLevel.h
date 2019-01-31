@@ -15,8 +15,13 @@
  * limitations under the License.
  */
 
-#ifndef MblSdbusAdaptor_h_
-#define MblSdbusAdaptor_h_
+#ifndef _DBusAdapterLowLevel_h_
+#define _DBusAdapterLowLevel_h_
+
+// FIXME : remove later
+#define tr_info(s)
+#define tr_debug(s)
+#define tr_error(s)
 
 // Positive values for status, negative values for errors
 typedef enum CCRBStatus
@@ -37,10 +42,10 @@ typedef struct MblSdbusCallbacks
 } MblSdbusCallbacks;
 
 
-int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks);
-int32_t SdBusAdaptor_deinit();
-int32_t SdBusAdaptor_run();
-int32_t SdBusAdaptor_stop();
-int32_t SdBusAdaptor_attach_pipe_fd(int fd);
+int32_t DBusAdapterLowLevel_init(const MblSdbusCallbacks *callbacks);
+int32_t DBusAdapterLowLevel_deinit();
+int32_t DBusAdapterLowLevel_run();
+int32_t DBusAdapterLowLevel_stop();
+int32_t DBusAdapterLowLevel_attach_pipe_fd(int fd);
 
-#endif // MblSdbusAdaptor_h_
+#endif // _DBusAdapterLowLevel_h_

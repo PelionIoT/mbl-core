@@ -4,69 +4,86 @@
 #include <stdint.h>
 #include <semaphore.h>
 
-#include "MblSdbusBinder.h"
-
+#include "DBusAdapter.h"
+#include "DBusAdapterMsg.h"
 
 extern "C" {
-#include "MblSdbusPipe.h"
+#include "DBusAdapterMailbox.h"
 }
 
-TEST(Sdbus, CreateDestroyPipe) {
-    MblSdbusPipe pipe;
+#define DBUS_MAILBOX_WAIT_TIME_MS      100000
 
-    ASSERT_EQ(MblSdbusPipe_create(&pipe), 0);
-    ASSERT_EQ(MblSdbusPipe_destroy(&pipe), 0);
+TEST(DBusAdapterMailBox, AllocFree) {
+    DBusAdapterMailbox mailbox;
+
+    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);
+    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
 }
 
-TEST(Sdbus, SendReceiveRawMessageSingleThread) {
-    MblSdbusPipe pipe;
-    MblSdbusPipeMsg write_msg;
-    MblSdbusPipeMsg *read_msg;
+TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_SingleThread) {
+    DBusAdapterMailbox mailbox;
+    struct DBusAdapterMsg input_msg;
+    struct DBusAdapterMsg output_msg;
+    uintptr_t msg_ptr_as_int;
+    std::string str("Hello1 Hello2 Hello3");
 
-    write_msg.type = PIPE_MSG_TYPE_RAW;
-    strncpy(write_msg.msg.raw.bytes, "Hello1 Hello2 Hello3", sizeof(write_msg.msg.raw.bytes));;
+    memset(&input_msg, 0, sizeof(input_msg));
+    input_msg.type = DBUS_ADAPTER_MSG_RAW;
+    input_msg.payload_len = str.length();
+    strncpy(
+        input_msg.payload.raw.bytes,
+        str.c_str(),
+        str.length());
 
-    ASSERT_EQ(MblSdbusPipe_create(&pipe), 0);
-    ASSERT_EQ(MblSdbusPipe_msg_send(&pipe, &write_msg), 0);
-    ASSERT_EQ(MblSdbusPipe_msg_receive(&pipe, &read_msg), 0);
-    ASSERT_EQ(strcmp(write_msg.msg.raw.bytes, read_msg->msg.raw.bytes), 0);
-    ASSERT_EQ(MblSdbusPipe_destroy(&pipe), 0);
-    free(read_msg);
+    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);
+
+    // send / receive / compare 100 times
+    for (auto i = 0; i < 100; i++){
+        ASSERT_EQ(DBusAdapterMailbox_send(&mailbox, &input_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(DBusAdapterMailbox_receive(&mailbox, &output_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(memcmp(&input_msg, &output_msg, sizeof(DBusAdapterMsg)), 0);
+    }
+    
+    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
 }
 
-static void* reader_thread_start(void *_pipe)
+
+static void* reader_thread_start(void *mailbox)
 {
     int     result;
     char    ch='A';
-    MblSdbusPipeMsg *read_msg;
-    MblSdbusPipe *pipe = (MblSdbusPipe*)_pipe;
+    DBusAdapterMsg output_msg;
+    DBusAdapterMailbox *mailbox_ = (DBusAdapterMailbox*)mailbox;
+    uint64_t expected_sequence_num = 0;
 
-    for (char ch='A'; ch < 'Z'+1; ++ch){
-        if (MblSdbusPipe_msg_receive(pipe, &read_msg) != 0){
+    for (char ch='A'; ch < 'Z'+1; ++ch, ++expected_sequence_num){
+        if (DBusAdapterMailbox_receive(mailbox_, &output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
-        if ((read_msg->type != PIPE_MSG_TYPE_RAW) ||
-            (read_msg->msg.raw.bytes[0] != ch)) {
-                 pthread_exit((void*)-1);
+        if ((output_msg.type != DBUS_ADAPTER_MSG_RAW) ||
+            (output_msg.payload_len != 1) ||
+            (output_msg.payload.raw.bytes[0] != ch)||
+            (expected_sequence_num != output_msg._sequence_num))
+        {
+            pthread_exit((void*)-1);
         }
-        std::cout << ch << ":" <<  read_msg->msg.raw.bytes[0] << std::endl;
-        free(read_msg);
     }
     pthread_exit((void*)0);
 }
 
-static void* writer_thread_start(void *_pipe)
+static void* writer_thread_start(void *mailbox)
 {
     char    ch='A';
-    MblSdbusPipeMsg write_msg;
-    MblSdbusPipe *pipe = (MblSdbusPipe*)_pipe;
-
-    memset(&write_msg, 0, sizeof(write_msg));
-    write_msg.type = PIPE_MSG_TYPE_RAW;
+    DBusAdapterMsg input_message;
+    DBusAdapterMailbox *mailbox_ = (DBusAdapterMailbox*)mailbox_;
+    
+    memset(&input_message, 0, sizeof(input_message));
+    input_message.type = DBUS_ADAPTER_MSG_RAW;
+    input_message.payload_len = 1;
 
     for (char ch='A'; ch < 'Z'+1; ++ch){
-        write_msg.msg.raw.bytes[0] = ch;
-        if (MblSdbusPipe_msg_send(pipe, &write_msg) != 0){
+        input_message.payload.raw.bytes[0] = ch;
+        if (DBusAdapterMailbox_send(mailbox_, &input_message, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
     }
@@ -74,21 +91,22 @@ static void* writer_thread_start(void *_pipe)
     pthread_exit((void*)0);
 }
 
-TEST(Sdbus, SendReceiveRawMessageMultiThread) {
-    pthread_t   tid1,tid2;
-    MblSdbusPipe pipe;    
-    int *retval;
 
-    ASSERT_EQ(MblSdbusPipe_create(&pipe), 0);    
-    ASSERT_EQ(pthread_create(&tid1, NULL, reader_thread_start, &pipe), 0);
-    ASSERT_EQ(pthread_create(&tid2, NULL, writer_thread_start, &pipe), 0);
-    ASSERT_EQ(pthread_join(tid1, (void**)&retval), 0);
+TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_MultiThread) {
+    pthread_t   writer_tid, reader_tid;
+    DBusAdapterMailbox mailbox;    
+    void *retval;
+
+    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);    
+    ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
+    ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
+    ASSERT_EQ(pthread_join(writer_tid, &retval), 0);
     ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(pthread_join(tid2, (void**)&retval), 0);
+    ASSERT_EQ(pthread_join(reader_tid, &retval), 0);
     ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(MblSdbusPipe_destroy(&pipe), 0);
+    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
 }
-
+/*
 typedef struct ccrm_intra_thread
 {
    sem_t sem; 
@@ -119,7 +137,7 @@ static void* ccrm_thread_start(void* _data)
 TEST(Sdbus, StartStopWithPipeMsg) { 
     pthread_t   tid;
     int *retval;
-    MblSdbusPipeMsg msg;
+    DBusAdapterMsg msg;
     ccrm_intra_thread data;
 
     memset(&msg, 0, sizeof(msg)); 
@@ -133,17 +151,17 @@ TEST(Sdbus, StartStopWithPipeMsg) {
             
     //send mesage in pipe in raw way, not via API, no need to fill data - just signal exit
     msg.type = PIPE_MSG_TYPE_EXIT;
-    ASSERT_EQ(MblSdbusPipe_msg_send(&data.pipe, &msg), 0);
+    ASSERT_EQ(DBusAdapterMailbox_msg_send(&data.pipe, &msg), 0);
 
     // FIXME: all pthread join must be converted to pthread_timedjoin_np    
     ASSERT_EQ(pthread_join(tid, (void**)&retval), 0); 
     ASSERT_EQ((uintptr_t)retval, 0);
     ASSERT_EQ(sem_destroy(&data.sem), 0);
-    ASSERT_EQ(MblSdbusPipe_destroy(&data.pipe), 0);
+    ASSERT_EQ(DBusAdapterMailbox_destroy(&data.pipe), 0);
     pthread_exit((void*)0);
 }
 
-
+*/
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();    

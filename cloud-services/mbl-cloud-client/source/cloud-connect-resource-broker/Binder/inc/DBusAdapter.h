@@ -16,59 +16,68 @@
  */
 
 
-#ifndef MblSdbusBinder_h_
-#define MblSdbusBinder_h_
+#ifndef _DBusAdapter_h_
+#define _DBusAdapter_h_
 
-#include "MblDBusBinder.h"
+// FIXME : remove later
+#define tr_info(s)
+#define tr_debug(s)
+#define tr_error(s)
+
+#include "MblError.h"
+
 extern "C" {
-    #include "MblSdbusAdaptor.h"
-    #include "MblSdbusPipe.h"
+    #include "DBusAdapterMailbox.h"
+    #include "DBusAdapterLowLevel.h"
 }
 
-namespace mbl {
+struct DBusAdapterMsg;
 
-struct MblSdbusPipeMsg;
+namespace mbl {
 
 /*! \file MblSdbusBinder.h
  *  \brief MblSdbusBinder.
  *  This class provides an binding and abstraction interface for a D-Bus IPC.
 */
-class MblSdbusBinder : MblDBusBinder{
-
+class DBusAdapter
+{
 public:
 
-    MblSdbusBinder();
-    ~MblSdbusBinder() = default;
+    DBusAdapter();
+    ~DBusAdapter() = default;
     
     MblError init();
     MblError deinit();
     MblError start();
     MblError stop();
 
-    MblError mailbox_push_msg(struct MblSdbusPipeMsg *msg);    
+    // TODO : Use smart pointer?
+    MblError mailbox_push_msg(struct DBusAdapterMsg *msg);    
 
 private:
-    enum class Status {INITALIZED, FINALIZED};
+    enum class Status {INITALIZED, NON_INITALIZED};
     
-    Status status_ = Status::FINALIZED;
+    Status status_ = Status::NON_INITALIZED;
 
     MblSdbusCallbacks callbacks_;
-    MblSdbusPipe mailbox_;
+    DBusAdapterMailbox mailbox_;
     
-    MblError mailbox_pop_msg(struct MblSdbusPipeMsg *msg);
+    // TODO : Use smart pointer?
+    MblError mailbox_pop_msg(struct DBusAdapterMsg **msg);
 
     // D-BUS callbacks
     static int register_resources_callback(const char *json_filem, CCRBStatus *ccrb_status);
     static int deregister_resources_callback(const char *access_token, CCRBStatus *ccrb_status);
 
+    // TODO : needed?
     // No copying or moving 
     // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
-    MblSdbusBinder(const MblSdbusBinder&) = delete;
-    MblSdbusBinder & operator = (const MblSdbusBinder&) = delete;
-    MblSdbusBinder(MblSdbusBinder&&) = delete;
-    MblSdbusBinder& operator = (MblSdbusBinder&&) = delete;    
+    DBusAdapter(const DBusAdapter&) = delete;
+    DBusAdapter & operator = (const DBusAdapter&) = delete;
+    DBusAdapter(DBusAdapter&&) = delete;
+    DBusAdapter& operator = (DBusAdapter&&) = delete;    
 };
 
 } // namespace mbl
 
-#endif // MblSdbusBinder_h_
+#endif // _DBusAdapter_h_

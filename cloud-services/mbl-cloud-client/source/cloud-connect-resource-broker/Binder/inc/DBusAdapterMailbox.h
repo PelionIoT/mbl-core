@@ -16,26 +16,38 @@
  */
 
 
-#ifndef MblSdbusPipe_h_
-#define MblSdbusPipe_h_
+#ifndef _DBusAdapterMailbox_h_
+#define _DBusAdapterMailbox_h_
 
 #include <poll.h>
 #include <stdint.h>
 
+// FIXME : remove later
+#define tr_info(s)
+#define tr_debug(s)
+#define tr_error(s)
+
+#define DBUS_MAILBOX_WAIT_INFINITE  (-1)
+
+struct DBusAdapterMsg;
+
+// TODO : consider change name to mailbox
 // bi directional unnamed-pipes mailbox
 // fdtab[0] is used to send messages to ccrb thread
 // fdtab[1] is used to send replies from ccrb thread
-typedef struct MblSdbusPipe {
-
+typedef struct DBusAdapterMailbox {
+    uint32_t        protection_flag;
     int             pipefd[2];    // Store read (0) and write (1) file descriptors for the pipe
     struct pollfd   pollfd[2];    // Store polling file descriptors on the pipe
-}MblSdbusPipe;   
+    uint64_t        _sequence_num; // starting from 0 and incremented
+}DBusAdapterMailbox;   
 
-// TODO : fix all name of this module to DBusAdapterMailBox
-int MblSdbusPipe_create(MblSdbusPipe *pipe_object);
-int MblSdbusPipe_destroy(MblSdbusPipe *pipe_object);
-int MblSdbusPipe_data_send(MblSdbusPipe *pipe_object , uint8_t *data, uint32_t data_size);
-int MblSdbusPipe_data_receive(MblSdbusPipe *pipe_object , uint8_t **data);
+// TODO : fix all name of this module to DBusAdapterMailbox
+int DBusAdapterMailbox_alloc(DBusAdapterMailbox *mailbox);
+int DBusAdapterMailbox_free(DBusAdapterMailbox *mailbox);
+int DBusAdapterMailbox_send(
+    DBusAdapterMailbox *mailbox, struct DBusAdapterMsg *msg, int timeout_milliseconds);
+int DBusAdapterMailbox_receive(
+    DBusAdapterMailbox *mailbox , struct DBusAdapterMsg *msg, int timeout_milliseconds);
 
-
-#endif // MblSdbusPipe_h_
+#endif // _DBusAdapterMailbox_h_

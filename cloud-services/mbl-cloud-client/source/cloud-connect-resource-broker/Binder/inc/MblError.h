@@ -64,10 +64,10 @@ enum Type {
     UpdateFatalRebootRequired           = 0x020d,
     UpdateErrorInvalidHash              = 0x020e,
 
-    // TODO - move later somewhere else (internal errors)
+    // TODO - replace
     AlreadyInitialized                  = 0x0300,
     NotInitialized                      = 0x0301,
-    SdBusError                          = 0x0302,
+    DBusErr_Temporary                   = 0x0302,
 
     EnrollmentErrorBase                 = 0x0400,
     EnrollmentErrorEnd                  = 0x0401

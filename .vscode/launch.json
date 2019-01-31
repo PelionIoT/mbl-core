@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/build/runTests",
-            "args": [ "--gtest_filter=*StartStopWithPipeMsg*" ],
+            "args": [ "--gtest_filter=*SendReceiveRawMessagePtr_MultiThread*" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [ ],

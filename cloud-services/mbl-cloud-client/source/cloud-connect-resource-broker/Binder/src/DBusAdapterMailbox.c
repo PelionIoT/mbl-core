@@ -21,92 +21,103 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>              /* Obtain O_* constant definitions */
+#include <stdint.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <errno.h> 
 
-#include "MblSdbusPipe.h"
+
+#include "DBusAdapterMsg.h"
+#include "DBusAdapterMailbox.h"
+
 
 #define READ                        0
 #define WRITE                       1
-#define MAX_TIME_TO_POLL_MILLISEC   10
+#define DBUS_MAILBOX_PROTECTION_FLAG    0xF0F0F0F0
 
-/* In Linux versions before 2.6.11, the capacity of a pipe was the same as the system page size 
-(e.g., 4096 bytes on i386). Since Linux 2.6.11, the pipe capacity is 65536 bytes.
-Simplify things here : allow maximum size of 4096 for now */
-#define MAX_DATA_SIZE   4096
-
-int MblSdbusPipe_create(MblSdbusPipe *pipe_object) 
+int DBusAdapterMailbox_alloc(DBusAdapterMailbox *mailbox) 
 {
+    // TODO - consider refacto all 'r' to 'retval'
     int r;
 
-    memset (pipe_object, 0, sizeof(pipe_object));
-    r = pipe2(pipe_object->pipefd, O_NONBLOCK);
+    assert(NULL != mailbox);
+    assert(DBUS_MAILBOX_PROTECTION_FLAG != mailbox->protection_flag);
+
+    memset (mailbox, 0, sizeof(mailbox));
+    r = pipe2(mailbox->pipefd, O_NONBLOCK);
     if (r != 0){
         return r;
     }
 
     // The first index is used for reading, polled for incoming input
-    pipe_object->pollfd[READ].fd = pipe_object->pipefd[READ];
-    pipe_object->pollfd[READ].events = POLLIN;
-    pipe_object->pollfd[READ].revents = 0;
+    mailbox->pollfd[READ].fd = mailbox->pipefd[READ];
+    mailbox->pollfd[READ].events = POLLIN;
+    mailbox->pollfd[READ].revents = 0;
 
     // The second index is used for writing, polled to check if writing is possible
-    pipe_object->pollfd[WRITE].fd = pipe_object->pipefd[WRITE];
-    pipe_object->pollfd[WRITE].events = POLLOUT;
-    pipe_object->pollfd[WRITE].revents = 0;
-
+    mailbox->pollfd[WRITE].fd = mailbox->pipefd[WRITE];
+    mailbox->pollfd[WRITE].events = POLLOUT;
+    mailbox->pollfd[WRITE].revents = 0;
+    mailbox->protection_flag = DBUS_MAILBOX_PROTECTION_FLAG;
     return 0;
 }
 
-int MblSdbusPipe_destroy(MblSdbusPipe *pipe_object) 
+int DBusAdapterMailbox_free(DBusAdapterMailbox *mailbox) 
 {
     int r;
     
     // TODO : we need to make sure no one is reading/writing to the pipe
-    // usually each side closes its egde, but here we might make easier assumptions    
-    r = close(pipe_object->pipefd[0]);
+    // usually each side closes its edge, but here we might make easier assumptions    
+    r = close(mailbox->pipefd[0]);
     if (r != 0){
         return r;
     }    
 
-    r = close(pipe_object->pipefd[1]);
+    r = close(mailbox->pipefd[1]);
     if (r != 0){
         return r;
     }    
 
-    memset (pipe_object, 0, sizeof(pipe_object));
+    memset (mailbox, 0, sizeof(mailbox));
     return 0;
 }
 
-
-int MblSdbusPipe_data_send(MblSdbusPipe *pipe_object , u_int8_t *data, uint32_t data_size) 
+int DBusAdapterMailbox_send(DBusAdapterMailbox *mailbox, struct DBusAdapterMsg *msg, int timeout_milliseconds)
 {
     int r;
-    u_int8_t *data_ = NULL;
 
-    if (data_size > MAX_DATA_SIZE){
+    if (NULL == msg){
         return -1;
     }
-
+    if (msg->payload_len > DBUS_MAX_MSG_PAYLOAD_SIZE){
+        return -1;
+    }
+    if (msg->payload_len == 0){
+        return -1;
+    }
+    
     // lets be sure that pipe is ready for write, we do not wait and do not retry
     // since this pipe is used only to transfer pointers - being full shows we have 
     // critical issue    
-    r = poll(&pipe_object->pollfd[WRITE], 1, MAX_TIME_TO_POLL_MILLISEC);
+    r = poll(&mailbox->pollfd[WRITE], 1, timeout_milliseconds);
     if (r == 0){
         // timeout!
         return -1;
     }
     if (r < 0){
         //some error!
+        printf("%d\n", errno);
         return r;
     }
-    if (pipe_object->pollfd[WRITE].revents & POLLOUT) {
-        //can write - write the allocated pointer
-        r = write(pipe_object->pollfd[WRITE].fd, data, data_size);
+    if (mailbox->pollfd[WRITE].revents & POLLOUT) {
+        //can write - write a full message type, even if some unneeded data is written at the end
+        msg->_sequence_num = mailbox->_sequence_num++;
+            r = write(mailbox->pipefd[WRITE], msg, sizeof(struct DBusAdapterMsg));
         if (r <= 0){
             //nothing written or error!
             return r;
         }
-        if (r != sizeof(data)){
+        if (r != sizeof(struct DBusAdapterMsg)){
             return -1;
         }
     }
@@ -119,12 +130,15 @@ int MblSdbusPipe_data_send(MblSdbusPipe *pipe_object , u_int8_t *data, uint32_t 
 }
 
 // receiver must free message
-int MblSdbusPipe_data_receive(MblSdbusPipe *pipe_object , u_int8_t **data)
+int DBusAdapterMailbox_receive(DBusAdapterMailbox *mailbox, struct DBusAdapterMsg *msg, int timeout_milliseconds)
 {
     int r;
-    uint8_t *data_;
 
-    r = poll(&pipe_object->pollfd[READ], 1, MAX_TIME_TO_POLL_MILLISEC);
+    if (NULL == msg){
+        return -1;
+    }
+
+    r = poll(&mailbox->pollfd[READ], 1, timeout_milliseconds);
     if (r == 0){
         // timeout!
         return -1;
@@ -133,14 +147,14 @@ int MblSdbusPipe_data_receive(MblSdbusPipe *pipe_object , u_int8_t **data)
         //some error!
         return r;
     }
-    if (pipe_object->pollfd[READ].revents & POLLIN) {
-        //can read - get the allocated pointer
-        r = read(pipe_object->pollfd[READ].fd, &data, sizeof(uint8_t*));
+    if (mailbox->pollfd[READ].revents & POLLIN) {
+        //can read - read maximum bytes
+        r = read(mailbox->pipefd[READ], msg, sizeof(struct DBusAdapterMsg));
         if (r <= 0){
             //nothing read or error!
            return r;
         }
-        if (r != sizeof(data)){
+        if (r != sizeof(struct DBusAdapterMsg)){
             return -1;
         }
     }
@@ -149,6 +163,5 @@ int MblSdbusPipe_data_receive(MblSdbusPipe *pipe_object , u_int8_t **data)
         return -1;
     }
 
-    *data = data_;
     return 0;
 }

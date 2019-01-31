@@ -15,38 +15,37 @@
  * limitations under the License.
  */
 
-#include "MblSdbusBinder.h"
+#include <string>
+
+#include "DBusAdapter.h"
+#include "DBusAdapterMsg.h"
+#include "MblError.h"
 
 extern "C"
 {
-#include <systemd/sd-bus.h>
-#include "MblSdbusAdaptor.h"
-#include "MblSdbusPipe.h"
+    #include <systemd/sd-bus.h>
+    #include "DBusAdapterLowLevel.h"
+    #include "DBusAdapterMailbox.h"
 }
-
-#include <string>
-
-// FIXME: uncomment later
-//#include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl
 {
-
-int MblSdbusBinder::register_resources_callback(const char *json_file, CCRBStatus *ccrb_status)
+/*
+int DBusAdapter::register_resources_callback(const char *json_file, CCRBStatus *ccrb_status)
 {
     std::string json(json_file);
     return 0;
 }
 
-int MblSdbusBinder::deregister_resources_callback(const char *access_token, CCRBStatus *ccrb_status)
+int DBusAdapter::deregister_resources_callback(const char *access_token, CCRBStatus *ccrb_status)
 {
     std::string json(access_token);
     return 0;
 }
 
-MblSdbusBinder::MblSdbusBinder()
+DBusAdapter::DBusAdapter()
 {
     tr_debug(__PRETTY_FUNCTION__);
 
@@ -55,7 +54,7 @@ MblSdbusBinder::MblSdbusBinder()
     callbacks_.deregister_resources_callback = deregister_resources_callback;
 }
 
-MblError MblSdbusBinder::init()
+MblError DBusAdapter::init()
 {
     tr_debug(__PRETTY_FUNCTION__);
 
@@ -64,14 +63,14 @@ MblError MblSdbusBinder::init()
         return MblError::AlreadyInitialized;
     }
 
-    if (SdBusAdaptor_init(&callbacks_) != 0)
+    if (DBusAdapterLowLevel_init(&callbacks_) != 0)
     {
-        return MblError::SdBusError;
+        return MblError::DBusErr_Temporary;
     }
 
-    if (MblSdbusPipe_create(&this->mailbox_) != 0)
+    if (DBusAdapterMailbox_alloc(&mailbox_) != 0)
     {
-        return MblError::SdBusError;
+        return MblError::DBusErr_Temporary;
     }
 
     status_ = Status::INITALIZED;
@@ -79,41 +78,41 @@ MblError MblSdbusBinder::init()
 }
 
 // FIXME = do best effort
-MblError MblSdbusBinder::deinit()
+MblError DBusAdapter::deinit()
 {
     tr_debug(__PRETTY_FUNCTION__);
 
-    if (SdBusAdaptor_deinit() != 0)
+    if (DBusAdapterLowLevel_deinit() != 0)
     {
-        return MblError::SdBusError;
+        return MblError::DBusErr_Temporary;
     }
 
-    if (MblSdbusPipe_destroy(&mailbox_) != 0)
+    if (DBusAdapterMailbox_free(&mailbox_) != 0)
     {
-        return MblError::SdBusError;
+        return MblError::DBusErr_Temporary;
     }
 
-    status_ = Status::FINALIZED;
+    status_ = Status::NON_INITALIZED;
     return MblError::None;
 }
 
-MblError MblSdbusBinder::start()
+MblError DBusAdapter::start()
 {
     if (status_ != Status::INITALIZED)
     {
         return MblError::NotInitialized;
     }
 
-    int32_t r = SdBusAdaptor_run();
+    int32_t r = DBusAdapterLowLevel_run();
     if (r != 0)
     {
-        return MblError::SdBusError;
+        return MblError::DBusErr_Temporary;
     }
 
     return MblError::None;
 }
 
-MblError MblSdbusBinder::stop()
+MblError DBusAdapter::stop()
 {
     if (status_ != Status::INITALIZED)
     {
@@ -121,56 +120,62 @@ MblError MblSdbusBinder::stop()
     }
 }
 
-// TODO : Cconsider implementing overloading - mailbox_send_msg
 // TODO : check when need to free
-MblError MblSdbusBinder::mailbox_push_msg(MblSdbusPipeMsg *msg)
+MblError DBusAdapter::mailbox_push_msg(struct DBusAdapterMsg *msg)
 {
-    MblSdbusPipeMsg *msg_;
+    struct DBusAdapterMsg *msg_;
     int r;
 
     if (nullptr == msg){
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
-    if (msg->type >= PIPE_MSG_TYPE_LAST)
+    if (msg->type >= DBUS_ADAPTER_MSG_LAST)
     {
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
 
-    msg_ = (MblSdbusPipeMsg *)malloc(sizeof(MblSdbusPipeMsg));
+    msg_ = (DBusAdapterMsg *)malloc(sizeof(DBusAdapterMsg));
     if (NULL == msg_)
     {
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
-    memcpy(msg_, msg, sizeof(MblSdbusPipeMsg));
-    r = MblSdbusPipe_data_send(mailbox_, msg_);
+    
+    memcpy(msg_, msg, sizeof(DBusAdapterMsg));
+    r = DBusAdapterMailbox_send(&mailbox_, reinterpret_cast<std::uintptr_t>(msg_));
     if (r < 0){
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
     return MblError::None;
 }
 
 
 //TODO : check when need to free
-MblError MblSdbusBinder::mailbox_pop_msg(MblSdbusPipeMsg **msg)
+MblError DBusAdapter::mailbox_pop_msg(struct DBusAdapterMsg **msg)
 {
-    MblSdbusPipeMsg *msg_;
+    int r;
+    uintptr_t ptr;
+    struct DBusAdapterMsg *msg_;
 
     if (nullptr == msg){
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
 
-    r = MblSdbusPipe_data_receive(mailbox_, &msg_);
+    r = DBusAdapterMailbox_ptr_receive(&mailbox_, &ptr);
     if (r < 0){
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
 
-    if (msg_->type >= PIPE_MSG_TYPE_LAST)
+    msg_ = reinterpret_cast<DBusAdapterMsg*>(ptr);
+
+    if (msg_->type >= DBUS_ADAPTER_MSG_LAST)
     {
         // TODO - free?
-        return MblError::CCRBStartFailed;
+        return MblError::DBusErr_Temporary;
     }
+    
     *msg = msg_;
+
     return MblError::None;
 }
-
+*/
 } // namespace mbl

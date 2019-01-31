@@ -24,19 +24,9 @@
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 
-#include "MblSdbusAdaptor.h"
-//#include "MblSdbusPipeMsg.h"
-
-// FIXME: uncomment later
-//#include "mbed-trace/mbed_trace.h"
-
-// FIXME : remove later
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
+#include "DBusAdapterLowLevel.h"
 
 #define TRACE_GROUP "ccrb-dbus"
-
 
 
 typedef struct MblSdbus
@@ -162,7 +152,7 @@ static const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_END
 };
 
-static int32_t SdBusAdaptor_event_loop_init(MblSdEventLoop *sd_event_loop)
+static int32_t event_loop_init(MblSdEventLoop *sd_event_loop)
 {    
     tr_debug(__PRETTY_FUNCTION__);
     sd_event *loop = NULL;
@@ -183,13 +173,13 @@ on_failure:
 }
 
 
-static int32_t SdBusAdaptor_event_loop_finalize(MblSdEventLoop *sd_event_loop)
+static int32_t event_loop_finalize(MblSdEventLoop *sd_event_loop)
 {
     tr_debug(__PRETTY_FUNCTION__);
     sd_event_unref(sd_event_loop->ev_loop);
 }
 
-static int32_t SdBusAdaptor_bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *callbacks)
+static int32_t bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *callbacks)
 {
     tr_debug(__PRETTY_FUNCTION__);    
     int32_t r = -1;
@@ -249,7 +239,7 @@ on_failure:
     return r;
 }
 
-static int32_t SdBusAdaptor_bus_finalize(MblSdbus *sdbus)
+static int32_t bus_finalize(MblSdbus *sdbus)
 {
     tr_debug(__PRETTY_FUNCTION__); 
     int32_t r = 0;
@@ -260,25 +250,25 @@ static int32_t SdBusAdaptor_bus_finalize(MblSdbus *sdbus)
 
 ////////////////////////////////////// API //////////////////////////
 ////////////////////////////////////////////////////////////////////
-int32_t SdBusAdaptor_init(const MblSdbusCallbacks *callbacks)
+int32_t DBusAdapterLowLevel_init(const MblSdbusCallbacks *callbacks)
 {
-    SdBusAdaptor_bus_init(&ctx.sdbus, callbacks);
-    SdBusAdaptor_event_loop_init(&ctx.sdev_loop);
+    bus_init(&ctx.sdbus, callbacks);
+    event_loop_init(&ctx.sdev_loop);
 }
 
-int32_t SdBusAdaptor_deinit()
+int32_t DBusAdapterLowLevel_deinit()
 {
-    SdBusAdaptor_bus_finalize(&ctx.sdbus);
-    SdBusAdaptor_event_loop_finalize(&ctx.sdev_loop);
+    bus_finalize(&ctx.sdbus);
+    event_loop_finalize(&ctx.sdev_loop);
 }
 
-int32_t SdBusAdaptor_attach_pipe_fd(int fd)
+int32_t DBusAdapterLowLevel_attach_pipe_fd(int fd)
 {
     sd_event_source *event_source;    
     return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
 }
 
-int32_t SdBusAdaptor_run() 
+int32_t DBusAdapterLowLevel_run() 
 {
     int32_t r = 0;
 
