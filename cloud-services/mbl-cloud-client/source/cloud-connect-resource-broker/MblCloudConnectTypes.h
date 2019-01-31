@@ -1,20 +1,8 @@
 /*
- * Copyright (c) 2019 ARM Ltd.
+ * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: ...
  */
-
 
 #ifndef MblCloudConnectTypes_h_
 #define MblCloudConnectTypes_h_
@@ -50,34 +38,36 @@ public:
 
 /**
  * @brief Construct a new Resource Data object with 
- * uninitialized value. The value should be set strictly according to the
- * type provided during construction.    
+ * uninitialized value. 
+ * The value should be set in the future, when it is known. 
+ * The value should be set strictly according to the type provided 
+ * during construction.    
  * 
- * @param path resource path
+ * @param path resource path. Path can't be changed in future. 
  * @param type resource value type
  */
     ResourceData(const std::string &path, const ResourceDataType type);
 
 /**
- * @brief Construct a new Resource Data object and 
- * stores provided string. From the moment this object can store only string.
+ * @brief Construct a new Resource Data object and stores provided string. 
+ * From the moment this object can store only string.
  *  
- * @param path resource path
+ * @param path resource path. Path can't be changed in future. 
  * @param initial_value data that should be stored.
  */
     ResourceData(const std::string &path, const std::string &initial_value);
 
 /**
- * @brief Construct a new Resource Data object and stores 
- * provided integer. From the moment this object can store only integer.
+ * @brief Construct a new Resource Data object and stores provided integer. 
+ * From the moment this object can store only integer.
  * 
- * @param path resource path
+ * @param path resource path. Path can't be changed in future. 
  * @param initial_value data that should be stored.
  */
     ResourceData(const std::string &path, int64_t initial_value);
 
 /**
- * @brief Gets stored resource path.  
+ * @brief Gets stored resource path.
  * @return std::string resource path.
  */
     const std::string& get_path() const;
@@ -91,7 +81,7 @@ public:
 /**
  * @brief Stores provided string data. 
  * This API should be used if object was constructed to store string.
- * @param value data that should be stored.
+ * @param value data that should be stored. 
  */
     void set_value(const std::string &value); 
 
@@ -103,13 +93,13 @@ public:
     void set_value(int64_t value);
 
 /**
- * @brief Gets the value of stored string.  
+ * @brief Gets the value of stored string value.  
  * @return std::string returned value.
  */
     const std::string& get_value_string() const;
 
 /**
- * @brief Gets the value of stored integer.  
+ * @brief Gets the value of stored integer value.  
  * @return int64_t returned value.
  */
     int64_t get_value_integer() const;
@@ -127,7 +117,7 @@ private:
     ResourceDataType data_type_ = ResourceDataType::INVALID;
 
     // currently we don't have pointers in class members, so we can allow default ctor's 
-    // and assign operators without worry.  
+    // and assign operators without worry.
 };
 
 struct ResourceSetOperation
@@ -149,8 +139,8 @@ struct ResourceGetOperation
 {
     /**
      * @brief Construct a new container for get operation. 
-     * @param get_input_path path of the resource who's value is required.
-     * @param get_input_type type of the resource data.
+     * @param input_path path of the resource who's value is required.
+     * @param input_type type of the resource data.
      */
     ResourceGetOperation(
         const std::string &input_path, 
