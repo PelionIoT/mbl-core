@@ -72,14 +72,40 @@ MblError DBusAdapter::stop()
     return Error::None;
 }
 
+
 MblError DBusAdapter::update_registration_status(
     const uintptr_t , 
     const std::string &,
-    const MblError )
+    const CloudConnectStatus )
 {
     // empty for now
     return Error::None;
 }
+
+MblError DBusAdapter::update_deregistration_status(
+    const uintptr_t , 
+    const CloudConnectStatus )
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError DBusAdapter::update_add_resource_instance_status(
+    const uintptr_t , 
+    const CloudConnectStatus )
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError DBusAdapter::update_remove_resource_instance_status(
+    const uintptr_t , 
+    const CloudConnectStatus )
+{
+    // empty for now
+    return Error::None;
+}
+
 
 
 
