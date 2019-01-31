@@ -4,7 +4,7 @@ The MBL application runs in a virtual environment.
 
 To set up the virtual environment, perform the following steps:
 
-1. Copy test application subtree `/mbl-core/application-framework/tests/mbl-app-lifecycle`
+1. Copy test application subtree `mbl-core/application-framework/tests/mbl-app-lifecycle`
    to the device under the `/scratch` partition.
    
 1. Make sure the device has internet connection 
