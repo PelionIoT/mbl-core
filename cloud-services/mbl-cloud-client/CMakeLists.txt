@@ -14,7 +14,6 @@
 # limitations under the License.
 
 cmake_minimum_required (VERSION 2.8)
-#cmake_minimum_required (VERSION 3.9)
 SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
@@ -47,25 +46,13 @@ add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
-
-# Create the Cloud Client main executable
-FILE(GLOB MBL_CLOUD_CLIENT_MAIN
-    "${CMAKE_CURRENT_SOURCE_DIR}/tests/g-tests/*.cpp"
-)
-add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_MAIN}")
-
-
-# Create the Cloud Client static library
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
@@ -73,23 +60,17 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
-# Create static library "mblCloudClient"
-add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
+
+add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
-
-target_link_libraries(mbl-cloud-client libgtest_main.a)
-target_link_libraries(mbl-cloud-client libgtest.a)
-
-target_link_libraries(mbl-cloud-client mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 target_link_libraries(mbl-cloud-client factory-configurator-client)
 target_link_libraries(mbl-cloud-client pal)
 target_link_libraries(mbl-cloud-client mbedcrypto)
 target_link_libraries(mbl-cloud-client mbedtls)
 target_link_libraries(mbl-cloud-client mbedx509)
-
 target_link_libraries(mbl-cloud-client mbedTrace)
 target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
@@ -101,4 +82,3 @@ target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
 # link with systemd to get D-Bus libs
 target_link_libraries(mbl-cloud-client systemd)
-

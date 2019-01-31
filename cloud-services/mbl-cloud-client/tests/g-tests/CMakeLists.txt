@@ -16,7 +16,7 @@ pkg_check_modules(JSONCPP jsoncpp)
 project(mblCcrbTests)
 
 
-add_compile_options(-Werror)
+#add_compile_options(-Werror)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Wformat=2)
