@@ -187,8 +187,8 @@ def install_package_and_run_container(package_path):
     result = app_update_manager.stop_container(app_id, APP_STOP_TIMEOUT)
     # It is fine if container does not exist...nothing to stop
     if (
-        result != Error.SUCCESS and 
-            result != Error.ERR_CONTAINER_DOES_NOT_EXIST
+        result != Error.SUCCESS
+        and result != Error.ERR_CONTAINER_DOES_NOT_EXIST
     ):
         return result
     # Remove package (app id is the package name)
