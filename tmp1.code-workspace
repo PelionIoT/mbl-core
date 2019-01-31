@@ -4,10 +4,7 @@
 			"path": "/home/gillev01/projects/clones/mbed-cloud-client"
 		},
 		{
-			"path": "/home/gillev01/projects/clones/mbl-core/cloud-services/mbl-cloud-client"
-		},
-		{
-			"path": "."
+			"path": "/home/gillev01/projects/clones/mbl-core/"
 		},
 		{
 			"path": "/home/gillev01/projects/clones/systemd/src/libsystemd"

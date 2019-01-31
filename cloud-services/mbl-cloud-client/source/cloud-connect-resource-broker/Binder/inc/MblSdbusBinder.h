@@ -27,6 +27,8 @@ extern "C" {
 
 namespace mbl {
 
+struct MblSdbusPipeMsg;
+
 /*! \file MblSdbusBinder.h
  *  \brief MblSdbusBinder.
  *  This class provides an binding and abstraction interface for a D-Bus IPC.
@@ -43,14 +45,17 @@ public:
     MblError start();
     MblError stop();
 
+    MblError mailbox_push_msg(struct MblSdbusPipeMsg *msg);    
+
 private:
     enum class Status {INITALIZED, FINALIZED};
     
     Status status_ = Status::FINALIZED;
 
     MblSdbusCallbacks callbacks_;
-    MblSdbusPipe input_messages_;
-    MblSdbusPipe output_messages_;
+    MblSdbusPipe mailbox_;
+    
+    MblError mailbox_pop_msg(struct MblSdbusPipeMsg *msg);
 
     // D-BUS callbacks
     static int register_resources_callback(const char *json_filem, CCRBStatus *ccrb_status);

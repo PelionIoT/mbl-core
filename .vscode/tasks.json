@@ -9,7 +9,7 @@
             },
             "command": "cmake",
             "args": [
-                "${workspaceRoot}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/"
+                ".."
             ],
             "group": "build",
             "presentation": {

@@ -25,6 +25,7 @@
 #include <systemd/sd-event.h>
 
 #include "MblSdbusAdaptor.h"
+//#include "MblSdbusPipeMsg.h"
 
 // FIXME: uncomment later
 //#include "mbed-trace/mbed_trace.h"

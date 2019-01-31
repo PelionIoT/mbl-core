@@ -89,15 +89,14 @@ TEST(Sdbus, SendReceiveRawMessageMultiThread) {
     ASSERT_EQ(MblSdbusPipe_destroy(&pipe), 0);
 }
 
-typedef struct ccrm_thread_data
+typedef struct ccrm_intra_thread
 {
    sem_t sem; 
-   MblSdbusPipe pipe;
-}ccrm_thread_data;
+   mbl::MblSdbusBinder binder;
+}ccrm_intra_thread;
 
 static void* ccrm_thread_start(void* _data)
 {
-    mbl::MblSdbusBinder binder;
     ccrm_thread_data *data = (ccrm_thread_data*)_data;    
     uintptr_t exit_code = 0;
 
@@ -110,28 +109,29 @@ static void* ccrm_thread_start(void* _data)
     else if (binder.start() != mbl::MblError::None) {
          exit_code = -3;
     }
+    
     binder.deinit();
     pthread_exit((void*)exit_code);
 }
 
-/*
+
 //FIXME: remove asserts whenever need to clean finalize child thread
 TEST(Sdbus, StartStopWithPipeMsg) { 
     pthread_t   tid;
     int *retval;
     MblSdbusPipeMsg msg;
-    ccrm_thread_data data;
-    
-    ASSERT_EQ(MblSdbusPipe_create(&data.pipe), 0);
-    memset(&msg, 0, sizeof(msg));
-    
+    ccrm_intra_thread data;
+
+    memset(&msg, 0, sizeof(msg)); 
+    ASSERT_EQ(data.binder.init(), mbl::MblError::None);
+       
     // Lets simulate : current thread is mbl-cloud-client thread 
     // which creates ccrm thread in the next line
     ASSERT_EQ(sem_init(&data.sem, 0, 0), 0);  //init to 0 to wait for created thread signal    
     ASSERT_EQ(pthread_create(&tid, NULL, ccrm_thread_start, &data), 0); 
     ASSERT_EQ(sem_wait(&data.sem), 0);  //wait for server to start
             
-    //send mesage in pipe, no need to fill data - just signal exit
+    //send mesage in pipe in raw way, not via API, no need to fill data - just signal exit
     msg.type = PIPE_MSG_TYPE_EXIT;
     ASSERT_EQ(MblSdbusPipe_msg_send(&data.pipe, &msg), 0);
 
@@ -142,7 +142,7 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     ASSERT_EQ(MblSdbusPipe_destroy(&data.pipe), 0);
     pthread_exit((void*)0);
 }
-*/
+
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);

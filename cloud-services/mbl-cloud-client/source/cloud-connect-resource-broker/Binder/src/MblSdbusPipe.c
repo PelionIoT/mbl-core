@@ -29,11 +29,16 @@
 #define WRITE                       1
 #define MAX_TIME_TO_POLL_MILLISEC   10
 
+/* In Linux versions before 2.6.11, the capacity of a pipe was the same as the system page size 
+(e.g., 4096 bytes on i386). Since Linux 2.6.11, the pipe capacity is 65536 bytes.
+Simplify things here : allow maximum size of 4096 for now */
+#define MAX_DATA_SIZE   4096
+
 int MblSdbusPipe_create(MblSdbusPipe *pipe_object) 
 {
     int r;
-    memset (pipe_object, 0, sizeof(pipe_object));
 
+    memset (pipe_object, 0, sizeof(pipe_object));
     r = pipe2(pipe_object->pipefd, O_NONBLOCK);
     if (r != 0){
         return r;
@@ -73,62 +78,51 @@ int MblSdbusPipe_destroy(MblSdbusPipe *pipe_object)
 }
 
 
-int MblSdbusPipe_msg_send(MblSdbusPipe *pipe_object , MblSdbusPipeMsg *_msg) 
+int MblSdbusPipe_data_send(MblSdbusPipe *pipe_object , u_int8_t *data, uint32_t data_size) 
 {
     int r;
-    MblSdbusPipeMsg *msg = NULL;
+    u_int8_t *data_ = NULL;
 
-    if (_msg->type >= PIPE_MSG_TYPE_LAST){
+    if (data_size > MAX_DATA_SIZE){
         return -1;
     }
-    msg = (MblSdbusPipeMsg*)malloc(sizeof(MblSdbusPipeMsg));
-    if (NULL == msg){
-        return -1;
-    }
-    memcpy(msg, _msg, sizeof(MblSdbusPipeMsg));
-    
+
+    // lets be sure that pipe is ready for write, we do not wait and do not retry
+    // since this pipe is used only to transfer pointers - being full shows we have 
+    // critical issue    
     r = poll(&pipe_object->pollfd[WRITE], 1, MAX_TIME_TO_POLL_MILLISEC);
     if (r == 0){
         // timeout!
-        r = -1;
-        goto on_failure;
+        return -1;
     }
     if (r < 0){
         //some error!
-        goto on_failure;
+        return r;
     }
     if (pipe_object->pollfd[WRITE].revents & POLLOUT) {
         //can write - write the allocated pointer
-        r = write(pipe_object->pollfd[WRITE].fd, &msg, sizeof(MblSdbusPipeMsg*));
+        r = write(pipe_object->pollfd[WRITE].fd, data, data_size);
         if (r <= 0){
             //nothing written or error!
-            goto on_failure;
+            return r;
         }
-        if (r != sizeof(msg)){
-            r = -1;
-            goto on_failure;
+        if (r != sizeof(data)){
+            return -1;
         }
     }
     else {
         //unexpected event!
-        r = -1;
-        goto on_failure;
+        return -1;
     }
 
     return 0;
-
-on_failure:
-    if (NULL != msg){
-        free(msg);
-    }
-    return r;
 }
 
 // receiver must free message
-int MblSdbusPipe_msg_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_msg)
+int MblSdbusPipe_data_receive(MblSdbusPipe *pipe_object , u_int8_t **data)
 {
     int r;
-    MblSdbusPipeMsg *msg;
+    uint8_t *data_;
 
     r = poll(&pipe_object->pollfd[READ], 1, MAX_TIME_TO_POLL_MILLISEC);
     if (r == 0){
@@ -141,12 +135,12 @@ int MblSdbusPipe_msg_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_msg)
     }
     if (pipe_object->pollfd[READ].revents & POLLIN) {
         //can read - get the allocated pointer
-        r = read(pipe_object->pollfd[READ].fd, &msg, sizeof(MblSdbusPipeMsg*));
+        r = read(pipe_object->pollfd[READ].fd, &data, sizeof(uint8_t*));
         if (r <= 0){
             //nothing read or error!
            return r;
         }
-        if (r != sizeof(msg)){
+        if (r != sizeof(data)){
             return -1;
         }
     }
@@ -155,6 +149,6 @@ int MblSdbusPipe_msg_receive(MblSdbusPipe *pipe_object , MblSdbusPipeMsg **_msg)
         return -1;
     }
 
-    *_msg = msg;
+    *data = data_;
     return 0;
 }
