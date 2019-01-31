@@ -22,7 +22,7 @@
 
 #include "MblError.h"
 #include "MblMutex.h"
-#include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
+#include "cloud-connect-resource-broker/ResourceBroker.h"
 
 #include <stdint.h>
 
@@ -70,7 +70,7 @@ private:
     State state_;
 
     // Mbl Cloud Connect Resource Broker member
-    MblCloudConnectResourceBroker cloud_connect_resource_broker_;
+    ResourceBroker cloud_connect_resource_broker_;
 
     static MblCloudClient* s_instance;
     static MblMutex s_mutex;

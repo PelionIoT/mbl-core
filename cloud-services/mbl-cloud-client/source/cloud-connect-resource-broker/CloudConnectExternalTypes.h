@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: ...
  */
 
-#ifndef CloudConnectTypes_h_
-#define CloudConnectTypes_h_
+#ifndef CloudConnectExternalTypes_h_
+#define CloudConnectExternalTypes_h_
 
 extern "C" {
 
@@ -24,4 +24,4 @@ typedef enum CloudConnectStatus CloudConnectStatus;
 
 }
 
-#endif // CloudConnectTypes_h_
+#endif // CloudConnectExternalTypes_h_

@@ -5,7 +5,7 @@
  */
 
 #include <cassert>
-#include "MblCloudConnectTypes.h"
+#include "CloudConnectTypes.h"
 
 namespace mbl {
 

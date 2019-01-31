@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: ...
  */
 
-#ifndef MblCloudConnectTypes_h_
-#define MblCloudConnectTypes_h_
+#ifndef CloudConnectTypes_h_
+#define CloudConnectTypes_h_
 
 #include  <stdint.h>
 #include  <vector>
 
 #include  "MblError.h"
-#include  "CloudConnectTypes.h"
+#include  "CloudConnectExternalTypes.h"
 
 namespace mbl {
 
@@ -156,4 +156,4 @@ struct ResourceGetOperation
 } //namespace mbl
 
 
-#endif // MblCloudConnectTypes_h_
+#endif // CloudConnectTypes_h_

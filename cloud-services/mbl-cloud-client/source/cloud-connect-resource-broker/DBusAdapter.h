@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: ...
  */
 
-#ifndef MblCloudConnectIpcDBus_h_
-#define MblCloudConnectIpcDBus_h_
+#ifndef DBusAdapter_h_
+#define DBusAdapter_h_
 
 #include <pthread.h>
 
@@ -13,7 +13,7 @@
 
 namespace mbl {
 
-class MblCloudConnectResourceBroker;
+class ResourceBroker;
 
 /**
  * @brief Implements an interface to the D-Bus IPC.
@@ -21,12 +21,12 @@ class MblCloudConnectResourceBroker;
  * will allow comminication between Pelion Cloud Connect D-Bus 
  * service and client applications.
  */
-class MblCloudConnectIpcDBus {
+class DBusAdapter {
 
 public:
 
-    MblCloudConnectIpcDBus(MblCloudConnectResourceBroker &ccrb);
-    ~MblCloudConnectIpcDBus();
+    DBusAdapter(ResourceBroker &ccrb);
+    ~DBusAdapter();
 
 /**
  * @brief Initializes IPC mechanism.
@@ -132,15 +132,15 @@ private:
 
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
-    MblCloudConnectResourceBroker &ccrb_;
+    ResourceBroker &ccrb_;
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
-    MblCloudConnectIpcDBus(const MblCloudConnectIpcDBus&) = delete;
-    MblCloudConnectIpcDBus & operator = (const MblCloudConnectIpcDBus&) = delete;
-    MblCloudConnectIpcDBus(MblCloudConnectIpcDBus&&) = delete;
-    MblCloudConnectIpcDBus& operator = (MblCloudConnectIpcDBus&&) = delete;    
+    DBusAdapter(const DBusAdapter&) = delete;
+    DBusAdapter & operator = (const DBusAdapter&) = delete;
+    DBusAdapter(DBusAdapter&&) = delete;
+    DBusAdapter& operator = (DBusAdapter&&) = delete;    
 };
 
 } // namespace mbl
 
-#endif // MblCloudConnectIpcDBus_h_
+#endif // DBusAdapter_h_

@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: ...
  */
 
-#ifndef MblCloudConnectResourceBroker_h_
-#define MblCloudConnectResourceBroker_h_
+#ifndef ResourceBroker_h_
+#define ResourceBroker_h_
 
-#include "MblCloudConnectIpcDBus.h"
-#include "MblCloudConnectTypes.h"
+#include "DBusAdapter.h"
+#include "CloudConnectTypes.h"
 
 #include  <memory>
 
@@ -21,11 +21,11 @@ namespace mbl {
  * - receive and manage requests from applications to MbedCloudClient.
  * - send observers notifications from MbedCloudClient to applications.
  */
-class MblCloudConnectResourceBroker {
-friend MblCloudConnectIpcDBus;
+class ResourceBroker {
+friend DBusAdapter;
 public:
-    MblCloudConnectResourceBroker();
-    ~MblCloudConnectResourceBroker();
+    ResourceBroker();
+    ~ResourceBroker();
 
 /////////////////////////////////////////////////////////////////////
 // API to be used by MblCloudClient class
@@ -223,22 +223,23 @@ private:
 
 
 // FIX return MblError description !!!!!!!!!!!!!!!!!!!!!!!!!
+// FIXME ResourceBroker
 
 private:
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
-    MblCloudConnectResourceBroker(const MblCloudConnectResourceBroker&) = delete;
-    MblCloudConnectResourceBroker & operator = (const MblCloudConnectResourceBroker&) = delete;
-    MblCloudConnectResourceBroker(MblCloudConnectResourceBroker&&) = delete;
-    MblCloudConnectResourceBroker& operator = (MblCloudConnectResourceBroker&&) = delete;  
+    ResourceBroker(const ResourceBroker&) = delete;
+    ResourceBroker & operator = (const ResourceBroker&) = delete;
+    ResourceBroker(ResourceBroker&&) = delete;
+    ResourceBroker& operator = (ResourceBroker&&) = delete;  
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
 
     // pointer to ipc binder instance
-    std::unique_ptr<MblCloudConnectIpcDBus> ipc_ = nullptr;
+    std::unique_ptr<DBusAdapter> ipc_ = nullptr;
 };
 
 } // namespace mbl
 
-#endif // MblCloudConnectResourceBroker_h_
+#endif // ResourceBroker_h_
