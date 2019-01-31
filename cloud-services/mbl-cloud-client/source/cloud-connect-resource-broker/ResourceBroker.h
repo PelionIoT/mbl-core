@@ -181,33 +181,56 @@ private:
  * @brief Set resources values for multiple resources. 
  *
  * @param access_token token used for access control to the resources pointed 
- *        from input_values vector. 
- * @param inout_data vector of entries that provides input and output parameters
- *        for set operation. 
- *        input  params: resource_data_
- *        output params: set_operation_status_
+ *        from inout_set_operations vector. 
+ * @param inout_set_operations vector of structures that provide all input and 
+ *        output parameters to perform setting operation. 
+ *        Each entry in inout_set_operations contains:
+ * 
+ *        input fields: 
+ *        - input_data is the data that includes resources's path type and value 
+ *          of the corresponding resource.
+ * 
+ *        output field: 
+ *        - output_status is the status of the set operation for the corresponding 
+ *          resource.
+ * 
  * @return MblError returns Error::None if all resources can be accessed according 
- *         to the provided access_token, or error code otherwise.
+ *         to the provided access_token, or error code otherwise. The set operation 
+ *         status is not returned via MblError, but by filling corresponding 
+ *         value to the output output_status in inout_set_operations.
  */
     MblError set_resources_values(
         const std::string &access_token, 
-        std::vector<ResourceSetOperation> &inout_get_operations);
+        std::vector<ResourceSetOperation> &inout_set_operations);
 
 /**
  * @brief Get resources values from multiple resources. 
  *
  * @param access_token token used for access control to the resources pointed 
- *        from input_paths vector. 
- * @param inout_data vector of entries that provides input and output parameters
- *        for set operation. 
- *        input  params: resource_data_.path and resource_data_.type 
- *        output params: resource_data_.value and get_operation_status
+ *        from inout_get_operations vector. 
+ * @param inout_get_operations vector of structures that provide all input and 
+ *        output parameters required to perform getting operation. 
+ *        Each entry in inout_get_operations contains:
+ * 
+ *        input fields: 
+ *        - inout_data.path field is the path of the corresponding resource 
+ *          who's value should be gotten. 
+ *        - inout_data.type field is the type of the resource data.
+ * 
+ *        output fields: 
+ *        - output_status is the status of the set operation for the corresponding
+ *          resource.
+ *        - inout_data.value field is the value that was gotten from resource. 
+ *          Use inout_data.value only if the output_status has SUCCESS value. 
+ *
  * @return MblError returns Error::None if all resources can be accessed according 
- *         to the provided access_token, or error code otherwise.
+ *         to the provided access_token, or error code otherwise. The set operation 
+ *         status is not returned via MblError, but by filling corresponding 
+ *         value to the output output_status field in inout_get_operations.
  */
     MblError get_resources_values(
         const std::string &access_token, 
-        std::vector<ResourceGetOperation> &inout_set_operations);
+        std::vector<ResourceGetOperation> &inout_get_operations);
 
 /**
  * @brief CCRB thread main function.
@@ -216,13 +239,9 @@ private:
  * - runs CCRB main functionality loop.  
  * 
  * @param ccrb address of CCRB instance that should run. 
- * @return void* thread output buffer - not used.
+ * @return void* thread output status. CCRB thread status(MblError enum) returned by value. 
  */
     static void *ccrb_main(void *ccrb);
-
-
-// FIX return MblError description !!!!!!!!!!!!!!!!!!!!!!!!!
-// FIXME ResourceBroker
 
 private:
 

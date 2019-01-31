@@ -182,9 +182,6 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 }
 
 
-
-
-
 MblError ResourceBroker::register_resources_async(
         const uintptr_t , 
         const std::string &)
