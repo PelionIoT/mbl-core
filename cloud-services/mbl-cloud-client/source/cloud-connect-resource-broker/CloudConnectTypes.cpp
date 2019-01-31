@@ -5,7 +5,10 @@
  */
 
 #include <cassert>
+
 #include "CloudConnectTypes.h"
+
+#define TRACE_GROUP "ccrb"
 
 namespace mbl {
 

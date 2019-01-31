@@ -3,13 +3,12 @@
  *
  * SPDX-License-Identifier: ...
  */
+#include <cassert>
+#include <pthread.h>
 
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
 #include "mbed-trace/mbed_trace.h"
-
-#include <cassert>
-#include <pthread.h>
 
 #define TRACE_GROUP "ccrb"
 

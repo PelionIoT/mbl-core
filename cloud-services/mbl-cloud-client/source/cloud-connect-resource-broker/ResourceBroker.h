@@ -7,11 +7,10 @@
 #ifndef ResourceBroker_h_
 #define ResourceBroker_h_
 
-#include "DBusAdapter.h"
-#include "CloudConnectTypes.h"
-
 #include  <memory>
 
+#include "DBusAdapter.h"
+#include "CloudConnectTypes.h"
 
 namespace mbl {
 

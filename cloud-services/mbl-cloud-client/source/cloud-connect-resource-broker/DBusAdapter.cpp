@@ -1,46 +1,34 @@
 /*
- * Copyright (c) 2019 ARM Ltd.
+ * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: ...
  */
 
-#include "MblCloudConnectIpcDBus.h"
-
-#include "mbed-trace/mbed_trace.h"
 #include <cassert>
 #include <pthread.h>
 #include <unistd.h>
-
 #include <systemd/sd-bus.h>
+
+#include "mbed-trace/mbed_trace.h"
+#include "DBusAdapter.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl {
 
-MblCloudConnectIpcDBus::MblCloudConnectIpcDBus(MblCloudConnectResourceBroker &ccrb)
+DBusAdapter::DBusAdapter(ResourceBroker &ccrb)
     : exit_loop_ (false), // temporary flag exit_loop_ will be removed soon
       ccrb_ (ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblCloudConnectIpcDBus::~MblCloudConnectIpcDBus()
+DBusAdapter::~DBusAdapter()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblError MblCloudConnectIpcDBus::init()
+MblError DBusAdapter::init()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
 
@@ -53,13 +41,13 @@ MblError MblCloudConnectIpcDBus::init()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::de_init()
+MblError DBusAdapter::de_init()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::run()
+MblError DBusAdapter::run()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
     
@@ -73,7 +61,7 @@ MblError MblCloudConnectIpcDBus::run()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::stop()
+MblError DBusAdapter::stop()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
 
@@ -84,7 +72,7 @@ MblError MblCloudConnectIpcDBus::stop()
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::update_registration_status(
+MblError DBusAdapter::update_registration_status(
     const uintptr_t , 
     const std::string &,
     const MblError )
@@ -93,29 +81,8 @@ MblError MblCloudConnectIpcDBus::update_registration_status(
     return Error::None;
 }
 
-MblError MblCloudConnectIpcDBus::update_deregistration_status(
-    const uintptr_t , 
-    const MblError )
-{
-    // empty for now
-    return Error::None;
-}
 
-MblError MblCloudConnectIpcDBus::update_add_resource_instance_status(
-    const uintptr_t , 
-    const MblError )
-{
-    // empty for now
-    return Error::None;
-}
 
-MblError MblCloudConnectIpcDBus::update_remove_resource_instance_status(
-    const uintptr_t , 
-    const MblError )
-{
-    // empty for now
-    return Error::None;
-}
 
 } // namespace mbl
 
