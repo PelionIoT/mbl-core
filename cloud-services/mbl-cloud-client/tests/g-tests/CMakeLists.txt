@@ -2,10 +2,16 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 2.8)
+#cmake_minimum_required (VERSION 3.9)
 SET(CMAKE_SYSTEM_NAME Generic)
 
+ADDSUBDIRS()
+
 set(CMAKE_SYSTEM_PROCESSOR arm)
+
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
 
 project(mblCcrbTests)
 
@@ -45,33 +51,15 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 #include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap)
 #include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap/mbed-coap)
 
-
-
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
- 
 get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
 message(STATUS "@@@DIRS: ")
 foreach(dir ${dirs})
   message(STATUS "@@@DIR='${dir}'")
 endforeach()
-
-
-
-# Create the Cloud Client executable
-#FILE(GLOB MBL_CLOUD_CLIENT_SRC
-#    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.c"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/../../*.cpp"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.c"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/*.cpp"
-#    "${CMAKE_CURRENT_SOURCE_DIR}/../../source/cloud-connect-resource-broker/*.cpp"
-#)
-
-# Create static library "mblCloudClient"
-#add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
 
 FILE(GLOB MBL_CCRB_TESTS_SRC
@@ -90,6 +78,21 @@ target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
 target_link_libraries(gtest-mbl-cloud-client libgtest.a)
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
-target_link_libraries(gtest-mbl-cloud-client systemd)
+target_link_libraries(gtest-mbl-cloud-client factory-configurator-client)
+target_link_libraries(gtest-mbl-cloud-client pal)
+target_link_libraries(gtest-mbl-cloud-client mbedcrypto)
+target_link_libraries(gtest-mbl-cloud-client mbedtls)
+target_link_libraries(gtest-mbl-cloud-client mbedx509)
+
+target_link_libraries(gtest-mbl-cloud-client mbedTrace)
+target_link_libraries(gtest-mbl-cloud-client ${JSONCPP_LIBRARIES})
+
+# mbedCloudClient seems to be co-dependent with mbedTrace (at least when
+# MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
+target_link_libraries(gtest-mbl-cloud-client mbedCloudClient)
+
 target_link_libraries(gtest-mbl-cloud-client pthread)
+target_link_libraries(gtest-mbl-cloud-client rt)
+# link with systemd to get D-Bus libs
+target_link_libraries(gtest-mbl-cloud-client systemd)
 

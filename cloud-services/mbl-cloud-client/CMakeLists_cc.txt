@@ -60,15 +60,13 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
 # Create the Cloud Client main executable
 FILE(GLOB MBL_CLOUD_CLIENT_MAIN
-    "${CMAKE_CURRENT_SOURCE_DIR}/tests/g-tests/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 )
 add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_MAIN}")
 
 
 # Create the Cloud Client static library
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
@@ -78,9 +76,6 @@ add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
 
 # Order is important here: dependencies must follow dependents
-
-target_link_libraries(mbl-cloud-client libgtest_main.a)
-target_link_libraries(mbl-cloud-client libgtest.a)
 
 target_link_libraries(mbl-cloud-client mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedCloudClient)
