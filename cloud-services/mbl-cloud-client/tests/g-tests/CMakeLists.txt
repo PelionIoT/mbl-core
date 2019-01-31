@@ -2,14 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required (VERSION 2.8)
-#cmake_minimum_required (VERSION 3.9)
+#cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.9)
 SET(CMAKE_SYSTEM_NAME Generic)
 
-ADDSUBDIRS()
+#ADDSUBDIRS()
 
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
@@ -36,20 +37,24 @@ include_directories(${INCLUDE_DIRS})
 
 #include_directories(${INCLUDE_DIRECTORIES})
 
-include_directories(${CCRB_INCLUDE_DIR1})
-include_directories(${CCRB_INCLUDE_DIR2})
+include_directories(${CCRB_INCLUDE_DIR})
+include_directories(${CCRB_INCLUDE_DIR}/source)
+
+include_directories(${MBED_CLOUD_CLIENT_INC_DIR})
 
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/source/include)
 
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-client)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/mbed-coap/mbed-coap)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
+
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
@@ -74,10 +79,10 @@ set_target_properties (gtest-mbl-cloud-client PROPERTIES
 )
 
 
-target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
-target_link_libraries(gtest-mbl-cloud-client libgtest.a)
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
+target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
+
 target_link_libraries(gtest-mbl-cloud-client factory-configurator-client)
 target_link_libraries(gtest-mbl-cloud-client pal)
 target_link_libraries(gtest-mbl-cloud-client mbedcrypto)
@@ -90,6 +95,11 @@ target_link_libraries(gtest-mbl-cloud-client ${JSONCPP_LIBRARIES})
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(gtest-mbl-cloud-client mbedCloudClient)
+
+target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
+
+target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
+target_link_libraries(gtest-mbl-cloud-client libgtest.a)
 
 target_link_libraries(gtest-mbl-cloud-client pthread)
 target_link_libraries(gtest-mbl-cloud-client rt)

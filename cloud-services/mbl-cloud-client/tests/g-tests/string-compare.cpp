@@ -4,7 +4,7 @@
 * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include "MblCloudClient.h"
+//#include "MblCloudClient.h"
 #include "cloud-connect-resource-broker/MblCloudConnectResourceBroker.h"
 #include <gtest/gtest.h> // googletest header file
 #include <string>
@@ -17,13 +17,13 @@ const char *expectVal      = "hello gtest";
 
 //MblCloudClient g_mcc;
 
-namespace mbl {
-    
-void* ccrb;
-MblCloudConnectResourceBroker * const this_ccrb =
-        static_cast<MblCloudConnectResourceBroker*>(ccrb);
-
-}
+//namespace mbl {
+//    
+//void* ccrb;
+//MblCloudConnectResourceBroker * const this_ccrb =
+//        static_cast<MblCloudConnectResourceBroker*>(ccrb);
+//
+//}
 
 TEST(StrCompare, CStrEqual) {
     EXPECT_STREQ(expectVal, actualValTrue);
