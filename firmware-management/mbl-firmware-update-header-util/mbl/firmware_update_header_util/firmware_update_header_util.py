@@ -86,7 +86,7 @@ class FirmwareUpdateHeader:
         self.firmware_size = 0
         self.firmware_hash = bytes(self._SIZEOF_SHA256)
         self.campaign_id = bytes(self._SIZEOF_GUID)
-        self.firmware_signature = bytes(0)
+        self.firmware_signature = bytes()
 
     def unpack(self, data):
         """
