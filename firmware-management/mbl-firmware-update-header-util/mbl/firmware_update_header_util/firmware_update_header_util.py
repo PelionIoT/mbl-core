@@ -230,7 +230,7 @@ def calculate_firmware_hash(firmware_stream):
         read = firmware_stream.readinto(buffer)
         if not read:
             break
-        hasher.update(buffer[0:read])
+        hasher.update(buffer[:read])
     return hasher.digest()
 
 

@@ -207,7 +207,6 @@ def test_unpack_valid_header(test_case):
     "test_case", BAD_TEST_CASES, ids=_get_test_case_description
 )
 def test_unpack_invalid_header(test_case):
-
     header = uh.FirmwareUpdateHeader()
     with pytest.raises(
         uh.FormatError, match=test_case["error_message_pattern"]
