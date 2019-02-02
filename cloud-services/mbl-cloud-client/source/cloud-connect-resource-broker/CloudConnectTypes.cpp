@@ -35,7 +35,7 @@ ResourceData::ResourceData(const std::string &path, int64_t initial_value)
   data_type_ (ResourceDataType::INTEGER)
 { }
 
-const std::string& ResourceData::get_path() const
+std::string ResourceData::get_path() const
 {
     return path_;        
 }
@@ -57,7 +57,7 @@ void ResourceData::set_value(int64_t value)
     integer_value_ = value;        
 }
 
-const std::string& ResourceData::get_value_string() const
+std::string ResourceData::get_value_string() const
 {
     assert(data_type_ == ResourceDataType::STRING);
     return string_value_;        
