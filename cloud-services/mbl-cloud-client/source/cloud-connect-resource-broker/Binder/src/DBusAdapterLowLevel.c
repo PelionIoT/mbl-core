@@ -32,6 +32,7 @@
 static DBusAdapterLowLevelContext ctx_ = { 0 };
 
 static int DBusAdapterBusService_deinit();
+static int DBusAdapterEventLoop_deinit();
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Event loop Attached Callbacks ////////////////////
@@ -42,6 +43,7 @@ static int pipe_incoming_msg_callback(
  	uint32_t revents,
     void *userdata)
 {
+    assert(0); // TODO re-write
     int a = 7;
 }
 
@@ -55,7 +57,7 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
     // 2	        STRING	New owner or empty string if none
     const char *msg_args[3];
     size_t  size;
-
+    assert(0); // TODO re-write
     int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
 
     return 0;
@@ -71,7 +73,7 @@ int register_resources_callback(
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
     const char *str;
-
+    assert(0); // TODO re-write
     // TODO:
     // validate app registered expected interface on bus? (use sd-bus track)
 
@@ -91,7 +93,7 @@ static int deregister_resources_callback(
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
     int r;
-
+    assert(0); // TODO re-write
     //int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
     //ctx->sdbus.callbacks.deregister_resources_callback(str, &ccrb_status);
  
@@ -142,10 +144,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     int32_t r = -1;
-    sd_bus *bus = NULL;
-    sd_bus_slot *slot = NULL;
-    const char  *unique_name = NULL;
-
+    
     if ((NULL == adapter_callbacks) ||
         (NULL == adapter_callbacks->deregister_resources_async_callback) ||
         (NULL == adapter_callbacks->register_resources_async_callback))
@@ -153,17 +152,17 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
         goto on_failure;
     }
 
-    r = sd_bus_open_user(&bus);    
+    r = sd_bus_open_user(&ctx_.connection_handle);    
     if (r < 0){
         goto on_failure;
     }
-    if (NULL == bus){
+    if (NULL == ctx_.connection_handle){
         goto on_failure;
     }
 
     // Install the object
-    r = sd_bus_add_object_vtable(bus,
-                                 &slot,
+    r = sd_bus_add_object_vtable(ctx_.connection_handle,
+                                 &ctx_.connection_slot,
                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                                  cloud_connect_service_vtable,
@@ -172,30 +171,27 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
         goto on_failure;
     }
 
-    r = sd_bus_get_unique_name(bus, &unique_name);
+    r = sd_bus_get_unique_name(ctx_.connection_handle, &ctx_.unique_name);
     if (r < 0) {
         goto on_failure;
     }
 
     // Take a well-known service name DBUS_CLOUD_SERVICE_NAME so client Apps can find us
-    r = sd_bus_request_name(bus, DBUS_CLOUD_SERVICE_NAME, 0);
+    r = sd_bus_request_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME, 0);
     if (r < 0) {
         goto on_failure;
     }
+    ctx_.service_name = DBUS_CLOUD_SERVICE_NAME;
     
     r = sd_bus_add_match(
-        bus, NULL, 
+        ctx_.connection_handle,
+        NULL, 
         "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
         name_owner_changed_match_callback, 
         &ctx_);
     if (r < 0) {
         goto on_failure;
     }
-
-    ctx_.adapter_callbacks = *adapter_callbacks;
-    ctx_.connection_handle = bus;
-    ctx_.connection_slot = slot;
-    ctx_.unique_name = unique_name;
 
     return 0;
 
@@ -207,12 +203,18 @@ on_failure:
 static int DBusAdapterBusService_deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    int r = sd_bus_release_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME);
-    if (r < 0){
-        // TODO : print error
+    if (ctx_.service_name){
+        int r = sd_bus_release_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME);
+        if (r < 0){
+            // TODO : print error
+        }
     }
-    sd_bus_slot_unref(ctx_.connection_slot);
-    sd_bus_unref(ctx_.connection_handle);
+    if (ctx_.connection_slot){
+        sd_bus_slot_unref(ctx_.connection_slot);
+    }
+    if (ctx_.connection_handle){
+        sd_bus_unref(ctx_.connection_handle);
+    }
     return 0;
 }
 
@@ -223,24 +225,24 @@ static int DBusAdapterEventLoop_init()
     sd_event *handle = NULL;
     int r = 0;
     
-    r = sd_event_default(&handle);
+    r = sd_event_default(&ctx_.event_loop_handle);
     if (r < 0){
         goto on_failure;
     }
-
-    ctx_.event_loop_handle = handle;
     
     return 0;
 
 on_failure:
-    sd_event_unref(handle);
+    DBusAdapterEventLoop_deinit();
     return r;
 }
 
 static int DBusAdapterEventLoop_deinit()
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
-    sd_event_unref(ctx_.event_loop_handle);
+    if (ctx_.event_loop_handle){
+        sd_event_unref(ctx_.event_loop_handle);
+    }
     return 0;
 }
 
@@ -262,28 +264,27 @@ int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks)
     if (r < 0){
         return r;
     } 
+
+    r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
+    if (r < 0){
+        return r;
+    }
     return 0;
 }
 
 int DBusAdapterLowLevel_deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-
+    int r1, r2, r3;
+    
     // best effort
-    int r1 = DBusAdapterBusService_deinit();
-    int r2 = DBusAdapterEventLoop_deinit();
-    memset(&ctx_, 0, sizeof(ctx_));
-    return (r1 < 0) ? r1 : (r2 < 0) ? r2 : 0;
-}
+    r1 = sd_bus_detach_event(ctx_.connection_handle);
+    r2 = DBusAdapterBusService_deinit();
+    r3 = DBusAdapterEventLoop_deinit();
 
-/*
-int DBusAdapterLowLevel_attach_pipe_fd(int fd)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    sd_event_source *event_source;    
-    return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
+    memset(&ctx_, 0, sizeof(ctx_));
+    return (r1 < 0) ? r1 : (r2 < 0) ? r2 : (r3 < 0) ? r3 : 0;
 }
-*/
 
 DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext()
 {
@@ -293,13 +294,9 @@ DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext()
 int DBusAdapterLowLevel_run() 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    int r = 0;
+    int r;
 
-    r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
-    if (r < 0){
-        return r;
-    }
-    
+       
     r = sd_event_loop(ctx_.event_loop_handle);
     if (r < 0){
         return r;
@@ -312,6 +309,15 @@ int DBusAdapterLowLevel_stop()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r = 0;
-
+    assert(0); // TODO re-write
     return 0;
 }
+
+/*
+int DBusAdapterLowLevel_attach_pipe_fd(int fd)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    sd_event_source *event_source;    
+    return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
+}
+*/

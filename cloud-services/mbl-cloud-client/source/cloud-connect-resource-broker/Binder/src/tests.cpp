@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <semaphore.h>
+#include <systemd/sd-event.h>
+#include <systemd/sd-bus.h>
 
 #include "DBusAdapter.h"
 #include "DBusAdapterMailbox.h"
@@ -15,6 +17,7 @@
 #define DBUS_MAILBOX_WAIT_TIME_MS      100000
 
 using MblError = mbl::MblError;
+extern "C" DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext();
 
 TEST(DBusAdapterMailBox_a,InitDeinit) 
 {
@@ -34,8 +37,8 @@ TEST(DBusAdapterMailBox_a,SendReceiveRawMessagePtr_SingleThread)
 
     memset(&write_msg, 0, sizeof(write_msg));
     memset(&read_msg, 0, sizeof(read_msg));
-    write_msg.header.sequence_num = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_RAW;
-    read_msg.header.payload_len = str.length();
+    write_msg.type = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_RAW;
+    read_msg.payload_len = str.length();
     strncpy(
         write_msg.payload.raw.bytes,
         str.c_str(),
@@ -65,10 +68,10 @@ static void* reader_thread_start(void *mailbox)
         if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
-        if ((output_msg.header.type != mbl::DBUS_ADAPTER_MSG_RAW) ||
-            (output_msg.header.payload_len != 1) ||
+        if ((output_msg.type != mbl::DBUS_ADAPTER_MSG_RAW) ||
+            (output_msg.payload_len != 1) ||
             (output_msg.payload.raw.bytes[0] != ch)||
-            (output_msg.header.sequence_num != expected_sequence_num))
+            (output_msg.get_sequence_num() != expected_sequence_num))
         {
             pthread_exit((void*)-1);
         }
@@ -82,8 +85,8 @@ static void* writer_thread_start(void *mailbox)
     mbl::DBusAdapterMailbox* mailbox_ = static_cast<mbl::DBusAdapterMailbox*>(mailbox);
     
     memset(&input_message, 0, sizeof(input_message));
-    input_message.header.type = mbl::DBUS_ADAPTER_MSG_RAW;
-    input_message.header.payload_len = 1;
+    input_message.type = mbl::DBUS_ADAPTER_MSG_RAW;
+    input_message.payload_len = 1;
 
     for (char ch='A'; ch < 'Z'+1; ++ch){
         input_message.payload.raw.bytes[0] = ch;
@@ -112,25 +115,55 @@ TEST(DBusAdapterMailBox_a,SendReceiveRawMessage_MultiThread)
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
+// The fixture for testing class Foo.
+class DBusAdapeterLowLevel_b : public ::testing::Test {
+    protected:
+    DBusAdapeterLowLevel_b() {
+        // set-up work for each test here.
 
-extern DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext();
+        //This is a fast dummy initialization for testing 
+        callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
+        callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
+    }
 
-TEST(DBusAdapeterLowLevel_b,init_deinit) 
-{
+    ~DBusAdapeterLowLevel_b() override {
+        // clean-up work that doesn't throw exceptions here.
+    }
+
+    // If the constructor and destructor are not enough for setting up
+    // and cleaning up each test, you can define the following methods:
+    void SetUp() override {
+        // Code here will be called immediately after the constructor (right before each test).
+        ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks), 0);
+    }
+
+    void TearDown() override {
+        // Code here will be called immediately after each test (right before the destructor).
+        ASSERT_EQ(DBusAdapterLowLevel_deinit(), 0);
+    }
+
+    // Objects declared here can be used by all tests in the test case for this class.
     DBusAdapterCallbacks  callbacks;
+};
 
-    //This is a fast dummy initialization for testing 
-    callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
-    callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
-
-    ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks), 0);
-    ASSERT_EQ(DBusAdapterLowLevel_deinit(), 0);
+TEST_F(DBusAdapeterLowLevel_b,init_deinit) 
+{
+    // all code preformed in fixture
 }
 
-TEST(DBusAdapeterLowLevel_b,run_stop) 
-{
-    //TODO
-    //ASSERT_ANY_THROW(0);
+TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_exit_event) 
+{   
+    pthread_t   tid;
+    mbl::DBusAdapterMsg msg;
+    void *retval;
+    DBusAdapterLowLevelContext *ctx = DBusAdapterLowLevel_GetContext();
+    const int event_exit_code = 0xFFFEEEAA;
+  
+    //ASSERT_EQ(pthread_create(&tid, NULL, service_thread, nullptr), 0); 
+
+    // send my self exit signal before I enter the loop, expect the event_exit_code
+    ASSERT_GE(sd_event_exit(ctx->event_loop_handle, event_exit_code), 0);
+    ASSERT_EQ(DBusAdapterLowLevel_run(), event_exit_code);
 }
 
 TEST(DBusAdapeter_c,init_deinit) 
@@ -141,19 +174,15 @@ TEST(DBusAdapeter_c,init_deinit)
     ASSERT_EQ(adapter.deinit(), 0);
 }
 
-TEST(DBusAdapeter_c, run_stop) 
+TEST(DBusAdapeter_c, run_stop_with_external_exit_Event) 
 {
     //TODO
     //ASSERT_ANY_THROW(0);
 }
 
-/*
-typedef struct ccrm_intra_thread
-{
-   sem_t sem; 
-   mbl::MblSdbusBinder binder;
-}ccrm_intra_thread;
 
+
+/*
 static void* ccrm_thread_start(void* _data)
 {
     ccrm_thread_data *data = (ccrm_thread_data*)_data;    
@@ -202,6 +231,7 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     pthread_exit((void*)0);
 }
 */
+
 int main(int argc, char **argv) 
 {
     testing::InitGoogleTest(&argc, argv);

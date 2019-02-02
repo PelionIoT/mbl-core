@@ -105,7 +105,7 @@ MblError DBusAdapterMailbox::send_msg(DBusAdapterMsg &msg, int timeout_milliseco
     }
     if (pollfds_[WRITE].revents & POLLOUT) {
         //can write - write the message pointer address
-        msg_->header.sequence_num = sequence_num_++;
+        msg_->sequence_num = sequence_num_++;
         r = write(pipefds_[WRITE], &msg_, sizeof(DBusAdapterMsg*));
         if (r <= 0){
             //nothing written or error!

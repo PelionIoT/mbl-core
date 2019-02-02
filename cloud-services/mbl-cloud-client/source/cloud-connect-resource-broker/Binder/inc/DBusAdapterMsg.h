@@ -34,34 +34,38 @@ Simplify things here : allow maximum size of 4096 for now */
 //TODO :  add 2 static compile time casts to check that 
 //DBUS_MAX_MSG_RAW_PAYLOAD_SIZE<DBUS_MAX_MSG_SIZE and that max size of DBusAdapterMsg
 // is less than  MAX_MSG_SIZE
-struct DBusAdapterMsg_raw {
+typedef struct DBusAdapterMsg_raw_ 
+{
     char    bytes[DBUS_MAX_MSG_RAW_PAYLOAD_SIZE];
-};
+}DBusAdapterMsg_raw;
 
 // Keep this enumerator
-enum DBusAdapterMsgType {
-    DBUS_ADAPTER_MSG_RAW = 0,      // TODO: delete this one later ?
-    DBUS_ADAPTER_MSG_EXIT = 1,     // exit
+typedef enum DBusAdapterMsgType_
+{
+    DBUS_ADAPTER_MSG_RAW = 1,      // TODO: delete this one later ?
+    DBUS_ADAPTER_MSG_EXIT = 2,     // exit
 
     DBUS_ADAPTER_MSG_LAST = 0x7FFFFFFF
-};
+}DBusAdapterMsgType;
 
-union DBusAdapterMsgPayload
+typedef union DBusAdapterMsgPayload_
 {
-    struct DBusAdapterMsg_raw  raw;
-}; 
+    DBusAdapterMsg_raw  raw;
+}DBusAdapterMsgPayload; 
 
-struct DBusAdapterMsgHeader
-{
-    uint64_t                        sequence_num;
-    uint32_t                        payload_len;            // size in bytes of payload field
-    enum DBusAdapterMsgType         type;    
-};
 
-struct DBusAdapterMsg 
-{
-    struct  DBusAdapterMsgHeader     header;
-    union   DBusAdapterMsgPayload    payload;
+struct DBusAdapterMsg
+{   
+    uint64_t get_sequence_num() { return sequence_num; } // TODO : create file?
+    
+    uint32_t                payload_len;                 // size in bytes of payload field
+    DBusAdapterMsgType      type;  
+
+    DBusAdapterMsgPayload   payload;
+
+    private:
+    friend class DBusAdapterMailbox;
+    uint64_t     sequence_num;
 };
 
 }//namespace mbl

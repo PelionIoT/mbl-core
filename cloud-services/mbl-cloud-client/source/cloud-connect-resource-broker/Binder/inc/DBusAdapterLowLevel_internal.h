@@ -42,6 +42,7 @@ typedef struct DBusAdapterLowLevelContext_
     sd_bus                  *connection_handle;
     sd_bus_slot             *connection_slot;         // TODO : needed?
     const char              *unique_name;
+    char                    *service_name;
     DBusAdapterCallbacks    adapter_callbacks;
 }DBusAdapterLowLevelContext;
 
