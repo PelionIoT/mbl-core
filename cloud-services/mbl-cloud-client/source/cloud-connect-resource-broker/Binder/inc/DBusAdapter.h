@@ -41,9 +41,10 @@ enum CloudConnectStatus
  */
 class DBusAdapter {
 
-public:
-
-    DBusAdapter(ResourceBroker &ccrb);
+public:    
+    //TODO: fix gtest issue
+    DBusAdapter();
+    //DBusAdapter(ResourceBroker &ccrb);
     ~DBusAdapter();
 
 /**
@@ -156,19 +157,22 @@ public:
 private:
     
     enum class Status {INITALIZED, NON_INITALIZED};
+
+    //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
-    ResourceBroker &ccrb_;    
+    //ResourceBroker &ccrb_;    
         
     Status status_ = Status::NON_INITALIZED;
 
     DBusAdapterCallbacks        lower_level_callbacks_;    
     DBusAdapterMailbox          mailbox_;
     
-    // D-BUS callbacks
+    // D-BUS callbacks - must be defined static since they are transferred into a C module
     static int register_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
         const char *appl_resource_definition_json);
+
     static int deregister_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
         const char *access_token);

@@ -10,19 +10,30 @@
 
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
+#include "DBusAdapterLowLevel.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
-/*
 
 namespace mbl {
 
-
+//TODO  uncomment and solve gtest issue for unit tests
+/*
 DBusAdapter::DBusAdapter(ResourceBroker &ccrb) :
-    ccrb_ (ccrb)
+    ccrb_(ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
+    // set callbacks to DBUS lower layer    
+    lower_level_callbacks_.register_resources_async_callback = register_resources_async_callback;
+    lower_level_callbacks_.deregister_resources_async_callback = deregister_resources_async_callback;
+}
+*/
+
+//TODO  delete - temporary ctor
+DBusAdapter::DBusAdapter()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // set callbacks to DBUS lower layer    
     lower_level_callbacks_.register_resources_async_callback = register_resources_async_callback;
     lower_level_callbacks_.deregister_resources_async_callback = deregister_resources_async_callback;
@@ -31,21 +42,53 @@ DBusAdapter::DBusAdapter(ResourceBroker &ccrb) :
 DBusAdapter::~DBusAdapter()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
 }
 
 MblError DBusAdapter::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
+    MblError status;
+    int r;
 
+    if (DBusAdapter::Status::NON_INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
+    status = mailbox_.init();
+    if (status != Error::None){
+        return status;
+    }
+
+    r = DBusAdapterLowLevel_init(&lower_level_callbacks_);
+    if (r < 0){
+        mailbox_.deinit();
+        return Error::DBusErr_Temporary;
+    }
+
+    status_ = DBusAdapter::Status::INITALIZED;
     return Error::None;
 }
 
 MblError DBusAdapter::deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
+    MblError status;
+    int r;
+
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
+    
+    status = mailbox_.deinit();
+    if (status != Error::None){
+        return status;
+    }
+
+    r = DBusAdapterLowLevel_deinit();
+    if (r < 0){
+        return Error::DBusErr_Temporary;
+    }
+
+    status_ = DBusAdapter::Status::NON_INITALIZED;
     return Error::None;
 }
 
@@ -53,6 +96,9 @@ MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     
     return Error::None;
 }
@@ -61,7 +107,9 @@ MblError DBusAdapter::stop()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
-
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     return Error::None;
 }
 
@@ -73,6 +121,9 @@ MblError DBusAdapter::update_registration_status(
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     return Error::None;
 }
 
@@ -82,7 +133,9 @@ MblError DBusAdapter::update_deregistration_status(
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
-
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     return Error::None;
 }
 
@@ -92,6 +145,9 @@ MblError DBusAdapter::update_add_resource_instance_status(
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     return Error::None;
 }
 
@@ -101,10 +157,30 @@ MblError DBusAdapter::update_remove_resource_instance_status(
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
+    if (DBusAdapter::Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
     return Error::None;
 }
 
 
-} // namespace mbl
 
-*/
+int DBusAdapter::register_resources_async_callback(
+        const uintptr_t ipc_conn_handle, 
+        const char *appl_resource_definition_json)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+    return 0;
+}
+
+int DBusAdapter::deregister_resources_async_callback(
+    const uintptr_t ipc_conn_handle, 
+    const char *access_token)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+    return 0;
+}
+
+} // namespace mbl

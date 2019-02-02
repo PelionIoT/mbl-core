@@ -32,8 +32,8 @@ extern "C" {
 
 typedef struct DBusAdapterCallbacks_
 {
-    int (*register_resources_async_callback)( const uintptr_t, const char *);
-    int (*deregister_resources_callback)(const uintptr_t,  const char *);
+    int (*register_resources_async_callback)(const uintptr_t, const char *);
+    int (*deregister_resources_async_callback)(const uintptr_t,  const char *);
 }DBusAdapterCallbacks;
 
 

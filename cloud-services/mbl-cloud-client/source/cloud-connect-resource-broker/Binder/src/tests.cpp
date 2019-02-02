@@ -8,7 +8,6 @@
 #include "DBusAdapterMailbox.h"
 #include "MblError.h"
 #include "DBusAdapterMsg.h"
-
 #include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
 
@@ -17,7 +16,7 @@
 
 using MblError = mbl::MblError;
 
-TEST(DBusAdapterMailBox, InitDeinit) 
+TEST(DBusAdapterMailBox_a,InitDeinit) 
 {
     mbl::DBusAdapterMailbox mailbox;
 
@@ -25,7 +24,7 @@ TEST(DBusAdapterMailBox, InitDeinit)
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
-TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_SingleThread) 
+TEST(DBusAdapterMailBox_a,SendReceiveRawMessagePtr_SingleThread) 
 {
     mbl::DBusAdapterMailbox mailbox;
     mbl::DBusAdapterMsg write_msg;
@@ -97,7 +96,8 @@ static void* writer_thread_start(void *mailbox)
 }
 
 
-TEST(DBusAdapterMailBox, SendReceiveRawMessage_MultiThread) {
+TEST(DBusAdapterMailBox_a,SendReceiveRawMessage_MultiThread) 
+{
     pthread_t   writer_tid, reader_tid;
     mbl::DBusAdapterMailbox mailbox;    
     void *retval;
@@ -115,20 +115,37 @@ TEST(DBusAdapterMailBox, SendReceiveRawMessage_MultiThread) {
 
 extern DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext();
 
-TEST(DBusAdapeterLowLevel, init_deinit) {
+TEST(DBusAdapeterLowLevel_b,init_deinit) 
+{
     DBusAdapterCallbacks  callbacks;
 
     //This is a fast dummy initialization for testing 
     callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
-    callbacks.deregister_resources_callback = (int (*)(uintptr_t, const char*))2;
+    callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
 
     ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks), 0);
     ASSERT_EQ(DBusAdapterLowLevel_deinit(), 0);
 }
 
-//TEST(DBusAdapeterLowLevel, run_stop) {
-//}
+TEST(DBusAdapeterLowLevel_b,run_stop) 
+{
+    //TODO
+    //ASSERT_ANY_THROW(0);
+}
 
+TEST(DBusAdapeter_c,init_deinit) 
+{
+    mbl::DBusAdapter adapter;
+
+    ASSERT_EQ(adapter.init(), 0);
+    ASSERT_EQ(adapter.deinit(), 0);
+}
+
+TEST(DBusAdapeter_c, run_stop) 
+{
+    //TODO
+    //ASSERT_ANY_THROW(0);
+}
 
 /*
 typedef struct ccrm_intra_thread

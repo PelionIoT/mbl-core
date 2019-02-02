@@ -26,8 +26,12 @@
 
 #define TRACE_GROUP "ccrb-dbus"
 
+//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// Declerations + initializations ///////////////////
+//////////////////////////////////////////////////////////////////////////////////
 static DBusAdapterLowLevelContext ctx_ = { 0 };
 
+static int DBusAdapterBusService_deinit();
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Event loop Attached Callbacks ////////////////////
@@ -143,7 +147,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
     const char  *unique_name = NULL;
 
     if ((NULL == adapter_callbacks) ||
-        (NULL == adapter_callbacks->deregister_resources_callback) ||
+        (NULL == adapter_callbacks->deregister_resources_async_callback) ||
         (NULL == adapter_callbacks->register_resources_async_callback))
     {
         goto on_failure;
@@ -196,13 +200,18 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
     return 0;
 
 on_failure:
-    sd_bus_unref(bus);
+    DBusAdapterBusService_deinit();
     return r;
 }
 
 static int DBusAdapterBusService_deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+    int r = sd_bus_release_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME);
+    if (r < 0){
+        // TODO : print error
+    }
+    sd_bus_slot_unref(ctx_.connection_slot);
     sd_bus_unref(ctx_.connection_handle);
     return 0;
 }
@@ -244,6 +253,7 @@ int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks)
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
 
+    memset(&ctx_, 0, sizeof(ctx_));
     r = DBusAdapterBusService_init(adapter_callbacks);
     if (r < 0){
         return r;
@@ -262,7 +272,7 @@ int DBusAdapterLowLevel_deinit()
     // best effort
     int r1 = DBusAdapterBusService_deinit();
     int r2 = DBusAdapterEventLoop_deinit();
-
+    memset(&ctx_, 0, sizeof(ctx_));
     return (r1 < 0) ? r1 : (r2 < 0) ? r2 : 0;
 }
 
