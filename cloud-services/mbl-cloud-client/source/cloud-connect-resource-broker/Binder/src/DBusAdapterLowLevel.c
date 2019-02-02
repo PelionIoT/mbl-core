@@ -21,62 +21,17 @@
 #include <stdbool.h>
 #include <assert.h>
 
-#include <systemd/sd-bus.h>
-#include <systemd/sd-event.h>
-
+#include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
-
-typedef struct MblSdbus
-{
-    sd_bus      *bus;
-    sd_bus_slot *bus_slot;         // TODO : needed?
-    const char  *unique_name;
-
-    MblSdbusCallbacks callbacks;
-}MblSdbus;
-
-typedef struct MblSdEventLoop 
-{
-    sd_event        *ev_loop;
-}MblSdEventLoop;
-
-typedef struct MblSdContext 
-{
-    struct MblSdEventLoop   sdev_loop;
-    struct MblSdbus         sdbus;
-}MblSdContext;
-
-static MblSdContext ctx;
-
-// sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
-#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
-
-static int register_resources_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    tr_debug(__PRETTY_FUNCTION__);
-    MblSdContext *ctx = (MblSdContext*)userdata;
-    const char *str;
-    CCRBStatus ccrb_status;
-
-    // TODO:
-    // validate app registered expected interface on bus?
-
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
-    ctx->sdbus.callbacks.register_resources_callback(str, &ccrb_status);
- 
-    return 0;
-}
+static DBusAdapterLowLevelContext ctx_ = { 0 };
 
 
+//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// Event loop Attached Callbacks ////////////////////
+//////////////////////////////////////////////////////////////////////////////////
 static int pipe_incoming_msg_callback(
     sd_event_source *s, 
     int fd,
@@ -84,20 +39,6 @@ static int pipe_incoming_msg_callback(
     void *userdata)
 {
     int a = 7;
-}
-
-static int deregister_resources_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    tr_debug(__PRETTY_FUNCTION__);
-    MblSdContext *ctx = (MblSdContext*)userdata;
-    const char *str;
-    CCRBStatus ccrb_status;
-
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
-    ctx->sdbus.callbacks.deregister_resources_callback(str, &ccrb_status);
- 
-    return 0;
 }
 
 static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
@@ -116,8 +57,45 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
     return 0;
 }
 
+
+//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// D-BUS Service Callbacks //////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+int register_resources_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
+    const char *str;
+
+    // TODO:
+    // validate app registered expected interface on bus? (use sd-bus track)
+
+    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
+    if (r < 0){
+        return r;
+    }
+
+    //ctx->adapter_callbacks.register_resources_async_callback() ...
+ 
+    return 0;
+}
+
+static int deregister_resources_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
+    int r;
+
+    //int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
+    //ctx->sdbus.callbacks.deregister_resources_callback(str, &ccrb_status);
+ 
+    return 0;
+}
+
 // TODO: Move to a new file dedicated for vtable
-static const sd_bus_vtable cloud_connect_service_vtable[] = {
+static const sd_bus_vtable     cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
     // This message contains JSON file with resources to be registered.
@@ -155,40 +133,21 @@ static const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_END
 };
 
-static int32_t event_loop_init(MblSdEventLoop *sd_event_loop)
-{    
-    tr_debug(__PRETTY_FUNCTION__);
-    sd_event *loop = NULL;
-    int32_t r = 0;
-    
-    r = sd_event_default(&loop);
-    if (r < 0){
-        goto on_failure;
-    }
 
-    sd_event_loop->ev_loop = loop;
-    
-    return 0;
-
-on_failure:
-    sd_event_unref(loop);
-    return r;
-}
-
-
-static int32_t event_loop_finalize(MblSdEventLoop *sd_event_loop)
+static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callbacks)
 {
-    tr_debug(__PRETTY_FUNCTION__);
-    sd_event_unref(sd_event_loop->ev_loop);
-}
-
-static int32_t bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *callbacks)
-{
-    tr_debug(__PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     int32_t r = -1;
     sd_bus *bus = NULL;
     sd_bus_slot *slot = NULL;
     const char  *unique_name = NULL;
+
+    if ((NULL == adapter_callbacks) ||
+        (NULL == adapter_callbacks->deregister_resources_callback) ||
+        (NULL == adapter_callbacks->register_resources_async_callback))
+    {
+        goto on_failure;
+    }
 
     r = sd_bus_open_user(&bus);    
     if (r < 0){
@@ -204,7 +163,7 @@ static int32_t bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *callbacks)
                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                                  cloud_connect_service_vtable,
-                                 &ctx);
+                                 &ctx_);
     if (r < 0) {
         goto on_failure;
     }
@@ -224,66 +183,125 @@ static int32_t bus_init(MblSdbus *sdbus, const MblSdbusCallbacks *callbacks)
         bus, NULL, 
         "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
         name_owner_changed_match_callback, 
-        &ctx);
+        &ctx_);
     if (r < 0) {
         goto on_failure;
     }
 
-    sdbus->callbacks = *callbacks;
-    sdbus->bus = bus;
-    sdbus->bus_slot = slot;
-    sdbus->unique_name = unique_name;
+    ctx_.adapter_callbacks = *adapter_callbacks;
+    ctx_.connection_handle = bus;
+    ctx_.connection_slot = slot;
+    ctx_.unique_name = unique_name;
 
     return 0;
 
 on_failure:
-
     sd_bus_unref(bus);
     return r;
 }
 
-static int32_t bus_finalize(MblSdbus *sdbus)
+static int DBusAdapterBusService_deinit()
 {
-    tr_debug(__PRETTY_FUNCTION__); 
-    int32_t r = 0;
-  
-    sd_bus_unref(sdbus->bus);
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    sd_bus_unref(ctx_.connection_handle);
+    return 0;
+}
+
+
+static int DBusAdapterEventLoop_init()
+{    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    sd_event *handle = NULL;
+    int r = 0;
+    
+    r = sd_event_default(&handle);
+    if (r < 0){
+        goto on_failure;
+    }
+
+    ctx_.event_loop_handle = handle;
+    
+    return 0;
+
+on_failure:
+    sd_event_unref(handle);
     return r;
 }
 
-////////////////////////////////////// API //////////////////////////
-////////////////////////////////////////////////////////////////////
-int32_t DBusAdapterLowLevel_init(const MblSdbusCallbacks *callbacks)
-{
-    bus_init(&ctx.sdbus, callbacks);
-    event_loop_init(&ctx.sdev_loop);
+static int DBusAdapterEventLoop_deinit()
+{    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    sd_event_unref(ctx_.event_loop_handle);
+    return 0;
 }
 
-int32_t DBusAdapterLowLevel_deinit()
+//////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////// API //////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+
+int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks)
 {
-    bus_finalize(&ctx.sdbus);
-    event_loop_finalize(&ctx.sdev_loop);
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;
+
+    r = DBusAdapterBusService_init(adapter_callbacks);
+    if (r < 0){
+        return r;
+    }
+    r = DBusAdapterEventLoop_init();
+    if (r < 0){
+        return r;
+    } 
+    return 0;
 }
 
-int32_t DBusAdapterLowLevel_attach_pipe_fd(int fd)
+int DBusAdapterLowLevel_deinit()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    // best effort
+    int r1 = DBusAdapterBusService_deinit();
+    int r2 = DBusAdapterEventLoop_deinit();
+
+    return (r1 < 0) ? r1 : (r2 < 0) ? r2 : 0;
+}
+
+/*
+int DBusAdapterLowLevel_attach_pipe_fd(int fd)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
     sd_event_source *event_source;    
     return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
 }
+*/
 
-int32_t DBusAdapterLowLevel_run() 
+DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext()
 {
-    int32_t r = 0;
+    return &ctx_;
+}
 
-    r = sd_bus_attach_event(ctx.sdbus.bus, ctx.sdev_loop.ev_loop, SD_EVENT_PRIORITY_NORMAL);
+int DBusAdapterLowLevel_run() 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r = 0;
+
+    r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
     if (r < 0){
         return r;
     }
     
-    r = sd_event_loop(ctx.sdev_loop.ev_loop);
+    r = sd_event_loop(ctx_.event_loop_handle);
     if (r < 0){
         return r;
     }
+
+    return 0;
+}
+
+int DBusAdapterLowLevel_stop() 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r = 0;
 
     return 0;
 }

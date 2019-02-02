@@ -30,12 +30,15 @@
 #include "DBusAdapterMsg.h"
 #include "MblError.h"
 
+
 namespace mbl {
+
 MblError DBusAdapterMailbox::init() 
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // TODO - consider refacto all 'r' to 'retval'
     int r;
-
+    
     // open unnamed pipe with flag O_NONBLOCK
     // This flag insturcts the kernel to release the thread immidiatly
     // in case that pipe blocks 
@@ -61,8 +64,8 @@ MblError DBusAdapterMailbox::init()
 
 MblError DBusAdapterMailbox::deinit() 
 {
-    int r;
-    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;        
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
     // TODO : we need to make sure no one is reading/writing to the pipe
     // usually each side closes its edge, but here we might make easier assumptions    
@@ -79,7 +82,10 @@ MblError DBusAdapterMailbox::deinit()
 
 MblError DBusAdapterMailbox::send_msg(DBusAdapterMsg &msg, int timeout_milliseconds)
 {
-    int r;
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;    
+    // FIXME : We can avoid allocation at all. create vector of smart pointers with atomic bool which shows if
+    // memory is used or not. this requires extra work. TBD.
     DBusAdapterMsg *msg_ = new DBusAdapterMsg(msg);
 
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
@@ -120,6 +126,7 @@ MblError DBusAdapterMailbox::send_msg(DBusAdapterMsg &msg, int timeout_milliseco
 // receiver must free message
 MblError DBusAdapterMailbox::receive_msg(DBusAdapterMsg &msg, int timeout_milliseconds)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
     DBusAdapterMsg *msg_;
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
@@ -151,7 +158,7 @@ MblError DBusAdapterMailbox::receive_msg(DBusAdapterMsg &msg, int timeout_millis
         return MblError::DBusErr_Temporary;
     }
     msg = *msg_;
-    free(msg_);
+    delete(msg_);
     return MblError::None;
 }
 

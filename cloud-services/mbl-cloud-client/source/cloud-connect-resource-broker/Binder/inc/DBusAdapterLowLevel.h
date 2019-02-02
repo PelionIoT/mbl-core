@@ -15,32 +15,36 @@
  * limitations under the License.
  */
 
+
 #ifndef _DBusAdapterLowLevel_h_
 #define _DBusAdapterLowLevel_h_
 
-// Positive values for status, negative values for errors
-typedef enum CCRBStatus
+#include <inttypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
+// FIXME : remove later
+#define tr_info(a,b)
+#define tr_debug(a,b)
+#define tr_error(a,b)
+
+typedef struct DBusAdapterCallbacks_
 {
-    //Errors
-
-    //Success
-    CCRB_STATUS_SUCCESS = 0,
-
-    //Status
-    CCRB_STATUS_IN_PROGRESS = 2,
-} CCRBStatus;
-
-typedef struct MblSdbusCallbacks
-{
-    int (*register_resources_callback)(const char *, CCRBStatus *);
-    int (*deregister_resources_callback)(const char *, CCRBStatus *);
-} MblSdbusCallbacks;
+    int (*register_resources_async_callback)( const uintptr_t, const char *);
+    int (*deregister_resources_callback)(const uintptr_t,  const char *);
+}DBusAdapterCallbacks;
 
 
-int32_t DBusAdapterLowLevel_init(const MblSdbusCallbacks *callbacks);
-int32_t DBusAdapterLowLevel_deinit();
-int32_t DBusAdapterLowLevel_run();
-int32_t DBusAdapterLowLevel_stop();
-int32_t DBusAdapterLowLevel_attach_pipe_fd(int fd);
+int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks);
+int DBusAdapterLowLevel_deinit();
+int DBusAdapterLowLevel_run();
+int DBusAdapterLowLevel_stop();
+
+
+#ifdef __cplusplus
+} //extern "C" {
+#endif 
 
 #endif // _DBusAdapterLowLevel_h_

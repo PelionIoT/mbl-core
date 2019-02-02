@@ -21,9 +21,9 @@
 //#include "mbed-cloud-client/MbedCloudClient.h"
 
 // FIXME : remove later
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
+#define tr_info(a,b)
+#define tr_debug(a,b)
+#define tr_error(a,b)
 
 namespace mbl {
 

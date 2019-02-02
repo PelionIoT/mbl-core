@@ -18,8 +18,8 @@ message(STATUS "dirs: ${SYSTEMD_INCLUDE_DIRS}")
 add_executable(runTests 
     ${CMAKE_SOURCE_DIR}/src/tests.cpp 
     ${CMAKE_SOURCE_DIR}/src/DBusAdapter.cpp
-    ${CMAKE_SOURCE_DIR}/src/DBusAdapterLowLevel.c
     ${CMAKE_SOURCE_DIR}/src/DBusAdapterMailbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/DBusAdapterLowLevel.c   
     )
     
 set_target_properties (runTests PROPERTIES

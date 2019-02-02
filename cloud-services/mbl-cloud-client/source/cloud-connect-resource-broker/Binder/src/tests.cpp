@@ -6,8 +6,12 @@
 
 #include "DBusAdapter.h"
 #include "DBusAdapterMailbox.h"
-#include "DBusAdapterMsg.h"
 #include "MblError.h"
+#include "DBusAdapterMsg.h"
+
+#include "DBusAdapterLowLevel_internal.h"
+#include "DBusAdapterLowLevel.h"
+
 
 #define DBUS_MAILBOX_WAIT_TIME_MS      100000
 
@@ -20,7 +24,6 @@ TEST(DBusAdapterMailBox, InitDeinit)
     ASSERT_EQ(mailbox.init(), MblError::None);
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
-
 
 TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_SingleThread) 
 {
@@ -94,7 +97,7 @@ static void* writer_thread_start(void *mailbox)
 }
 
 
-TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_MultiThread) {
+TEST(DBusAdapterMailBox, SendReceiveRawMessage_MultiThread) {
     pthread_t   writer_tid, reader_tid;
     mbl::DBusAdapterMailbox mailbox;    
     void *retval;
@@ -108,6 +111,24 @@ TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_MultiThread) {
     ASSERT_EQ((uintptr_t)retval, 0);
     ASSERT_EQ(mailbox.deinit(), 0);
 }
+
+
+extern DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext();
+
+TEST(DBusAdapeterLowLevel, init_deinit) {
+    DBusAdapterCallbacks  callbacks;
+
+    //This is a fast dummy initialization for testing 
+    callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
+    callbacks.deregister_resources_callback = (int (*)(uintptr_t, const char*))2;
+
+    ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks), 0);
+    ASSERT_EQ(DBusAdapterLowLevel_deinit(), 0);
+}
+
+//TEST(DBusAdapeterLowLevel, run_stop) {
+//}
+
 
 /*
 typedef struct ccrm_intra_thread
@@ -163,10 +184,7 @@ TEST(Sdbus, StartStopWithPipeMsg) {
     ASSERT_EQ(DBusAdapterMailbox_destroy(&data.pipe), 0);
     pthread_exit((void*)0);
 }
-
 */
-
-
 int main(int argc, char **argv) 
 {
     testing::InitGoogleTest(&argc, argv);
