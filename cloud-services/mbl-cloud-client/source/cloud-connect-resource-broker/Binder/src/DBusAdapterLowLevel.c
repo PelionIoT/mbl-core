@@ -28,6 +28,9 @@
 
 #define TRACE_GROUP "ccrb-dbus"
 
+#define tr_info(s)
+#define tr_debug(s)
+#define tr_error(s)
 
 typedef struct MblSdbus
 {

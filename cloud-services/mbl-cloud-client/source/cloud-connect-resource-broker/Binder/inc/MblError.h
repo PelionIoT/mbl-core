@@ -20,6 +20,11 @@
 
 //#include "mbed-cloud-client/MbedCloudClient.h"
 
+// FIXME : remove later
+#define tr_info(s)
+#define tr_debug(s)
+#define tr_error(s)
+
 namespace mbl {
 
 namespace Error {

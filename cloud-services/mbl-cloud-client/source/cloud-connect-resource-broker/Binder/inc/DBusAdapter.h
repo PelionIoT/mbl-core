@@ -19,15 +19,12 @@
 #ifndef _DBusAdapter_h_
 #define _DBusAdapter_h_
 
-// FIXME : remove later
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
+
 
 #include "MblError.h"
 
+#include "DBusAdapterMailbox.h"
 extern "C" {
-    #include "DBusAdapterMailbox.h"
     #include "DBusAdapterLowLevel.h"
 }
 

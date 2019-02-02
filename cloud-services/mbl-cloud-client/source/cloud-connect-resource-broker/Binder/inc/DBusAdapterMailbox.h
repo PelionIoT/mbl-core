@@ -22,32 +22,32 @@
 #include <poll.h>
 #include <stdint.h>
 
-// FIXME : remove later
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
+#include "MblError.h"
 
-#define DBUS_MAILBOX_WAIT_INFINITE  (-1)
+namespace mbl {
 
 struct DBusAdapterMsg;
+#define DBUS_MAILBOX_PROTECTION_FLAG    0xF0F0F0F0
 
-// TODO : consider change name to mailbox
-// bi directional unnamed-pipes mailbox
-// fdtab[0] is used to send messages to ccrb thread
-// fdtab[1] is used to send replies from ccrb thread
-typedef struct DBusAdapterMailbox {
-    uint32_t        protection_flag;
-    int             pipefd[2];    // Store read (0) and write (1) file descriptors for the pipe
-    struct pollfd   pollfd[2];    // Store polling file descriptors on the pipe
-    uint64_t        _sequence_num; // starting from 0 and incremented
-}DBusAdapterMailbox;   
+class DBusAdapterMailbox
+{
+    public:    
+    // TODO : fix all name of this module to DBusAdapterMailbox
+    MblError init();
+    MblError deinit();
+    MblError send_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
+    MblError receive_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
 
-// TODO : fix all name of this module to DBusAdapterMailbox
-int DBusAdapterMailbox_alloc(DBusAdapterMailbox *mailbox);
-int DBusAdapterMailbox_free(DBusAdapterMailbox *mailbox);
-int DBusAdapterMailbox_send(
-    DBusAdapterMailbox *mailbox, struct DBusAdapterMsg *msg, int timeout_milliseconds);
-int DBusAdapterMailbox_receive(
-    DBusAdapterMailbox *mailbox , struct DBusAdapterMsg *msg, int timeout_milliseconds);
+    private:
+      static const int READ = 0;
+      static const int WRITE = 1;
 
+    uint32_t      protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
+    uint64_t      sequence_num_ = 0; // starting from 0 and incremented
+    int           pipefds_[2];    // Store read (0) and write (1) file descriptors for the pipe
+    struct pollfd pollfds_[2];    // Store polling file descriptors on the pipe
+};
+
+
+}//namespace mbl
 #endif // _DBusAdapterMailbox_h_

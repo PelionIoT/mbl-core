@@ -18,11 +18,6 @@
 #ifndef _DBusAdapterLowLevel_h_
 #define _DBusAdapterLowLevel_h_
 
-// FIXME : remove later
-#define tr_info(s)
-#define tr_debug(s)
-#define tr_error(s)
-
 // Positive values for status, negative values for errors
 typedef enum CCRBStatus
 {

@@ -5,65 +5,68 @@
 #include <semaphore.h>
 
 #include "DBusAdapter.h"
-#include "DBusAdapterMsg.h"
-
-extern "C" {
 #include "DBusAdapterMailbox.h"
-}
+#include "DBusAdapterMsg.h"
+#include "MblError.h"
 
 #define DBUS_MAILBOX_WAIT_TIME_MS      100000
 
-TEST(DBusAdapterMailBox, AllocFree) {
-    DBusAdapterMailbox mailbox;
+using MblError = mbl::MblError;
 
-    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);
-    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
+TEST(DBusAdapterMailBox, InitDeinit) 
+{
+    mbl::DBusAdapterMailbox mailbox;
+
+    ASSERT_EQ(mailbox.init(), MblError::None);
+    ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
-TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_SingleThread) {
-    DBusAdapterMailbox mailbox;
-    struct DBusAdapterMsg input_msg;
-    struct DBusAdapterMsg output_msg;
+
+TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_SingleThread) 
+{
+    mbl::DBusAdapterMailbox mailbox;
+    mbl::DBusAdapterMsg write_msg;
+    mbl::DBusAdapterMsg read_msg;
     uintptr_t msg_ptr_as_int;
     std::string str("Hello1 Hello2 Hello3");
 
-    memset(&input_msg, 0, sizeof(input_msg));
-    input_msg.type = DBUS_ADAPTER_MSG_RAW;
-    input_msg.payload_len = str.length();
+    memset(&write_msg, 0, sizeof(write_msg));
+    memset(&read_msg, 0, sizeof(read_msg));
+    write_msg.header.sequence_num = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_RAW;
+    read_msg.header.payload_len = str.length();
     strncpy(
-        input_msg.payload.raw.bytes,
+        write_msg.payload.raw.bytes,
         str.c_str(),
         str.length());
 
-    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);
+    ASSERT_EQ(mailbox.init(), 0);
 
     // send / receive / compare 100 times
     for (auto i = 0; i < 100; i++){
-        ASSERT_EQ(DBusAdapterMailbox_send(&mailbox, &input_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
-        ASSERT_EQ(DBusAdapterMailbox_receive(&mailbox, &output_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
-        ASSERT_EQ(memcmp(&input_msg, &output_msg, sizeof(DBusAdapterMsg)), 0);
+        ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
+        write_msg = read_msg;
+        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(mbl::DBusAdapterMsg)), 0);        
     }
     
-    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
+    ASSERT_EQ(mailbox.deinit(), 0);
 }
 
 
 static void* reader_thread_start(void *mailbox)
 {
-    int     result;
-    char    ch='A';
-    DBusAdapterMsg output_msg;
-    DBusAdapterMailbox *mailbox_ = (DBusAdapterMailbox*)mailbox;
+    mbl::DBusAdapterMailbox* mailbox_ = static_cast<mbl::DBusAdapterMailbox*>(mailbox);
+    mbl::DBusAdapterMsg output_msg;
     uint64_t expected_sequence_num = 0;
 
     for (char ch='A'; ch < 'Z'+1; ++ch, ++expected_sequence_num){
-        if (DBusAdapterMailbox_receive(mailbox_, &output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
+        if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
-        if ((output_msg.type != DBUS_ADAPTER_MSG_RAW) ||
-            (output_msg.payload_len != 1) ||
+        if ((output_msg.header.type != mbl::DBUS_ADAPTER_MSG_RAW) ||
+            (output_msg.header.payload_len != 1) ||
             (output_msg.payload.raw.bytes[0] != ch)||
-            (expected_sequence_num != output_msg._sequence_num))
+            (output_msg.header.sequence_num != expected_sequence_num))
         {
             pthread_exit((void*)-1);
         }
@@ -73,17 +76,16 @@ static void* reader_thread_start(void *mailbox)
 
 static void* writer_thread_start(void *mailbox)
 {
-    char    ch='A';
-    DBusAdapterMsg input_message;
-    DBusAdapterMailbox *mailbox_ = (DBusAdapterMailbox*)mailbox_;
+    mbl::DBusAdapterMsg input_message;
+    mbl::DBusAdapterMailbox* mailbox_ = static_cast<mbl::DBusAdapterMailbox*>(mailbox);
     
     memset(&input_message, 0, sizeof(input_message));
-    input_message.type = DBUS_ADAPTER_MSG_RAW;
-    input_message.payload_len = 1;
+    input_message.header.type = mbl::DBUS_ADAPTER_MSG_RAW;
+    input_message.header.payload_len = 1;
 
     for (char ch='A'; ch < 'Z'+1; ++ch){
         input_message.payload.raw.bytes[0] = ch;
-        if (DBusAdapterMailbox_send(mailbox_, &input_message, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
+        if (mailbox_->send_msg(input_message, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
     }
@@ -94,18 +96,19 @@ static void* writer_thread_start(void *mailbox)
 
 TEST(DBusAdapterMailBox, SendReceiveRawMessagePtr_MultiThread) {
     pthread_t   writer_tid, reader_tid;
-    DBusAdapterMailbox mailbox;    
+    mbl::DBusAdapterMailbox mailbox;    
     void *retval;
 
-    ASSERT_EQ(DBusAdapterMailbox_alloc(&mailbox), 0);    
+    ASSERT_EQ(mailbox.init(), 0);    
     ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
     ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
     ASSERT_EQ(pthread_join(writer_tid, &retval), 0);
     ASSERT_EQ((uintptr_t)retval, 0);
     ASSERT_EQ(pthread_join(reader_tid, &retval), 0);
     ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(DBusAdapterMailbox_free(&mailbox), 0);
+    ASSERT_EQ(mailbox.deinit(), 0);
 }
+
 /*
 typedef struct ccrm_intra_thread
 {
@@ -162,7 +165,10 @@ TEST(Sdbus, StartStopWithPipeMsg) {
 }
 
 */
-int main(int argc, char **argv) {
+
+
+int main(int argc, char **argv) 
+{
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();    
 }
