@@ -70,7 +70,7 @@ public:
  * @brief Gets stored resource path.
  * @return std::string resource path.
  */
-    const std::string& get_path() const;
+    std::string get_path() const;
 
 /**
  * @brief Gets resource data type. 
@@ -96,7 +96,7 @@ public:
  * @brief Gets the value of stored string value.  
  * @return std::string returned value.
  */
-    const std::string& get_value_string() const;
+    std::string get_value_string() const;
 
 /**
  * @brief Gets the value of stored integer value.  
