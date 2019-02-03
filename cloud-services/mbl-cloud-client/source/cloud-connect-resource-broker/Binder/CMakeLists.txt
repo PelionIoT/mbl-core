@@ -19,6 +19,7 @@ add_executable(runTests
     ${CMAKE_SOURCE_DIR}/src/tests.cpp 
     ${CMAKE_SOURCE_DIR}/src/DBusAdapter.cpp
     ${CMAKE_SOURCE_DIR}/src/DBusAdapterMailbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/DBusAdapterTImer.cpp    
     ${CMAKE_SOURCE_DIR}/src/DBusAdapterLowLevel.c     
     )
     

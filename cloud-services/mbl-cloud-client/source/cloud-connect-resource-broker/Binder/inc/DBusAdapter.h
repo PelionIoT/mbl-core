@@ -157,7 +157,7 @@ public:
 private:
     //wait no more than 10 milliseconds in order to send an asynchronus message of any type
     static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
-    enum class Status {INITALIZED, NON_INITALIZED};
+    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
 
     //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
     // this class must have a reference that should be always valid to the CCRB instance. 

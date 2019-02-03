@@ -112,8 +112,11 @@ MblError DBusAdapter::run()
     if (DBusAdapter::Status::INITALIZED != status_){
         return Error::DBusErr_Temporary;
     }
-    
+        
+    status_ = DBusAdapter::Status::RUNNING;
     int r = DBusAdapterLowLevel_event_loop_run();    
+    status_ = DBusAdapter::Status::INITALIZED;
+    
     return (r == 0) ? Error::None : Error::DBusErr_Temporary;
 }
 

@@ -15,7 +15,7 @@
 #include "DBusAdapterLowLevel.h"
 
 #define TRACE_GROUP "ccrb-dbus"
-#define IS_GE_0(retval) (((retval) >= 0) ? 0 : retval)
+#define RETURN_0_ON_SUCCESS(retval) (((retval) >= 0) ? 0 : retval)
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Declerations + initializations ///////////////////
@@ -48,6 +48,7 @@ static int incoming_mailbox_message_callback(
          // TODO : print , fatal error. what to do?
          return r;
     }
+    return 0;
 }
 
 static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
@@ -59,11 +60,11 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
     // 1	        STRING	Old owner or empty string if none   
     // 2	        STRING	New owner or empty string if none
     const char *msg_args[3];
-    size_t  size;
-    assert(0); // TODO re-write
+    size_t  size;    
     int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
-
-    return 0;
+    // for now, we do nothing with this - only print to log
+    // TODO : print to log
+    return RETURN_0_ON_SUCCESS(r);
 }
 
 
@@ -75,18 +76,46 @@ int register_resources_callback(
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
-    const char *str;
-    assert(0); // TODO re-write
+    const char *json_file_data;
+
     // TODO:
     // validate app registered expected interface on bus? (use sd-bus track)
 
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
+    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
     if (r < 0){
         return r;
     }
 
-    //ctx->adapter_callbacks.register_resources_async_callback() ...
- 
+
+    uint64_t cookie, monotonic_usec, realtime_usec, _get_seqnum;
+    uint8_t type;
+
+        int r1 = sd_bus_message_get_cookie(m, &cookie);
+        const char *dest = sd_bus_message_get_destination(m);
+    const char *itf = sd_bus_message_get_interface(m);
+    const char *member = sd_bus_message_get_member(m);
+    int r2 = sd_bus_message_get_monotonic_usec(m, &monotonic_usec);
+    const char *path = sd_bus_message_get_path(m);
+    int r3 = sd_bus_message_get_realtime_usec(m, &realtime_usec);
+    const char *sender = sd_bus_message_get_sender(m);
+    int r4 = sd_bus_message_get_seqnum(m , &_get_seqnum);
+    const char * sig1 = sd_bus_message_get_signature(m, 1);
+    const char * sig2 = sd_bus_message_get_signature(m, 0);
+    int r5 = sd_bus_message_get_type(m, &type);
+    int r6 = sd_bus_message_has_signature(m, "s");
+    int r7 = sd_bus_message_is_empty(m);
+
+
+    //last
+    //r = sd_bus_message_is_method_call()
+    //sd_bus_message_is_signal
+
+    //r = ctx_.adapter_callbacks.register_resources_async_callback(aaa, json_file_data);
+    //if (r < 0){
+         // TODO : print , fatal error. what to do?
+         //return r;
+    //}
+
     return 0;
 }
 
@@ -107,38 +136,73 @@ static int deregister_resources_callback(
 static const sd_bus_vtable     cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
-    // This message contains JSON file with resources to be registered.
-    //
-    // Input:
+    // ==Method== - Request to register resources supplied by a JSON file
+    // 
+    // ==Input==
     // Argument	    Type	Description
     // 0	        STRING	JSON file (encoded UTF-8)
     //
-    // Output:
+    // ==Output==
     // Argument	    Type	Description
-    // 0	        INT32	CCRBStatus
+    // 0	        INT32	Cloud Connect Status
+    //
+    // ==Possible Cloud connect status values==
+    // TBD
     SD_BUS_METHOD(
         "RegisterResources",
         "s", 
-        "u",
+        "i",
         register_resources_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED),
+        SD_BUS_VTABLE_UNPRIVILEGED
+    ),
 
+    // ==Signal== - emitted as a final result for resources registration asynchronous request
+    //
+    // Argument	    Type	Description
+    // 0	        INT32	Cloud connect status Code
+    // 1	        STRING	access-token - relevant only on successful registration
+    //
+    // ==Possible Cloud connect status values==
+    // TBD
+    SD_BUS_SIGNAL(
+        "RegisterResourcesResult",
+        "is",
+        0
+    ),
 
-    // This message de-register all previously registered resources for supplied access-token.
+    // ==Method== - Request to de-register all previously registered resources for supplied access-token.
     //
-    // Input:
+    // ==Input==
     // Argument	    Type	Description
-    // 0	        STRING	access-token string
+    // 0	        STRING	access-token
     //
-    // Output:
+    // ==Output==
     // Argument	    Type	Description
-    // 0	        INT32	CCRBStatus
+    // 0	        INT32	Cloud Connect Status
+    //
+    // ==Possible Cloud connect status values==
+    // TBD
     SD_BUS_METHOD(
         "DeRegisterResources",
         "s", 
-        "u",
+        "i",
         deregister_resources_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED),
+        SD_BUS_VTABLE_UNPRIVILEGED
+    ),
+
+    // ==Signal== - emitted on successful resources deregistration
+    //
+    // Argument	    Type	Description
+    // 0	        INT32	Cloud Connect Status Code
+    //
+    // ==Possible Cloud connect status values==
+    // TBD
+    SD_BUS_SIGNAL(
+        "DeRegisterResourcesResult",
+        "i",
+        0
+    ),
+
     SD_BUS_VTABLE_END
 };
 
@@ -202,7 +266,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
 
 on_failure:
     DBusAdapterBusService_deinit();
-    return IS_GE_0(r);
+    return r;
 }
 
 static int DBusAdapterBusService_deinit()
@@ -239,7 +303,7 @@ static int DBusAdapterEventLoop_init()
 
 on_failure:
     DBusAdapterEventLoop_deinit();
-    return IS_GE_0(r);
+    return RETURN_0_ON_SUCCESS(r);
 }
 
 static int DBusAdapterEventLoop_deinit()
@@ -301,7 +365,7 @@ int DBusAdapterLowLevel_event_loop_run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
-       
+    
     r = sd_event_loop(ctx_.event_loop_handle);
     if (r < 0){
         return r;
@@ -321,7 +385,7 @@ int DBusAdapterLowLevel_event_loop_request_stop(int exit_code)
         return -1;
     }
     int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
-    return IS_GE_0(r);
+    return RETURN_0_ON_SUCCESS(r);
 }
 
 int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
@@ -335,5 +399,5 @@ int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
         EPOLLIN, 
         incoming_mailbox_message_callback,
         user_data);
-    return IS_GE_0(r);
+    return RETURN_0_ON_SUCCESS(r);
 }
