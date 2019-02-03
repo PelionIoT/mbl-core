@@ -177,6 +177,11 @@ private:
         const uintptr_t ipc_conn_handle, 
         const char *access_token);
 
+    // Other callbacks
+    static int received_message_on_mailbox_callback(
+        const uint8_t* buff, 
+        const uint32_t size);
+
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;

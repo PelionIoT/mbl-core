@@ -115,8 +115,8 @@ TEST(DBusAdapterMailBox_a,SendReceiveRawMessage_MultiThread)
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
-// The fixture for testing class Foo.
-class DBusAdapeterLowLevel_b : public ::testing::Test {
+class DBusAdapeterLowLevel_b : public ::testing::Test 
+{
     protected:
     DBusAdapeterLowLevel_b() {
         // set-up work for each test here.
@@ -124,6 +124,7 @@ class DBusAdapeterLowLevel_b : public ::testing::Test {
         //This is a fast dummy initialization for testing 
         callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
         callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
+        callbacks.received_message_on_mailbox_callback = (int (*)(const uint8_t* , const uint32_t))3;
     }
 
     ~DBusAdapeterLowLevel_b() override {
@@ -148,7 +149,7 @@ class DBusAdapeterLowLevel_b : public ::testing::Test {
 
 TEST_F(DBusAdapeterLowLevel_b,init_deinit) 
 {
-    // all code preformed in fixture
+    // empty test body
 }
 
 TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_request) 
@@ -165,15 +166,43 @@ TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_request)
     ASSERT_EQ(DBusAdapterLowLevel_event_loop_run(), event_exit_code);
 }
 
-TEST(DBusAdapeter_c,init_deinit) 
-{
-    mbl::DBusAdapter adapter;
 
-    ASSERT_EQ(adapter.init(), 0);
-    ASSERT_EQ(adapter.deinit(), 0);
+//TODO : add negative test - external thread try to send ext self request - exexcted to be blocked by code
+
+class DBusAdapeter_c : public ::testing::Test 
+{
+    protected:
+    DBusAdapeter_c() {
+        // set-up work for each test here.
+    }
+    
+    ~DBusAdapeter_c() override {
+        // clean-up work that doesn't throw exceptions here.
+    }
+
+    // If the constructor and destructor are not enough for setting up
+    // and cleaning up each test, you can define the following methods:
+    void SetUp() override {
+        // Code here will be called immediately after the constructor (right before each test).
+        ASSERT_EQ(adapter.init(), mbl::MblError::None);
+    }
+
+    void TearDown() override {
+        // Code here will be called immediately after each test (right before the destructor).
+        ASSERT_EQ(adapter.deinit(), mbl::MblError::None);
+    }
+
+    // Objects declared here can be used by all tests in the test case for this class.
+    mbl::DBusAdapter adapter;
+};
+
+
+TEST_F(DBusAdapeter_c,init_deinit) 
+{   
+    // empty test body
 }
 
-TEST(DBusAdapeter_c, run_stop_with_external_exit_msg) 
+TEST_F(DBusAdapeter_c,run_stop_with_external_exit_msg) 
 {
     pthread_t   tid;
     mbl::DBusAdapterMsg msg;
@@ -183,7 +212,6 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
   
     //ASSERT_EQ(pthread_create(&tid, NULL, service_thread, nullptr), 0); 
 }
-
 
 
 /*

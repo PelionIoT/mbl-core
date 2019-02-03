@@ -46,6 +46,9 @@ typedef struct DBusAdapterLowLevelContext_
     char                    *service_name;
     DBusAdapterCallbacks    adapter_callbacks;
     pthread_t               ccrb_thread_id;
+
+    //event sources
+    sd_event_source *event_source_pipe;
 }DBusAdapterLowLevelContext;
 
 #ifdef __cplusplus

@@ -29,11 +29,12 @@
 #include "DBusAdapterMailbox.h"
 #include "DBusAdapterMsg.h"
 #include "MblError.h"
+#include "DBusAdapterLowLevel.h"
 
 
 namespace mbl {
 
-MblError DBusAdapterMailbox::init() 
+MblError DBusAdapterMailbox::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // TODO - consider refacto all 'r' to 'retval'
@@ -160,6 +161,13 @@ MblError DBusAdapterMailbox::receive_msg(DBusAdapterMsg &msg, int timeout_millis
     msg = *msg_;
     delete(msg_);
     return MblError::None;
+}
+
+
+MblError DBusAdapterMailbox::add_read_fd_to_event_loop()
+{
+    int r = DBusAdapterLowLevel_event_loop_add_io(pipefds_[READ], this);
+    return (r == 0) ? MblError::None : MblError::DBusErr_Temporary;
 }
 
 }//namespace mbl

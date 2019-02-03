@@ -32,15 +32,17 @@ struct DBusAdapterMsg;
 class DBusAdapterMailbox
 {
     public:    
+
     // TODO : fix all name of this module to DBusAdapterMailbox
-    MblError init();
-    MblError deinit();
-    MblError send_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
-    MblError receive_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
+    MblError  init();
+    MblError  deinit();
+    MblError  send_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
+    MblError  receive_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
+    MblError  add_read_fd_to_event_loop();
 
     private:
-      static const int READ = 0;
-      static const int WRITE = 1;
+    static const int READ = 0;
+    static const int WRITE = 1;
 
     uint32_t      protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
     uint64_t      sequence_num_ = 0; // starting from 0 and incremented

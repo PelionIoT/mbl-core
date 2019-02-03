@@ -29,6 +29,7 @@
 #include "DBusAdapterLowLevel.h"
 
 #define TRACE_GROUP "ccrb-dbus"
+#define IS_GE_0(retval) (((retval) >= 0) ? 0 : retval)
 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Declerations + initializations ///////////////////
@@ -151,7 +152,8 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
     
     if ((NULL == adapter_callbacks) ||
         (NULL == adapter_callbacks->deregister_resources_async_callback) ||
-        (NULL == adapter_callbacks->register_resources_async_callback))
+        (NULL == adapter_callbacks->register_resources_async_callback) || 
+        (NULL == adapter_callbacks->received_message_on_mailbox_callback))
     {
         goto on_failure;
     }
@@ -201,7 +203,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
 
 on_failure:
     DBusAdapterBusService_deinit();
-    return r;
+    return IS_GE_0(r);
 }
 
 static int DBusAdapterBusService_deinit()
@@ -238,7 +240,7 @@ static int DBusAdapterEventLoop_init()
 
 on_failure:
     DBusAdapterEventLoop_deinit();
-    return r;
+    return IS_GE_0(r);
 }
 
 static int DBusAdapterEventLoop_deinit()
@@ -320,7 +322,21 @@ int DBusAdapterLowLevel_event_loop_request_stop(int exit_code)
         return -1;
     }
     int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
-    return (r >= 0) ? 0 : r;
+    return IS_GE_0(r);
+}
+
+int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+       
+    int r = sd_event_add_io(
+        ctx_.event_loop_handle, 
+        &ctx_.event_source_pipe, 
+        fd, 
+        EPOLLIN, 
+        pipe_incoming_msg_callback,
+        user_data);
+    return IS_GE_0(r);
 }
 
 /*
