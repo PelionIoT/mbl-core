@@ -20,6 +20,10 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <assert.h>
+#include <pthread.h>
+
+
+
 
 #include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
@@ -256,6 +260,7 @@ int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks)
     int r;
 
     memset(&ctx_, 0, sizeof(ctx_));
+    ctx_.ccrb_thread_id = pthread_self();
     r = DBusAdapterBusService_init(adapter_callbacks);
     if (r < 0){
         return r;
@@ -291,11 +296,10 @@ DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext()
     return &ctx_;
 }
 
-int DBusAdapterLowLevel_run() 
+int DBusAdapterLowLevel_event_loop_run() 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
-
        
     r = sd_event_loop(ctx_.event_loop_handle);
     if (r < 0){
@@ -305,12 +309,18 @@ int DBusAdapterLowLevel_run()
     return 0;
 }
 
-int DBusAdapterLowLevel_stop() 
+int DBusAdapterLowLevel_event_loop_request_stop(int exit_code) 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    int r = 0;
-    assert(0); // TODO re-write
-    return 0;
+
+    //only my thread id is allowd to call this one, check no other thread
+    //is using this function in order to prevent confusion.
+    //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
+    if (pthread_self() != ctx_.ccrb_thread_id){
+        return -1;
+    }
+    int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
+    return (r >= 0) ? 0 : r;
 }
 
 /*

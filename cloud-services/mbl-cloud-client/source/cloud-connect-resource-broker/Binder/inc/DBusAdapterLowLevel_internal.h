@@ -20,6 +20,7 @@
 
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
+#include <pthread.h>
 
 #include "DBusAdapterLowLevel.h"
 
@@ -44,6 +45,7 @@ typedef struct DBusAdapterLowLevelContext_
     const char              *unique_name;
     char                    *service_name;
     DBusAdapterCallbacks    adapter_callbacks;
+    pthread_t               ccrb_thread_id;
 }DBusAdapterLowLevelContext;
 
 #ifdef __cplusplus

@@ -39,8 +39,8 @@ typedef struct DBusAdapterCallbacks_
 
 int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks);
 int DBusAdapterLowLevel_deinit();
-int DBusAdapterLowLevel_run();
-int DBusAdapterLowLevel_stop();
+int DBusAdapterLowLevel_event_loop_run();
+int DBusAdapterLowLevel_event_loop_request_stop(int exit_code);
 
 
 #ifdef __cplusplus

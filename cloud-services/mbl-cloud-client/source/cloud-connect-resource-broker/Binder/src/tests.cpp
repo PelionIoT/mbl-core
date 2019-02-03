@@ -151,19 +151,18 @@ TEST_F(DBusAdapeterLowLevel_b,init_deinit)
     // all code preformed in fixture
 }
 
-TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_exit_event) 
+TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_request) 
 {   
-    pthread_t   tid;
-    mbl::DBusAdapterMsg msg;
-    void *retval;
     DBusAdapterLowLevelContext *ctx = DBusAdapterLowLevel_GetContext();
     const int event_exit_code = 0xFFFEEEAA;
-  
-    //ASSERT_EQ(pthread_create(&tid, NULL, service_thread, nullptr), 0); 
 
     // send my self exit signal before I enter the loop, expect the event_exit_code
-    ASSERT_GE(sd_event_exit(ctx->event_loop_handle, event_exit_code), 0);
-    ASSERT_EQ(DBusAdapterLowLevel_run(), event_exit_code);
+    // usually we will send self stop from a callback and not this wey. 
+    // this is a test, so that's the easiest way to check (simulating a callback at this location)
+    ASSERT_EQ(DBusAdapterLowLevel_event_loop_request_stop(event_exit_code), 0);
+
+    // expect exit code to be event_exit_code since that what was sent
+    ASSERT_EQ(DBusAdapterLowLevel_event_loop_run(), event_exit_code);
 }
 
 TEST(DBusAdapeter_c,init_deinit) 
@@ -174,10 +173,15 @@ TEST(DBusAdapeter_c,init_deinit)
     ASSERT_EQ(adapter.deinit(), 0);
 }
 
-TEST(DBusAdapeter_c, run_stop_with_external_exit_Event) 
+TEST(DBusAdapeter_c, run_stop_with_external_exit_msg) 
 {
-    //TODO
-    //ASSERT_ANY_THROW(0);
+    pthread_t   tid;
+    mbl::DBusAdapterMsg msg;
+    void *retval;
+    DBusAdapterLowLevelContext *ctx = DBusAdapterLowLevel_GetContext();
+    const int event_exit_code = 0xFFFEEEAA;
+  
+    //ASSERT_EQ(pthread_create(&tid, NULL, service_thread, nullptr), 0); 
 }
 
 

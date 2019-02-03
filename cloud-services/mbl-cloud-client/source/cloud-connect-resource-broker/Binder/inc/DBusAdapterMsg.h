@@ -39,6 +39,11 @@ typedef struct DBusAdapterMsg_raw_
     char    bytes[DBUS_MAX_MSG_RAW_PAYLOAD_SIZE];
 }DBusAdapterMsg_raw;
 
+typedef struct DBusAdapterMsg_exit_ 
+{
+    int32_t     exit_code;
+}DBusAdapterMsg_exit;
+
 // Keep this enumerator
 typedef enum DBusAdapterMsgType_
 {
@@ -51,6 +56,7 @@ typedef enum DBusAdapterMsgType_
 typedef union DBusAdapterMsgPayload_
 {
     DBusAdapterMsg_raw  raw;
+    DBusAdapterMsg_exit exit;
 }DBusAdapterMsgPayload; 
 
 
