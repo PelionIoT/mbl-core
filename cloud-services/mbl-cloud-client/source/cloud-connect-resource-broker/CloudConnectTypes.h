@@ -1,17 +1,17 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef CloudConnectTypes_h_
 #define CloudConnectTypes_h_
 
-#include  <stdint.h>
-#include  <vector>
+#include <cstdint>
+#include <vector>
 
-#include  "MblError.h"
-#include  "CloudConnectExternalTypes.h"
+#include "MblError.h"
+#include "CloudConnectExternalTypes.h"
 
 namespace mbl {
 
@@ -20,14 +20,13 @@ namespace mbl {
  * Currently supported LwM2M resource data types. 
  */
 enum class ResourceDataType {
-    INVALID   = 0x0,
     STRING    = 0x1,  // uses std::string
     INTEGER   = 0x2,  // uses int64_t
-    FLOAT     = 0x3,
-    BOOLEAN   = 0x4,
-    OPAQUE    = 0x5,
-    TIME      = 0x6,
-    OBJLINK   = 0x7,
+    FLOAT     = 0x3,  // currently not supported
+    BOOLEAN   = 0x4,  // currently not supported
+    OPAQUE    = 0x5,  // currently not supported
+    TIME      = 0x6,  // currently not supported
+    OBJLINK   = 0x7,  // currently not supported
 };
     
 /**
@@ -111,10 +110,10 @@ private:
     // When we shall have more types, consider using union or byte array for 
     // storing different types. 
     std::string string_value_;
-    int64_t integer_value_;
+    int64_t integer_value_ = 0xBADBEEF;
 
     // stores type of stored data
-    ResourceDataType data_type_ = ResourceDataType::INVALID;
+    ResourceDataType data_type_;
 
     // currently we don't have pointers in class members, so we can allow default ctor's 
     // and assign operators without worry.

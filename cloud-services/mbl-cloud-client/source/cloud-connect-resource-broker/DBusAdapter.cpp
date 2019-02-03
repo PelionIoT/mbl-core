@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <cassert>
@@ -17,8 +17,8 @@
 namespace mbl {
 
 DBusAdapter::DBusAdapter(ResourceBroker &ccrb)
-    : exit_loop_ (false), // temporary flag exit_loop_ will be removed soon
-      ccrb_ (ccrb)
+    : exit_loop_(false), // temporary flag exit_loop_ will be removed soon
+      ccrb_(ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -106,9 +106,4 @@ MblError DBusAdapter::update_remove_resource_instance_status(
     return Error::None;
 }
 
-
-
-
-
 } // namespace mbl
-

@@ -1,13 +1,15 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ResourceBroker_h_
 #define ResourceBroker_h_
 
-#include  <memory>
+#include <cstdint>
+#include <memory>
+#include <pthread.h>
 
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
@@ -98,7 +100,7 @@ private:
  *         parsed and the registration request was sent to the Cloud for 
  *         the processing, or error code otherwise. 
  */
-    MblError register_resources_async(
+    MblError register_resources(
         const uintptr_t ipc_conn_handle, 
         const std::string &appl_resource_definition_json);
 
@@ -117,7 +119,7 @@ private:
  * @return MblError returns Error::None if the deregistration request 
  *         was sent to the Cloud for the processing, or error code otherwise. 
  */
-    MblError deregister_resources_async(
+    MblError deregister_resources(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token);
 
@@ -143,7 +145,7 @@ private:
  *         request was sent to the Cloud for the processing, or error 
  *         code otherwise.
  */
-    MblError add_resource_instances_async(
+    MblError add_resource_instances(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
@@ -171,7 +173,7 @@ private:
  *         request was sent to the Cloud for the processing, or error 
  *         code otherwise.
  */
-    MblError remove_resource_instances_async(
+    MblError remove_resource_instances(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <cassert>
@@ -16,7 +16,7 @@ ResourceData::ResourceData(
     const std::string &path, 
     const ResourceDataType type)
 : path_(path),
-  data_type_ (type) 
+  data_type_(type) 
 {
     // leave value not initialized
 }
@@ -26,13 +26,13 @@ ResourceData::ResourceData(
     const std::string &initial_value)
 : path_(path),
   string_value_(initial_value),
-  data_type_ (ResourceDataType::STRING) 
+  data_type_(ResourceDataType::STRING) 
 { }
 
 ResourceData::ResourceData(const std::string &path, int64_t initial_value)
 : path_(path),
   integer_value_(initial_value),
-  data_type_ (ResourceDataType::INTEGER)
+  data_type_(ResourceDataType::INTEGER)
 { }
 
 std::string ResourceData::get_path() const

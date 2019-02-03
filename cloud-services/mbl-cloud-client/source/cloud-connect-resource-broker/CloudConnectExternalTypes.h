@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef CloudConnectExternalTypes_h_
@@ -15,9 +15,7 @@ extern "C" {
 enum CloudConnectStatus {
     SUCCESS = 0x0000, 
     FAILED  = 0x0001,
-    
-    // allign enumerators to be 32 bits 
-    MAX_STATUS = 0xFFFFFFFF
+
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;

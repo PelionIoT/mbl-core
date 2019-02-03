@@ -1,8 +1,9 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <cassert>
 #include <pthread.h>
 
@@ -182,7 +183,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 }
 
 
-MblError ResourceBroker::register_resources_async(
+MblError ResourceBroker::register_resources(
         const uintptr_t , 
         const std::string &)
 {
@@ -191,7 +192,7 @@ MblError ResourceBroker::register_resources_async(
 }
 
 
-MblError ResourceBroker::deregister_resources_async(
+MblError ResourceBroker::deregister_resources(
         const uintptr_t , 
         const std::string &)
 {
@@ -199,7 +200,7 @@ MblError ResourceBroker::deregister_resources_async(
     return Error::None;
 }
 
-MblError ResourceBroker::add_resource_instances_async(
+MblError ResourceBroker::add_resource_instances(
         const uintptr_t , 
         const std::string &, 
         const std::string &, 
@@ -209,7 +210,7 @@ MblError ResourceBroker::add_resource_instances_async(
     return Error::None;
 }
 
-MblError ResourceBroker::remove_resource_instances_async(
+MblError ResourceBroker::remove_resource_instances(
     const uintptr_t , 
     const std::string &, 
     const std::string &, 
@@ -236,4 +237,3 @@ MblError ResourceBroker::get_resources_values(
 }
 
 } // namespace mbl
-

@@ -1,13 +1,13 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef DBusAdapter_h_
 #define DBusAdapter_h_
 
-#include <pthread.h>
+#include <cstdint>
 
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
@@ -66,7 +66,7 @@ public:
  * client application. 
  * This function sends a final status of the registration request, 
  * that was initiated by a client application via calling 
- * register_resources_async API. 
+ * register_resources API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token is a token that should be used by the client application
@@ -88,7 +88,7 @@ public:
  * @brief Sends deregistration request final status to the destination client 
  * application. This function sends a final status of the deregistration 
  * request, that was initiated by a client application via calling 
- * deregister_resources_async API. 
+ * deregister_resources API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information
  *        of the application that should be notified.
  * @param dereg_status status of deregistration of all resources. 
@@ -105,7 +105,7 @@ public:
  * @brief Sends resource instances addition request final status to the destination
  * client application. This function sends a final status of the resource instances
  * addition request, that was initiated by a client application via calling 
- * add_resource_instances_async API. 
+ * add_resource_instances API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information of 
  *        the application that should be notified.
  * @param add_status status of resource instances addition. 
@@ -122,7 +122,7 @@ public:
  * @brief Sends resource instances removal request final status to the destination
  * client application. This function sends a final status of the resource instances
  * removal request, that was initiated by a client application via calling 
- * remove_resource_instances_async API. 
+ * remove_resource_instances API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param remove_status status of resource instances removal. 
