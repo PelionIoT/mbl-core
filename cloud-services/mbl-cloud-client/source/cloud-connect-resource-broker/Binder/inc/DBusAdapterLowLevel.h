@@ -37,7 +37,7 @@ extern "C"
         int (*deregister_resources_async_callback)(const uintptr_t, const char *);
 
         // Other events
-        int (*received_message_on_mailbox_callback)(const uint8_t *, const uint32_t);
+        int (*received_message_on_mailbox_callback)(const int, const void*);
     } DBusAdapterCallbacks;
 
     int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks);

@@ -155,7 +155,8 @@ public:
 
 
 private:
-    
+    //wait no more than 10 milliseconds in order to send an asynchronus message of any type
+    static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
     enum class Status {INITALIZED, NON_INITALIZED};
 
     //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
@@ -165,9 +166,10 @@ private:
         
     Status status_ = Status::NON_INITALIZED;
 
-    DBusAdapterCallbacks        lower_level_callbacks_;    
-    DBusAdapterMailbox          mailbox_;
-    
+    DBusAdapterCallbacks   lower_level_callbacks_;    
+    DBusAdapterMailbox     mailbox_;
+    pthread_t              ccrb_thread_id_;
+
     // D-BUS callbacks - must be defined static since they are transferred into a C module
     static int register_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
@@ -179,8 +181,8 @@ private:
 
     // Other callbacks
     static int received_message_on_mailbox_callback(
-        const uint8_t* buff, 
-        const uint32_t size);
+        const int fd,
+        const void *userdata);
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;

@@ -22,9 +22,6 @@
 #include <assert.h>
 #include <pthread.h>
 
-
-
-
 #include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
 
@@ -42,14 +39,24 @@ static int DBusAdapterEventLoop_deinit();
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Event loop Attached Callbacks ////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-static int pipe_incoming_msg_callback(
+static int incoming_mailbox_message_callback(
     sd_event_source *s, 
     int fd,
  	uint32_t revents,
     void *userdata)
 {
-    assert(0); // TODO re-write
-    int a = 7;
+    if (s != ctx_.event_source_pipe){
+        // TODO : print , fatal error. what to do?
+        return -1;
+    }
+    if (revents & EPOLLIN == 0){
+         // TODO : print , fatal error. what to do?
+        return -1;
+    }
+    int r = ctx_.adapter_callbacks.received_message_on_mailbox_callback(fd, userdata);
+    if (r < 0){
+         // TODO : print , fatal error. what to do?
+    }
 }
 
 static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
@@ -199,6 +206,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
         goto on_failure;
     }
 
+    ctx_.adapter_callbacks = *adapter_callbacks;
     return 0;
 
 on_failure:
@@ -334,7 +342,7 @@ int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
         &ctx_.event_source_pipe, 
         fd, 
         EPOLLIN, 
-        pipe_incoming_msg_callback,
+        incoming_mailbox_message_callback,
         user_data);
     return IS_GE_0(r);
 }

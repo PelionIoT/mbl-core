@@ -11,6 +11,7 @@
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
 #include "DBusAdapterLowLevel.h"
+#include "DBusAdapterMsg.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
@@ -75,6 +76,7 @@ MblError DBusAdapter::init()
         return status;
     }
 
+    ccrb_thread_id_ = pthread_self();
     status_ = DBusAdapter::Status::INITALIZED;
     return Error::None;
 }
@@ -106,22 +108,42 @@ MblError DBusAdapter::deinit()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
     if (DBusAdapter::Status::INITALIZED != status_){
         return Error::DBusErr_Temporary;
     }
     
-    return Error::None;
+    int r = DBusAdapterLowLevel_event_loop_run();    
+    return (r == 0) ? Error::None : Error::DBusErr_Temporary;
 }
 
 MblError DBusAdapter::stop()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
+    MblError status;
+    int exit_code = 0; //set 0 as exit code for now
     if (DBusAdapter::Status::INITALIZED != status_){
         return Error::DBusErr_Temporary;
     }
-    return Error::None;
+
+    if (pthread_self() == ccrb_thread_id_){
+        int r = DBusAdapterLowLevel_event_loop_request_stop(exit_code);
+        if (r < 0){
+            // print error
+        }
+        status = (r == 0) ? Error::None : Error::DBusErr_Temporary;
+    }
+    else
+    {
+        DBusAdapterMsg msg;
+        msg.type = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_EXIT;
+        msg.payload_len = sizeof(mbl::DBusAdapterMsg_exit);
+        msg.payload.exit.exit_code = exit_code;
+        status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
+        if (status != MblError::None){
+            //print something
+        }
+    }
+    return status;
 }
 
 
@@ -195,8 +217,8 @@ int DBusAdapter::deregister_resources_async_callback(
 }
 
 int DBusAdapter::received_message_on_mailbox_callback(
-    const uint8_t* buff, 
-    const uint32_t size)
+    const int fd,
+    const void* userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);

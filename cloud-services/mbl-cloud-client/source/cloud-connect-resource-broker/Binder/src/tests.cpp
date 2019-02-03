@@ -124,7 +124,7 @@ class DBusAdapeterLowLevel_b : public ::testing::Test
         //This is a fast dummy initialization for testing 
         callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
         callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
-        callbacks.received_message_on_mailbox_callback = (int (*)(const uint8_t* , const uint32_t))3;
+        callbacks.received_message_on_mailbox_callback = (int (*)(const int, const void*))3;
     }
 
     ~DBusAdapeterLowLevel_b() override {
@@ -167,50 +167,52 @@ TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_request)
 }
 
 
-//TODO : add negative test - external thread try to send ext self request - exexcted to be blocked by code
-
-class DBusAdapeter_c : public ::testing::Test 
-{
-    protected:
-    DBusAdapeter_c() {
-        // set-up work for each test here.
-    }
-    
-    ~DBusAdapeter_c() override {
-        // clean-up work that doesn't throw exceptions here.
-    }
-
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-    void SetUp() override {
-        // Code here will be called immediately after the constructor (right before each test).
-        ASSERT_EQ(adapter.init(), mbl::MblError::None);
-    }
-
-    void TearDown() override {
-        // Code here will be called immediately after each test (right before the destructor).
-        ASSERT_EQ(adapter.deinit(), mbl::MblError::None);
-    }
-
-    // Objects declared here can be used by all tests in the test case for this class.
-    mbl::DBusAdapter adapter;
-};
-
-
-TEST_F(DBusAdapeter_c,init_deinit) 
+TEST(DBusAdapeter_c,init_deinit) 
 {   
-    // empty test body
+    mbl::DBusAdapter adapter_;
+    ASSERT_EQ(adapter_.init(), mbl::MblError::None);
+    ASSERT_EQ(adapter_.deinit(), mbl::MblError::None);
 }
 
-TEST_F(DBusAdapeter_c,run_stop_with_external_exit_msg) 
+
+static void* mbl_cloud_client_thread(void *adapter_)
 {
+    mbl::DBusAdapter *adapter = static_cast<mbl::DBusAdapter*>(adapter_);
+    MblError status;
+    
+    status = adapter->init();
+    if (status != mbl::MblError::None) {
+        pthread_exit((void*)status);
+    }
+
+    status = adapter->run();
+    if (status != mbl::MblError::None) {
+        pthread_exit((void*)status);
+    }
+
+    status = adapter->deinit();
+    if (status != mbl::MblError::None) {
+        pthread_exit((void*)status);
+    }
+
+    pthread_exit((void*)0);
+}
+
+TEST(DBusAdapeter_c,run_stop_with_external_exit_msg) 
+{
+    mbl::DBusAdapter adapter;
     pthread_t   tid;
-    mbl::DBusAdapterMsg msg;
     void *retval;
-    DBusAdapterLowLevelContext *ctx = DBusAdapterLowLevel_GetContext();
-    const int event_exit_code = 0xFFFEEEAA;
-  
-    //ASSERT_EQ(pthread_create(&tid, NULL, service_thread, nullptr), 0); 
+    
+    ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
+
+    //didn't use semaphoeres - sleep for 10 millisec
+    usleep(10000);
+
+    ASSERT_EQ(adapter.stop(), mbl::MblError::None);
+
+    ASSERT_EQ(pthread_join(tid, &retval), 0);
+    ASSERT_EQ((uintptr_t)retval, 0);
 }
 
 
