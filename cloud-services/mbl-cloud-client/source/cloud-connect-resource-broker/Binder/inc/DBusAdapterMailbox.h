@@ -1,18 +1,7 @@
 /*
- * Copyright (c) 2019 ARM Ltd.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 
@@ -26,9 +15,12 @@
 
 namespace mbl {
 
-struct DBusAdapterMsg;
-#define DBUS_MAILBOX_PROTECTION_FLAG    0xF0F0F0F0
 
+#define DBUS_MAILBOX_PROTECTION_FLAG        0xF0F0F0F0
+#define DBUS_MAILBOX_TIMEOUT_MILLISECONDS   1000
+
+struct DBusMailboxMsg;
+class DBusAdapter;
 class DBusAdapterMailbox
 {
     public:    
@@ -36,9 +28,9 @@ class DBusAdapterMailbox
     // TODO : fix all name of this module to DBusAdapterMailbox
     MblError  init();
     MblError  deinit();
-    MblError  send_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
-    MblError  receive_msg(DBusAdapterMsg &msg, int timeout_milliseconds);
-    MblError  add_read_fd_to_event_loop();
+    MblError  send_msg(DBusMailboxMsg &msg, int timeout_milliseconds);
+    MblError  receive_msg(DBusMailboxMsg &msg, int timeout_milliseconds);
+    int       get_pipefd_read();
 
     private:
     static const int READ = 0;

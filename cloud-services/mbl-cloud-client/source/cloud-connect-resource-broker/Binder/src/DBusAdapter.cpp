@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <cassert>
@@ -11,7 +11,7 @@
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
 #include "DBusAdapterLowLevel.h"
-#include "DBusAdapterMsg.h"
+#include "DBusMailboxMsg.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
@@ -70,8 +70,9 @@ MblError DBusAdapter::init()
         return Error::DBusErr_Temporary;
     }
 
-    status = mailbox_.add_read_fd_to_event_loop();
-    if (status != Error::None){
+    // send read fd and 'this' to be invoked on message
+    r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read(), this);
+    if (r < 0){
         deinit();
         return status;
     }
@@ -134,10 +135,10 @@ MblError DBusAdapter::stop()
     }
     else
     {
-        DBusAdapterMsg msg;
-        msg.type = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_EXIT;
-        msg.payload_len = sizeof(mbl::DBusAdapterMsg_exit);
-        msg.payload.exit.exit_code = exit_code;
+        DBusMailboxMsg msg;
+        msg.type_ = mbl::DBusMailboxMsg::MsgType::EXIT;
+        msg.payload_len_ = sizeof(mbl::DBusMailboxMsg::Msg_exit_);
+        msg.payload_.exit.exit_code = exit_code;
         status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
         if (status != MblError::None){
             //print something
@@ -187,7 +188,7 @@ MblError DBusAdapter::update_add_resource_instance_status(
 MblError DBusAdapter::update_remove_resource_instance_status(
     const uintptr_t , 
     const CloudConnectStatus )
-{
+{    
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
     if (DBusAdapter::Status::INITALIZED != status_){
@@ -202,6 +203,7 @@ int DBusAdapter::register_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
         const char *appl_resource_definition_json)
 {
+    // This is a static callback
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
     return 0;
@@ -211,18 +213,54 @@ int DBusAdapter::deregister_resources_async_callback(
     const uintptr_t ipc_conn_handle, 
     const char *access_token)
 {
+    // This is a static callback
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
     return 0;
 }
 
+int DBusAdapter::received_message_on_mailbox_callback_impl(const int fd)
+{
+    MblError status;
+    DBusMailboxMsg msg;
+    int r = -1;
+
+    if (fd != mailbox_.get_pipefd_read()){
+        return r;
+    }
+    status = mailbox_.receive_msg(msg, DBUS_MAILBOX_TIMEOUT_MILLISECONDS);
+    if (status != MblError::None) {
+        return r;
+    }
+
+    switch (msg.type_)
+    {
+        case mbl::DBusMailboxMsg::MsgType::EXIT:
+            if (msg.payload_len_ != sizeof(mbl::DBusMailboxMsg::Msg_exit_)){
+                break;
+            }
+            r = DBusAdapterLowLevel_event_loop_request_stop(msg.payload_.exit.exit_code);
+            break;
+        case mbl::DBusMailboxMsg::MsgType::RAW_DATA:
+            //pass 
+            break;
+    
+        default:
+            //TODO : print error
+            break;
+    }
+    return r;
+}
+
 int DBusAdapter::received_message_on_mailbox_callback(
     const int fd,
-    const void* userdata)
+    void* userdata)
 {
+    // This is a static callback
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    return 0;
+    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
+    return adapter_->received_message_on_mailbox_callback_impl(fd);
 }
+
 
 } // namespace mbl

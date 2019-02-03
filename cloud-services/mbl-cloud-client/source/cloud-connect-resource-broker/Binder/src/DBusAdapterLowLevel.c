@@ -1,18 +1,7 @@
 /*
- * Copyright (c) 2019 ARM Ltd.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 
@@ -45,17 +34,19 @@ static int incoming_mailbox_message_callback(
  	uint32_t revents,
     void *userdata)
 {
-    if (s != ctx_.event_source_pipe){
-        // TODO : print , fatal error. what to do?
-        return -1;
-    }
     if (revents & EPOLLIN == 0){
          // TODO : print , fatal error. what to do?
         return -1;
     }
+    if (s != ctx_.event_source_pipe){
+        // TODO : print , fatal error. what to do?
+        return -1;
+    }
+   
     int r = ctx_.adapter_callbacks.received_message_on_mailbox_callback(fd, userdata);
     if (r < 0){
          // TODO : print , fatal error. what to do?
+         return r;
     }
 }
 
@@ -346,12 +337,3 @@ int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
         user_data);
     return IS_GE_0(r);
 }
-
-/*
-int DBusAdapterLowLevel_attach_pipe_fd(int fd)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    sd_event_source *event_source;    
-    return sd_event_add_io(ctx.sdev_loop.ev_loop, &event_source, fd, EPOLLIN, pipe_incoming_msg_callback, 0);
-}
-*/

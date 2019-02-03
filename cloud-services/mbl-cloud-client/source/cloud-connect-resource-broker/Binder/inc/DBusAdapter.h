@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2016-2019 Arm Limited and Contributors. All rights reserved.
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
- * SPDX-License-Identifier: ...
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef DBusAdapter_h_
@@ -22,7 +22,7 @@
 
 namespace mbl {
 
-struct DBusAdapterMsg;
+struct DBusMailboxMsg;
 class ResourceBroker;
 
 // FIXME : defined temporarily - remove later
@@ -182,8 +182,9 @@ private:
     // Other callbacks
     static int received_message_on_mailbox_callback(
         const int fd,
-        const void *userdata);
+        void *userdata);
 
+    int received_message_on_mailbox_callback_impl(const int fd);
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;

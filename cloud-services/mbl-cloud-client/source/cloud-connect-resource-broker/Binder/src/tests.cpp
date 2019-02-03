@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <gtest/gtest.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -9,12 +15,12 @@
 #include "DBusAdapter.h"
 #include "DBusAdapterMailbox.h"
 #include "MblError.h"
-#include "DBusAdapterMsg.h"
+#include "DBusMailboxMsg.h"
 #include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
 
-
-#define DBUS_MAILBOX_WAIT_TIME_MS      100000
+#define DBUS_MAILBOX_WAIT_TIME_MS       100000
+#define SLEEP_MS(time_to_sleep_im_ms)   usleep(1000 * time_to_sleep_im_ms)
 
 using MblError = mbl::MblError;
 extern "C" DBusAdapterLowLevelContext* DBusAdapterLowLevel_GetContext();
@@ -30,17 +36,17 @@ TEST(DBusAdapterMailBox_a,InitDeinit)
 TEST(DBusAdapterMailBox_a,SendReceiveRawMessagePtr_SingleThread) 
 {
     mbl::DBusAdapterMailbox mailbox;
-    mbl::DBusAdapterMsg write_msg;
-    mbl::DBusAdapterMsg read_msg;
+    mbl::DBusMailboxMsg write_msg;
+    mbl::DBusMailboxMsg read_msg;
     uintptr_t msg_ptr_as_int;
     std::string str("Hello1 Hello2 Hello3");
 
     memset(&write_msg, 0, sizeof(write_msg));
     memset(&read_msg, 0, sizeof(read_msg));
-    write_msg.type = mbl::DBusAdapterMsgType::DBUS_ADAPTER_MSG_RAW;
-    read_msg.payload_len = str.length();
+    write_msg.type_ = mbl::DBusMailboxMsg::MsgType::RAW_DATA;
+    read_msg.payload_len_ = str.length();
     strncpy(
-        write_msg.payload.raw.bytes,
+        write_msg.payload_.raw.bytes,
         str.c_str(),
         str.length());
 
@@ -51,27 +57,26 @@ TEST(DBusAdapterMailBox_a,SendReceiveRawMessagePtr_SingleThread)
         ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
         ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
         write_msg = read_msg;
-        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(mbl::DBusAdapterMsg)), 0);        
+        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(mbl::DBusMailboxMsg)), 0);        
     }
     
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
-
 static void* reader_thread_start(void *mailbox)
 {
     mbl::DBusAdapterMailbox* mailbox_ = static_cast<mbl::DBusAdapterMailbox*>(mailbox);
-    mbl::DBusAdapterMsg output_msg;
+    mbl::DBusMailboxMsg output_msg;
     uint64_t expected_sequence_num = 0;
 
     for (char ch='A'; ch < 'Z'+1; ++ch, ++expected_sequence_num){
         if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
-        if ((output_msg.type != mbl::DBUS_ADAPTER_MSG_RAW) ||
-            (output_msg.payload_len != 1) ||
-            (output_msg.payload.raw.bytes[0] != ch)||
-            (output_msg.get_sequence_num() != expected_sequence_num))
+        if ((output_msg.type_ != mbl::DBusMailboxMsg::MsgType::RAW_DATA) ||
+            (output_msg.payload_len_ != 1) ||
+            (output_msg.payload_.raw.bytes[0] != ch)||
+            (output_msg._sequence_num != expected_sequence_num))
         {
             pthread_exit((void*)-1);
         }
@@ -81,15 +86,15 @@ static void* reader_thread_start(void *mailbox)
 
 static void* writer_thread_start(void *mailbox)
 {
-    mbl::DBusAdapterMsg input_message;
+    mbl::DBusMailboxMsg input_message;
     mbl::DBusAdapterMailbox* mailbox_ = static_cast<mbl::DBusAdapterMailbox*>(mailbox);
     
     memset(&input_message, 0, sizeof(input_message));
-    input_message.type = mbl::DBUS_ADAPTER_MSG_RAW;
-    input_message.payload_len = 1;
+    input_message.type_ = mbl::DBusMailboxMsg::MsgType::RAW_DATA;
+    input_message.payload_len_ = 1;
 
     for (char ch='A'; ch < 'Z'+1; ++ch){
-        input_message.payload.raw.bytes[0] = ch;
+        input_message.payload_.raw.bytes[0] = ch;
         if (mailbox_->send_msg(input_message, DBUS_MAILBOX_WAIT_TIME_MS) != 0){
             pthread_exit((void*)-1);
         }
@@ -124,7 +129,7 @@ class DBusAdapeterLowLevel_b : public ::testing::Test
         //This is a fast dummy initialization for testing 
         callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char*))1;
         callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char*))2;
-        callbacks.received_message_on_mailbox_callback = (int (*)(const int, const void*))3;
+        callbacks.received_message_on_mailbox_callback = (int (*)(const int, void*))3;
     }
 
     ~DBusAdapeterLowLevel_b() override {
@@ -166,14 +171,12 @@ TEST_F(DBusAdapeterLowLevel_b,run_stop_with_self_request)
     ASSERT_EQ(DBusAdapterLowLevel_event_loop_run(), event_exit_code);
 }
 
-
 TEST(DBusAdapeter_c,init_deinit) 
 {   
     mbl::DBusAdapter adapter_;
     ASSERT_EQ(adapter_.init(), mbl::MblError::None);
     ASSERT_EQ(adapter_.deinit(), mbl::MblError::None);
 }
-
 
 static void* mbl_cloud_client_thread(void *adapter_)
 {
@@ -198,73 +201,29 @@ static void* mbl_cloud_client_thread(void *adapter_)
     pthread_exit((void*)0);
 }
 
+
 TEST(DBusAdapeter_c,run_stop_with_external_exit_msg) 
 {
     mbl::DBusAdapter adapter;
     pthread_t   tid;
     void *retval;
-    
-    ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
+        
+    //start stop 10 times
+    for (auto i = 0; i < 10; i++){
+        ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
 
-    //didn't use semaphoeres - sleep for 10 millisec
-    usleep(10000);
+        // do not use semaphoeres - it's only a test - sleep for 10 millisec
+        SLEEP_MS(10);
 
-    ASSERT_EQ(adapter.stop(), mbl::MblError::None);
+        ASSERT_EQ(adapter.stop(), mbl::MblError::None);
 
-    ASSERT_EQ(pthread_join(tid, &retval), 0);
-    ASSERT_EQ((uintptr_t)retval, 0);
-}
-
-
-/*
-static void* ccrm_thread_start(void* _data)
-{
-    ccrm_thread_data *data = (ccrm_thread_data*)_data;    
-    uintptr_t exit_code = 0;
-
-    if (binder.init() != mbl::MblError::None){
-        exit_code = -1;
-    }
-    else if (sem_post(&data->sem) != 0){
-         exit_code = -2;
-    }
-    else if (binder.start() != mbl::MblError::None) {
-         exit_code = -3;
+        ASSERT_EQ(pthread_join(tid, &retval), 0);
+        ASSERT_EQ((uintptr_t)retval, 0);
+        printf("%d", i);
     }
     
-    binder.deinit();
-    pthread_exit((void*)exit_code);
 }
 
-
-//FIXME: remove asserts whenever need to clean finalize child thread
-TEST(Sdbus, StartStopWithPipeMsg) { 
-    pthread_t   tid;
-    int *retval;
-    DBusAdapterMsg msg;
-    ccrm_intra_thread data;
-
-    memset(&msg, 0, sizeof(msg)); 
-    ASSERT_EQ(data.binder.init(), mbl::MblError::None);
-       
-    // Lets simulate : current thread is mbl-cloud-client thread 
-    // which creates ccrm thread in the next line
-    ASSERT_EQ(sem_init(&data.sem, 0, 0), 0);  //init to 0 to wait for created thread signal    
-    ASSERT_EQ(pthread_create(&tid, NULL, ccrm_thread_start, &data), 0); 
-    ASSERT_EQ(sem_wait(&data.sem), 0);  //wait for server to start
-            
-    //send mesage in pipe in raw way, not via API, no need to fill data - just signal exit
-    msg.type = PIPE_MSG_TYPE_EXIT;
-    ASSERT_EQ(DBusAdapterMailbox_msg_send(&data.pipe, &msg), 0);
-
-    // FIXME: all pthread join must be converted to pthread_timedjoin_np    
-    ASSERT_EQ(pthread_join(tid, (void**)&retval), 0); 
-    ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(sem_destroy(&data.sem), 0);
-    ASSERT_EQ(DBusAdapterMailbox_destroy(&data.pipe), 0);
-    pthread_exit((void*)0);
-}
-*/
 
 int main(int argc, char **argv) 
 {
