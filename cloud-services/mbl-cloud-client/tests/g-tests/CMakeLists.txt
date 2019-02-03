@@ -2,22 +2,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-#cmake_minimum_required (VERSION 2.8)
 cmake_minimum_required (VERSION 3.9)
-SET(CMAKE_SYSTEM_NAME Generic)
 
-#ADDSUBDIRS()
-
+set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
-
 set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
+
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
 project(mblCcrbTests)
 
+add_definitions(-DMBED_CLOUD_CLIENT_ENDPOINT_TYPE="default")
+add_definitions(-DMBED_CLOUD_CLIENT_LIFETIME=600)
+add_definitions(-DSN_COAP_MAX_BLOCKWISE_PAYLOAD_SIZE=512)
+add_definitions(-DMBED_CLOUD_CLIENT_TRANSPORT_MODE_TCP)
 
-#add_compile_options(-Werror)
+
+add_compile_options(-Werror)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Wformat=2)
@@ -31,11 +33,10 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 
-include_directories(${SYSTEMD_INCLUDE_DIRS})
-include_directories(${MBEDCCRB_INCLUDE_DIRS})
-include_directories(${INCLUDE_DIRS})
+#include_directories(${SYSTEMD_INCLUDE_DIRS})
+#include_directories(${MBEDCCRB_INCLUDE_DIRS})
+#include_directories(${INCLUDE_DIRS})
 
-#include_directories(${INCLUDE_DIRECTORIES})
 
 include_directories(${CCRB_INCLUDE_DIR})
 include_directories(${CCRB_INCLUDE_DIR}/source)
@@ -48,9 +49,14 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c/nsdl-c)
+
+include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-libservice)
+
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/source/include)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/source/include)
 
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
