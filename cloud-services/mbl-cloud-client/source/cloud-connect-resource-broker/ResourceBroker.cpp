@@ -2,43 +2,31 @@
  * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- * Licensed under the Apache License, Version 2.0 (the License); you may
- * not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an AS IS BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
-
-
-#include "MblCloudConnectResourceBroker.h"
-#include "MblCloudConnectIpcDBus.h"
-#include "mbed-trace/mbed_trace.h"
 
 #include <cassert>
 #include <pthread.h>
+
+#include "ResourceBroker.h"
+#include "DBusAdapter.h"
+#include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb"
 
 namespace mbl {
 
 // Currently, this constructor is called from MblCloudClient thread.
-MblCloudConnectResourceBroker::MblCloudConnectResourceBroker() 
+ResourceBroker::ResourceBroker() 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblCloudConnectResourceBroker::~MblCloudConnectResourceBroker()
+ResourceBroker::~ResourceBroker()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblError MblCloudConnectResourceBroker::start()
+MblError ResourceBroker::start()
 {
     tr_info("%s", __PRETTY_FUNCTION__);
 
@@ -46,7 +34,7 @@ MblError MblCloudConnectResourceBroker::start()
     const int thread_create_err = pthread_create(
             &ipc_thread_id_,
             nullptr, // thread is created with default attributes
-            MblCloudConnectResourceBroker::ccrb_main,
+            ResourceBroker::ccrb_main,
             this
         );
     if(0 != thread_create_err) {
@@ -64,7 +52,7 @@ MblError MblCloudConnectResourceBroker::start()
     return Error::None;
 }
 
-MblError MblCloudConnectResourceBroker::stop()
+MblError ResourceBroker::stop()
 {
     // FIXME: handle properly all errors in this function. 
 
@@ -124,14 +112,14 @@ MblError MblCloudConnectResourceBroker::stop()
     return ret_value;
 }
 
-MblError MblCloudConnectResourceBroker::init()
+MblError ResourceBroker::init()
 {
     // verify that ipc_ member was not created yet
     assert(nullptr == ipc_);
     tr_info("%s", __PRETTY_FUNCTION__);
 
-    // create ipc instance
-    ipc_ = std::make_unique<MblCloudConnectIpcDBus>();
+    // create ipc instance and pass ccrb instance to constructor
+    ipc_ = std::make_unique<DBusAdapter>(*this);
 
     MblError status = ipc_->init();
     if(Error::None != status) {
@@ -141,7 +129,7 @@ MblError MblCloudConnectResourceBroker::init()
     return status;
 }
 
-MblError MblCloudConnectResourceBroker::de_init()
+MblError ResourceBroker::de_init()
 {
     assert(ipc_);
     tr_info("%s", __PRETTY_FUNCTION__);
@@ -157,7 +145,7 @@ MblError MblCloudConnectResourceBroker::de_init()
     return status;
 }
 
-MblError MblCloudConnectResourceBroker::run()
+MblError ResourceBroker::run()
 {
     assert(ipc_);
     tr_info("%s", __PRETTY_FUNCTION__);
@@ -170,13 +158,13 @@ MblError MblCloudConnectResourceBroker::run()
     return status;
 }
 
-void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
+void* ResourceBroker::ccrb_main(void* ccrb)
 {
     assert(ccrb);
     tr_info("%s", __PRETTY_FUNCTION__);
 
-    MblCloudConnectResourceBroker * const this_ccrb =
-        static_cast<MblCloudConnectResourceBroker*>(ccrb);
+    ResourceBroker * const this_ccrb =
+        static_cast<ResourceBroker*>(ccrb);
 
     MblError status = this_ccrb->init();
     if(Error::None != status) {
@@ -194,5 +182,58 @@ void* MblCloudConnectResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
-} // namespace mbl
 
+MblError ResourceBroker::register_resources(
+        const uintptr_t , 
+        const std::string &)
+{
+    // empty for now
+    return Error::None;
+}
+
+
+MblError ResourceBroker::deregister_resources(
+        const uintptr_t , 
+        const std::string &)
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError ResourceBroker::add_resource_instances(
+        const uintptr_t , 
+        const std::string &, 
+        const std::string &, 
+        const std::vector<uint16_t> &)
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError ResourceBroker::remove_resource_instances(
+    const uintptr_t , 
+    const std::string &, 
+    const std::string &, 
+    const std::vector<uint16_t> &)
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError ResourceBroker::set_resources_values(
+        const std::string &, 
+        std::vector<ResourceSetOperation> &)
+{
+    // empty for now
+    return Error::None;
+}
+
+MblError ResourceBroker::get_resources_values(
+        const std::string &, 
+        std::vector<ResourceGetOperation> &)
+{
+    // empty for now
+    return Error::None;
+}
+
+} // namespace mbl
