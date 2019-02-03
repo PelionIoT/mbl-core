@@ -1,6 +1,6 @@
 # mbl-app-update-manager - Mbed Linux OS user application update manager
 
-`mbl-app-update-manager` is an application that manages the installation of user applications on Mbed Linux OS.
+`mbl-app-update-manager` is an application that manages the installation of user applications from an update package on Mbed Linux OS.
 
 It expects a tar archive, referred here as the update package, which must contain one or multiple open package management (OPKG) packages with the `.ipk` extension.
 
@@ -11,6 +11,10 @@ The update package may be delivered via Pelion Device management or via some oth
 * verifiying the content of the update package
 * installing new applications
 * replacing currently installed version of applications
+
+`mbl-app-update-manager` requires the following Python packages to be installed on Mbed Linux OS:
+* [`mbl-app-manager`](../mbl-app-manager)
+* [`mbl-app-lifecycle-manager`](../../application-framework/mbl-app-lifecycle-manager)
 
 ## Installation and usage
 
@@ -24,8 +28,6 @@ pip install .
 ## Usage
 ```
 usage: mbl-app-update-manager [arguments] [<file>]
-
-MBL application update manager
 
 positional arguments:
   [<file>]       package containing app(s) to install.

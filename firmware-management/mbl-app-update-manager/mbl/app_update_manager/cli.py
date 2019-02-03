@@ -28,14 +28,14 @@ def parse_args():
     parser = ArgumentParserWithDefaultHelp(
         description="MBL application update manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="mbl-app-update-manager [arguments] [<file>]",
+        usage="mbl-app-update-manager [arguments] <file>",
     )
 
     parser.add_argument(
-        "package",
-        metavar="[<file>]",
+        "update-package",
+        metavar="<file>",
         type=str,
-        help="package containing app(s) to install.",
+        help="update package containing app(s) to install",
     )
 
     parser.add_argument(
@@ -57,7 +57,7 @@ def run_mbl_app_update_manager():
     log.info("Starting mbl-app-update-manager")
     log.debug("Command line arguments:{}".format(args))
 
-    handler = AppUpdateManager(args.package)
+    handler = AppUpdateManager(args.update_package)
 
     if handler.unpack():
         if handler.install_apps():

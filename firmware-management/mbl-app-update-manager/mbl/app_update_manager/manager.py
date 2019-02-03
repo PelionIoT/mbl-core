@@ -10,12 +10,13 @@ import sys
 import tarfile
 
 from .utils import log
-import mbl.app_manager.app_manager as apm
+import mbl.app_manager.manager as apm
 import mbl.app_lifecycle_manager.app_lifecycle_manager as alm
 
 
 TIMEOUT_STOP_RUNNING_APP_IN_SECONDS = 3
 IPKS_EXCTRACTION_PATH = "/mnt/cache/opkg/src_ipk"
+APPS_INSTALLATION_PATH = "/home/app"
 
 
 class AppUpdateManager:
@@ -30,7 +31,7 @@ class AppUpdateManager:
         """Create an app package handler."""
         self._ipks = []
         self._pkg_arch_members = []
-        self._installed_app_ids = []
+        self._installed_app_names = []
         self._package = package
         self.app_mng = apm.AppManager()
         self.app_lifecycle_mng = alm.AppLifecycleManager()
@@ -86,9 +87,9 @@ class AppUpdateManager:
 
     def start_installed_apps(self):
         """Run applications that have been successfully installed if any."""
-        if self._installed_app_ids:
-            for app_id in self._installed_app_ids:
-                start_app(app_id)
+        if self._installed_app_names:
+            for app_name in self._installed_app_names:
+                start_app(app_name)
 
     # --------------------------- Private Methods -----------------------------
 
@@ -139,106 +140,51 @@ class AppUpdateManager:
                 self._ipks.append(tar_info.name)
                 self._pkg_arch_members.append(tar_info)
 
-    def _get_app_id(self, ipk):
-        """
-        Get the application id from the ipk.
-
-        The application id is also the name of the directory in /home/app
-        where the application will be installed.
-        """
-        log.info("Getting app id from ipk '{}'".format(ipk))
-
-        try:
-            app_id = self.app_mng.get_package_dest_dir(ipk)
-            log.debug("App Id is '{}'".format(app_id))
-            return app_id
-        except subprocess.CalledProcessError as e:
-            msg = "Getting app id failed with error: {}".format(e.returncode)
-            log.exception(msg)
-            raise AppOperationError(msg)
-
-    def _start_app(self, app_id):
+    def _start_app(self, app_name):
         """Start an application.
 
         Return `True` iff an application with the id was started.
         """
-        log.info("Starting app with id '{}'".format(app_id))
+        log.info("Starting app '{}'".format(app_name))
 
-        ret_code = self.app_lifecycle_mng.run_container(app_id, app_id)
+        ret_code = self.app_lifecycle_mng.run_container(app_name, app_name)
 
         if ret_code is not alm.Error.SUCCESS:
-            msg = "Starting app with id '{}' failed with error: {}".format(
-                app_id, ret_code
+            msg = "Starting app '{}' failed with error: {}".format(
+                app_name, ret_code
             )
             log.exception(msg)
             raise AppOperationError(msg)
 
-        log.info("App with id '{}' successfully started".format(app_id))
+        log.info("App '{}' successfully started".format(app_name))
 
         return True
 
-    def _stop_app(self, app_id):
+    def _stop_app(self, app_name):
         """Stop a running application.
 
         Return `True` if an application running with the id was stopped or no
         app with the specified id exist.
         """
-        log.info("Stopping app with id '{}'".format(app_id))
+        log.info("Stopping app '{}'".format(app_name))
 
         ret_code = self.app_lifecycle_mng.stop_app(
-            app_id, TIMEOUT_STOP_RUNNING_APP_IN_SECONDS
+            app_name, TIMEOUT_STOP_RUNNING_APP_IN_SECONDS
         )
 
         if ret_code is not alm.Error.ERR_CONTAINER_DOES_NOT_EXIST:
             # it is ok, the app may not be installed
-            log.debug("App with id '{}' does not exist".format(app_id))
+            log.debug("App '{}' does not exist".format(app_name))
         elif ret_code is not alm.Error.SUCCESS:
-            msg = "Stopping app with id '{}' failed with error: {}".format(
-                app_id, ret_code
+            msg = "Stopping app '{}' failed with error: {}".format(
+                app_name, ret_code
             )
             log.exception(msg)
             raise AppOperationError(msg)
 
-        log.info("App with id '{}' successfully stopped".format(app_id))
+        log.info("App '{}' successfully stopped".format(app_name))
 
         return True
-
-    def _remove_app(self, app_id):
-        """Remove an application.
-
-        Return `True` iff an application with the specified id was removed.
-        """
-        log.info("Removing app with id '{}'".format(app_id))
-
-        try:
-            self.app_mng.remove_package(app_id)
-            log.info("App with id '{}' successfully removed".format(app_id))
-            return True
-        except subprocess.CalledProcessError as e:
-            msg = "Removing app with id '{}' failed with error: {}".format(
-                app_id, e.returncode
-            )
-            log.exception(msg)
-            raise AppOperationError(msg)
-
-    def _install_app(self, ipk):
-        """
-        Install package using AppManager.
-
-        Return `True` iff the application is successfully installed.
-        """
-        log.info("Installing app from '{}'".format(ipk))
-
-        try:
-            self.app_mng.install_package(ipk)
-            log.info("App in ipk '{}' successfully installed".format(ipk))
-            return True
-        except subprocess.CalledProcessError as error:
-            msg = "'{}' installation ended with return code: '{}'".format(
-                ipk, e.returncode
-            )
-            log.exception(msg)
-            raise AppOperationError(msg)
 
     def _manage_app_installation(self, ipk):
         """Manage the process of installing application from ipk.
@@ -248,12 +194,17 @@ class AppUpdateManager:
         log.info("Installing ipk '{}'".format(ipk))
 
         try:
-            app_id = self._get_app_id(ipk)
+            app_name = self.app_mng.get_app_name(ipk)
 
-            if app_id:
-                if self._stop_app(app_id):
-                    if self._remove_app(app_id) and self._install_app(ipk):
-                        self._installed_app_ids.append(app_id)
+            if app_name:
+                if self._stop_app(app_name):
+                    if self.app_mng.remove_app(
+                        app_name,
+                        os.path.join(APPS_INSTALLATION_PATH, app_name),
+                    ) and self.app_mng.install_app(
+                        ipk, os.path.join(APPS_INSTALLATION_PATH, app_name)
+                    ):
+                        self._installed_app_names.append(app_name)
                         return True
         except AppOperationError as error:
             msg = "Failure to install '{}', Error: {}".format(ipk, error)
