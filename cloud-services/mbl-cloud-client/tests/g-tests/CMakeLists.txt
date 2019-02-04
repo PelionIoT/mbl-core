@@ -8,8 +8,7 @@ set(EXTERNAL_DEFINE_FILE ${EXTARNAL_DEFINE_FILE})
 #include(${EXTARNAL_DEFINE_FILE})
 include(${EXTERNAL_DEFINE_FILE})
 
-#cmake_minimum_required (VERSION 3.9)
-cmake_minimum_required (VERSION 2.8)
+cmake_minimum_required (VERSION 3.9)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -58,8 +57,8 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-
-include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/update-client-hub)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
+include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
