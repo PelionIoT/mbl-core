@@ -3,13 +3,13 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Simple command line interface for mbl app manager."""
+"""Command line interface for mbl-app-manager."""
 
 import argparse
 import logging
 import os
 import sys
-from enum import Enum
+from enum  import Enum
 
 from .manager import AppManager
 from .utils import log
@@ -87,7 +87,7 @@ def run_mbl_app_manager():
     log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
 
     log.info("Starting mbl-app-manager")
-    logger.debug("Command line arguments:{}".format(args))
+    log.debug("Command line arguments:{}".format(args))
 
     handler = AppManager()
 
