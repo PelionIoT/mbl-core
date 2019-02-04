@@ -2,7 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required (VERSION 3.9)
+
+#add_definitions(-DEXTARNAL_DEFINE_FILE)
+set(EXTERNAL_DEFINE_FILE ${EXTARNAL_DEFINE_FILE})
+#include(${EXTARNAL_DEFINE_FILE})
+include(${EXTERNAL_DEFINE_FILE})
+
+#cmake_minimum_required (VERSION 3.9)
+cmake_minimum_required (VERSION 2.8)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
@@ -13,10 +20,12 @@ pkg_check_modules(JSONCPP jsoncpp)
 
 project(mblCcrbTests)
 
-add_definitions(-DMBED_CLOUD_CLIENT_ENDPOINT_TYPE="default")
-add_definitions(-DMBED_CLOUD_CLIENT_LIFETIME=600)
-add_definitions(-DSN_COAP_MAX_BLOCKWISE_PAYLOAD_SIZE=512)
-add_definitions(-DMBED_CLOUD_CLIENT_TRANSPORT_MODE_TCP)
+
+
+#add_definitions(-DMBED_CLOUD_CLIENT_ENDPOINT_TYPE="default")
+#add_definitions(-DMBED_CLOUD_CLIENT_LIFETIME=600)
+#add_definitions(-DSN_COAP_MAX_BLOCKWISE_PAYLOAD_SIZE=512)
+#add_definitions(-DMBED_CLOUD_CLIENT_TRANSPORT_MODE_TCP)
 
 
 add_compile_options(-Werror)
@@ -50,6 +59,7 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-tr
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
+include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/update-client-hub)
 
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
@@ -65,7 +75,7 @@ set_target_properties (gtest-mbl-cloud-client PROPERTIES
 
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
-# Cyclic dependency between  mblCloudClient and mbedCloudClient
+# Cyclic dependency between mblCloudClient and mbedCloudClient
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 
 target_link_libraries(gtest-mbl-cloud-client factory-configurator-client)
@@ -80,7 +90,7 @@ target_link_libraries(gtest-mbl-cloud-client ${JSONCPP_LIBRARIES})
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(gtest-mbl-cloud-client mbedCloudClient)
-# Cyclic dependency between  mblCloudClient and mbedCloudClient
+# Cyclic dependency between mblCloudClient and mbedCloudClient
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 
 target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
