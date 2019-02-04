@@ -33,11 +33,6 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 
-#include_directories(${SYSTEMD_INCLUDE_DIRS})
-#include_directories(${MBEDCCRB_INCLUDE_DIRS})
-#include_directories(${INCLUDE_DIRS})
-
-
 include_directories(${CCRB_INCLUDE_DIR})
 include_directories(${CCRB_INCLUDE_DIR}/source)
 
@@ -46,7 +41,7 @@ include_directories(${MBED_CLOUD_CLIENT_INC_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
-include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
+#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
@@ -56,8 +51,6 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-li
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/source/include)
-
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
 
