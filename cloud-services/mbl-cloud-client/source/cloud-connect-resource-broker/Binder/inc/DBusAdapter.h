@@ -15,6 +15,7 @@
 //#include "CloudConnectExternalTypes.h"
 
 #include <string>
+#include <set>
 
 #include "DBusAdapterMailbox.h"
 #include "DBusAdapterLowLevel.h"
@@ -168,32 +169,38 @@ private:
 
     DBusAdapterCallbacks   lower_level_callbacks_;    
     DBusAdapterMailbox     mailbox_;
-    pthread_t              ccrb_thread_id_;
+    pthread_t              master_thread_id_;
+
+    // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
+    // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching
+    // it is kept inside this set
+    // TODO : consider adding timestamp to avoid container explosion + periodic cleanup
+    std::set<uintptr_t>    bus_request_handles_;
 
     /*
     callbacks + implementation pairs
     Callbacks are static and pipe the call to the actual object implementation member function
     */
     static int register_resources_async_callback(
-        const uintptr_t ipc_conn_handle, 
-        const char *appl_resource_definition_json);
+        const uintptr_t bus_request_handle, 
+        const char *appl_resource_definition_json,
+        void *userdata);
     int register_resources_async_callback_impl(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t bus_request_handle, 
         const char *appl_resource_definition_json);
 
     static int deregister_resources_async_callback(
-        const uintptr_t ipc_conn_handle, 
-        const char *access_token);
+        const uintptr_t bus_request_handle, 
+        const char *access_token,
+        void *userdata);        // TODO : should these pointers be const?
     int deregister_resources_async_callback_impl(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t bus_request_handle, 
         const char *access_token);
 
     static int received_message_on_mailbox_callback(
         const int fd,
         void *userdata);
-    int received_message_on_mailbox_callback_impl(
-        const int fd,
-        void *userdata);
+    int received_message_on_mailbox_callback_impl(const int fd);
     
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;

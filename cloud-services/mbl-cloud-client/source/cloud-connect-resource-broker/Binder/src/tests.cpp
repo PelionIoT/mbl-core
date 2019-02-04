@@ -133,10 +133,9 @@ class DBusAdapeterLowLevel_b : public ::testing::Test
     {
         // set-up work for each test here.
 
-        //This is a fast dummy initialization for testing
-        callbacks.register_resources_async_callback = (int (*)(uintptr_t, const char *))1;
-        callbacks.deregister_resources_async_callback = (int (*)(uintptr_t, const char *))2;
-        callbacks.received_message_on_mailbox_callback = (int (*)(const int, void *))3;
+        // This is a fast dummy initialization for unit-testing
+        // We just want to pass the entry sanity checks - so assign here non-zero values
+        memset(&callbacks, 1, sizeof(callbacks));
     }
 
     ~DBusAdapeterLowLevel_b() override
@@ -149,7 +148,8 @@ class DBusAdapeterLowLevel_b : public ::testing::Test
     void SetUp() override
     {
         // Code here will be called immediately after the constructor (right before each test).
-        ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks), 0);
+        // This is a fast dummy initialization for unit-testing
+        ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks, nullptr), 0);
     }
 
     void TearDown() override
@@ -214,6 +214,7 @@ static void *mbl_cloud_client_thread(void *adapter_)
     pthread_exit((void *)0);
 }
 
+
 TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 {
     mbl::DBusAdapter adapter;
@@ -227,7 +228,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 
         // TODO :replace with blocking query
         // do not use semaphores - it's only a test - sleep for 10 millisec
-        SLEEP_MS(100000);
+        SLEEP_MS(100000);       //TODO - temporary infinite - back to 10
 
         ASSERT_EQ(adapter.stop(), mbl::MblError::None);
 
@@ -236,6 +237,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
         printf("%d", i);
     }
 }
+
 
 int main(int argc, char **argv)
 {

@@ -64,20 +64,20 @@ MblError DBusAdapter::init()
         return status;
     }
 
-    r = DBusAdapterLowLevel_init(&lower_level_callbacks_);
+    r = DBusAdapterLowLevel_init(&lower_level_callbacks_, this);
     if (r < 0){
         deinit();
         return Error::DBusErr_Temporary;
     }
 
     // send read fd and 'this' to be invoked on message
-    r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read(), this);
+    r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read());
     if (r < 0){
         deinit();
         return status;
     }
 
-    ccrb_thread_id_ = pthread_self();
+    master_thread_id_ = pthread_self();
     status_ = DBusAdapter::Status::INITALIZED;
     return Error::None;
 }
@@ -116,7 +116,7 @@ MblError DBusAdapter::run()
     status_ = DBusAdapter::Status::RUNNING;
     int r = DBusAdapterLowLevel_event_loop_run();    
     status_ = DBusAdapter::Status::INITALIZED;
-    
+
     return (r == 0) ? Error::None : Error::DBusErr_Temporary;
 }
 
@@ -129,7 +129,7 @@ MblError DBusAdapter::stop()
         return Error::DBusErr_Temporary;
     }
 
-    if (pthread_self() == ccrb_thread_id_){
+    if (pthread_self() == master_thread_id_){
         int r = DBusAdapterLowLevel_event_loop_request_stop(exit_code);
         if (r < 0){
             // print error
@@ -200,22 +200,45 @@ MblError DBusAdapter::update_remove_resource_instance_status(
     return Error::None;
 }
 
+int DBusAdapter::register_resources_async_callback_impl(
+    const uintptr_t bus_request_handle, 
+    const char *appl_resource_definition_json)
+{
+    // Register resources is an asynchronous process towards the cloud -> store handle
+    if (bus_request_handles_.insert(bus_request_handle).second == false){
+        return -1;
+    }
+    //TODO : uncomment + handle errors
+    //MblError status = ccrb.register_resources(bus_request_handle, std::string(appl_resource_definition_json));    
+    return 0;
+}
+
 int DBusAdapter::register_resources_async_callback(
-        const uintptr_t ipc_conn_handle, 
-        const char *appl_resource_definition_json)
+        const uintptr_t bus_request_handle, 
+        const char *appl_resource_definition_json,
+        void *userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->deregister_resources_async_callback_impl(ipc_conn_handle, appl_resource_definition_json);
+    return adapter_->register_resources_async_callback_impl(
+        bus_request_handle, appl_resource_definition_json);
+}
+
+int DBusAdapter::deregister_resources_async_callback_impl(
+    const uintptr_t bus_request_handle, 
+    const char *access_token)
+{
+    assert(0);
 }
 
 int DBusAdapter::deregister_resources_async_callback(
-    const uintptr_t ipc_conn_handle, 
-    const char *access_token)
+    const uintptr_t bus_request_handle, 
+    const char *access_token,
+    void *userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->deregister_resources_async_callback_impl(ipc_conn_handle, access_token);
+    return adapter_->deregister_resources_async_callback_impl(bus_request_handle, access_token);
 }
 
 int DBusAdapter::received_message_on_mailbox_callback_impl(const int fd)

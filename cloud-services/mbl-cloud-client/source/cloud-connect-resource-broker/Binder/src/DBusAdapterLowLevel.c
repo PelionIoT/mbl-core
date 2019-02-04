@@ -19,6 +19,7 @@
 #define TRACE_GROUP "ccrb-dbus"
 #define RETURN_0_ON_SUCCESS(retval) (((retval) >= 0) ? 0 : retval)
 
+
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// Declerations + initializations ///////////////////
 //////////////////////////////////////////////////////////////////////////////////
@@ -111,7 +112,7 @@ int incoming_bus_message_callback(
     }
 
     if (sd_bus_message_is_method_call(m, 0, "RegisterResources")){
-        const char *json_file_data;        
+        const char *json_file_data = NULL;       
         
         if (0 != strncmp(signature,"s", 1)){
             return -1;        
@@ -121,21 +122,27 @@ int incoming_bus_message_callback(
             return r;
         }
 
+        if ((NULL == json_file_data) || (strlen(json_file_data) == 0)){
+            return -1;
+        }
+
         // TODO:
         // validate app registered expected interface on bus? (use sd-bus track)
-
-        sd_bus_message_ref(m);
+        
         r = ctx_.adapter_callbacks.register_resources_async_callback(
-            (uintptr_t)m,
+            (const uintptr_t)m,
             json_file_data,
-            ctx_.adapter_callbacks_user_data);
+            ctx_.adapter_callbacks_userdata);
         if (r < 0){
             //TODO : print , fatal error. what to do?
             return r;
         }
+        // success - increase ref
+        sd_bus_message_ref(m);
     }
     else if (sd_bus_message_is_method_call(m, 0, "DeRegisterResources")) {
         sd_bus_message_ref(m);
+        assert(0);
     }
     else {
         //TODO - reply with error? or just pass?
@@ -145,18 +152,6 @@ int incoming_bus_message_callback(
     return 0;
 }
 
-static int deregister_resources_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
-    int r;
-    assert(0); // TODO re-write
-    //int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &str);
-    //ctx->sdbus.callbacks.deregister_resources_callback(str, &ccrb_status);
- 
-    return 0;
-}
 
 // TODO: Move to a new file dedicated for vtable
 static const sd_bus_vtable     cloud_connect_service_vtable[] = {
@@ -233,7 +228,9 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
 };
 
 
-static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callbacks, void *user_data)
+static int DBusAdapterBusService_init(
+    const DBusAdapterCallbacks *adapter_callbacks, 
+    void *userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     int32_t r = -1;
@@ -288,7 +285,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
     }
 
     ctx_.adapter_callbacks = *adapter_callbacks;
-    ctx_.adapter_callbacks_user_data = user_data;
+    ctx_.adapter_callbacks_userdata = userdata;
     return 0;
 
 on_failure:
@@ -346,14 +343,14 @@ static int DBusAdapterEventLoop_deinit()
 /////////////////////////////// API //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void *user_data)
+int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void *userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
 
     memset(&ctx_, 0, sizeof(ctx_));
-    ctx_.ccrb_thread_id = pthread_self();
-    r = DBusAdapterBusService_init(adapter_callbacks, user_data);
+    ctx_.master_thread_id = pthread_self();
+    r = DBusAdapterBusService_init(adapter_callbacks, userdata);
     if (r < 0){
         return r;
     }
@@ -408,7 +405,7 @@ int DBusAdapterLowLevel_event_loop_request_stop(int exit_code)
     //only my thread id is allowd to call this one, check no other thread
     //is using this function in order to prevent confusion.
     //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
-    if (pthread_self() != ctx_.ccrb_thread_id){
+    if (pthread_self() != ctx_.master_thread_id){
         return -1;
     }
     int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
@@ -425,6 +422,6 @@ int DBusAdapterLowLevel_event_loop_add_io(int fd)
         fd, 
         EPOLLIN, 
         incoming_mailbox_message_callback,
-        ctx_.adapter_callbacks_user_data);
+        (void*)ctx_.adapter_callbacks_userdata);
     return RETURN_0_ON_SUCCESS(r);
 }
