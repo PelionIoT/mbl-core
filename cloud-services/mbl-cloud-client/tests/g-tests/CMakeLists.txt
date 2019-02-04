@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.9)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
-set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
+#set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
@@ -41,19 +41,13 @@ include_directories(${MBED_CLOUD_CLIENT_INC_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
-#include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client/source)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c/nsdl-c)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-libservice)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
-
 
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
@@ -80,6 +74,7 @@ set_target_properties (gtest-mbl-cloud-client PROPERTIES
 
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
+# Cyclic dependency between  mblCloudClient and mbedCloudClient
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 
 target_link_libraries(gtest-mbl-cloud-client factory-configurator-client)
@@ -94,7 +89,7 @@ target_link_libraries(gtest-mbl-cloud-client ${JSONCPP_LIBRARIES})
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(gtest-mbl-cloud-client mbedCloudClient)
-
+# Cyclic dependency between  mblCloudClient and mbedCloudClient
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 
 target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)

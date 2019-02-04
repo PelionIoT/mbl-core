@@ -78,6 +78,7 @@ add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 # Order is important here: dependencies must follow dependents
 target_link_libraries(mbl-cloud-client mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedCloudClient)
+# Cyclic dependency between  mblCloudClient and mbedCloudClient
 target_link_libraries(mbl-cloud-client mblCloudClient)
 
 target_link_libraries(mbl-cloud-client factory-configurator-client)
@@ -91,7 +92,7 @@ target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(mbl-cloud-client mbedCloudClient)
-
+# Cyclic dependency between  mblCloudClient and mbedCloudClient
 target_link_libraries(mbl-cloud-client mblCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
