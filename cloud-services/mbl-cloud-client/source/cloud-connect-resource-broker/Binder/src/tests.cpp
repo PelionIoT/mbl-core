@@ -226,7 +226,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
         ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
 
         // TODO :replace with blocking query
-        // do not use semaphoeres - it's only a test - sleep for 10 millisec
+        // do not use semaphores - it's only a test - sleep for 10 millisec
         SLEEP_MS(100000);
 
         ASSERT_EQ(adapter.stop(), mbl::MblError::None);

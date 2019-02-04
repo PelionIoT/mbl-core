@@ -10,6 +10,8 @@
 #include <stdbool.h>
 #include <assert.h>
 #include <pthread.h>
+#include <string.h>
+
 
 #include "DBusAdapterLowLevel_internal.h"
 #include "DBusAdapterLowLevel.h"
@@ -71,50 +73,72 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// D-BUS Service Callbacks //////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-int register_resources_callback(
+int incoming_message_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;
     DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
-    const char *json_file_data;
+    bool increase_reference = false;
 
-    // TODO:
-    // validate app registered expected interface on bus? (use sd-bus track)
-
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
+    //TODO: check what happens when failure returned to callback
+    if (sd_bus_message_is_empty(m)){
+        return -1;
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_destination(m),
+        DBUS_CLOUD_SERVICE_NAME, 
+        strlen(DBUS_CLOUD_SERVICE_NAME)))
+    {
+        return -1;        
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_path(m),
+        DBUS_CLOUD_CONNECT_OBJECT_PATH, 
+        strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
+    {
+        return -1;        
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_interface(m),
+        DBUS_CLOUD_CONNECT_INTERFACE_NAME, 
+        strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
+    {
+        return -1;        
+    }
+    const char *signature = sd_bus_message_get_signature(m, true);
     if (r < 0){
         return r;
     }
 
+    if (sd_bus_message_is_method_call(m, 0, "RegisterResources")){
+        const char *json_file_data;        
+        
+        if (0 != strncmp(signature,"s", 1)){
+            return -1;        
+        }
+        r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
+        if (r < 0){
+            return r;
+        }
 
-    uint64_t cookie, monotonic_usec, realtime_usec, _get_seqnum;
-    uint8_t type;
+        // TODO:
+        // validate app registered expected interface on bus? (use sd-bus track)
 
-        int r1 = sd_bus_message_get_cookie(m, &cookie);
-        const char *dest = sd_bus_message_get_destination(m);
-    const char *itf = sd_bus_message_get_interface(m);
-    const char *member = sd_bus_message_get_member(m);
-    int r2 = sd_bus_message_get_monotonic_usec(m, &monotonic_usec);
-    const char *path = sd_bus_message_get_path(m);
-    int r3 = sd_bus_message_get_realtime_usec(m, &realtime_usec);
-    const char *sender = sd_bus_message_get_sender(m);
-    int r4 = sd_bus_message_get_seqnum(m , &_get_seqnum);
-    const char * sig1 = sd_bus_message_get_signature(m, 1);
-    const char * sig2 = sd_bus_message_get_signature(m, 0);
-    int r5 = sd_bus_message_get_type(m, &type);
-    int r6 = sd_bus_message_has_signature(m, "s");
-    int r7 = sd_bus_message_is_empty(m);
-
-
-    //last
-    //r = sd_bus_message_is_method_call()
-    //sd_bus_message_is_signal
-
-    //r = ctx_.adapter_callbacks.register_resources_async_callback(aaa, json_file_data);
-    //if (r < 0){
-         // TODO : print , fatal error. what to do?
-         //return r;
-    //}
+        sd_bus_message_ref(m);
+        r = ctx_.adapter_callbacks.register_resources_async_callback((uintptr_t)m, json_file_data);
+        if (r < 0){
+            //TODO : print , fatal error. what to do?
+            return r;
+        }
+    }
+    else if (sd_bus_message_is_method_call(m, 0, "DeRegisterResources")) {
+        sd_bus_message_ref(m);
+    }
+    else {
+        //TODO - reply with error? or just pass?
+        return -1;
+    }
 
     return 0;
 }
@@ -152,7 +176,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
         "RegisterResources",
         "s", 
         "i",
-        register_resources_callback,
+        incoming_message_callback,
         SD_BUS_VTABLE_UNPRIVILEGED
     ),
 
@@ -186,7 +210,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
         "DeRegisterResources",
         "s", 
         "i",
-        deregister_resources_callback,
+        incoming_message_callback,
         SD_BUS_VTABLE_UNPRIVILEGED
     ),
 

@@ -57,6 +57,9 @@ MblError DBusAdapterMailbox::deinit()
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;        
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
+
+    // TODO : VERY IMPORTANT - add code here which will empty the mailbox and free all pointers.
+
     // TODO : we need to make sure no one is reading/writing to the pipe
     // usually each side closes its edge, but here we might make easier assumptions    
     r = close(pipefds_[0]);
