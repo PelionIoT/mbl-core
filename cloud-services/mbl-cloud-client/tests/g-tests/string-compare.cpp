@@ -6,6 +6,13 @@
 
 #include <gtest/gtest.h> // googletest header file
 #include <string>
+#include "systemd/sd-bus.h"
+#include "systemd/sd-event.h"
+
+sd_event * e;
+sd_event_new(&e);
+
+
 
 using std::string;
 
