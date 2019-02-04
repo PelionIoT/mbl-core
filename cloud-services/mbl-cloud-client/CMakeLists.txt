@@ -49,9 +49,8 @@ add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
 
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
+
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
@@ -71,8 +70,6 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
-
-#add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_SRC}")
 
 
 # Order is important here: dependencies must follow dependents

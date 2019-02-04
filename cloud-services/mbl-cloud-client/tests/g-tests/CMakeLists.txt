@@ -6,7 +6,7 @@ cmake_minimum_required (VERSION 3.9)
 
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_PROCESSOR arm)
-#set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
+set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
@@ -35,9 +35,7 @@ add_compile_options(-Wlogical-op)
 
 include_directories(${CCRB_INCLUDE_DIR})
 include_directories(${CCRB_INCLUDE_DIR}/source)
-
-include_directories(${MBED_CLOUD_CLIENT_INC_DIR})
-
+include_directories(${INC_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-cloud-client)
@@ -48,16 +46,9 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/nanostack-libservice/mbed-client-li
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-coap/mbed-coap)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client-pal)
-
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
-
-get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-message(STATUS "@@@DIRS: ")
-foreach(dir ${dirs})
-  message(STATUS "@@@DIR='${dir}'")
-endforeach()
 
 
 FILE(GLOB MBL_CCRB_TESTS_SRC
