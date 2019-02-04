@@ -3,9 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-#add_definitions(-DEXTARNAL_DEFINE_FILE)
-set(EXTERNAL_DEFINE_FILE ${EXTARNAL_DEFINE_FILE})
-#include(${EXTARNAL_DEFINE_FILE})
+#set(EXTERNAL_DEFINE_FILE ${EXTARNAL_DEFINE_FILE})
+
 include(${EXTERNAL_DEFINE_FILE})
 
 cmake_minimum_required (VERSION 3.9)
@@ -18,13 +17,6 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
 project(mblCcrbTests)
-
-
-
-#add_definitions(-DMBED_CLOUD_CLIENT_ENDPOINT_TYPE="default")
-#add_definitions(-DMBED_CLOUD_CLIENT_LIFETIME=600)
-#add_definitions(-DSN_COAP_MAX_BLOCKWISE_PAYLOAD_SIZE=512)
-#add_definitions(-DMBED_CLOUD_CLIENT_TRANSPORT_MODE_TCP)
 
 
 add_compile_options(-Werror)
