@@ -62,7 +62,6 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
     // 1	        STRING	Old owner or empty string if none   
     // 2	        STRING	New owner or empty string if none
     const char *msg_args[3];
-    size_t  size;    
     int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
     // for now, we do nothing with this - only print to log
     // TODO : print to log
@@ -73,7 +72,7 @@ static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, 
 //////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////// D-BUS Service Callbacks //////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
-int incoming_message_callback(
+int incoming_bus_message_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -126,7 +125,10 @@ int incoming_message_callback(
         // validate app registered expected interface on bus? (use sd-bus track)
 
         sd_bus_message_ref(m);
-        r = ctx_.adapter_callbacks.register_resources_async_callback((uintptr_t)m, json_file_data);
+        r = ctx_.adapter_callbacks.register_resources_async_callback(
+            (uintptr_t)m,
+            json_file_data,
+            ctx_.adapter_callbacks_user_data);
         if (r < 0){
             //TODO : print , fatal error. what to do?
             return r;
@@ -176,7 +178,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
         "RegisterResources",
         "s", 
         "i",
-        incoming_message_callback,
+        incoming_bus_message_callback,
         SD_BUS_VTABLE_UNPRIVILEGED
     ),
 
@@ -210,7 +212,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
         "DeRegisterResources",
         "s", 
         "i",
-        incoming_message_callback,
+        incoming_bus_message_callback,
         SD_BUS_VTABLE_UNPRIVILEGED
     ),
 
@@ -231,7 +233,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
 };
 
 
-static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callbacks)
+static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callbacks, void *user_data)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     int32_t r = -1;
@@ -286,6 +288,7 @@ static int DBusAdapterBusService_init(const DBusAdapterCallbacks *adapter_callba
     }
 
     ctx_.adapter_callbacks = *adapter_callbacks;
+    ctx_.adapter_callbacks_user_data = user_data;
     return 0;
 
 on_failure:
@@ -343,14 +346,14 @@ static int DBusAdapterEventLoop_deinit()
 /////////////////////////////// API //////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks)
+int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void *user_data)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
 
     memset(&ctx_, 0, sizeof(ctx_));
     ctx_.ccrb_thread_id = pthread_self();
-    r = DBusAdapterBusService_init(adapter_callbacks);
+    r = DBusAdapterBusService_init(adapter_callbacks, user_data);
     if (r < 0){
         return r;
     }
@@ -412,7 +415,7 @@ int DBusAdapterLowLevel_event_loop_request_stop(int exit_code)
     return RETURN_0_ON_SUCCESS(r);
 }
 
-int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
+int DBusAdapterLowLevel_event_loop_add_io(int fd)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
        
@@ -422,6 +425,6 @@ int DBusAdapterLowLevel_event_loop_add_io(int fd, void *user_data)
         fd, 
         EPOLLIN, 
         incoming_mailbox_message_callback,
-        user_data);
+        ctx_.adapter_callbacks_user_data);
     return RETURN_0_ON_SUCCESS(r);
 }

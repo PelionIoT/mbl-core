@@ -200,26 +200,22 @@ MblError DBusAdapter::update_remove_resource_instance_status(
     return Error::None;
 }
 
-
-
 int DBusAdapter::register_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
         const char *appl_resource_definition_json)
 {
-    // This is a static callback
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    return 0;
+    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
+    return adapter_->deregister_resources_async_callback_impl(ipc_conn_handle, appl_resource_definition_json);
 }
 
 int DBusAdapter::deregister_resources_async_callback(
     const uintptr_t ipc_conn_handle, 
     const char *access_token)
 {
-    // This is a static callback
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    return 0;
+    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
+    return adapter_->deregister_resources_async_callback_impl(ipc_conn_handle, access_token);
 }
 
 int DBusAdapter::received_message_on_mailbox_callback_impl(const int fd)

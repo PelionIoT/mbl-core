@@ -170,21 +170,31 @@ private:
     DBusAdapterMailbox     mailbox_;
     pthread_t              ccrb_thread_id_;
 
-    // D-BUS callbacks - must be defined static since they are transferred into a C module
+    /*
+    callbacks + implementation pairs
+    Callbacks are static and pipe the call to the actual object implementation member function
+    */
     static int register_resources_async_callback(
+        const uintptr_t ipc_conn_handle, 
+        const char *appl_resource_definition_json);
+    int register_resources_async_callback_impl(
         const uintptr_t ipc_conn_handle, 
         const char *appl_resource_definition_json);
 
     static int deregister_resources_async_callback(
         const uintptr_t ipc_conn_handle, 
         const char *access_token);
+    int deregister_resources_async_callback_impl(
+        const uintptr_t ipc_conn_handle, 
+        const char *access_token);
 
-    // Other callbacks
     static int received_message_on_mailbox_callback(
         const int fd,
         void *userdata);
-
-    int received_message_on_mailbox_callback_impl(const int fd);
+    int received_message_on_mailbox_callback_impl(
+        const int fd,
+        void *userdata);
+    
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;

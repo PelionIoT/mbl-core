@@ -28,16 +28,20 @@ extern "C" {
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
 typedef struct DBusAdapterLowLevelContext_
-{   sd_event                *event_loop_handle;
+{   
+    pthread_t               ccrb_thread_id;
+
+    // D-Bus
+    sd_event                *event_loop_handle;
     sd_bus                  *connection_handle;
     sd_bus_slot             *connection_slot;         // TODO : needed?
     const char              *unique_name;
-    char                    *service_name;
+    char                    *service_name;    
+    
+    // event loop
     DBusAdapterCallbacks    adapter_callbacks;
-    pthread_t               ccrb_thread_id;
-
-    //event sources
-    sd_event_source *event_source_pipe;
+    void                    *adapter_callbacks_user_data;
+    sd_event_source         *event_source_pipe;    
 }DBusAdapterLowLevelContext;
 
 #ifdef __cplusplus
