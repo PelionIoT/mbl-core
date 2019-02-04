@@ -3,8 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-#set(EXTERNAL_DEFINE_FILE ${EXTARNAL_DEFINE_FILE})
-
 include(${EXTERNAL_DEFINE_FILE})
 
 cmake_minimum_required (VERSION 3.9)
@@ -52,10 +50,12 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 
+
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
 add_executable(gtest-mbl-cloud-client ${MBL_CCRB_TESTS_SRC})
+
 
 set_target_properties (gtest-mbl-cloud-client PROPERTIES
    CXX_STANDARD 14
