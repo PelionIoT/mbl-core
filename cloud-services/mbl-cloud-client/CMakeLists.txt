@@ -15,7 +15,6 @@
 # limitations under the License.
 
 cmake_minimum_required (VERSION 2.8)
-
 SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
@@ -35,7 +34,7 @@ pkg_check_modules(JSONCPP jsoncpp)
 
 # Add these options after all non-mbl-cloud-client bits so they only apply to
 # mbl-cloud-client code
-#add_compile_options(-Werror)
+add_compile_options(-Werror)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
 add_compile_options(-Wformat=2)
@@ -48,6 +47,7 @@ add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 
 SET(MBED_CLOUD_CLIENT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/mbed-cloud-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-trace-helper)

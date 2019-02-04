@@ -16,7 +16,6 @@ pkg_check_modules(JSONCPP jsoncpp)
 
 project(mblCcrbTests)
 
-
 add_compile_options(-Werror)
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
@@ -29,7 +28,6 @@ add_compile_options(-Wcast-align)
 add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
-
 
 include_directories(${CCRB_INCLUDE_DIR})
 include_directories(${CCRB_INCLUDE_DIR}/source)
@@ -50,7 +48,6 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 
-
 FILE(GLOB MBL_CCRB_TESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
@@ -62,7 +59,6 @@ set_target_properties (gtest-mbl-cloud-client PROPERTIES
    CXX_STANDARD_REQUIRED TRUE
    CXX_EXTENSIONS FALSE
 )
-
 
 target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
 target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
@@ -91,4 +87,3 @@ target_link_libraries(gtest-mbl-cloud-client pthread)
 target_link_libraries(gtest-mbl-cloud-client rt)
 # link with systemd to get D-Bus libs
 target_link_libraries(gtest-mbl-cloud-client systemd)
-
