@@ -49,10 +49,10 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 
-FILE(GLOB MBL_CLOUD_CLIENT_GTESTS_SRC
+FILE(GLOB MBL_CLOUD_CLIENT_GTEST_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-add_executable(mbl-cloud-client-gtest ${MBL_CLOUD_CLIENT_GTESTS_SRC})
+add_executable(mbl-cloud-client-gtest ${MBL_CLOUD_CLIENT_GTEST_SRC})
 
 
 set_target_properties (mbl-cloud-client-gtest PROPERTIES
