@@ -27,10 +27,10 @@ struct DBusMailboxMsg;
 class ResourceBroker;
 
 // FIXME : defined temporarily - remove later
-enum CloudConnectStatus
-{
-    CLOUD_CONNECT_STATUS_SUCCESS,
-    CLOUD_CONNECT_STATUS_FAILURE,
+enum CloudConnectStatus 
+{           //very important - will be used by dbus to send error/reply message
+    CLOUD_CONNECT_STATUS_SUCCESS,    // negative values are failure
+     CLOUD_CONNECT_STATUS_FAILURE,   // positive or 0  values are success
 };
 
 
@@ -168,7 +168,7 @@ private:
     Status status_ = Status::NON_INITALIZED;
 
     DBusAdapterCallbacks   lower_level_callbacks_;    
-    DBusAdapterMailbox     mailbox_;
+    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
     pthread_t              master_thread_id_;
 
     // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)

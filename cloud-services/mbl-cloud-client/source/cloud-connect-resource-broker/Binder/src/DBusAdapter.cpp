@@ -15,8 +15,13 @@
 
 #define TRACE_GROUP "ccrb-dbus"
 
-
+/*
 namespace mbl {
+
+
+//////////////////////////////////////////////////////
+//  Upper Layer calls 
+//////////////////////////////////////////////////////
 
 //TODO  uncomment and solve gtest issue for unit tests
 /*
@@ -102,6 +107,10 @@ MblError DBusAdapter::deinit()
         return Error::DBusErr_Temporary;
     }
 
+    // TODO - reember to unref all
+    //for (auto &handle : bus_request_handles_){
+        //sd_bus_message_unref((sd_bus_message*)handle);
+    //}
     status_ = DBusAdapter::Status::NON_INITALIZED;
     return Error::None;
 }
@@ -125,7 +134,7 @@ MblError DBusAdapter::stop()
     tr_debug("%s", __PRETTY_FUNCTION__);
     MblError status;
     int exit_code = 0; //set 0 as exit code for now
-    if (DBusAdapter::Status::INITALIZED != status_){
+    if (DBusAdapter::Status::RUNNING != status_){
         return Error::DBusErr_Temporary;
     }
 
@@ -152,52 +161,69 @@ MblError DBusAdapter::stop()
 
 
 MblError DBusAdapter::update_registration_status(
-    const uintptr_t , 
-    const std::string &,
-    const CloudConnectStatus )
+    const uintptr_t bus_request_handle, 
+    const std::string &access_token,
+    const CloudConnectStatus status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    if (DBusAdapter::Status::INITALIZED != status_){
+    
+    if (DBusAdapter::Status::RUNNING != status_){
         return Error::DBusErr_Temporary;
     }
+    
     return Error::None;
 }
 
 MblError DBusAdapter::update_deregistration_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t bus_request_handle, 
+    const CloudConnectStatus status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
-    if (DBusAdapter::Status::INITALIZED != status_){
+    if (DBusAdapter::Status::RUNNING != status_){
         return Error::DBusErr_Temporary;
     }
     return Error::None;
 }
 
+// TODO - IMPLEMENT
 MblError DBusAdapter::update_add_resource_instance_status(
     const uintptr_t , 
     const CloudConnectStatus )
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
-    if (DBusAdapter::Status::INITALIZED != status_){
+    if (DBusAdapter::Status::RUNNING != status_){
         return Error::DBusErr_Temporary;
     }
     return Error::None;
 }
 
+// TODO - IMPLEMENT
 MblError DBusAdapter::update_remove_resource_instance_status(
     const uintptr_t , 
     const CloudConnectStatus )
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
-    if (DBusAdapter::Status::INITALIZED != status_){
+    if (DBusAdapter::Status::RUNNING != status_){
         return Error::DBusErr_Temporary;
     }
     return Error::None;
+}
+
+//////////////////////////////////////////////////////
+//  Callbacks from lower layer
+//////////////////////////////////////////////////////
+int DBusAdapter::register_resources_async_callback(
+        const uintptr_t bus_request_handle, 
+        const char *appl_resource_definition_json,
+        void *userdata)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
+    return adapter_->register_resources_async_callback_impl(
+        bus_request_handle, appl_resource_definition_json);
 }
 
 int DBusAdapter::register_resources_async_callback_impl(
@@ -213,24 +239,6 @@ int DBusAdapter::register_resources_async_callback_impl(
     return 0;
 }
 
-int DBusAdapter::register_resources_async_callback(
-        const uintptr_t bus_request_handle, 
-        const char *appl_resource_definition_json,
-        void *userdata)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->register_resources_async_callback_impl(
-        bus_request_handle, appl_resource_definition_json);
-}
-
-int DBusAdapter::deregister_resources_async_callback_impl(
-    const uintptr_t bus_request_handle, 
-    const char *access_token)
-{
-    assert(0);
-}
-
 int DBusAdapter::deregister_resources_async_callback(
     const uintptr_t bus_request_handle, 
     const char *access_token,
@@ -239,6 +247,19 @@ int DBusAdapter::deregister_resources_async_callback(
     tr_debug("%s", __PRETTY_FUNCTION__);
     DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
     return adapter_->deregister_resources_async_callback_impl(bus_request_handle, access_token);
+}
+
+int DBusAdapter::deregister_resources_async_callback_impl(
+    const uintptr_t bus_request_handle, 
+    const char *access_token)
+{
+    // Register resources is an asynchronous process towards the cloud -> store handle
+    if (bus_request_handles_.insert(bus_request_handle).second == false){
+        return -1;
+    }
+    //TODO : uncomment + handle errors
+    //MblError status = ccrb.deregister_resources(bus_request_handle, std::string(deregister_resources));    
+    return 0;
 }
 
 int DBusAdapter::received_message_on_mailbox_callback_impl(const int fd)

@@ -106,15 +106,11 @@ int incoming_bus_message_callback(
     {
         return -1;        
     }
-    const char *signature = sd_bus_message_get_signature(m, true);
-    if (r < 0){
-        return r;
-    }
 
     if (sd_bus_message_is_method_call(m, 0, "RegisterResources")){
         const char *json_file_data = NULL;       
         
-        if (0 != strncmp(signature,"s", 1)){
+        if (sd_bus_message_has_signature(m, "s") == false){
             return -1;        
         }
         r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
@@ -140,9 +136,31 @@ int incoming_bus_message_callback(
         // success - increase ref
         sd_bus_message_ref(m);
     }
-    else if (sd_bus_message_is_method_call(m, 0, "DeRegisterResources")) {
+    else if (sd_bus_message_is_method_call(m, 0, "DeregisterResources")) {
+        const char *access_token = NULL;       
+        
+        if (sd_bus_message_has_signature(m, "s") == false){
+            return -1;        
+        }
+        r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &access_token);
+        if (r < 0){
+            return r;
+        }
+
+        if ((NULL == access_token) || (strlen(access_token) == 0)){
+            return -1;
+        }
+
+        r = ctx_.adapter_callbacks.deregister_resources_async_callback(
+            (const uintptr_t)m,
+            access_token,
+            ctx_.adapter_callbacks_userdata);
+        if (r < 0){
+            //TODO : print , fatal error. what to do?
+            return r;
+        }
+        // success - increase ref 
         sd_bus_message_ref(m);
-        assert(0);
     }
     else {
         //TODO - reply with error? or just pass?
@@ -204,7 +222,7 @@ static const sd_bus_vtable     cloud_connect_service_vtable[] = {
     // ==Possible Cloud connect status values==
     // TBD
     SD_BUS_METHOD(
-        "DeRegisterResources",
+        "DeregisterResources",
         "s", 
         "i",
         incoming_bus_message_callback,
