@@ -46,7 +46,6 @@ include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/mbed-client-pal)
 include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/factory-configurator-client/mbed-trace-helper)
 include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/mbed-trace)
-include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/mbed-trace/mbed-trace)
 include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/update-client-hub)
 include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/update-client-hub/modules/common)
 
@@ -82,10 +81,10 @@ target_link_libraries(mbl-cloud-client-gtest mbedCloudClient)
 # Cyclic dependency between mblCloudClient and mbedCloudClient
 target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
 
-#target_link_libraries(mbl-cloud-client-gtest mbedTrace)
-
 target_link_libraries(mbl-cloud-client-gtest libgtest_main.a)
 target_link_libraries(mbl-cloud-client-gtest libgtest.a)
+
+target_link_libraries(mbl-cloud-client-gtest mbedTrace)
 
 target_link_libraries(mbl-cloud-client-gtest pthread)
 target_link_libraries(mbl-cloud-client-gtest rt)
