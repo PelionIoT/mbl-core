@@ -31,6 +31,7 @@ add_compile_options(-Wlogical-op)
 
 include_directories(${MBL_CLOUD_CLIENT_INCLUDE_DIR})
 include_directories(${MBL_CLOUD_CLIENT_INCLUDE_DIR}/source)
+include_directories(${MBL_CLOUD_CLIENT_INCLUDE_DIR}/source/cloud-connect-resource-broker)
 include_directories(${INC_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
