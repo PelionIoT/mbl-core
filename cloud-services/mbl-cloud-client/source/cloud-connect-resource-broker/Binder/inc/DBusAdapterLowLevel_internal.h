@@ -33,8 +33,6 @@ extern "C" {
 
 typedef struct DBusAdapterLowLevelContext_
 {   
-    pthread_t               master_thread_id;       // The "master thread" is the one which initializes this module
-                                                    // This should be the CCRB thread
     // D-Bus
     sd_event                *event_loop_handle;
     sd_bus                  *connection_handle;

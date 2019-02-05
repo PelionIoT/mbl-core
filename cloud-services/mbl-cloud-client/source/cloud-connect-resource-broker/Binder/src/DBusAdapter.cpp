@@ -7,25 +7,162 @@
 #include <cassert>
 #include <pthread.h>
 #include <unistd.h>
+#include <set>
+
+#include <systemd/sd-bus.h>
+#include <systemd/sd-event.h>
 
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
-#include "DBusAdapterLowLevel.h"
-#include "DBusMailboxMsg.h"
+#include "DBusAdapterMailbox.h"
+//TODO include also upper layer header
 
 #define TRACE_GROUP "ccrb-dbus"
 
-/*
 namespace mbl {
 
+// TODO : seperate DBusAdapter and DBusAdapterImpl
 
-//////////////////////////////////////////////////////
-//  Upper Layer calls 
-//////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////// DBusAdapterImpl /////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+DBusAdapter
+class DBusAdapter::DBusAdapterImpl
+{
+
+public:
+    DBusAdapterImpl();
+    ~DBusAdapterImpl();
+
+    /*
+     callbacks + handle functions
+    Callbacks are static and pipe the call to the actual object implementation member function
+    */
+    static int incoming_bus_message_callback(
+       sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+
+    static int received_message_on_mailbox_callback(
+        const int fd,
+        void *userdata);
+
+    int handle_register_resources_message(
+        const uintptr_t bus_request_handle, 
+        const char *appl_resource_definition_json);
+
+    int handle_deregister_resources_message(
+        const uintptr_t bus_request_handle, 
+        const char *access_token);
+  
+private:
+      //wait no more than 10 milliseconds in order to send an asynchronus message of any type
+    static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
+    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
+
+    //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
+    // this class must have a reference that should be always valid to the CCRB instance. 
+    // reference class member satisfy this condition.   
+    //ResourceBroker &ccrb_;    
+        
+    Status status_ = Status::NON_INITALIZED;
+
+    //DBusAdapterCallbacks   lower_level_callbacks_;    
+    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
+    pthread_t              master_thread_id_;
+
+    MblError bus_init();
+    MblError bus_deinit();
+    MblError event_loop_init();
+    MblError event_loop_deinit();
+
+    // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
+    // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching
+    // it is kept inside this set
+    // TODO : consider adding timestamp to avoid container explosion + periodic cleanup
+    std::set<uintptr_t>    bus_request_handles_;
+};
+ 
+
+DBusAdapter::DBusAdapterImpl::DBusAdapterImpl()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+}
+
+DBusAdapter::DBusAdapterImpl::~DBusAdapterImpl()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);   
+};
+
+
+
+
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////// DBusAdapter /////////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+// MblError DBusAdapter::init()
+// {
+//     tr_debug("%s", __PRETTY_FUNCTION__);
+//     MblError status;
+//     int r;
+
+//     if (DBusAdapter::Status::NON_INITALIZED != status_){
+//         return Error::DBusErr_Temporary;
+//     }
+ 
+//     status = mailbox_.init();
+//     if (status != Error::None){
+//         deinit();
+//         return status;
+//     }
+
+//     status = bus_init();
+//      if (status != Error::None){
+//         deinit();
+//         return status;
+//     }
+
+//     status = event_loop_init();
+//     if (status != Error::None){
+//         deinit();
+//         return status;
+//     }
+
+//     master_thread_id_ = pthread_self();
+//     status_ = DBusAdapter::Status::INITALIZED;
+//     return Error::None;
+// }
+
+
+
+DBusAdapter::~DBusAdapter() = default;
+
+//TODO  delete - temporary ctor
+DBusAdapter::DBusAdapter() : impl_(new DBusAdapterImpl)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+}
+
+
+ 
+
+
+
+/*
+static int incoming_bus_message_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    assert(0);
+}
+*/
 
 //TODO  uncomment and solve gtest issue for unit tests
 /*
-DBusAdapter::DBusAdapter(ResourceBroker &ccrb) :
+DBusAdapter::DBusAdapter(ResourceBroker &ccrb) , mpl_(new DBusAdapterImpl):
     ccrb_(ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -36,56 +173,217 @@ DBusAdapter::DBusAdapter(ResourceBroker &ccrb) :
 }
 */
 
-//TODO  delete - temporary ctor
-DBusAdapter::DBusAdapter()
+// MblError DBusAdapterImpl::bus_init()
+// {
+//     tr_debug("%s", __PRETTY_FUNCTION__);    
+//     int32_t r = -1;
+    
+//     r = sd_bus_open_user(&ctx_.connection_handle);    
+//     if (r < 0){
+//         goto on_failure;
+//     }
+//     if (NULL == ctx_.connection_handle){
+//         goto on_failure;
+//     }
+
+//     // Install the object
+//     r = sd_bus_add_object_vtable(ctx_.connection_handle,
+//                                  &ctx_.connection_slot,
+//                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
+//                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+//                                  cloud_connect_service_vtable,
+//                                  &ctx_);
+//     if (r < 0) {
+//         goto on_failure;
+//     }
+
+//     r = sd_bus_get_unique_name(ctx_.connection_handle, &ctx_.unique_name);
+//     if (r < 0) {
+//         goto on_failure;
+//     }
+
+//     // Take a well-known service name DBUS_CLOUD_SERVICE_NAME so client Apps can find us
+//     r = sd_bus_request_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME, 0);
+//     if (r < 0) {
+//         goto on_failure;
+//     }
+//     ctx_.service_name = DBUS_CLOUD_SERVICE_NAME;
+    
+//     r = sd_bus_add_match(
+//         ctx_.connection_handle,
+//         NULL, 
+//         "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
+//         name_owner_changed_match_callback, 
+//         &ctx_);
+//     if (r < 0) {
+//         goto on_failure;
+//     }
+
+//     ctx_.adapter_callbacks = *adapter_callbacks;
+//     ctx_.adapter_callbacks_userdata = userdata;
+//     return 0;
+
+// on_failure:
+//     DBusAdapterBusService_deinit();
+//     return r;
+// }
+
+// MblError DBusAdapter::event_loop_init()
+// {    
+//     tr_debug("%s", __PRETTY_FUNCTION__);
+//     sd_event *handle = NULL;
+//     int r = 0;
+    
+//     r = sd_event_default(&ctx_.event_loop_handle);
+//     if (r < 0){
+//         goto on_failure;
+//     }
+    
+//      // send read fd and 'this' to be invoked on message
+//     r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read());
+//     if (r < 0){
+//         deinit();
+//         return status;
+//     }
+
+//     r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
+//     if (r < 0){
+//         return r;
+//     }
+
+//     return 0;
+
+// on_failure:
+//     DBusAdapterEventLoop_deinit();
+//     return RETURN_0_ON_SUCCESS(r);
+// }
+
+
+} // namespace mbl {
+
+/*
+
+
+int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void *userdata)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-
-    // set callbacks from D-BUS service from lower layer    
-    lower_level_callbacks_.register_resources_async_callback = register_resources_async_callback;
-    lower_level_callbacks_.deregister_resources_async_callback = deregister_resources_async_callback;
-
-    // set other callbacks from lower layer
-    lower_level_callbacks_.received_message_on_mailbox_callback = received_message_on_mailbox_callback;
-}
-
-DBusAdapter::~DBusAdapter()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-}
-
-MblError DBusAdapter::init()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status;
     int r;
 
-    if (DBusAdapter::Status::NON_INITALIZED != status_){
-        return Error::DBusErr_Temporary;
-    }
-    status = mailbox_.init();
-    if (status != Error::None){
-        deinit();
-        return status;
-    }
-
-    r = DBusAdapterLowLevel_init(&lower_level_callbacks_, this);
+    memset(&ctx_, 0, sizeof(ctx_));
+    ctx_.master_thread_id = pthread_self();
+    r = DBusAdapterBusService_init(adapter_callbacks, userdata);
     if (r < 0){
-        deinit();
-        return Error::DBusErr_Temporary;
+        return r;
     }
-
-    // send read fd and 'this' to be invoked on message
-    r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read());
+    r = DBusAdapterEventLoop_init();
     if (r < 0){
-        deinit();
-        return status;
-    }
+        return r;
+    } 
 
-    master_thread_id_ = pthread_self();
-    status_ = DBusAdapter::Status::INITALIZED;
-    return Error::None;
+    r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
+    if (r < 0){
+        return r;
+    }
+    return 0;
 }
+
+
+int DBusAdapterLowLevel_deinit()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r1, r2, r3;
+    
+    // best effort
+    r1 = sd_bus_detach_event(ctx_.connection_handle);
+    r2 = DBusAdapterBusService_deinit();
+    r3 = DBusAdapterEventLoop_deinit();
+
+    memset(&ctx_, 0, sizeof(ctx_));
+    return (r1 < 0) ? r1 : (r2 < 0) ? r2 : (r3 < 0) ? r3 : 0;
+}
+
+static int DBusAdapterBusService_deinit()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    if (ctx_.service_name){
+        int r = sd_bus_release_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME);
+        if (r < 0){
+            // TODO : print error
+        }
+    }
+    if (ctx_.connection_slot){
+        sd_bus_slot_unref(ctx_.connection_slot);
+    }
+    if (ctx_.connection_handle){
+        sd_bus_unref(ctx_.connection_handle);
+    }
+    return 0;
+}
+
+
+static int DBusAdapterEventLoop_deinit()
+{    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    if (ctx_.event_loop_handle){
+        sd_event_unref(ctx_.event_loop_handle);
+    }
+    return 0;
+}
+
+
+
+int DBusAdapterLowLevel_event_loop_run() 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;
+    
+    r = sd_event_loop(ctx_.event_loop_handle);
+    if (r < 0){
+        return r;
+    }
+
+    return 0;
+}
+
+int DBusAdapterLowLevel_event_loop_request_stop(int exit_code) 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    //only my thread id is allowd to call this one, check no other thread
+    //is using this function in order to prevent confusion.
+    //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
+    if (pthread_self() != ctx_.master_thread_id){
+        return -1;
+    }
+    int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
+    return RETURN_0_ON_SUCCESS(r);
+}
+
+int DBusAdapterLowLevel_event_loop_add_io(int fd)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+       
+    int r = sd_event_add_io(
+        ctx_.event_loop_handle, 
+        &ctx_.event_source_pipe, 
+        fd, 
+        EPOLLIN, 
+        incoming_mailbox_message_callback,
+        (void*)ctx_.adapter_callbacks_userdata);
+    return RETURN_0_ON_SUCCESS(r);
+}
+
+//////////////////////////////////////////////////////
+//  Upper Layer calls 
+//////////////////////////////////////////////////////
+
+/*
+
+
+
+
+/*
+
 
 MblError DBusAdapter::deinit()
 {
@@ -305,5 +603,4 @@ int DBusAdapter::received_message_on_mailbox_callback(
     return adapter_->received_message_on_mailbox_callback_impl(fd);
 }
 
-
-} // namespace mbl
+*/

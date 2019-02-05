@@ -52,7 +52,8 @@
 			"typeinfo": "cpp",
 			"utility": "cpp",
 			"dbusadaptermsg.h": "c",
-			"dbusadaptermailbox.h": "c"
+			"dbusadaptermailbox.h": "c",
+			"dbusadapterservice.h": "c"
 		},
 		"editor.tokenColorCustomizations": {
 			"textMateRules": [

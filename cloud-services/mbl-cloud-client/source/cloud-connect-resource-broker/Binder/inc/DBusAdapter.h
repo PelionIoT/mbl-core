@@ -14,16 +14,19 @@
 // FIXME : removed temporarily
 //#include "CloudConnectExternalTypes.h"
 
-#include <string>
-#include <set>
+//#include <string>
+//#include <set>
+#include <memory>
 
-#include "DBusAdapterMailbox.h"
-#include "DBusAdapterLowLevel.h"
+//#include <systemd/sd-bus.h>
+//#include <systemd/sd-event.h>
+
+//#include "DBusAdapterLowLevel.h"
 
 
 namespace mbl {
 
-struct DBusMailboxMsg;
+
 class ResourceBroker;
 
 // FIXME : defined temporarily - remove later
@@ -46,7 +49,7 @@ public:
     //TODO: fix gtest issue
     DBusAdapter();
     //DBusAdapter(ResourceBroker &ccrb);
-    ~DBusAdapter();
+    ~DBusAdapter();   //TODO- moved to cpp remove this from here
 
 /**
  * @brief Initializes IPC mechanism.
@@ -156,52 +159,11 @@ public:
 
 
 private:
-    //wait no more than 10 milliseconds in order to send an asynchronus message of any type
-    static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
-    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
-
-    //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
-    // this class must have a reference that should be always valid to the CCRB instance. 
-    // reference class member satisfy this condition.   
-    //ResourceBroker &ccrb_;    
-        
-    Status status_ = Status::NON_INITALIZED;
-
-    DBusAdapterCallbacks   lower_level_callbacks_;    
-    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
-    pthread_t              master_thread_id_;
-
-    // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
-    // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching
-    // it is kept inside this set
-    // TODO : consider adding timestamp to avoid container explosion + periodic cleanup
-    std::set<uintptr_t>    bus_request_handles_;
-
-    /*
-    callbacks + implementation pairs
-    Callbacks are static and pipe the call to the actual object implementation member function
-    */
-    static int register_resources_async_callback(
-        const uintptr_t bus_request_handle, 
-        const char *appl_resource_definition_json,
-        void *userdata);
-    int register_resources_async_callback_impl(
-        const uintptr_t bus_request_handle, 
-        const char *appl_resource_definition_json);
-
-    static int deregister_resources_async_callback(
-        const uintptr_t bus_request_handle, 
-        const char *access_token,
-        void *userdata);        // TODO : should these pointers be const?
-    int deregister_resources_async_callback_impl(
-        const uintptr_t bus_request_handle, 
-        const char *access_token);
-
-    static int received_message_on_mailbox_callback(
-        const int fd,
-        void *userdata);
-    int received_message_on_mailbox_callback_impl(const int fd);
-    
+    // forward declaration - PIMPL implementation class - defined in cpp source file
+    // unique pointer impl_ will automatically  destroy the object
+    class DBusAdapterImpl;
+    std::unique_ptr<DBusAdapterImpl> impl_;
+      
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;

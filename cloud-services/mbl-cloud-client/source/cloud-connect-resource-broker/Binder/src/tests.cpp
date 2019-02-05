@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+
+
 #include <gtest/gtest.h>
+
+#include "DBusAdapterService.h"
+/*
 #include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -20,6 +25,8 @@
 #include "DBusAdapterLowLevel.h"
 
 #define DBUS_MAILBOX_WAIT_TIME_MS 100000
+
+
 
 //TODO : replace this with blocking query
 #define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
@@ -238,6 +245,19 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
     }
 }
 
+*/
+
+TEST(DBusAdapterService,init_get_deinit)
+{
+    // initialize callback to non-zero. check null/non-null userdata
+    uintptr_t none_zero_val = 1;
+    IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
+        
+    ASSERT_EQ(DBusAdapterService_init(callback), 0);
+    ASSERT_EQ(DBusAdapterService_init(callback), 0);
+    ASSERT_NE(DBusAdapterService_get_service_table(), nullptr);
+    ASSERT_EQ(DBusAdapterService_deinit(), 0);
+}
 
 int main(int argc, char **argv)
 {
