@@ -52,7 +52,7 @@ include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/update-client-hub/modules/c
 FILE(GLOB MBL_CLOUD_CLIENT_GTEST_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-add_executable(mbl-cloud-client-gtest ${MBL_CLOUD_CLIENT_GTEST_SRC})
+add_executable(mbl-cloud-client-gtest ${CMAKE_SOURCE_DIR}/*.cpp)
 
 
 set_target_properties (mbl-cloud-client-gtest PROPERTIES
@@ -74,6 +74,10 @@ target_link_libraries(mbl-cloud-client-gtest mbedx509)
 
 target_link_libraries(mbl-cloud-client-gtest mbedTrace)
 target_link_libraries(mbl-cloud-client-gtest ${JSONCPP_LIBRARIES})
+target_link_libraries(mbl-cloud-client-gtest libesfs.a)
+target_link_libraries(mbl-cloud-client-gtest libnshalpal.a)
+target_link_libraries(mbl-cloud-client-gtest libsotp.a)
+target_link_libraries(mbl-cloud-client-gtest libnanostacklibservice.a)
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
@@ -84,7 +88,7 @@ target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
 target_link_libraries(mbl-cloud-client-gtest libgtest_main.a)
 target_link_libraries(mbl-cloud-client-gtest libgtest.a)
 
-target_link_libraries(mbl-cloud-client-gtest mbedTrace)
+#target_link_libraries(mbl-cloud-client-gtest mbedTrace)
 
 target_link_libraries(mbl-cloud-client-gtest pthread)
 target_link_libraries(mbl-cloud-client-gtest rt)
