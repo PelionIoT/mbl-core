@@ -25,12 +25,6 @@ extern "C" {
 //int incoming_bus_message_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 
 
-
-// sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
-#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
-
 typedef struct DBusAdapterLowLevelContext_
 {   
     // D-Bus
@@ -45,6 +39,7 @@ typedef struct DBusAdapterLowLevelContext_
     void                    *adapter_callbacks_userdata;
     sd_event_source         *event_source_pipe;    
 }DBusAdapterLowLevelContext;
+
 
 //extern DBusAdapterLowLevelContext ctx_;
 

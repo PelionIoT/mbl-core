@@ -11,13 +11,13 @@
 
 typedef struct DBusAdapterServiceContext_
 {   
-    IncomingDataCallback    incoming_data_callback;
+    IncomingDataCallback    incoming_bus_message_callback_;
 }DBusAdapterServiceContext;
 
 static DBusAdapterServiceContext ctx_ = { 0 };
 static int incoming_bus_message_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-
+    
 const sd_bus_vtable  cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
@@ -97,7 +97,7 @@ static int incoming_bus_message_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    return ctx_.incoming_data_callback(m, userdata, ret_error);
+    return ctx_.incoming_bus_message_callback_(m, userdata, ret_error);
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ int DBusAdapterService_init(IncomingDataCallback callback)
     int r;
 
     memset(&ctx_, 0, sizeof(ctx_));
-    ctx_.incoming_data_callback = callback;
+    ctx_.incoming_bus_message_callback_ = callback;
 
     return 0;
 }
@@ -125,7 +125,7 @@ int DBusAdapterService_deinit()
     return 0;
 }
 
-const sd_bus_vtable* DBusAdapterService_get_service_table()
+const sd_bus_vtable* DBusAdapterService_get_service_vtable()
 {
     return cloud_connect_service_vtable;
 }

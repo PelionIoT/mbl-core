@@ -15,9 +15,18 @@
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
 #include "DBusAdapterMailbox.h"
+#include "DBusAdapterService.h"
+
 //TODO include also upper layer header
 
 #define TRACE_GROUP "ccrb-dbus"
+
+// sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
+#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
+
+#define RETURN_0_ON_SUCCESS(retval) (((retval) >= 0) ? 0 : retval)
 
 namespace mbl {
 
@@ -29,7 +38,8 @@ namespace mbl {
 //////////////////////// DBusAdapterImpl /////////////////////////
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
-DBusAdapter
+
+
 class DBusAdapter::DBusAdapterImpl
 {
 
@@ -37,12 +47,21 @@ public:
     DBusAdapterImpl();
     ~DBusAdapterImpl();
 
+  
+private:
+      //wait no more than 10 milliseconds in order to send an asynchronus message of any type
+    static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
+    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
+
     /*
      callbacks + handle functions
     Callbacks are static and pipe the call to the actual object implementation member function
     */
     static int incoming_bus_message_callback(
        sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+
+    int incoming_bus_message_callback_impl(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 
     static int received_message_on_mailbox_callback(
         const int fd,
@@ -55,11 +74,23 @@ public:
     int handle_deregister_resources_message(
         const uintptr_t bus_request_handle, 
         const char *access_token);
-  
-private:
-      //wait no more than 10 milliseconds in order to send an asynchronus message of any type
-    static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
-    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
+
+    static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+    int name_owner_changed_match_callback_impl(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+
+    static int incoming_mailbox_message_callback(
+        sd_event_source *s, 
+        int fd,
+ 	    uint32_t revents,
+        void *userdata);
+
+    int incoming_mailbox_message_callback_impl(
+    sd_event_source *s, 
+        int fd,
+ 	    uint32_t revents,
+        void *userdata);
+
+
 
     //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
     // this class must have a reference that should be always valid to the CCRB instance. 
@@ -82,8 +113,17 @@ private:
     // it is kept inside this set
     // TODO : consider adding timestamp to avoid container explosion + periodic cleanup
     std::set<uintptr_t>    bus_request_handles_;
+
+    // D-Bus
+    sd_event                *event_loop_handle_;
+    sd_bus                  *connection_handle_;
+    sd_bus_slot             *connection_slot_;         // TODO : needed?
+    sd_event_source         *event_source_pipe_;  
+    const char              *unique_name_;
+    const char              *service_name_;       
 };
  
+
 
 DBusAdapter::DBusAdapterImpl::DBusAdapterImpl()
 {
@@ -96,15 +136,278 @@ DBusAdapter::DBusAdapterImpl::~DBusAdapterImpl()
 };
 
 
+int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback_impl(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    return 0;
+}
 
 
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
-//////////////////////// DBusAdapter /////////////////////////////
-//////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////
+int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    // This signal indicates that the owner of a name has changed. 
+    // It's also the signal to use to detect the appearance of new names on the bus.
+    // Argument	    Type	Description
+    // 0	        STRING	Name with a new owner
+    // 1	        STRING	Old owner or empty string if none   
+    // 2	        STRING	New owner or empty string if none
+    const char *msg_args[3];
+    int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
+    // for now, we do nothing with this - only print to log
+    // TODO : print to log
+    return RETURN_0_ON_SUCCESS(r);
+}
 
-// MblError DBusAdapter::init()
+
+MblError DBusAdapter::DBusAdapterImpl::bus_init()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);    
+    int r = -1;
+    
+    r = sd_bus_open_user(&connection_handle_);    
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
+    }
+    if (NULL == connection_handle_){
+        return MblError::DBusErr_Temporary;
+    }
+    
+    const sd_bus_vtable* table = DBusAdapterService_get_service_vtable();
+    if (nullptr == table){
+        return MblError::DBusErr_Temporary;
+    }
+    // Install the object
+    r = sd_bus_add_object_vtable(connection_handle_,
+                                 &connection_slot_,
+                                 DBUS_CLOUD_CONNECT_OBJECT_PATH,  
+                                 DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                                 DBusAdapterService_get_service_vtable(),
+                                 this);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
+
+    r = sd_bus_get_unique_name(connection_handle_, &unique_name_);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
+
+    //     // Take a well-known service name DBUS_CLOUD_SERVICE_NAME so client Apps can find us
+    r = sd_bus_request_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
+    service_name_ = DBUS_CLOUD_SERVICE_NAME;
+    
+    r = sd_bus_add_match(
+        connection_handle_,
+        NULL, 
+        "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
+        DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback, 
+        this);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
+    return MblError::None;
+}
+
+
+MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    if (service_name_){
+        int r = sd_bus_release_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME);
+        if (r < 0){
+            // TODO : print error
+        }
+        else {
+            service_name_ = nullptr;
+        }        
+    }
+    if (connection_slot_){
+        sd_bus_slot_unref(connection_slot_);
+        connection_slot_ = nullptr;
+    }
+    if (connection_handle_){
+        sd_bus_unref(connection_handle_);
+        connection_handle_ = nullptr;
+    }
+    return MblError::None;
+}
+
+
+
+MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
+{    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    //sd_event *handle = NULL;
+    int r = 0;
+    
+    r = sd_event_default(&event_loop_handle_);
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
+    }
+
+    r = sd_event_add_io(
+        event_loop_handle_, 
+        &event_source_pipe_, 
+        mailbox_.get_pipefd_read(), 
+        EPOLLIN, 
+        DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback,
+        this);
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
+    }
+
+    r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
+    }
+
+    return MblError::None;
+}
+
+MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
+{    
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    if (event_loop_handle_){
+        sd_event_unref(event_loop_handle_);
+        event_loop_handle_ = nullptr;
+    }
+    return MblError::None;
+}
+
+
+MblError  DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
+    sd_event_source *s, 
+    int fd,
+ 	uint32_t revents,
+    void *userdata)
+{
+    if (revents & EPOLLIN == 0){
+         // TODO : print , fatal error. what to do?
+        return -1;
+    }
+    if (s != ctx_.event_source_pipe){
+        // TODO : print , fatal error. what to do?
+        return -1;
+    }
+   
+    int r = ctx_.adapter_callbacks.received_message_on_mailbox_callback(fd, userdata);
+    if (r < 0){
+         // TODO : print , fatal error. what to do?
+         return r;
+    }
+    return 0;
+}
+
+
+int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;
+    DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
+    bool increase_reference = false;
+
+    //TODO: check what happens when failure returned to callback
+    if (sd_bus_message_is_empty(m)){
+        return -1;
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_destination(m),
+        DBUS_CLOUD_SERVICE_NAME, 
+        strlen(DBUS_CLOUD_SERVICE_NAME)))
+    {
+        return -1;        
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_path(m),
+        DBUS_CLOUD_CONNECT_OBJECT_PATH, 
+        strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
+    {
+        return -1;        
+    }
+    if (0 != strncmp(
+        sd_bus_message_get_interface(m),
+        DBUS_CLOUD_CONNECT_INTERFACE_NAME, 
+        strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
+    {
+        return -1;        
+    }
+
+    if (sd_bus_message_is_method_call(m, 0, "RegisterResources")){
+        const char *json_file_data = NULL;       
+        
+        if (sd_bus_message_has_signature(m, "s") == false){
+            return -1;        
+        }
+        r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
+        if (r < 0){
+            return r;
+        }
+
+        if ((NULL == json_file_data) || (strlen(json_file_data) == 0)){
+            return -1;
+        }
+
+        // TODO:
+        // validate app registered expected interface on bus? (use sd-bus track)
+        
+        r = ctx_.adapter_callbacks.register_resources_async_callback(
+            (const uintptr_t)m,
+            json_file_data,
+            ctx_.adapter_callbacks_userdata);
+        if (r < 0){
+            //TODO : print , fatal error. what to do?
+            return r;
+        }
+        // success - increase ref
+        sd_bus_message_ref(m);
+    }
+    else if (sd_bus_message_is_method_call(m, 0, "DeregisterResources")) {
+        const char *access_token = NULL;       
+        
+        if (sd_bus_message_has_signature(m, "s") == false){
+            return -1;        
+        }
+        r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &access_token);
+        if (r < 0){
+            return r;
+        }
+
+        if ((NULL == access_token) || (strlen(access_token) == 0)){
+            return -1;
+        }
+
+        r = ctx_.adapter_callbacks.deregister_resources_async_callback(
+            (const uintptr_t)m,
+            access_token,
+            ctx_.adapter_callbacks_userdata);
+        if (r < 0){
+            //TODO : print , fatal error. what to do?
+            return r;
+        }
+        // success - increase ref 
+        sd_bus_message_ref(m);
+    }
+    else {
+        //TODO - reply with error? or just pass?
+        return -1;
+    }
+
+    return 0;
+}
+
+int incoming_bus_message_callback_impl(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+}
+
+//MblError DBusAdapter::init()
 // {
 //     tr_debug("%s", __PRETTY_FUNCTION__);
 //     MblError status;
@@ -139,6 +442,14 @@ DBusAdapter::DBusAdapterImpl::~DBusAdapterImpl()
 
 
 
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////// DBusAdapter /////////////////////////////
+//////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////
+
+
+
 DBusAdapter::~DBusAdapter() = default;
 
 //TODO  delete - temporary ctor
@@ -146,19 +457,6 @@ DBusAdapter::DBusAdapter() : impl_(new DBusAdapterImpl)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
-
-
- 
-
-
-
-/*
-static int incoming_bus_message_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    assert(0);
-}
-*/
 
 //TODO  uncomment and solve gtest issue for unit tests
 /*
@@ -173,90 +471,10 @@ DBusAdapter::DBusAdapter(ResourceBroker &ccrb) , mpl_(new DBusAdapterImpl):
 }
 */
 
-// MblError DBusAdapterImpl::bus_init()
-// {
-//     tr_debug("%s", __PRETTY_FUNCTION__);    
-//     int32_t r = -1;
-    
-//     r = sd_bus_open_user(&ctx_.connection_handle);    
-//     if (r < 0){
-//         goto on_failure;
-//     }
-//     if (NULL == ctx_.connection_handle){
-//         goto on_failure;
-//     }
 
-//     // Install the object
-//     r = sd_bus_add_object_vtable(ctx_.connection_handle,
-//                                  &ctx_.connection_slot,
-//                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
-//                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-//                                  cloud_connect_service_vtable,
-//                                  &ctx_);
-//     if (r < 0) {
-//         goto on_failure;
-//     }
 
-//     r = sd_bus_get_unique_name(ctx_.connection_handle, &ctx_.unique_name);
-//     if (r < 0) {
-//         goto on_failure;
-//     }
 
-//     // Take a well-known service name DBUS_CLOUD_SERVICE_NAME so client Apps can find us
-//     r = sd_bus_request_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME, 0);
-//     if (r < 0) {
-//         goto on_failure;
-//     }
-//     ctx_.service_name = DBUS_CLOUD_SERVICE_NAME;
-    
-//     r = sd_bus_add_match(
-//         ctx_.connection_handle,
-//         NULL, 
-//         "type='signal',interface='org.freedesktop.DBus',member='NameOwnerChanged'",
-//         name_owner_changed_match_callback, 
-//         &ctx_);
-//     if (r < 0) {
-//         goto on_failure;
-//     }
 
-//     ctx_.adapter_callbacks = *adapter_callbacks;
-//     ctx_.adapter_callbacks_userdata = userdata;
-//     return 0;
-
-// on_failure:
-//     DBusAdapterBusService_deinit();
-//     return r;
-// }
-
-// MblError DBusAdapter::event_loop_init()
-// {    
-//     tr_debug("%s", __PRETTY_FUNCTION__);
-//     sd_event *handle = NULL;
-//     int r = 0;
-    
-//     r = sd_event_default(&ctx_.event_loop_handle);
-//     if (r < 0){
-//         goto on_failure;
-//     }
-    
-//      // send read fd and 'this' to be invoked on message
-//     r = DBusAdapterLowLevel_event_loop_add_io(mailbox_.get_pipefd_read());
-//     if (r < 0){
-//         deinit();
-//         return status;
-//     }
-
-//     r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
-//     if (r < 0){
-//         return r;
-//     }
-
-//     return 0;
-
-// on_failure:
-//     DBusAdapterEventLoop_deinit();
-//     return RETURN_0_ON_SUCCESS(r);
-// }
 
 
 } // namespace mbl {
@@ -302,33 +520,8 @@ int DBusAdapterLowLevel_deinit()
     return (r1 < 0) ? r1 : (r2 < 0) ? r2 : (r3 < 0) ? r3 : 0;
 }
 
-static int DBusAdapterBusService_deinit()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    if (ctx_.service_name){
-        int r = sd_bus_release_name(ctx_.connection_handle, DBUS_CLOUD_SERVICE_NAME);
-        if (r < 0){
-            // TODO : print error
-        }
-    }
-    if (ctx_.connection_slot){
-        sd_bus_slot_unref(ctx_.connection_slot);
-    }
-    if (ctx_.connection_handle){
-        sd_bus_unref(ctx_.connection_handle);
-    }
-    return 0;
-}
 
 
-static int DBusAdapterEventLoop_deinit()
-{    
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    if (ctx_.event_loop_handle){
-        sd_event_unref(ctx_.event_loop_handle);
-    }
-    return 0;
-}
 
 
 
@@ -359,19 +552,7 @@ int DBusAdapterLowLevel_event_loop_request_stop(int exit_code)
     return RETURN_0_ON_SUCCESS(r);
 }
 
-int DBusAdapterLowLevel_event_loop_add_io(int fd)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-       
-    int r = sd_event_add_io(
-        ctx_.event_loop_handle, 
-        &ctx_.event_source_pipe, 
-        fd, 
-        EPOLLIN, 
-        incoming_mailbox_message_callback,
-        (void*)ctx_.adapter_callbacks_userdata);
-    return RETURN_0_ON_SUCCESS(r);
-}
+
 
 //////////////////////////////////////////////////////
 //  Upper Layer calls 

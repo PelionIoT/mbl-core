@@ -247,6 +247,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 
 */
 
+
 TEST(DBusAdapterService,init_get_deinit)
 {
     // initialize callback to non-zero. check null/non-null userdata
@@ -255,7 +256,7 @@ TEST(DBusAdapterService,init_get_deinit)
         
     ASSERT_EQ(DBusAdapterService_init(callback), 0);
     ASSERT_EQ(DBusAdapterService_init(callback), 0);
-    ASSERT_NE(DBusAdapterService_get_service_table(), nullptr);
+    ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
     ASSERT_EQ(DBusAdapterService_deinit(), 0);
 }
 

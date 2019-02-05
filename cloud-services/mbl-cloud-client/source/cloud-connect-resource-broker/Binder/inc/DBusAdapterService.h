@@ -37,9 +37,9 @@ typedef struct DBusAdapterCallbacks_
 typedef int (*IncomingDataCallback)(sd_bus_message*, void*, sd_bus_error*);
 
 
-int DBusAdapterService_init(IncomingDataCallback incoming_data_callback);
-int DBusAdapterService_deinit();
-const sd_bus_vtable* DBusAdapterService_get_service_table();
+int                     DBusAdapterService_init(IncomingDataCallback incoming_data_callback);
+int                     DBusAdapterService_deinit();
+const sd_bus_vtable*    DBusAdapterService_get_service_vtable();
 
 #ifdef __cplusplus
 } //extern "C" {
