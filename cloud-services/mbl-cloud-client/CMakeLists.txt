@@ -91,5 +91,5 @@ target_link_libraries(mbl-cloud-client mblCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
-# link with systemd to get D-Bus libs
+# link with systemd to get sd-bus and sd-event support
 target_link_libraries(mbl-cloud-client systemd)

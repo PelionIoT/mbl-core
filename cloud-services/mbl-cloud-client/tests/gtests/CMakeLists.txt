@@ -14,7 +14,7 @@ set(CMAKE_FIND_LIBRARY_SUFFIXES .a .so)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
 
-project(mblCcrbTests)
+project(mblCloudClientGtest)
 
 add_compile_options(-Werror)
 add_compile_options(-Wall)
@@ -29,8 +29,8 @@ add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
 
-include_directories(${CCRB_INCLUDE_DIR})
-include_directories(${CCRB_INCLUDE_DIR}/source)
+include_directories(${MBL_CLOUD_CLIENT_INCLUDE_DIR})
+include_directories(${MBL_CLOUD_CLIENT_INCLUDE_DIR}/source)
 include_directories(${INC_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/source)
@@ -48,42 +48,42 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/update-client-hub/modules/common)
 
-FILE(GLOB MBL_CCRB_TESTS_SRC
+FILE(GLOB MBL_CLOUD_CLIENT_GTESTS_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-add_executable(gtest-mbl-cloud-client ${MBL_CCRB_TESTS_SRC})
+add_executable(mbl-cloud-client-gtest ${MBL_CLOUD_CLIENT_GTESTS_SRC})
 
 
-set_target_properties (gtest-mbl-cloud-client PROPERTIES
+set_target_properties (mbl-cloud-client-gtest PROPERTIES
    CXX_STANDARD 14
    CXX_STANDARD_REQUIRED TRUE
    CXX_EXTENSIONS FALSE
 )
 
-target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
-target_link_libraries(gtest-mbl-cloud-client libmbedCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmbedCloudClient.a)
 # Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
 
-target_link_libraries(gtest-mbl-cloud-client factory-configurator-client)
-target_link_libraries(gtest-mbl-cloud-client pal)
-target_link_libraries(gtest-mbl-cloud-client mbedcrypto)
-target_link_libraries(gtest-mbl-cloud-client mbedtls)
-target_link_libraries(gtest-mbl-cloud-client mbedx509)
+target_link_libraries(mbl-cloud-client-gtest factory-configurator-client)
+target_link_libraries(mbl-cloud-client-gtest pal)
+target_link_libraries(mbl-cloud-client-gtest mbedcrypto)
+target_link_libraries(mbl-cloud-client-gtest mbedtls)
+target_link_libraries(mbl-cloud-client-gtest mbedx509)
 
-target_link_libraries(gtest-mbl-cloud-client mbedTrace)
-target_link_libraries(gtest-mbl-cloud-client ${JSONCPP_LIBRARIES})
+target_link_libraries(mbl-cloud-client-gtest mbedTrace)
+target_link_libraries(mbl-cloud-client-gtest ${JSONCPP_LIBRARIES})
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
-target_link_libraries(gtest-mbl-cloud-client mbedCloudClient)
+target_link_libraries(mbl-cloud-client-gtest mbedCloudClient)
 # Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(gtest-mbl-cloud-client libmblCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
 
-target_link_libraries(gtest-mbl-cloud-client libgtest_main.a)
-target_link_libraries(gtest-mbl-cloud-client libgtest.a)
+target_link_libraries(mbl-cloud-client-gtest libgtest_main.a)
+target_link_libraries(mbl-cloud-client-gtest libgtest.a)
 
-target_link_libraries(gtest-mbl-cloud-client pthread)
-target_link_libraries(gtest-mbl-cloud-client rt)
-# link with systemd to get D-Bus libs
-target_link_libraries(gtest-mbl-cloud-client systemd)
+target_link_libraries(mbl-cloud-client-gtest pthread)
+target_link_libraries(mbl-cloud-client-gtest rt)
+# link with systemd to get sd-bus and sd-event support
+target_link_libraries(mbl-cloud-client-gtest systemd)
