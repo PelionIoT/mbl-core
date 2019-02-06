@@ -40,11 +40,7 @@ MblError ResourceBroker::start()
     if(0 != thread_create_err) {
         // thread creation failed, print errno value and exit
         const int thread_create_errno = errno;
-
-        tr_err(
-            "Thread creation failed (%s)",
-            strerror(thread_create_errno));
-
+        tr_err("Thread creation failed (%s)", strerror(thread_create_errno));
         return Error::CCRBStartFailed;
     }
 
@@ -83,9 +79,7 @@ MblError ResourceBroker::stop()
     if(0 != thread_join_err) {
         // thread joining failed, print errno value
         const int thread_join_errno = errno;
-        tr_err(
-            "Thread joining failed (%s)",
-            strerror(thread_join_errno));
+        tr_err("Thread joining failed (%s)", strerror(thread_join_errno));
         
         // FIXME: Currently, if pthread_join fails, we return error.
         //        Required to add "release resources best effort" functionality.

@@ -7,6 +7,7 @@
 #include <cassert>
 
 #include "CloudConnectTypes.h"
+#include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb"
 
