@@ -158,6 +158,7 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
 
     if (event_loop_handle_){
         sd_event_unref(event_loop_handle_);
+        sd_event_source_unref(event_source_pipe_);
         event_loop_handle_ = nullptr;
     }
     return MblError::None;
@@ -246,7 +247,9 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
     if (fd != mailbox_.get_pipefd_read()){
         return r;
     }
-    status = mailbox_.receive_msg(msg, DBUS_MAILBOX_TIMEOUT_MILLISECONDS);
+    status = mailbox_.receive_msg(
+        msg, 
+        DBusAdapterMailbox::DBUS_MAILBOX_MAX_DEFAULT_TIMEOUT_MILLISECONDS);
     if (status != MblError::None) {
         return r;
     }
@@ -399,21 +402,21 @@ MblError DBusAdapter::DBusAdapterImpl::init()
 
     status = mailbox_.init();
     if (status != Error::None){
+        //mailbox deinit itself
         return status;
     }
 
     status = bus_init();
-     if (status != Error::None){
+    if (status != Error::None){
+        //bus is not an object, need to deinit
+        bus_deinit();    
         return status;
     }
 
     status = event_loop_init();
     if (status != Error::None){
-        return status;
-    }
-
-    r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
-    if (r < 0){
+        //event loop is not an object, need to deinit
+        event_loop_deinit();
         return status;
     }
 

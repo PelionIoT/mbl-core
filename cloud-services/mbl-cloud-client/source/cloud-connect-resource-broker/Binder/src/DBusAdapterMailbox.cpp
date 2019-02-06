@@ -23,6 +23,15 @@ namespace mbl {
 
 MblError DBusAdapterMailbox::init()
 {
+    MblError status = do_init();
+    if (status != MblError::None){
+        deinit();
+    }
+    return status;
+}
+
+MblError DBusAdapterMailbox::do_init()
+{
     tr_debug("%s", __PRETTY_FUNCTION__);
     // TODO - consider refacto all 'r' to 'retval'
     int r;

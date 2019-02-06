@@ -22,44 +22,37 @@
 
 using namespace mbl;
 
-#define DBUS_MAILBOX_WAIT_TIME_MS 100000
+#define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
+#define DBUS_MAILBOX_MAX_WAIT_TIME_MS 10
 
-
-//TODO :  continue with infrastructure later (reminder : declare class out of mbl in header + add friend class in class)
-/*
-class GTestChecker
+///////////////////////////////////////////////////////////////////////////
+////////////////////////////INFRA//////////////////////////////////////////
+#define CHECKER_VALIDATE_EQ(a, b) if (a != b) return MblError::DBusErr_Temporary
+class DBusAdapterTestChecker
 {
-    class DBusAdapterImplGtest
-    {
     public:
 
-        DBusAdapterImplGtest(DBusAdapter::DBusAdapterImpl &adapter_impl) : adapter_impl_(adapter_impl) {};
-            //{  adapter_impl_ = adapter_impl; };
-        
-        // Put here your getters functions
+        DBusAdapterTestChecker(DBusAdapter &adapter) : 
+            adapter_(adapter) {};
 
-        // Put here your setter functions
-
-    private:
-        DBusAdapter::DBusAdapterImpl &adapter_impl_;
-    };
-
-
-    class DBusAdapterGtest
-    {
-    public:
-
-        DBusAdapterGtest(DBusAdapter &adapter) : adapter_(adapter) {};
-
-        // Put here your getters functions
-
-        // Put here your setter functions
-
+        MblError validate_deinitialized_adapter();
     private:
         DBusAdapter &adapter_;
-    };
 };
-*/
+
+MblError DBusAdapterTestChecker::validate_deinitialized_adapter()
+{
+    CHECKER_VALIDATE_EQ(adapter_.impl_->status_, DBusAdapter::DBusAdapterImpl::Status::NON_INITALIZED); 
+    CHECKER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->connection_slot_, nullptr);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->event_source_pipe_, nullptr);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
+    CHECKER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
+}
+///////////////////////////////////////////////////////////////////////////
+
 
 TEST(DBusAdapterMailBox_a, InitDeinit)
 {
@@ -90,24 +83,14 @@ TEST(DBusAdapterMailBox_a, SendReceiveRawMessagePtr_SingleThread)
     // send / receive / compare 100 times
     for (auto i = 0; i < 100; i++)
     {
-        ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
-        ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
         write_msg = read_msg;
         ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(DBusMailboxMsg)), 0);
     }
 
     ASSERT_EQ(mailbox.deinit(), 0);
 }
-
-
-/*
-
-
-
-//TODO : replace this with blocking query
-#define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
-
-
 
 
 static void *reader_thread_start(void *mailbox)
@@ -118,7 +101,7 @@ static void *reader_thread_start(void *mailbox)
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch, ++expected_sequence_num)
     {
-        if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_WAIT_TIME_MS) != 0)
+        if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
         {
             pthread_exit((void *)-1);
         }
@@ -145,7 +128,7 @@ static void *writer_thread_start(void *mailbox)
     for (char ch = 'A'; ch < 'Z' + 1; ++ch)
     {
         input_message.payload_.raw.bytes[0] = ch;
-        if (mailbox_->send_msg(input_message, DBUS_MAILBOX_WAIT_TIME_MS) != 0)
+        if (mailbox_->send_msg(input_message, DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
         {
             pthread_exit((void *)-1);
         }
@@ -169,6 +152,21 @@ TEST(DBusAdapterMailBox_a, SendReceiveRawMessage_MultiThread)
     ASSERT_EQ((uintptr_t)retval, 0);
     ASSERT_EQ(mailbox.deinit(), 0);
 }
+
+TEST(DBusAdapeter_c, init_deinit)
+{
+    DBusAdapter adapter;
+    DBusAdapterTestChecker checker(adapter);
+    for (auto i = 0; i < 100; ++i){
+        ASSERT_EQ(adapter.init(), MblError::None);        
+        ASSERT_EQ(adapter.deinit(), MblError::None);        
+        checker.validate_deinitialized_adapter();
+    }    
+}
+
+
+/*
+
 
 class DBusAdapeterLowLevel_b : public ::testing::Test
 {
@@ -225,12 +223,7 @@ TEST_F(DBusAdapeterLowLevel_b, run_stop_with_self_request)
     ASSERT_EQ(DBusAdapterLowLevel_event_loop_run(), event_exit_code);
 }
 
-TEST(DBusAdapeter_c, init_deinit)
-{
-    DBusAdapter adapter_;
-    ASSERT_EQ(adapter_.init(), MblError::None);
-    ASSERT_EQ(adapter_.deinit(), MblError::None);
-}
+
 
 static void *mbl_cloud_client_thread(void *adapter_)
 {
