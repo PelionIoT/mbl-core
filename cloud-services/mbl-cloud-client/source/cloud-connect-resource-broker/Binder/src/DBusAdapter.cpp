@@ -43,16 +43,21 @@ namespace mbl {
 
 class DBusAdapter::DBusAdapterImpl
 {
-
 public:
     DBusAdapterImpl();
     ~DBusAdapterImpl();
 
+    MblError init();
+    MblError deinit();
   
 private:
       //wait no more than 10 milliseconds in order to send an asynchronus message of any type
     static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
-    enum class Status {NON_INITALIZED, INITALIZED, RUNNING};
+
+    enum class Status {
+        NON_INITALIZED, 
+        INITALIZED, 
+        RUNNING}  status_ = Status::NON_INITALIZED;
 
     /*
      callbacks + handle functions
@@ -91,8 +96,6 @@ private:
     // reference class member satisfy this condition.   
     //ResourceBroker &ccrb_;    
         
-    Status status_ = Status::NON_INITALIZED;
-
     //DBusAdapterCallbacks   lower_level_callbacks_;    
     DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
     pthread_t              initializer_thread_id_;
@@ -189,6 +192,7 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
 MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+
     if (service_name_){
         int r = sd_bus_release_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME);
         if (r < 0){
@@ -212,6 +216,7 @@ MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
 MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
+
     //sd_event *handle = NULL;
     int r = 0;
     
@@ -242,6 +247,7 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
 MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
+
     if (event_loop_handle_){
         sd_event_unref(event_loop_handle_);
         event_loop_handle_ = nullptr;
@@ -252,8 +258,13 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
 MblError DBusAdapter::DBusAdapterImpl::event_loop_run() 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    int r = sd_event_loop(event_loop_handle_);
-    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
+    int r = -1;
+
+    r = sd_event_loop(event_loop_handle_);
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
+    }
+    return MblError::None;
 }
 
 MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(int exit_code) 
@@ -307,8 +318,6 @@ int  DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback(
     return adapter_impl->incoming_mailbox_message_callback_impl(s, fd, revents);
 }
 
-
-
 int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
     sd_event_source *s, 
     int fd,
@@ -352,7 +361,6 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
     }
     return r;
 }
-
 
 int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
     sd_bus_message *m, sd_bus_error *ret_error)
@@ -458,8 +466,6 @@ int DBusAdapter::DBusAdapterImpl::process_incoming_message_RegisterResources(
     return 0;
 }
 
-
-
 int DBusAdapter::DBusAdapterImpl::process_incoming_message_DeregisterResources(
     const sd_bus_message *m, 
     const char *access_toke) 
@@ -473,41 +479,34 @@ int DBusAdapter::DBusAdapterImpl::process_incoming_message_DeregisterResources(
     return 0;
 }
 
+MblError DBusAdapter::DBusAdapterImpl::init()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);    
+    MblError status;
 
+    if (Status::NON_INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
 
+    status = mailbox_.init();
+    if (status != Error::None){
+        return status;
+    }
 
-//MblError DBusAdapter::init()
-// {
-//     tr_debug("%s", __PRETTY_FUNCTION__);
-//     MblError status;
-//     int r;
+    status = bus_init();
+     if (status != Error::None){
+        return status;
+    }
 
-//     if (DBusAdapter::Status::NON_INITALIZED != status_){
-//         return Error::DBusErr_Temporary;
-//     }
- 
-//     status = mailbox_.init();
-//     if (status != Error::None){
-//         deinit();
-//         return status;
-//     }
+    status = event_loop_init();
+    if (status != Error::None){
+        return status;
+    }
 
-//     status = bus_init();
-//      if (status != Error::None){
-//         deinit();
-//         return status;
-//     }
-
-//     status = event_loop_init();
-//     if (status != Error::None){
-//         deinit();
-//         return status;
-//     }
-
-//     initializer_thread_id_ = pthread_self();
-//     status_ = DBusAdapter::Status::INITALIZED;
-//     return Error::None;
-// }
+    initializer_thread_id_ = pthread_self();
+    status_ = Status::INITALIZED;
+    return Error::None;
+}
 
 
 
@@ -517,9 +516,15 @@ int DBusAdapter::DBusAdapterImpl::process_incoming_message_DeregisterResources(
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-
-
+/*
+For holding std::unique_ptr<DBusAdapterImpl*>, need to allow unique_ptr to recognize DBusAdapterImpl as a complete type.
+std::unique_ptr checks  in its destructor if the definition of the type is visible before calling delete.
+DBusAdapterImpl is forward decleared in header (that a call to delete is well-formed);
+std::unique_ptr will refuse to compile and to call delete if the type is only forward declared.
+Use the default implentation for the destructor after the definition of DBusAdapterImpl :
+*/
 DBusAdapter::~DBusAdapter() = default;
+
 
 //TODO  delete - temporary ctor
 DBusAdapter::DBusAdapter() : impl_(new DBusAdapterImpl)
@@ -540,6 +545,17 @@ DBusAdapter::DBusAdapter(ResourceBroker &ccrb) , mpl_(new DBusAdapterImpl):
 }
 */
 
+
+
+MblError DBusAdapter::init()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    MblError status = impl_->init();
+    if (status != MblError::None){
+        impl_->deinit();
+    }
+    return status;
+}
 
 
 
