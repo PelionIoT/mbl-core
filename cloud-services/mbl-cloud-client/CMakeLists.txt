@@ -54,11 +54,13 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-tr
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
+add_executable(mbl-cloud-client ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
-#FILE(GLOB MBL_CLOUD_CLIENT_MAIN
-#    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-#)
-add_executable(mbl-cloud-client "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+FILE(GLOB MBED_CLOUD_CLIENT_SRC
+    "${CMAKE_CURRENT_SOURCE_DIR}/mbed_cloud_dev_credentials.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/update_default_resources.c"
+)
+add_library(mbedCloudClientExternal STATIC "${MBED_CLOUD_CLIENT_SRC}")
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
@@ -67,21 +69,14 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
 )
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
-FILE(GLOB MBL_CLOUD_CRED_RESOURCES_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
-)
-add_library(mblCloudExt STATIC "${MBL_CLOUD_CRED_RESOURCES_SRC}")
-
-target_link_libraries(mbl-cloud-client mblCloudExt)
+add_dependencies(mbedCloudClient mbedCloudClientExternal)
 
 # Order is important here: dependencies must follow dependents
 target_link_libraries(mbl-cloud-client mblCloudClient)
-target_link_libraries(mbl-cloud-client mbedCloudClient)
-# Cyclic dependency between mblCloudClient and mbedCloudClient
-#target_link_libraries(mbl-cloud-client mblCloudClient)
+target_link_libraries(mbl-cloud-client mbedCloudClient mbedCloudClientExternal)
 
 target_link_libraries(mbl-cloud-client factory-configurator-client)
-target_link_libraries(mbl-cloud-client pal)
+target_link_libraries(mbl-cloud-client pal mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedcrypto)
 target_link_libraries(mbl-cloud-client mbedtls)
 target_link_libraries(mbl-cloud-client mbedx509)
@@ -90,9 +85,7 @@ target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
-target_link_libraries(mbl-cloud-client mbedCloudClient)
-# Cyclic dependency between mblCloudClient and mbedCloudClient
-#target_link_libraries(mbl-cloud-client mblCloudClient)
+target_link_libraries(mbl-cloud-client mbedCloudClient mbedCloudClientExternal)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
