@@ -30,7 +30,7 @@ DBusAdapter::~DBusAdapter()
 
 MblError DBusAdapter::init()
 {
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     // FIXME: temporary - remove code bellow
     sd_bus *bus = NULL;
@@ -43,13 +43,13 @@ MblError DBusAdapter::init()
 
 MblError DBusAdapter::de_init()
 {
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     return Error::None;
 }
 
 MblError DBusAdapter::run()
 {
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_) {
@@ -63,7 +63,7 @@ MblError DBusAdapter::run()
 
 MblError DBusAdapter::stop()
 {
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     // temporary not thread safe solution that should be removed soon.
     // signal to event-loop that it should finish.
@@ -78,6 +78,7 @@ MblError DBusAdapter::update_registration_status(
     const std::string &,
     const CloudConnectStatus )
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
     return Error::None;
 }
@@ -86,6 +87,7 @@ MblError DBusAdapter::update_deregistration_status(
     const uintptr_t , 
     const CloudConnectStatus )
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
@@ -94,6 +96,7 @@ MblError DBusAdapter::update_add_resource_instance_status(
     const uintptr_t , 
     const CloudConnectStatus )
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
@@ -102,6 +105,7 @@ MblError DBusAdapter::update_remove_resource_instance_status(
     const uintptr_t , 
     const CloudConnectStatus )
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
