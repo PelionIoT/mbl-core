@@ -82,8 +82,19 @@ def main():
     else:
         print("Input File not found")
 
-    for result in results:
-        print(result)
+    if len(results) == 0:
+        print(
+            "{}{} {}{}{}".format(
+                "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=",
+                "NoResultsFound",
+                "RESULT=",
+                "SKIP",
+                ">",
+            )
+        )
+    else:
+        for result in results:
+            print(result)
 
 
 if __name__ == "__main__":

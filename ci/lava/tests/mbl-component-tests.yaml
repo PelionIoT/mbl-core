@@ -43,6 +43,9 @@ run:
         # Turn the pytest results into a format the LAVA requires
         - python3 ./ci/lava/dependencies/send_junit_results_to_lava.py ./$COMPONENT.xml
 
+        # Reenable the "-e" option
+        - set -e
+
         # Perform optional TEARDOWN actions
         - $TEARDOWN
 
