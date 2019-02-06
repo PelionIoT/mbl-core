@@ -21,12 +21,6 @@ extern "C"
 
 
 
-int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks,  void *userdata);
-int DBusAdapterLowLevel_deinit();
-int DBusAdapterLowLevel_event_loop_run();
-int DBusAdapterLowLevel_event_loop_request_stop(int exit_code);
-int DBusAdapterLowLevel_event_loop_add_io(int fd);
-
 #ifdef __cplusplus
 } //extern "C" {
 #endif

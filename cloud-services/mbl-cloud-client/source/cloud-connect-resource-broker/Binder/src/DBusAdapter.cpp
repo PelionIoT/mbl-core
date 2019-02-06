@@ -14,6 +14,7 @@
 
 //#include "mbed-trace/mbed_trace.h"  // FIXME : uncomment
 #include "DBusAdapter.h"
+#include "DBusMailboxMsg.h"
 #include "DBusAdapterMailbox.h"
 #include "DBusAdapterService.h"
 
@@ -59,38 +60,31 @@ private:
     */
     static int incoming_bus_message_callback(
        sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-
     int incoming_bus_message_callback_impl(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-
-    static int received_message_on_mailbox_callback(
-        const int fd,
-        void *userdata);
-
-    int handle_register_resources_message(
-        const uintptr_t bus_request_handle, 
-        const char *appl_resource_definition_json);
-
-    int handle_deregister_resources_message(
-        const uintptr_t bus_request_handle, 
-        const char *access_token);
-
-    static int name_owner_changed_match_callback(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-    int name_owner_changed_match_callback_impl(sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+        sd_bus_message *m, sd_bus_error *ret_error);
+    
+    static int name_owner_changed_match_callback(
+        sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
+    int name_owner_changed_match_callback_impl(
+        sd_bus_message *m, sd_bus_error *ret_error);
 
     static int incoming_mailbox_message_callback(
         sd_event_source *s, 
         int fd,
  	    uint32_t revents,
         void *userdata);
-
     int incoming_mailbox_message_callback_impl(
-    sd_event_source *s, 
-        int fd,
- 	    uint32_t revents,
-        void *userdata);
+        sd_event_source *s, 
+        int fd, 
+        uint32_t revents);
 
+    int process_incoming_message_RegisterResources(
+        const sd_bus_message *m, 
+        const char *appl_resource_definition_json);
 
+    int process_incoming_message_DeregisterResources(
+        const sd_bus_message *m, 
+        const char *access_token);
 
     //TODO : uncomment and find solution to initializing for gtest without ResourceBroker
     // this class must have a reference that should be always valid to the CCRB instance. 
@@ -101,18 +95,22 @@ private:
 
     //DBusAdapterCallbacks   lower_level_callbacks_;    
     DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
-    pthread_t              master_thread_id_;
+    pthread_t              initializer_thread_id_;
 
     MblError bus_init();
     MblError bus_deinit();
+
     MblError event_loop_init();
     MblError event_loop_deinit();
+    MblError event_loop_run();
+    MblError event_loop_request_stop(int32_t exit_code);
+
 
     // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
     // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching
     // it is kept inside this set
     // TODO : consider adding timestamp to avoid container explosion + periodic cleanup
-    std::set<uintptr_t>    bus_request_handles_;
+    std::set<const sd_bus_message*>    pending_messages_;
 
     // D-Bus
     sd_event                *event_loop_handle_;
@@ -122,7 +120,6 @@ private:
     const char              *unique_name_;
     const char              *service_name_;       
 };
- 
 
 
 DBusAdapter::DBusAdapterImpl::DBusAdapterImpl()
@@ -134,30 +131,6 @@ DBusAdapter::DBusAdapterImpl::~DBusAdapterImpl()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);   
 };
-
-
-int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback_impl(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    return 0;
-}
-
-
-int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
-{
-    // This signal indicates that the owner of a name has changed. 
-    // It's also the signal to use to detect the appearance of new names on the bus.
-    // Argument	    Type	Description
-    // 0	        STRING	Name with a new owner
-    // 1	        STRING	Old owner or empty string if none   
-    // 2	        STRING	New owner or empty string if none
-    const char *msg_args[3];
-    int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
-    // for now, we do nothing with this - only print to log
-    // TODO : print to log
-    return RETURN_0_ON_SUCCESS(r);
-}
 
 
 MblError DBusAdapter::DBusAdapterImpl::bus_init()
@@ -236,8 +209,6 @@ MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
     return MblError::None;
 }
 
-
-
 MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -278,38 +249,118 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
     return MblError::None;
 }
 
+MblError DBusAdapter::DBusAdapterImpl::event_loop_run() 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r = sd_event_loop(event_loop_handle_);
+    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
+}
 
-MblError  DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
+MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(int exit_code) 
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    int r;
+
+    //only my thread id is allowd to call this one, check no other thread
+    //is using this function in order to prevent confusion.
+    //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
+    if (pthread_self() != initializer_thread_id_){
+        return MblError::DBusErr_Temporary;
+    }
+    r = sd_event_exit(event_loop_handle_, exit_code);
+    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
+}
+
+int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback_impl(
+    sd_bus_message *m, sd_bus_error *ret_error)
+{
+    // This signal indicates that the owner of a name has changed. 
+    // It's also the signal to use to detect the appearance of new names on the bus.
+    // Argument	    Type	Description
+    // 0	        STRING	Name with a new owner
+    // 1	        STRING	Old owner or empty string if none   
+    // 2	        STRING	New owner or empty string if none
+    const char *msg_args[3];
+    int r = sd_bus_message_read(m, "sss", &msg_args[0], &msg_args[1], &msg_args[2]);
+    // for now, we do nothing with this - only print to log
+    // TODO : print to log
+    return RETURN_0_ON_SUCCESS(r);
+}
+
+
+int DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    DBusAdapter::DBusAdapterImpl *adapter_impl = static_cast<DBusAdapter::DBusAdapterImpl*>(userdata);
+    return adapter_impl->name_owner_changed_match_callback_impl(m, ret_error);   
+}
+
+int  DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback(
     sd_event_source *s, 
     int fd,
  	uint32_t revents,
     void *userdata)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    DBusAdapter::DBusAdapterImpl *adapter_impl = static_cast<DBusAdapter::DBusAdapterImpl*>(userdata);
+    return adapter_impl->incoming_mailbox_message_callback_impl(s, fd, revents);
+}
+
+
+
+int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
+    sd_event_source *s, 
+    int fd,
+ 	uint32_t revents)
+{
+    MblError status;
+    DBusMailboxMsg msg;
+    int r = -1;
+
     if (revents & EPOLLIN == 0){
          // TODO : print , fatal error. what to do?
         return -1;
     }
-    if (s != ctx_.event_source_pipe){
+    if (s != event_source_pipe_){
         // TODO : print , fatal error. what to do?
         return -1;
     }
-   
-    int r = ctx_.adapter_callbacks.received_message_on_mailbox_callback(fd, userdata);
-    if (r < 0){
-         // TODO : print , fatal error. what to do?
-         return r;
+    if (fd != mailbox_.get_pipefd_read()){
+        return r;
     }
-    return 0;
+    status = mailbox_.receive_msg(msg, DBUS_MAILBOX_TIMEOUT_MILLISECONDS);
+    if (status != MblError::None) {
+        return r;
+    }
+
+    switch (msg.type_)
+    {
+        case mbl::DBusMailboxMsg::MsgType::EXIT:
+            if (msg.payload_len_ != sizeof(mbl::DBusMailboxMsg::Msg_exit_)){
+                break;
+            }
+            r = event_loop_request_stop(msg.payload_.exit.exit_code);
+            break;
+        case mbl::DBusMailboxMsg::MsgType::RAW_DATA:
+            //pass 
+            break;
+    
+        default:
+            //TODO : print error
+            break;
+    }
+    return r;
 }
 
 
 int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+    sd_bus_message *m, sd_bus_error *ret_error)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
-    DBusAdapterLowLevelContext *ctx = (DBusAdapterLowLevelContext*)userdata;
     bool increase_reference = false;
+
 
     //TODO: check what happens when failure returned to callback
     if (sd_bus_message_is_empty(m)){
@@ -355,10 +406,7 @@ int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
         // TODO:
         // validate app registered expected interface on bus? (use sd-bus track)
         
-        r = ctx_.adapter_callbacks.register_resources_async_callback(
-            (const uintptr_t)m,
-            json_file_data,
-            ctx_.adapter_callbacks_userdata);
+        r = process_incoming_message_RegisterResources(m, json_file_data);
         if (r < 0){
             //TODO : print , fatal error. what to do?
             return r;
@@ -381,10 +429,7 @@ int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
             return -1;
         }
 
-        r = ctx_.adapter_callbacks.deregister_resources_async_callback(
-            (const uintptr_t)m,
-            access_token,
-            ctx_.adapter_callbacks_userdata);
+        r = process_incoming_message_DeregisterResources(m, access_token);
         if (r < 0){
             //TODO : print , fatal error. what to do?
             return r;
@@ -400,12 +445,36 @@ int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
     return 0;
 }
 
-int incoming_bus_message_callback_impl(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+int DBusAdapter::DBusAdapterImpl::process_incoming_message_RegisterResources(
+    const sd_bus_message *m, 
+    const char *appl_resource_definition_json)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
+    // Register resources is an asynchronous process towards the cloud -> store handle
+    if (pending_messages_.insert(m).second == false){
+        return -1;
+    }
+    //TODO : uncomment + handle errors
+    //MblError status = ccrb.register_resources(bus_request_handle, std::string(appl_resource_definition_json));    
+    return 0;
 }
+
+
+
+int DBusAdapter::DBusAdapterImpl::process_incoming_message_DeregisterResources(
+    const sd_bus_message *m, 
+    const char *access_toke) 
+{
+    // Register resources is an asynchronous process towards the cloud -> store handle
+    if (pending_messages_.insert(m).second == false){
+        return -1;
+    }
+    //TODO : uncomment + handle errors
+    //MblError status = ccrb.deregister_resources(bus_request_handle, std::string(deregister_resources));    
+    return 0;
+}
+
+
+
 
 //MblError DBusAdapter::init()
 // {
@@ -435,7 +504,7 @@ int incoming_bus_message_callback_impl(
 //         return status;
 //     }
 
-//     master_thread_id_ = pthread_self();
+//     initializer_thread_id_ = pthread_self();
 //     status_ = DBusAdapter::Status::INITALIZED;
 //     return Error::None;
 // }
@@ -488,7 +557,7 @@ int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void
     int r;
 
     memset(&ctx_, 0, sizeof(ctx_));
-    ctx_.master_thread_id = pthread_self();
+    ctx_.initializer_thread_id_ = pthread_self();
     r = DBusAdapterBusService_init(adapter_callbacks, userdata);
     if (r < 0){
         return r;
@@ -522,35 +591,6 @@ int DBusAdapterLowLevel_deinit()
 
 
 
-
-
-
-int DBusAdapterLowLevel_event_loop_run() 
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    int r;
-    
-    r = sd_event_loop(ctx_.event_loop_handle);
-    if (r < 0){
-        return r;
-    }
-
-    return 0;
-}
-
-int DBusAdapterLowLevel_event_loop_request_stop(int exit_code) 
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    //only my thread id is allowd to call this one, check no other thread
-    //is using this function in order to prevent confusion.
-    //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
-    if (pthread_self() != ctx_.master_thread_id){
-        return -1;
-    }
-    int r = sd_event_exit(ctx_.event_loop_handle, exit_code);
-    return RETURN_0_ON_SUCCESS(r);
-}
 
 
 
@@ -691,97 +731,6 @@ MblError DBusAdapter::update_remove_resource_instance_status(
     return Error::None;
 }
 
-//////////////////////////////////////////////////////
-//  Callbacks from lower layer
-//////////////////////////////////////////////////////
-int DBusAdapter::register_resources_async_callback(
-        const uintptr_t bus_request_handle, 
-        const char *appl_resource_definition_json,
-        void *userdata)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->register_resources_async_callback_impl(
-        bus_request_handle, appl_resource_definition_json);
-}
 
-int DBusAdapter::register_resources_async_callback_impl(
-    const uintptr_t bus_request_handle, 
-    const char *appl_resource_definition_json)
-{
-    // Register resources is an asynchronous process towards the cloud -> store handle
-    if (bus_request_handles_.insert(bus_request_handle).second == false){
-        return -1;
-    }
-    //TODO : uncomment + handle errors
-    //MblError status = ccrb.register_resources(bus_request_handle, std::string(appl_resource_definition_json));    
-    return 0;
-}
-
-int DBusAdapter::deregister_resources_async_callback(
-    const uintptr_t bus_request_handle, 
-    const char *access_token,
-    void *userdata)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->deregister_resources_async_callback_impl(bus_request_handle, access_token);
-}
-
-int DBusAdapter::deregister_resources_async_callback_impl(
-    const uintptr_t bus_request_handle, 
-    const char *access_token)
-{
-    // Register resources is an asynchronous process towards the cloud -> store handle
-    if (bus_request_handles_.insert(bus_request_handle).second == false){
-        return -1;
-    }
-    //TODO : uncomment + handle errors
-    //MblError status = ccrb.deregister_resources(bus_request_handle, std::string(deregister_resources));    
-    return 0;
-}
-
-int DBusAdapter::received_message_on_mailbox_callback_impl(const int fd)
-{
-    MblError status;
-    DBusMailboxMsg msg;
-    int r = -1;
-
-    if (fd != mailbox_.get_pipefd_read()){
-        return r;
-    }
-    status = mailbox_.receive_msg(msg, DBUS_MAILBOX_TIMEOUT_MILLISECONDS);
-    if (status != MblError::None) {
-        return r;
-    }
-
-    switch (msg.type_)
-    {
-        case mbl::DBusMailboxMsg::MsgType::EXIT:
-            if (msg.payload_len_ != sizeof(mbl::DBusMailboxMsg::Msg_exit_)){
-                break;
-            }
-            r = DBusAdapterLowLevel_event_loop_request_stop(msg.payload_.exit.exit_code);
-            break;
-        case mbl::DBusMailboxMsg::MsgType::RAW_DATA:
-            //pass 
-            break;
-    
-        default:
-            //TODO : print error
-            break;
-    }
-    return r;
-}
-
-int DBusAdapter::received_message_on_mailbox_callback(
-    const int fd,
-    void* userdata)
-{
-    // This is a static callback
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    DBusAdapter *adapter_ = static_cast<DBusAdapter*>(userdata);
-    return adapter_->received_message_on_mailbox_callback_impl(fd);
-}
 
 */
