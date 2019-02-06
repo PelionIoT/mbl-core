@@ -42,7 +42,7 @@ MblError ResourceBroker::start()
         const int thread_create_errno = errno;
 
         tr_err(
-            "Thread creation failed (%s)!\n",
+            "Thread creation failed (%s)",
             strerror(thread_create_errno));
 
         return Error::CCRBStartFailed;
@@ -84,7 +84,7 @@ MblError ResourceBroker::stop()
         // thread joining failed, print errno value
         const int thread_join_errno = errno;
         tr_err(
-            "Thread joining failed (%s)!\n",
+            "Thread joining failed (%s)",
             strerror(thread_join_errno));
         
         // FIXME: Currently, if pthread_join fails, we return error.
