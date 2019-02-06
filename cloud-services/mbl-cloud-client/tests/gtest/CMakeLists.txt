@@ -61,7 +61,6 @@ set_target_properties (mbl-cloud-client-gtest PROPERTIES
    CXX_EXTENSIONS FALSE
 )
 
-#add_dependencies(libmbedCloudClient.a mbedCloudClientExternal)
 
 target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
 target_link_libraries(mbl-cloud-client-gtest libmbedCloudClient.a libmbedCloudClientExternal.a)

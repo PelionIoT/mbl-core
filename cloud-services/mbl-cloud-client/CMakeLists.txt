@@ -69,8 +69,6 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
 )
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
-add_dependencies(mbedCloudClient mbedCloudClientExternal)
-
 # Order is important here: dependencies must follow dependents
 target_link_libraries(mbl-cloud-client mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedCloudClient mbedCloudClientExternal)
