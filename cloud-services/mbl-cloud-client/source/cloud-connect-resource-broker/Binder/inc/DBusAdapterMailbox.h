@@ -9,7 +9,7 @@
 #define _DBusAdapterMailbox_h_
 
 #include <poll.h>
-#include <stdint.h>
+#include <inttypes.h>
 
 #include "MblError.h"
 

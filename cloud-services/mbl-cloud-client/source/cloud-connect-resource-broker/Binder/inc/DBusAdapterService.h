@@ -8,7 +8,8 @@
 #ifndef _DBusAdapterService_h_
 #define _DBusAdapterService_h_
 
-#include <stdint.h>
+#include <inttypes.h>
+
 #include <systemd/sd-bus.h>
 
 #ifdef __cplusplus
@@ -21,18 +22,6 @@ extern "C"
 #define tr_debug(a, b)
 #define tr_error(a, b)
 
-/*
-// TODO - move out from here
-typedef struct DBusAdapterCallbacks_
-{
-    // Events coming from the D-Bus service
-    int (*register_resources_async_callback)(const uintptr_t, const char *, void*);
-    int (*deregister_resources_async_callback)(const uintptr_t, const char *, void*);
-
-    // Other events
-    int (*received_message_on_mailbox_callback)(const int, void*);
-} DBusAdapterCallbacks;
-*/
 
 typedef int (*IncomingDataCallback)(sd_bus_message*, void*, sd_bus_error*);
 

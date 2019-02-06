@@ -7,25 +7,15 @@
 #ifndef DBusAdapter_h_
 #define DBusAdapter_h_
 
-// FIXME - why here?
-//#include <pthread.h>
 
-#include "MblError.h"
-// FIXME : removed temporarily
-//#include "CloudConnectExternalTypes.h"
-
-//#include <string>
-//#include <set>
+#include <inttypes.h>
 #include <memory>
 
-//#include <systemd/sd-bus.h>
-//#include <systemd/sd-event.h>
+#include "MblError.h"
 
-//#include "DBusAdapterLowLevel.h"
-
+// to be used by Google Test testing
 
 namespace mbl {
-
 
 class ResourceBroker;
 
@@ -44,7 +34,6 @@ enum CloudConnectStatus
  * service and client applications.
  */
 class DBusAdapter {
-
 public:    
     //TODO: fix gtest issue
     DBusAdapter();
@@ -164,7 +153,8 @@ private:
     class DBusAdapterImpl;
     std::unique_ptr<DBusAdapterImpl> impl_;
       
-    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    // No copying or moving 
+    // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;
     DBusAdapter(DBusAdapter&&) = delete;

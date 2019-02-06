@@ -5,54 +5,80 @@
  */
 
 
-
-#include <gtest/gtest.h>
-
-#include "DBusAdapterService.h"
-/*
 #include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <semaphore.h>
-#include <systemd/sd-event.h>
-#include <systemd/sd-bus.h>
+
+#include <gtest/gtest.h>
 
 #include "DBusAdapter.h"
+#include "DBusAdapterImpl.h"
 #include "DBusAdapterMailbox.h"
 #include "MblError.h"
 #include "DBusMailboxMsg.h"
-#include "DBusAdapterLowLevel_internal.h"
-#include "DBusAdapterLowLevel.h"
+#include "DBusAdapterService.h"
+#include "DBusAdapterTimer.h"
+
+using namespace mbl;
 
 #define DBUS_MAILBOX_WAIT_TIME_MS 100000
 
 
+//TODO :  continue with infrastructure later (reminder : declare class out of mbl in header + add friend class in class)
+/*
+class GTestChecker
+{
+    class DBusAdapterImplGtest
+    {
+    public:
 
-//TODO : replace this with blocking query
-#define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
+        DBusAdapterImplGtest(DBusAdapter::DBusAdapterImpl &adapter_impl) : adapter_impl_(adapter_impl) {};
+            //{  adapter_impl_ = adapter_impl; };
+        
+        // Put here your getters functions
 
-using MblError = mbl::MblError;
-extern "C" DBusAdapterLowLevelContext *DBusAdapterLowLevel_GetContext();
+        // Put here your setter functions
+
+    private:
+        DBusAdapter::DBusAdapterImpl &adapter_impl_;
+    };
+
+
+    class DBusAdapterGtest
+    {
+    public:
+
+        DBusAdapterGtest(DBusAdapter &adapter) : adapter_(adapter) {};
+
+        // Put here your getters functions
+
+        // Put here your setter functions
+
+    private:
+        DBusAdapter &adapter_;
+    };
+};
+*/
 
 TEST(DBusAdapterMailBox_a, InitDeinit)
 {
-    mbl::DBusAdapterMailbox mailbox;
-
+    DBusAdapterMailbox mailbox;
     ASSERT_EQ(mailbox.init(), MblError::None);
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
 TEST(DBusAdapterMailBox_a, SendReceiveRawMessagePtr_SingleThread)
 {
-    mbl::DBusAdapterMailbox mailbox;
-    mbl::DBusMailboxMsg write_msg;
-    mbl::DBusMailboxMsg read_msg;
+    DBusAdapterMailbox mailbox;
+    DBusMailboxMsg write_msg;
+    DBusMailboxMsg read_msg;
     uintptr_t msg_ptr_as_int;
     std::string str("Hello1 Hello2 Hello3");
 
     memset(&write_msg, 0, sizeof(write_msg));
     memset(&read_msg, 0, sizeof(read_msg));
-    write_msg.type_ = mbl::DBusMailboxMsg::MsgType::RAW_DATA;
+    write_msg.type_ = DBusMailboxMsg::MsgType::RAW_DATA;
     read_msg.payload_len_ = str.length();
     strncpy(
         write_msg.payload_.raw.bytes,
@@ -67,16 +93,27 @@ TEST(DBusAdapterMailBox_a, SendReceiveRawMessagePtr_SingleThread)
         ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
         ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_WAIT_TIME_MS), 0);
         write_msg = read_msg;
-        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(mbl::DBusMailboxMsg)), 0);
+        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(DBusMailboxMsg)), 0);
     }
 
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
+
+/*
+
+
+
+//TODO : replace this with blocking query
+#define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
+
+
+
+
 static void *reader_thread_start(void *mailbox)
 {
-    mbl::DBusAdapterMailbox *mailbox_ = static_cast<mbl::DBusAdapterMailbox *>(mailbox);
-    mbl::DBusMailboxMsg output_msg;
+    DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
+    DBusMailboxMsg output_msg;
     uint64_t expected_sequence_num = 0;
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch, ++expected_sequence_num)
@@ -85,7 +122,7 @@ static void *reader_thread_start(void *mailbox)
         {
             pthread_exit((void *)-1);
         }
-        if ((output_msg.type_ != mbl::DBusMailboxMsg::MsgType::RAW_DATA) ||
+        if ((output_msg.type_ != DBusMailboxMsg::MsgType::RAW_DATA) ||
             (output_msg.payload_len_ != 1) ||
             (output_msg.payload_.raw.bytes[0] != ch) ||
             (output_msg._sequence_num != expected_sequence_num))
@@ -98,11 +135,11 @@ static void *reader_thread_start(void *mailbox)
 
 static void *writer_thread_start(void *mailbox)
 {
-    mbl::DBusMailboxMsg input_message;
-    mbl::DBusAdapterMailbox *mailbox_ = static_cast<mbl::DBusAdapterMailbox *>(mailbox);
+    DBusMailboxMsg input_message;
+    DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
 
     memset(&input_message, 0, sizeof(input_message));
-    input_message.type_ = mbl::DBusMailboxMsg::MsgType::RAW_DATA;
+    input_message.type_ = DBusMailboxMsg::MsgType::RAW_DATA;
     input_message.payload_len_ = 1;
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch)
@@ -120,7 +157,7 @@ static void *writer_thread_start(void *mailbox)
 TEST(DBusAdapterMailBox_a, SendReceiveRawMessage_MultiThread)
 {
     pthread_t writer_tid, reader_tid;
-    mbl::DBusAdapterMailbox mailbox;
+    DBusAdapterMailbox mailbox;
     void *retval;
 
     ASSERT_EQ(mailbox.init(), 0);
@@ -190,30 +227,30 @@ TEST_F(DBusAdapeterLowLevel_b, run_stop_with_self_request)
 
 TEST(DBusAdapeter_c, init_deinit)
 {
-    mbl::DBusAdapter adapter_;
-    ASSERT_EQ(adapter_.init(), mbl::MblError::None);
-    ASSERT_EQ(adapter_.deinit(), mbl::MblError::None);
+    DBusAdapter adapter_;
+    ASSERT_EQ(adapter_.init(), MblError::None);
+    ASSERT_EQ(adapter_.deinit(), MblError::None);
 }
 
 static void *mbl_cloud_client_thread(void *adapter_)
 {
-    mbl::DBusAdapter *adapter = static_cast<mbl::DBusAdapter *>(adapter_);
+    DBusAdapter *adapter = static_cast<DBusAdapter *>(adapter_);
     MblError status;
 
     status = adapter->init();
-    if (status != mbl::MblError::None)
+    if (status != MblError::None)
     {
         pthread_exit((void *)status);
     }
 
     status = adapter->run();
-    if (status != mbl::MblError::None)
+    if (status != MblError::None)
     {
         pthread_exit((void *)status);
     }
 
     status = adapter->deinit();
-    if (status != mbl::MblError::None)
+    if (status != MblError::None)
     {
         pthread_exit((void *)status);
     }
@@ -224,7 +261,7 @@ static void *mbl_cloud_client_thread(void *adapter_)
 
 TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 {
-    mbl::DBusAdapter adapter;
+    DBusAdapter adapter;
     pthread_t tid;
     void *retval;
 
@@ -237,7 +274,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
         // do not use semaphores - it's only a test - sleep for 10 millisec
         SLEEP_MS(100000);       //TODO - temporary infinite - back to 10
 
-        ASSERT_EQ(adapter.stop(), mbl::MblError::None);
+        ASSERT_EQ(adapter.stop(), MblError::None);
 
         ASSERT_EQ(pthread_join(tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, 0);
