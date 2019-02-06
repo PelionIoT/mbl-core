@@ -52,7 +52,7 @@ include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/update-client-hub/modules/c
 FILE(GLOB MBL_CLOUD_CLIENT_GTEST_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-add_executable(mbl-cloud-client-gtest "${CMAKE_SOURCE_DIR}/*.cpp")
+add_executable(mbl-cloud-client-gtest ${MBL_CLOUD_CLIENT_GTEST_SRC})
 
 
 set_target_properties (mbl-cloud-client-gtest PROPERTIES
@@ -61,13 +61,13 @@ set_target_properties (mbl-cloud-client-gtest PROPERTIES
    CXX_EXTENSIONS FALSE
 )
 
+#add_dependencies(libmbedCloudClient.a mbedCloudClientExternal)
+
 target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
-target_link_libraries(mbl-cloud-client-gtest libmbedCloudClient.a)
-# Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmbedCloudClient.a libmbedCloudClientExternal.a)
 
 target_link_libraries(mbl-cloud-client-gtest factory-configurator-client)
-target_link_libraries(mbl-cloud-client-gtest pal)
+target_link_libraries(mbl-cloud-client-gtest pal mblCloudClient)
 target_link_libraries(mbl-cloud-client-gtest mbedcrypto)
 target_link_libraries(mbl-cloud-client-gtest mbedtls)
 target_link_libraries(mbl-cloud-client-gtest mbedx509)
@@ -81,14 +81,10 @@ target_link_libraries(mbl-cloud-client-gtest libnanostacklibservice.a)
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
-target_link_libraries(mbl-cloud-client-gtest mbedCloudClient)
-# Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(mbl-cloud-client-gtest libmblCloudClient.a)
+target_link_libraries(mbl-cloud-client-gtest libmbedCloudClient.a libmbedCloudClientExternal.a)
 
 target_link_libraries(mbl-cloud-client-gtest libgtest_main.a)
 target_link_libraries(mbl-cloud-client-gtest libgtest.a)
-
-#target_link_libraries(mbl-cloud-client-gtest mbedTrace)
 
 target_link_libraries(mbl-cloud-client-gtest pthread)
 target_link_libraries(mbl-cloud-client-gtest rt)
