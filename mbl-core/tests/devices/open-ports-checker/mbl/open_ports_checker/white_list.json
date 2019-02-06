@@ -1,0 +1,39 @@
+{
+  "ports": [
+    {
+      "protocol": "tcp4",
+      "port": "22"
+    },
+    {
+      "protocol": "tcp6",
+      "port": "22"
+    },
+    {
+      "protocol": "tcp4",
+      "port": "111"
+    },
+    {
+      "protocol": "tcp6",
+      "port": "111"
+    },
+    {
+      "protocol": "udp4",
+      "port": "111"
+    },
+    {
+      "protocol": "udp6",
+      "port": "111"
+    }
+  ],
+  "executables": [
+    {
+      "executable": "/usr/sbin/avahi-daemon"
+    },
+    {
+      "executable": "/usr/sbin/avahi-autoipd"
+    },
+    {
+      "executable": "/bin/busybox.nosuid"
+    }
+  ]
+}
