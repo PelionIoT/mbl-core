@@ -164,19 +164,8 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
     return MblError::None;
 }
 
-MblError DBusAdapter::DBusAdapterImpl::event_loop_run() 
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    int r = -1;
 
-    r = sd_event_loop(event_loop_handle_);
-    if (r < 0){
-        return MblError::DBusErr_Temporary;
-    }
-    return MblError::None;
-}
-
-MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(int exit_code) 
+MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(DBusAdapterStopStatus stop_status) 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
@@ -187,7 +176,7 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(int exit_code)
     if (pthread_self() != initializer_thread_id_){
         return MblError::DBusErr_Temporary;
     }
-    r = sd_event_exit(event_loop_handle_, exit_code);
+    r = sd_event_exit(event_loop_handle_, (int)100);
     return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
 }
 
@@ -260,7 +249,7 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
             if (msg.payload_len_ != sizeof(mbl::DBusMailboxMsg::Msg_exit_)){
                 break;
             }
-            r = event_loop_request_stop(msg.payload_.exit.exit_code);
+            r = event_loop_request_stop(msg.payload_.exit.stop_status);
             break;
         case mbl::DBusMailboxMsg::MsgType::RAW_DATA:
             //pass 
@@ -457,10 +446,28 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
     return Error::None;
 }
 
-MblError DBusAdapter::DBusAdapterImpl::run()
+
+MblError DBusAdapter::DBusAdapterImpl::event_loop_run(DBusAdapterStopStatus &stop_status) 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status1, status2, status3;
+
+    /*
+    Thread enters the sd-event loop and blocks.
+    https://www.freedesktop.org/software/systemd/man/sd_event_run.html# :
+    sd_event_loop() invokes sd_event_run() in a loop, 
+    thus implementing the actual event loop. The call returns as soon as exiting 
+    was requested using sd_event_exit(3).
+    sd_event_loop() returns the exit code specified when invoking sd_event_exit()
+    */
+    stop_status = (DBusAdapterStopStatus)sd_event_loop(event_loop_handle_);
+    return MblError::None;
+}
+
+
+MblError DBusAdapter::DBusAdapterImpl::run(DBusAdapterStopStatus &stop_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    MblError status;
     int r;
 
     if (Status::INITALIZED != status_){
@@ -468,21 +475,18 @@ MblError DBusAdapter::DBusAdapterImpl::run()
     }
     
     status_ = Status::RUNNING;
-    /*
-    Thread enters the sd-event loop and blocks.
-    https://www.freedesktop.org/software/systemd/man/sd_event_run.html# :
-    sd_event_loop() invokes sd_event_run() in a loop, 
-    thus implementing the actual event loop. The call returns as soon as exiting 
-    was requested using sd_event_exit(3).
-    */
-    r = sd_event_loop(event_loop_handle_);
+    status = event_loop_run(stop_status);    
+    if (status != MblError::None){
+        event_loop_request_stop(DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR);
+        return status;
+    }
     status_ = Status::INITALIZED;
-    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
+
+    return MblError::None;
 }
 
 
-
-MblError DBusAdapter::DBusAdapterImpl::stop()
+MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     MblError status;
@@ -493,7 +497,7 @@ MblError DBusAdapter::DBusAdapterImpl::stop()
     }
 
     if (pthread_self() == initializer_thread_id_){
-        int r = event_loop_request_stop(exit_code);
+        int r = event_loop_request_stop(stop_status);
         if (r < 0){
             // print error
         }
@@ -503,7 +507,7 @@ MblError DBusAdapter::DBusAdapterImpl::stop()
         DBusMailboxMsg msg;
         msg.type_ = mbl::DBusMailboxMsg::MsgType::EXIT;
         msg.payload_len_ = sizeof(mbl::DBusMailboxMsg::Msg_exit_);
-        msg.payload_.exit.exit_code = exit_code;
+        msg.payload_.exit.stop_status = stop_status;
         status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
         if (status != MblError::None){
             //print something
@@ -614,20 +618,20 @@ MblError DBusAdapter::deinit()
    return impl_->deinit(); 
 }
 
-MblError DBusAdapter::run()
+MblError DBusAdapter::run(DBusAdapterStopStatus &stop_status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status = impl_->run();
+    MblError status = impl_->run(stop_status);
     if (status != MblError::None){
-        impl_->stop();
+        impl_->stop(DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR);
     }
     return status;
 }
 
-MblError DBusAdapter::stop()
+MblError DBusAdapter::stop(DBusAdapterStopStatus stop_status)
 {
    tr_debug("%s", __PRETTY_FUNCTION__);
-   return impl_->stop(); 
+   return impl_->stop(stop_status); 
 }
 
 

@@ -14,7 +14,7 @@
 #include "MblError.h"
 
 // to be used by Google Test testing
-class DBusAdapterTestChecker;
+class DBusAdapterTester;
 
 namespace mbl {
 
@@ -28,6 +28,21 @@ enum CloudConnectStatus
 };
 
 
+//TODO - write nicer way
+/*
+    This enumerator is used in low level sd-event loop
+    In order not to conflict with Linux error codes, start it from 10000
+    For more details :
+    http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+    https://www.freedesktop.org/software/systemd/man/sd_event_loop.html#
+    https://www.freedesktop.org/software/systemd/man/sd_event_exit.html#
+*/
+typedef enum DBusAdapterStopStatus_
+{
+    DBUS_ADAPTER_STOP_STATUS_NO_ERROR = 10000,
+    DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR,
+}DBusAdapterStopStatus;
+
 /**
  * @brief Implements an interface to the D-Bus IPC.
  * This class provides an implementation for the handlers that 
@@ -35,7 +50,7 @@ enum CloudConnectStatus
  * service and client applications.
  */
 class DBusAdapter {
-friend class ::DBusAdapterTestChecker;
+friend class ::DBusAdapterTester;
 public:    
     //TODO: fix gtest issue
     DBusAdapter();
@@ -60,19 +75,21 @@ public:
 
 /**
  * @brief Runs IPC event-loop.
- * 
+ * @param stop_status is used in order to understand the reason for stoping the adapter
+ * This can be due to calling stop() , or due to other reasons
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError run();
+    MblError run(DBusAdapterStopStatus &stop_status);
 
 /**
  * @brief Stops IPC event-loop.
- * 
+ * @param stop_status is used in order to understand the reason for stoping the adapter
+ *  use DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR by default (no error)
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError stop();
+    MblError stop(DBusAdapterStopStatus stop_status);
 
 /**
  * @brief Sends registration request final status to the destination 

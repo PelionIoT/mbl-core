@@ -27,41 +27,67 @@ using namespace mbl;
 
 ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////INFRA//////////////////////////////////////////
-#define CHECKER_VALIDATE_EQ(a, b) if (a != b) return MblError::DBusErr_Temporary
-class DBusAdapterTestChecker
+#define TESTER_VALIDATE_EQ(a, b) if (a != b) return MblError::DBusErr_Temporary
+class DBusAdapterTester
 {
     public:
 
-        DBusAdapterTestChecker(DBusAdapter &adapter) : 
+        DBusAdapterTester(DBusAdapter &adapter) : 
             adapter_(adapter) {};
 
         MblError validate_deinitialized_adapter();
+        MblError event_loop_request_stop(DBusAdapterStopStatus  stop_status);
+        MblError event_loop_run(
+            DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
     private:
         DBusAdapter &adapter_;
 };
 
-MblError DBusAdapterTestChecker::validate_deinitialized_adapter()
+MblError DBusAdapterTester::validate_deinitialized_adapter()
 {
-    CHECKER_VALIDATE_EQ(adapter_.impl_->status_, DBusAdapter::DBusAdapterImpl::Status::NON_INITALIZED); 
-    CHECKER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->connection_slot_, nullptr);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->event_source_pipe_, nullptr);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
-    CHECKER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->status_, DBusAdapter::DBusAdapterImpl::Status::NON_INITALIZED); 
+    TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
+    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->connection_slot_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->event_source_pipe_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
+    TESTER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
+}
+MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus  stop_status)
+{
+    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
+}
+
+MblError DBusAdapterTester::event_loop_run(
+    DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status)
+{
+    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
+    TESTER_VALIDATE_EQ(stop_status, expected_stop_status);    
 }
 ///////////////////////////////////////////////////////////////////////////
 
 
-TEST(DBusAdapterMailBox_a, InitDeinit)
+TEST(DBusAdapterMailBox1, InitDeinit)
 {
     DBusAdapterMailbox mailbox;
     ASSERT_EQ(mailbox.init(), MblError::None);
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
-TEST(DBusAdapterMailBox_a, SendReceiveRawMessagePtr_SingleThread)
+TEST(DBusAdapterService1,init_get_deinit)
+{
+    // initialize callback to non-zero. check null/non-null userdata
+    uintptr_t none_zero_val = 1;
+    IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
+        
+    ASSERT_EQ(DBusAdapterService_init(callback), 0);
+    ASSERT_EQ(DBusAdapterService_init(callback), 0);
+    ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
+    ASSERT_EQ(DBusAdapterService_deinit(), 0);
+}
+
+TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
 {
     DBusAdapterMailbox mailbox;
     DBusMailboxMsg write_msg;
@@ -137,7 +163,7 @@ static void *writer_thread_start(void *mailbox)
     pthread_exit((void *)0);
 }
 
-TEST(DBusAdapterMailBox_a, SendReceiveRawMessage_MultiThread)
+TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
 {
     pthread_t writer_tid, reader_tid;
     DBusAdapterMailbox mailbox;
@@ -153,78 +179,39 @@ TEST(DBusAdapterMailBox_a, SendReceiveRawMessage_MultiThread)
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
-TEST(DBusAdapeter_c, init_deinit)
+TEST(DBusAdapeter1, init_deinit)
 {
     DBusAdapter adapter;
-    DBusAdapterTestChecker checker(adapter);
+    DBusAdapterTester tester(adapter);
     for (auto i = 0; i < 100; ++i){
         ASSERT_EQ(adapter.init(), MblError::None);        
         ASSERT_EQ(adapter.deinit(), MblError::None);        
-        checker.validate_deinitialized_adapter();
-    }    
+        tester.validate_deinitialized_adapter();
+    }
+}
+
+TEST(DBusAdapeter1, run_stop_with_self_request)
+{
+    DBusAdapter adapter;    
+    DBusAdapterStopStatus stop_status = DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR;
+    DBusAdapterTester tester(adapter);
+    
+    ASSERT_EQ(adapter.init(), MblError::None);
+
+    // send my self exit signal before I enter the loop, expect the event_exit_code
+    // usually we will send self stop from a callback and not this way.
+    // this is a test, so that's the easiest way to check (simulating a callback at this location)
+    ASSERT_EQ(tester.event_loop_request_stop(stop_status), 0);
+
+    // expect exit code to be event_exit_code since that what was sent
+    ASSERT_EQ(tester.event_loop_run(
+        stop_status, DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), 0);
+
+    ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
 
 /*
-
-
-class DBusAdapeterLowLevel_b : public ::testing::Test
-{
-  protected:
-    DBusAdapeterLowLevel_b()
-    {
-        // set-up work for each test here.
-
-        // This is a fast dummy initialization for unit-testing
-        // We just want to pass the entry sanity checks - so assign here non-zero values
-        memset(&callbacks, 1, sizeof(callbacks));
-    }
-
-    ~DBusAdapeterLowLevel_b() override
-    {
-        // clean-up work that doesn't throw exceptions here.
-    }
-
-    // If the constructor and destructor are not enough for setting up
-    // and cleaning up each test, you can define the following methods:
-    void SetUp() override
-    {
-        // Code here will be called immediately after the constructor (right before each test).
-        // This is a fast dummy initialization for unit-testing
-        ASSERT_EQ(DBusAdapterLowLevel_init(&callbacks, nullptr), 0);
-    }
-
-    void TearDown() override
-    {
-        // Code here will be called immediately after each test (right before the destructor).
-        ASSERT_EQ(DBusAdapterLowLevel_deinit(), 0);
-    }
-
-    // Objects declared here can be used by all tests in the test case for this class.
-    DBusAdapterCallbacks callbacks;
-};
-
-TEST_F(DBusAdapeterLowLevel_b, init_deinit)
-{
-    // empty test body
-}
-
-TEST_F(DBusAdapeterLowLevel_b, run_stop_with_self_request)
-{
-    DBusAdapterLowLevelContext *ctx = DBusAdapterLowLevel_GetContext();
-    const int event_exit_code = 0xFFFEEEAA;
-
-    // send my self exit signal before I enter the loop, expect the event_exit_code
-    // usually we will send self stop from a callback and not this wey.
-    // this is a test, so that's the easiest way to check (simulating a callback at this location)
-    ASSERT_EQ(DBusAdapterLowLevel_event_loop_request_stop(event_exit_code), 0);
-
-    // expect exit code to be event_exit_code since that what was sent
-    ASSERT_EQ(DBusAdapterLowLevel_event_loop_run(), event_exit_code);
-}
-
-
-
 static void *mbl_cloud_client_thread(void *adapter_)
 {
     DBusAdapter *adapter = static_cast<DBusAdapter *>(adapter_);
@@ -276,19 +263,6 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 }
 
 */
-
-
-TEST(DBusAdapterService,init_get_deinit)
-{
-    // initialize callback to non-zero. check null/non-null userdata
-    uintptr_t none_zero_val = 1;
-    IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
-        
-    ASSERT_EQ(DBusAdapterService_init(callback), 0);
-    ASSERT_EQ(DBusAdapterService_init(callback), 0);
-    ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
-    ASSERT_EQ(DBusAdapterService_deinit(), 0);
-}
 
 int main(int argc, char **argv)
 {

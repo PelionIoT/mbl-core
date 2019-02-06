@@ -20,20 +20,21 @@
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
 
-class DBusAdapterTestChecker;
+class DBusAdapterTester;
+
 namespace mbl {
 
 class DBusAdapter::DBusAdapterImpl
 {
-friend class ::DBusAdapterTestChecker;
+friend class ::DBusAdapterTester;
 public:
     DBusAdapterImpl();
     ~DBusAdapterImpl();
 
     MblError init();
     MblError deinit();
-    MblError run();
-    MblError stop();
+    MblError run(DBusAdapterStopStatus &stop_status);
+    MblError stop(DBusAdapterStopStatus stop_status);
     
     MblError handle_ccrb_RegisterResources_status_update(
         const uintptr_t ipc_conn_handle, 
@@ -107,8 +108,8 @@ private:
 
     MblError event_loop_init();
     MblError event_loop_deinit();
-    MblError event_loop_run();
-    MblError event_loop_request_stop(int32_t exit_code);
+    MblError event_loop_run(DBusAdapterStopStatus &stop_status);
+    MblError event_loop_request_stop(DBusAdapterStopStatus stop_status);
 
     // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
     // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching

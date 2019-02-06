@@ -7,6 +7,8 @@
 #ifndef _DBusMailboxMsg_h_
 #define _DBusMailboxMsg_h_
 
+#include "DBusAdapter.h"
+
 namespace mbl{
 
 #define DBUS_MAILBOX_RAW_MSG_MAX_PAYLOAD_SIZE       100
@@ -39,7 +41,7 @@ struct DBusMailboxMsg
 
     typedef struct Msg_exit_ 
     {
-        int32_t     exit_code;
+        DBusAdapterStopStatus     stop_status;
     }Msg_exit_;
 
     // Keep this enumerator
