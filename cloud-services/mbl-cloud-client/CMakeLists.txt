@@ -55,25 +55,30 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
 
-FILE(GLOB MBL_CLOUD_CLIENT_MAIN
-    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-)
-add_executable(mbl-cloud-client "${MBL_CLOUD_CLIENT_MAIN}")
+#FILE(GLOB MBL_CLOUD_CLIENT_MAIN
+#    "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
+#)
+add_executable(mbl-cloud-client "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 
 FILE(GLOB MBL_CLOUD_CLIENT_SRC
-    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
+FILE(GLOB MBL_CLOUD_CRED_RESOURCES_SRC
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
+)
+add_library(mblCloudExt STATIC "${MBL_CLOUD_CRED_RESOURCES_SRC}")
+
+target_link_libraries(mbl-cloud-client mblCloudExt)
 
 # Order is important here: dependencies must follow dependents
 target_link_libraries(mbl-cloud-client mblCloudClient)
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 # Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(mbl-cloud-client mblCloudClient)
+#target_link_libraries(mbl-cloud-client mblCloudClient)
 
 target_link_libraries(mbl-cloud-client factory-configurator-client)
 target_link_libraries(mbl-cloud-client pal)
@@ -87,7 +92,7 @@ target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
 target_link_libraries(mbl-cloud-client mbedCloudClient)
 # Cyclic dependency between mblCloudClient and mbedCloudClient
-target_link_libraries(mbl-cloud-client mblCloudClient)
+#target_link_libraries(mbl-cloud-client mblCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)

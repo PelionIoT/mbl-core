@@ -52,7 +52,7 @@ include_directories(${MBED_CLOUD_CLIENT_INCLUDE_DIR}/update-client-hub/modules/c
 FILE(GLOB MBL_CLOUD_CLIENT_GTEST_SRC
     "${CMAKE_SOURCE_DIR}/*.cpp"
 )
-add_executable(mbl-cloud-client-gtest ${CMAKE_SOURCE_DIR}/*.cpp)
+add_executable(mbl-cloud-client-gtest "${CMAKE_SOURCE_DIR}/*.cpp")
 
 
 set_target_properties (mbl-cloud-client-gtest PROPERTIES
