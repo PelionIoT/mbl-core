@@ -32,14 +32,22 @@ run:
         # Perform optional SETUP actions
         - $SETUP
 
+        # A Test FAIL means that pytest returns an error code.
+        # This in turn causes the shell to immediatly exit.
+        # Prevent this with the "set +e" option
+        - set +e
+
         # Run pytest
-        - pytest -v ./$COMPONENT | tee /tmp/test_venv/results.txt
+        - pytest --verbose --color=no --junitxml=./$COMPONENT.xml ./$COMPONENT
 
         # Turn the pytest results into a format the LAVA requires
-        - python3 ./ci/lava/dependencies/send_pytest_results_to_lava.py /tmp/test_venv/results.txt
+        - python3 ./ci/lava/dependencies/send_junit_results_to_lava.py ./$COMPONENT.xml
+
+        # Reenable the "-e" option
+        - set -e
 
         # Perform optional TEARDOWN actions
         - $TEARDOWN
 
         # Cleanup
-        - /bin/rm //tmp/test_venv/results.txt
+        - /bin/rm ./$COMPONENT.xml
