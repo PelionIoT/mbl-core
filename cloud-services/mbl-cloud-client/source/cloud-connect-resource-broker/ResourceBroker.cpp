@@ -28,7 +28,7 @@ ResourceBroker::~ResourceBroker()
 
 MblError ResourceBroker::start()
 {
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     // create new thread which will run IPC event loop
     const int thread_create_err = pthread_create(
@@ -40,11 +40,7 @@ MblError ResourceBroker::start()
     if(0 != thread_create_err) {
         // thread creation failed, print errno value and exit
         const int thread_create_errno = errno;
-
-        tr_err(
-            "Thread creation failed (%s)!\n",
-            strerror(thread_create_errno));
-
+        tr_err("Thread creation failed (%s)", strerror(thread_create_errno));
         return Error::CCRBStartFailed;
     }
 
@@ -54,10 +50,11 @@ MblError ResourceBroker::start()
 
 MblError ResourceBroker::stop()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    
     // FIXME: handle properly all errors in this function. 
 
     assert(ipc_);
-    tr_info("%s", __PRETTY_FUNCTION__);
     
     // try sending stop signal to ipc
     const MblError ipc_stop_err = ipc_->stop();
@@ -82,9 +79,7 @@ MblError ResourceBroker::stop()
     if(0 != thread_join_err) {
         // thread joining failed, print errno value
         const int thread_join_errno = errno;
-        tr_err(
-            "Thread joining failed (%s)!\n",
-            strerror(thread_join_errno));
+        tr_err("Thread joining failed (%s)", strerror(thread_join_errno));
         
         // FIXME: Currently, if pthread_join fails, we return error.
         //        Required to add "release resources best effort" functionality.
@@ -114,9 +109,10 @@ MblError ResourceBroker::stop()
 
 MblError ResourceBroker::init()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    
     // verify that ipc_ member was not created yet
     assert(nullptr == ipc_);
-    tr_info("%s", __PRETTY_FUNCTION__);
 
     // create ipc instance and pass ccrb instance to constructor
     ipc_ = std::make_unique<DBusAdapter>(*this);
@@ -131,9 +127,10 @@ MblError ResourceBroker::init()
 
 MblError ResourceBroker::de_init()
 {
-    assert(ipc_);
-    tr_info("%s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     
+    assert(ipc_);
+   
     // FIXME: Currently we call ipc_->de_init unconditionally. 
     //        ipc_->de_init can't be called if ccrb thread was not finished.
     //        Required to call ipc_->de_init only if ccrb thread was finished.  
@@ -147,8 +144,9 @@ MblError ResourceBroker::de_init()
 
 MblError ResourceBroker::run()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    
     assert(ipc_);
-    tr_info("%s", __PRETTY_FUNCTION__);
 
     MblError status = ipc_->run();
     if(Error::None != status) {
@@ -160,8 +158,9 @@ MblError ResourceBroker::run()
 
 void* ResourceBroker::ccrb_main(void* ccrb)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    
     assert(ccrb);
-    tr_info("%s", __PRETTY_FUNCTION__);
 
     ResourceBroker * const this_ccrb =
         static_cast<ResourceBroker*>(ccrb);
@@ -187,6 +186,7 @@ MblError ResourceBroker::register_resources(
         const uintptr_t , 
         const std::string &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
@@ -196,6 +196,7 @@ MblError ResourceBroker::deregister_resources(
         const uintptr_t , 
         const std::string &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
     return Error::None;
 }
@@ -206,6 +207,7 @@ MblError ResourceBroker::add_resource_instances(
         const std::string &, 
         const std::vector<uint16_t> &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
@@ -216,6 +218,7 @@ MblError ResourceBroker::remove_resource_instances(
     const std::string &, 
     const std::vector<uint16_t> &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
     return Error::None;
 }
@@ -224,6 +227,7 @@ MblError ResourceBroker::set_resources_values(
         const std::string &, 
         std::vector<ResourceSetOperation> &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
     return Error::None;
 }
@@ -232,6 +236,7 @@ MblError ResourceBroker::get_resources_values(
         const std::string &, 
         std::vector<ResourceGetOperation> &)
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }

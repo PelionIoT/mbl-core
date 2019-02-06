@@ -99,6 +99,7 @@ MblCloudClient::~MblCloudClient()
 
 MblError MblCloudClient::run()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     InstanceScoper scoper;
     assert(s_instance);
 
@@ -163,12 +164,14 @@ void MblCloudClient::register_handlers()
 
 void MblCloudClient::add_resources()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     M2MObjectList objs;
     cloud_client_->add_objects(objs);
 }
 
 MblError MblCloudClient::cloud_client_setup()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     {
         MblScopedLock l(s_mutex);
         state_ = State_CalledRegister;

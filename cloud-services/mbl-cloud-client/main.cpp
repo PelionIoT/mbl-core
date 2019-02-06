@@ -59,9 +59,7 @@ int main()
 
     const MblError sig_err = signals_init();
     if (sig_err != Error::None) {
-        std::fprintf(
-            stderr,
-            "Signal handler initialization failed (%s), exiting application!\n",
+        tr_err("Signal handler initialization failed (%s), exiting application!",
             MblError_to_str(sig_err));
         return 1;
     }
