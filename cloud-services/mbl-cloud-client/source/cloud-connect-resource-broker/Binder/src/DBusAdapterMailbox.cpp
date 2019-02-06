@@ -18,8 +18,6 @@
 #include "DBusAdapterMailbox.h"
 #include "DBusMailboxMsg.h"
 #include "MblError.h"
-#include "DBusAdapterLowLevel.h"
-
 
 namespace mbl {
 
