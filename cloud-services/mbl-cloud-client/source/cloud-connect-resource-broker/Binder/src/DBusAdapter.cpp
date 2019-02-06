@@ -26,7 +26,6 @@
 #define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
-
 #define RETURN_0_ON_SUCCESS(retval) (((retval) >= 0) ? 0 : retval)
 
 namespace mbl {
@@ -40,7 +39,6 @@ namespace mbl {
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 
-
 class DBusAdapter::DBusAdapterImpl
 {
 public:
@@ -49,7 +47,26 @@ public:
 
     MblError init();
     MblError deinit();
-  
+    MblError run();
+    MblError stop();
+    
+    MblError handle_ccrb_RegisterResources_status_update(
+        const uintptr_t ipc_conn_handle, 
+        const std::string &access_token,
+        const CloudConnectStatus reg_status);
+
+    MblError handle_ccrb_DeregisterResources_status_update(
+        const uintptr_t ipc_conn_handle, 
+        const CloudConnectStatus dereg_status);
+
+    MblError handle_ccrb_AddResourceInstances_status_update(
+        const uintptr_t ipc_conn_handle, 
+        const CloudConnectStatus add_status);
+
+    MblError handle_ccrb_RemoveResourceInstances_status_update(
+        const uintptr_t ipc_conn_handle, 
+        const CloudConnectStatus remove_status);
+
 private:
       //wait no more than 10 milliseconds in order to send an asynchronus message of any type
     static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
@@ -483,6 +500,7 @@ MblError DBusAdapter::DBusAdapterImpl::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     MblError status;
+    int r;
 
     if (Status::NON_INITALIZED != status_){
         return Error::DBusErr_Temporary;
@@ -503,13 +521,154 @@ MblError DBusAdapter::DBusAdapterImpl::init()
         return status;
     }
 
+    r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
+    if (r < 0){
+        return status;
+    }
+
     initializer_thread_id_ = pthread_self();
     status_ = Status::INITALIZED;
     return Error::None;
 }
 
+MblError DBusAdapter::DBusAdapterImpl::deinit()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    MblError status1, status2, status3;
+    int r;
+
+    if (Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
+    
+    status1 = mailbox_.deinit();
+    status2 = bus_deinit();
+    status3 = event_loop_deinit();
+
+    // TODO - clean all references to messages, timers etc. to unref all
+    //for (auto &handle : bus_request_handles_){
+        //sd_bus_message_unref((sd_bus_message*)handle);
+    //}
+
+    if (MblError::None != status1) {
+        return status1;
+    }
+    else if (MblError::None != status2) {
+        return status2;
+    }
+    else if (MblError::None != status3) {
+        return status3;
+    }
+    status_ = Status::NON_INITALIZED;
+    return Error::None;
+}
+
+MblError DBusAdapter::DBusAdapterImpl::run()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    MblError status1, status2, status3;
+    int r;
+
+    if (Status::INITALIZED != status_){
+        return Error::DBusErr_Temporary;
+    }
+    
+    status_ = Status::RUNNING;
+    /*
+    Thread enters the sd-event loop and blocks.
+    https://www.freedesktop.org/software/systemd/man/sd_event_run.html# :
+    sd_event_loop() invokes sd_event_run() in a loop, 
+    thus implementing the actual event loop. The call returns as soon as exiting 
+    was requested using sd_event_exit(3).
+    */
+    r = sd_event_loop(event_loop_handle_);
+    status_ = Status::INITALIZED;
+    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
+}
 
 
+
+MblError DBusAdapter::DBusAdapterImpl::stop()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    MblError status;
+    //TODO : need to understand by design
+    int exit_code = 0; //set 0 as exit code for now - we don't pass the exit code from outside
+    if (Status::RUNNING != status_){
+        return Error::DBusErr_Temporary;
+    }
+
+    if (pthread_self() == initializer_thread_id_){
+        int r = event_loop_request_stop(exit_code);
+        if (r < 0){
+            // print error
+        }
+        status = (r >= 0) ? Error::None : Error::DBusErr_Temporary;
+    }
+    else {
+        DBusMailboxMsg msg;
+        msg.type_ = mbl::DBusMailboxMsg::MsgType::EXIT;
+        msg.payload_len_ = sizeof(mbl::DBusMailboxMsg::Msg_exit_);
+        msg.payload_.exit.exit_code = exit_code;
+        status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
+        if (status != MblError::None){
+            //print something
+        }
+    }
+    return status;
+}
+
+
+
+MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(
+    const uintptr_t ipc_conn_handle, 
+    const std::string &access_token,
+    const CloudConnectStatus reg_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+
+    if (Status::RUNNING != status_){
+        return Error::DBusErr_Temporary;
+    }
+}
+
+MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
+    const uintptr_t ipc_conn_handle, 
+    const CloudConnectStatus dereg_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__)
+    assert(0);
+
+    if (Status::RUNNING != status_){
+        return Error::DBusErr_Temporary;
+    }
+}
+
+MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(
+    const uintptr_t ipc_conn_handle, 
+    const CloudConnectStatus add_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+
+    if (Status::RUNNING != status_){
+        return Error::DBusErr_Temporary;
+    }   
+}
+
+MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
+    const uintptr_t ipc_conn_handle, 
+    const CloudConnectStatus remove_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(0);
+
+    if (Status::RUNNING != status_){
+        return Error::DBusErr_Temporary;
+    }
+    
+}
 //////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////
 //////////////////////// DBusAdapter /////////////////////////////
@@ -545,8 +704,6 @@ DBusAdapter::DBusAdapter(ResourceBroker &ccrb) , mpl_(new DBusAdapterImpl):
 }
 */
 
-
-
 MblError DBusAdapter::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -557,141 +714,26 @@ MblError DBusAdapter::init()
     return status;
 }
 
-
-
-
-
-
-} // namespace mbl {
-
-/*
-
-
-int DBusAdapterLowLevel_init(const DBusAdapterCallbacks *adapter_callbacks, void *userdata)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    int r;
-
-    memset(&ctx_, 0, sizeof(ctx_));
-    ctx_.initializer_thread_id_ = pthread_self();
-    r = DBusAdapterBusService_init(adapter_callbacks, userdata);
-    if (r < 0){
-        return r;
-    }
-    r = DBusAdapterEventLoop_init();
-    if (r < 0){
-        return r;
-    } 
-
-    r = sd_bus_attach_event(ctx_.connection_handle, ctx_.event_loop_handle, SD_EVENT_PRIORITY_NORMAL);
-    if (r < 0){
-        return r;
-    }
-    return 0;
-}
-
-
-int DBusAdapterLowLevel_deinit()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    int r1, r2, r3;
-    
-    // best effort
-    r1 = sd_bus_detach_event(ctx_.connection_handle);
-    r2 = DBusAdapterBusService_deinit();
-    r3 = DBusAdapterEventLoop_deinit();
-
-    memset(&ctx_, 0, sizeof(ctx_));
-    return (r1 < 0) ? r1 : (r2 < 0) ? r2 : (r3 < 0) ? r3 : 0;
-}
-
-
-
-
-
-
-//////////////////////////////////////////////////////
-//  Upper Layer calls 
-//////////////////////////////////////////////////////
-
-/*
-
-
-
-
-/*
-
-
 MblError DBusAdapter::deinit()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status;
-    int r;
-
-    if (DBusAdapter::Status::INITALIZED != status_){
-        return Error::DBusErr_Temporary;
-    }
-    
-    status = mailbox_.deinit();
-    if (status != Error::None){
-        return status;
-    }
-
-    r = DBusAdapterLowLevel_deinit();
-    if (r < 0){
-        return Error::DBusErr_Temporary;
-    }
-
-    // TODO - reember to unref all
-    //for (auto &handle : bus_request_handles_){
-        //sd_bus_message_unref((sd_bus_message*)handle);
-    //}
-    status_ = DBusAdapter::Status::NON_INITALIZED;
-    return Error::None;
+   tr_debug("%s", __PRETTY_FUNCTION__);
+   return impl_->deinit(); 
 }
 
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    if (DBusAdapter::Status::INITALIZED != status_){
-        return Error::DBusErr_Temporary;
+    MblError status = impl_->run();
+    if (status != MblError::None){
+        impl_->stop();
     }
-        
-    status_ = DBusAdapter::Status::RUNNING;
-    int r = DBusAdapterLowLevel_event_loop_run();    
-    status_ = DBusAdapter::Status::INITALIZED;
-
-    return (r == 0) ? Error::None : Error::DBusErr_Temporary;
+    return status;
 }
 
 MblError DBusAdapter::stop()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status;
-    int exit_code = 0; //set 0 as exit code for now
-    if (DBusAdapter::Status::RUNNING != status_){
-        return Error::DBusErr_Temporary;
-    }
-
-    if (pthread_self() == master_thread_id_){
-        int r = DBusAdapterLowLevel_event_loop_request_stop(exit_code);
-        if (r < 0){
-            // print error
-        }
-        status = (r == 0) ? Error::None : Error::DBusErr_Temporary;
-    }
-    else
-    {
-        DBusMailboxMsg msg;
-        msg.type_ = mbl::DBusMailboxMsg::MsgType::EXIT;
-        msg.payload_len_ = sizeof(mbl::DBusMailboxMsg::Msg_exit_);
-        msg.payload_.exit.exit_code = exit_code;
-        status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
-        if (status != MblError::None){
-            //print something
-        }
-    }
-    return status;
+   tr_debug("%s", __PRETTY_FUNCTION__);
+   return impl_->stop(); 
 }
 
 
@@ -701,12 +743,7 @@ MblError DBusAdapter::update_registration_status(
     const CloudConnectStatus status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
-    if (DBusAdapter::Status::RUNNING != status_){
-        return Error::DBusErr_Temporary;
-    }
-    
-    return Error::None;
+    return impl_->handle_ccrb_RegisterResources_status_update(bus_request_handle, access_token, status); 
 }
 
 MblError DBusAdapter::update_deregistration_status(
@@ -714,39 +751,24 @@ MblError DBusAdapter::update_deregistration_status(
     const CloudConnectStatus status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    if (DBusAdapter::Status::RUNNING != status_){
-        return Error::DBusErr_Temporary;
-    }
-    return Error::None;
+    return impl_->handle_ccrb_DeregisterResources_status_update(bus_request_handle, status);
 }
 
-// TODO - IMPLEMENT
 MblError DBusAdapter::update_add_resource_instance_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t bus_request_handle, 
+    const CloudConnectStatus status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    if (DBusAdapter::Status::RUNNING != status_){
-        return Error::DBusErr_Temporary;
-    }
-    return Error::None;
+    return impl_->handle_ccrb_AddResourceInstances_status_update(bus_request_handle, status);
 }
 
-// TODO - IMPLEMENT
 MblError DBusAdapter::update_remove_resource_instance_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t bus_request_handle, 
+    const CloudConnectStatus status)
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(0);
-    if (DBusAdapter::Status::RUNNING != status_){
-        return Error::DBusErr_Temporary;
-    }
-    return Error::None;
+    return impl_->handle_ccrb_RemoveResourceInstances_status_update(bus_request_handle, status);
 }
 
+} // namespace mbl {
 
-
-*/

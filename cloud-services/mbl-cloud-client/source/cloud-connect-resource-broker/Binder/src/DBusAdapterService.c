@@ -85,7 +85,7 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // ==Possible Cloud connect status values==
     // TBD
     SD_BUS_SIGNAL(
-        "DeRegisterResourcesResult",
+        "DeregisterResourcesResult",
         "i",
         0
     ),
