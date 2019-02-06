@@ -132,7 +132,8 @@ MblError log_init()
     mbed_trace_init();
 
     // No colors, no carriage returns, print all log levels
-    mbed_trace_config_set(TRACE_ACTIVE_LEVEL_INFO);
+    //TODO: set trace default level back to TRACE_ACTIVE_LEVEL_INFO before merging to master
+    mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
 
     mbed_trace_print_function_set(mbl_trace_print_handler);
     mbed_trace_cmdprint_function_set(mbl_trace_print_handler);
