@@ -48,24 +48,40 @@
 #define OP_MASK_POST_ALLOWED        4
 #define OP_MASK_DELETE_ALLOWED      8
 
-static const M2MBase::Operation mask_to_operation[] = {
-    M2MBase::NOT_ALLOWED,                   //0
-    M2MBase::GET_ALLOWED,                   //1
-    M2MBase::PUT_ALLOWED,                   //2
-    M2MBase::GET_PUT_ALLOWED,               //3
-    M2MBase::POST_ALLOWED,                  //4
-    M2MBase::GET_POST_ALLOWED,              //5
-    M2MBase::PUT_POST_ALLOWED,              //6
-    M2MBase::GET_PUT_POST_ALLOWED,          //7
-    M2MBase::DELETE_ALLOWED,                //8
-    M2MBase::GET_DELETE_ALLOWED,            //9
-    M2MBase::PUT_DELETE_ALLOWED,            //10
-    M2MBase::GET_PUT_DELETE_ALLOWED,        //11
-    M2MBase::POST_DELETE_ALLOWED,           //12
-    M2MBase::GET_POST_DELETE_ALLOWED,       //13
-    M2MBase::PUT_POST_DELETE_ALLOWED,       //14
-    M2MBase::GET_PUT_POST_DELETE_ALLOWED    //15
-} ;
+static std::map<uint8_t, M2MBase::Operation> operation_map = {
+    {OP_MASK_NONE_ALLOWED,
+        M2MBase::NOT_ALLOWED},                      //0
+    {OP_MASK_GET_ALLOWED,
+        M2MBase::GET_ALLOWED},                      //1
+    {OP_MASK_PUT_ALLOWED,
+        M2MBase::PUT_ALLOWED},                      //2
+    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED,
+        M2MBase::GET_PUT_ALLOWED},                  //3
+    {OP_MASK_POST_ALLOWED,
+        M2MBase::POST_ALLOWED},                     //4
+    {OP_MASK_GET_ALLOWED | OP_MASK_POST_ALLOWED,
+        M2MBase::GET_POST_ALLOWED},                 //5
+    {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED,
+        M2MBase::PUT_POST_ALLOWED},                 //6
+    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED,
+        M2MBase::GET_PUT_POST_ALLOWED},             //7
+    {OP_MASK_DELETE_ALLOWED,
+        M2MBase::DELETE_ALLOWED},                   //8
+    {OP_MASK_GET_ALLOWED | OP_MASK_DELETE_ALLOWED,
+        M2MBase::GET_DELETE_ALLOWED},               //9
+    {OP_MASK_PUT_ALLOWED | OP_MASK_DELETE_ALLOWED,
+        M2MBase::PUT_DELETE_ALLOWED},               //10
+    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_DELETE_ALLOWED,
+        M2MBase::GET_PUT_DELETE_ALLOWED},           //11
+    {OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
+        M2MBase::POST_DELETE_ALLOWED},              //12
+    {OP_MASK_GET_ALLOWED | OP_MASK_POST_ALLOWED| OP_MASK_DELETE_ALLOWED,
+        M2MBase::GET_POST_DELETE_ALLOWED},          //13
+    {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED| OP_MASK_DELETE_ALLOWED,
+        M2MBase::PUT_POST_DELETE_ALLOWED},          //14
+    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED| OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
+        M2MBase::GET_PUT_POST_DELETE_ALLOWED},      //15
+};
 
 namespace mbl {
 
@@ -83,14 +99,15 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
     return M2MResourceInstance::OPAQUE;
 }
 
-static MblError get_m2m_resource_operation(uint32_t operation_mask, M2MBase::Operation *operation)
+static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation *operation)
 {
-    // Range check
-    if(operation_mask >= (sizeof(mask_to_operation) / sizeof(M2MBase::Operation))) {
+    // Verify operation mast is valid
+    auto itr = operation_map.find(operation_mask);
+    if(itr == operation_map.end()) {
         tr_error("%s - Invalid operaion mask: %d", __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
     }
-    *operation = mask_to_operation[operation_mask];
+    *operation = operation_map[operation_mask];
     return Error::None;
 }
 
@@ -116,7 +133,7 @@ MblError ResourceDefinitionParser::create_resources(
     const std::string &resource_value,
     bool resource_multiple_instance,
     bool resource_observable,
-    uint32_t operation_mask)
+    uint8_t operation_mask)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     M2MBase::Operation m2m_operation;
@@ -197,7 +214,7 @@ MblError ResourceDefinitionParser::parse_resource(
     std::string resource_type;
     std::string resource_res_type;
     std::string resource_operation;
-    uint32_t operation_mask = OP_MASK_NONE_ALLOWED;
+    uint8_t operation_mask = OP_MASK_NONE_ALLOWED;
     bool found_res_multiple_instance = false;
     bool resource_multiple_instance = false;
     bool found_res_observable = false;
@@ -422,10 +439,8 @@ MblError ResourceDefinitionParser::build_object_list(
         std::string errors;
 
         // Parse
-        const char * end = &*json_string.cend();
-        //const char * end = &(*it);
-
-        bool parsing_successful = reader->parse(json_string.c_str(), end, &root, &errors);
+        const char * end_string = &*json_string.cend();
+        bool parsing_successful = reader->parse(json_string.c_str(), end_string, &root, &errors);
         delete reader;
         if (!parsing_successful) {
             tr_error("%s - parsing Json string failed with errors: %s.", __PRETTY_FUNCTION__, errors.c_str());
