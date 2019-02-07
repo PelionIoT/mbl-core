@@ -114,10 +114,10 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
     // Iterate all resources
     M2MResource *m2m_resource = nullptr;
     RBM2MResource *rbm2m_resource = nullptr;
-    for (auto itr = rbm2m_object_instance->get_resource_map().begin(); itr != rbm2m_object_instance->get_resource_map().end(); itr++)
+    for(auto& itr : rbm2m_object_instance->get_resource_map())
     {
-        std::string rbm2m_resource_name = itr->first;
-        rbm2m_resource = itr->second;
+        std::string rbm2m_resource_name = itr.first;
+        rbm2m_resource = itr.second;
         tr_debug("rbm2m_resource_name: %s", rbm2m_resource_name.c_str());
         m2m_resource = m2m_object_instance->resource(rbm2m_resource_name.c_str());
         ASSERT_TRUE(m2m_resource != nullptr);
@@ -152,10 +152,10 @@ static void CheckEqualObject(M2MObject* m2m_object, RBM2MObject *rbm2m_object, b
     // Iterate all object instances
     M2MObjectInstance* m2m_object_instance = nullptr;
     RBM2MObjectInstance* rbm2m_object_instance = nullptr;
-    for (auto itr = rbm2m_object->get_object_instance_map().begin(); itr != rbm2m_object->get_object_instance_map().end(); itr++)
+    for(auto& itr : rbm2m_object->get_object_instance_map())
     {
-        uint16_t rbm2m_object_instance_id = itr->first;
-        rbm2m_object_instance = itr->second;
+        uint16_t rbm2m_object_instance_id = itr.first;
+        rbm2m_object_instance = itr.second;
         tr_debug("rbm2m_object_instance_id: %d", rbm2m_object_instance_id);
         m2m_object_instance = m2m_object->object_instance(rbm2m_object_instance_id);
         check_equal_object_instances(m2m_object_instance, rbm2m_object_instance, ignore_m2m_objects_compare);
@@ -182,9 +182,9 @@ static void check_equal_object_lists(const M2MObjectList &m2m_object_list, RBM2M
     // Iterate all Objects
     M2MObject *m2m_object = nullptr;
     RBM2MObject *rbm2m_object = nullptr;
-    for (auto itr = m2m_object_list.begin(); itr != m2m_object_list.end(); itr++)
+    for(auto& itr : m2m_object_list)
     {
-        m2m_object = *itr;
+        m2m_object = itr;
         std::string object_name = m2m_object->name();
         tr_debug("object_name: %s", object_name.c_str());
         rbm2m_object = rbm2m_object_list.get_object(object_name);
