@@ -113,16 +113,15 @@ public:
         {};
 
     int create() {
-        return pthread_create(&tid, NULL, thread_main, this);
+        return pthread_create(&tid_, NULL, thread_main, this);
     }
     int join(int &retval) {
-        return pthread_join(tid, (void**)&retval);
+        return pthread_join(tid_, (void**)&retval);
     }
     sd_bus *connection_handle_;
 private:
     int start()
     {
-        sd_bus *connection_handle_;
         int r;
 
         r = sd_bus_open_user(&connection_handle_);    
@@ -147,7 +146,7 @@ private:
     
     AppThreadCallback func_to_invoke_;
     void *func_input_;
-    pthread_t tid;
+    pthread_t tid_;
 };
 ///////////////////////////////////////////////////////////////////////////
 
@@ -368,12 +367,8 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 
 static int validate_Service_exist(void* user_data, AppThread* app_thread)
 {
-    AppThread *app_thread_ = static_cast<AppThread*>(app_thread);
-
-    //we expect this function to fail
-    int r = sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
-    int k = EEXIST;
-    return (r < 0) ? 0: -1;
+    AppThread *app_thread_ = static_cast<AppThread*>(app_thread);    
+    return sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
 }
 
 
@@ -383,8 +378,12 @@ TEST(DBusAdapeter_c, ValidateServiceExist)
     AppThread app_thread(validate_Service_exist, nullptr);
     int retval;
 
+    ASSERT_EQ(adapter.init(), MblError::None);
+    SLEEP_MS(100);
     ASSERT_EQ(app_thread.create(), 0);
-    app_thread.join(retval);
+    ASSERT_EQ(app_thread.join(retval), 0);
+    ASSERT_EQ(retval, -EEXIST);
+    ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
 int main(int argc, char **argv)
