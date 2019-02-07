@@ -53,7 +53,7 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
     if (r < 0){
         return MblError::DBusErr_Temporary;
     }
-    if (NULL == connection_handle_){
+    if (nullptr == connection_handle_){
         return MblError::DBusErr_Temporary;
     }
     
@@ -84,6 +84,9 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
     }
     service_name_ = DBUS_CLOUD_SERVICE_NAME;
     
+    // match signal NameOwnerChanged
+    // This signal indicates that the owner of a name has changed. 
+    // It's also the signal to use to detect the appearance of new names on the bus.
     r = sd_bus_add_match(
         connection_handle_,
         NULL, 
@@ -93,9 +96,32 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
     if (r < 0) {
         return MblError::DBusErr_Temporary;
     }
+
+    // match signal NameLost
+    // This signal is sent to a specific application when it loses ownership of a name.
+    r = sd_bus_add_match(
+        connection_handle_,
+        NULL, 
+        "type='signal',interface='org.freedesktop.DBus',member='NameLost'",
+        DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback, 
+        this);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
+
+    // match signal NameAcquired
+    // This signal is sent to a specific application when it gains ownership of a name.
+    r = sd_bus_add_match(
+        connection_handle_,
+        NULL, 
+        "type='signal',interface='org.freedesktop.DBus',member='NameAcquired'",
+        DBusAdapter::DBusAdapterImpl::name_owner_changed_match_callback, 
+        this);
+    if (r < 0) {
+        return MblError::DBusErr_Temporary;
+    }
     return MblError::None;
 }
-
 
 MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
 {
@@ -176,7 +202,7 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(DBusAdapterStopSt
     if (pthread_self() != initializer_thread_id_){
         return MblError::DBusErr_Temporary;
     }
-    r = sd_event_exit(event_loop_handle_, (int)100);
+    r = sd_event_exit(event_loop_handle_, (int)stop_status);
     return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
 }
 
@@ -385,7 +411,7 @@ MblError DBusAdapter::DBusAdapterImpl::init()
     MblError status;
     int r;
 
-    if (Status::NON_INITALIZED != status_){
+    if (State::UNINITALIZED != state_){
         return Error::DBusErr_Temporary;
     }
 
@@ -410,7 +436,7 @@ MblError DBusAdapter::DBusAdapterImpl::init()
     }
 
     initializer_thread_id_ = pthread_self();
-    status_ = Status::INITALIZED;
+    state_ = State::INITALIZED;
     return Error::None;
 }
 
@@ -420,7 +446,7 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
     MblError status1, status2, status3;
     int r;
 
-    if (Status::INITALIZED != status_){
+    if (State::INITALIZED != state_){
         return Error::DBusErr_Temporary;
     }
     
@@ -442,7 +468,7 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
     else if (MblError::None != status3) {
         return status3;
     }
-    status_ = Status::NON_INITALIZED;
+    state_ = State::UNINITALIZED;
     return Error::None;
 }
 
@@ -459,7 +485,9 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_run(DBusAdapterStopStatus &sto
     was requested using sd_event_exit(3).
     sd_event_loop() returns the exit code specified when invoking sd_event_exit()
     */
+    state_ = State::RUNNING;
     stop_status = (DBusAdapterStopStatus)sd_event_loop(event_loop_handle_);
+    state_ = State::INITALIZED;
     return MblError::None;
 }
 
@@ -470,17 +498,16 @@ MblError DBusAdapter::DBusAdapterImpl::run(DBusAdapterStopStatus &stop_status)
     MblError status;
     int r;
 
-    if (Status::INITALIZED != status_){
+    if (State::INITALIZED != state_){
         return Error::DBusErr_Temporary;
     }
-    
-    status_ = Status::RUNNING;
+        
     status = event_loop_run(stop_status);    
     if (status != MblError::None){
         event_loop_request_stop(DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR);
         return status;
     }
-    status_ = Status::INITALIZED;
+    state_ = State::INITALIZED;
 
     return MblError::None;
 }
@@ -492,7 +519,7 @@ MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
     MblError status;
     //TODO : need to understand by design
     int exit_code = 0; //set 0 as exit code for now - we don't pass the exit code from outside
-    if (Status::RUNNING != status_){
+    if (State::RUNNING != state_){
         return Error::DBusErr_Temporary;
     }
 
@@ -526,7 +553,7 @@ MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_RegisterResources_status_upda
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
 
-    if (Status::RUNNING != status_){
+    if (State::RUNNING != state_){
         return Error::DBusErr_Temporary;
     }
 }
@@ -538,7 +565,7 @@ MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_DeregisterResources_status_up
     tr_debug("%s", __PRETTY_FUNCTION__)
     assert(0);
 
-    if (Status::RUNNING != status_){
+    if (State::RUNNING != state_){
         return Error::DBusErr_Temporary;
     }
 }
@@ -550,7 +577,7 @@ MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_u
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
 
-    if (Status::RUNNING != status_){
+    if (State::RUNNING != state_){
         return Error::DBusErr_Temporary;
     }   
 }
@@ -562,7 +589,7 @@ MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_statu
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(0);
 
-    if (Status::RUNNING != status_){
+    if (State::RUNNING != state_){
         return Error::DBusErr_Temporary;
     }
     

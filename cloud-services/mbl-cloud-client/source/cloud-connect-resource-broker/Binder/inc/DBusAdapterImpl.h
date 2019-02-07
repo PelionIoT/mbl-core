@@ -57,10 +57,11 @@ private:
       //wait no more than 10 milliseconds in order to send an asynchronus message of any type
     static const uint32_t  MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS = 10;
 
-    enum class Status {
-        NON_INITALIZED, 
-        INITALIZED, 
-        RUNNING}  status_ = Status::NON_INITALIZED;
+    enum class State {
+        UNINITALIZED, 
+        INITALIZED,         
+        RUNNING,
+        }  state_ = State::UNINITALIZED;
 
     /*
     callbacks + handle functions
@@ -99,10 +100,6 @@ private:
     // reference class member satisfy this condition.   
     //ResourceBroker &ccrb_;    
         
-    //DBusAdapterCallbacks   lower_level_callbacks_;    
-    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
-    pthread_t              initializer_thread_id_;
-
     MblError bus_init();
     MblError bus_deinit();
 
@@ -126,6 +123,9 @@ private:
     // Event loop 
     sd_event_source         *event_source_pipe_;      
     sd_event                *event_loop_handle_;
+
+    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
+    pthread_t              initializer_thread_id_;
 };
 
 }  //namespace mbl {

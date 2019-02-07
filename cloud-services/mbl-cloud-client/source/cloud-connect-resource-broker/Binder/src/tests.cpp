@@ -39,13 +39,18 @@ class DBusAdapterTester
         MblError event_loop_request_stop(DBusAdapterStopStatus  stop_status);
         MblError event_loop_run(
             DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
-    private:
+        sd_event* get_event_loop_handle();
+
+        //use this call only if calling thread is the one to initialize the adapter!
+        int set_event_defer(sd_event_handler_t handler,void *userdata);
+
+
         DBusAdapter &adapter_;
 };
 
 MblError DBusAdapterTester::validate_deinitialized_adapter()
 {
-    TESTER_VALIDATE_EQ(adapter_.impl_->status_, DBusAdapter::DBusAdapterImpl::Status::NON_INITALIZED); 
+    TESTER_VALIDATE_EQ(adapter_.impl_->state_, DBusAdapter::DBusAdapterImpl::State::UNINITALIZED); 
     TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
@@ -53,10 +58,13 @@ MblError DBusAdapterTester::validate_deinitialized_adapter()
     TESTER_VALIDATE_EQ(adapter_.impl_->event_source_pipe_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
+    return MblError::None;
 }
+
 MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus  stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
+    return MblError::None;
 }
 
 MblError DBusAdapterTester::event_loop_run(
@@ -64,6 +72,22 @@ MblError DBusAdapterTester::event_loop_run(
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
     TESTER_VALIDATE_EQ(stop_status, expected_stop_status);    
+    return MblError::None;
+}
+
+sd_event* DBusAdapterTester::get_event_loop_handle()
+{
+    return adapter_.impl_->event_loop_handle_;
+}
+
+int DBusAdapterTester::set_event_defer(sd_event_handler_t handler, void *userdata)
+{
+    sd_event_source *source;
+    return sd_event_add_defer(
+        adapter_.impl_->event_loop_handle_,
+        &source,
+        handler,
+        userdata);
 }
 ///////////////////////////////////////////////////////////////////////////
 
@@ -183,11 +207,18 @@ TEST(DBusAdapeter1, init_deinit)
 {
     DBusAdapter adapter;
     DBusAdapterTester tester(adapter);
-    for (auto i = 0; i < 100; ++i){
+    
+    for (auto i = 0; i < 10; ++i){
         ASSERT_EQ(adapter.init(), MblError::None);        
         ASSERT_EQ(adapter.deinit(), MblError::None);        
         tester.validate_deinitialized_adapter();
     }
+}
+
+static int event_loop_request_stop(sd_event_source *s, void *userdata)
+{
+    DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
+    return tester->event_loop_request_stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
 }
 
 TEST(DBusAdapeter1, run_stop_with_self_request)
@@ -195,13 +226,11 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
     DBusAdapter adapter;    
     DBusAdapterStopStatus stop_status = DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR;
     DBusAdapterTester tester(adapter);
-    
+    sd_event_source *source;
+
     ASSERT_EQ(adapter.init(), MblError::None);
 
-    // send my self exit signal before I enter the loop, expect the event_exit_code
-    // usually we will send self stop from a callback and not this way.
-    // this is a test, so that's the easiest way to check (simulating a callback at this location)
-    ASSERT_EQ(tester.event_loop_request_stop(stop_status), 0);
+    ASSERT_GE(tester.set_event_defer(event_loop_request_stop, &tester), 0);
 
     // expect exit code to be event_exit_code since that what was sent
     ASSERT_EQ(tester.event_loop_run(
