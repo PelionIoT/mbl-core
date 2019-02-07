@@ -128,8 +128,8 @@ RBM2MObjectInstance::~RBM2MObjectInstance()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     RBM2MResource *resource = nullptr;
-    for (auto itr = rbm2m_resource_map_.begin(); itr != rbm2m_resource_map_.end(); itr++) {
-        resource = itr->second;
+    for (auto& itr : rbm2m_resource_map_) {
+        resource = itr.second;
         tr_debug("Deleting rbm2m resource: %s (%p)", 
             resource->get_resource_name().c_str(),
             resource);
@@ -210,8 +210,8 @@ RBM2MObject::~RBM2MObject()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     RBM2MObjectInstance *object_instance = nullptr;
-    for (auto itr = rbm2m_object_instance_map_.begin(); itr != rbm2m_object_instance_map_.end(); itr++) {
-        object_instance = itr->second;
+    for (auto& itr : rbm2m_object_instance_map_) {
+        object_instance = itr.second;
         tr_debug("Deleting rbm2m object instance: %d (%p)", 
             object_instance->get_object_instance_id(), 
             object_instance);
@@ -270,8 +270,8 @@ RBM2MObjectList::~RBM2MObjectList()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     RBM2MObject *object = nullptr;
-    for (auto itr = rbm2m_object_map_.begin(); itr != rbm2m_object_map_.end(); itr++) {
-        object = itr->second;
+    for (auto& itr : rbm2m_object_map_) {
+        object = itr.second;
         tr_debug("Deleting rbm2m object: %s (%p)", object->get_object_name().c_str(), object);
         delete object;
     }
