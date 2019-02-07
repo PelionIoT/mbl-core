@@ -111,6 +111,20 @@ if(CODE_CHECK_MODE)
       ${MBL_CLOUD_CLIENT_SRC}
   )
 
+  # Find path and verify installation of clang-format
+  find_program(CLANG_FORMAT "clang-format") 
+  if(NOT CLANG_FORMAT)
+    message(FATAL_ERROR "clang-format not installed! Abort.")
+  endif()
+  
+  add_custom_target(
+      clang-format
+      COMMAND ${CLANG_FORMAT}
+      -i
+      -style=file
+      ${MBL_CLOUD_CLIENT_SRC}
+  )
+
 else()
   # -Wlogical-op GCC compilation flag causes error when clang-tidy uses compilation commands list,
   #              so we add this option only clang-tid is not used 
@@ -138,6 +152,7 @@ target_link_libraries(mbl-cloud-client mbedCloudClient)
 
 target_link_libraries(mbl-cloud-client pthread)
 target_link_libraries(mbl-cloud-client rt)
+
 # link with systemd to get D-Bus libs
 target_link_libraries(mbl-cloud-client systemd)
 
