@@ -26,7 +26,7 @@ namespace mbl {
 // RBM2MResource
 ////////////////////////////////////////////////////////////////////////////////
 RBM2MResource::RBM2MResource(
-    const std::string &resource_name,
+    std::string resource_name,
     M2MBase::Mode mode,
     bool multiple_instances,
     M2MBase::Operation operation,
@@ -34,7 +34,7 @@ RBM2MResource::RBM2MResource(
     const std::string &resource_type,
     M2MResourceBase::ResourceType type,
     const std::string &value)
-: resource_name_(resource_name), 
+: resource_name_(std::move(resource_name)), 
 mode_(mode),
 multiple_instances_(multiple_instances),
 operation_(operation),
@@ -200,8 +200,8 @@ RBM2MResource *RBM2MObjectInstance::create_resource(
 ////////////////////////////////////////////////////////////////////////////////
 // RBM2MObject
 ////////////////////////////////////////////////////////////////////////////////
-RBM2MObject::RBM2MObject(const std::string &object_name)
-    : object_name_(object_name), m2m_object_(nullptr)
+RBM2MObject::RBM2MObject(std::string object_name)
+    : object_name_(std::move(object_name)), m2m_object_(nullptr)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }

@@ -83,8 +83,9 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
     return M2MResourceInstance::OPAQUE;
 }
 
-static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation *operation)
+static MblError get_m2m_resource_operation(uint32_t operation_mask, M2MBase::Operation *operation)
 {
+    // Range check
     if(operation_mask >= (sizeof(mask_to_operation) / sizeof(M2MBase::Operation))) {
         tr_error("%s - Invalid operaion mask: %d", __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
@@ -115,7 +116,7 @@ MblError ResourceDefinitionParser::create_resources(
     const std::string &resource_value,
     bool resource_multiple_instance,
     bool resource_observable,
-    uint8_t operation_mask)
+    uint32_t operation_mask)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     M2MBase::Operation m2m_operation;
@@ -126,7 +127,7 @@ MblError ResourceDefinitionParser::create_resources(
         return retval;
     }
 
-    M2MResource* m2m_resource = NULL;
+    M2MResource* m2m_resource = nullptr;
     M2MBase::Mode m2m_mode = M2MBase::Dynamic;
     tr_info("Create %s resource: %s", resource_mode.c_str(), resource_name.c_str());
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
@@ -147,7 +148,7 @@ MblError ResourceDefinitionParser::create_resources(
             resource_observable,
             resource_multiple_instance);
     }
-    if(!m2m_resource) {
+    if(nullptr == m2m_resource) {
         tr_error("%s - Create %s m2m_resource: %s failed", __PRETTY_FUNCTION__, resource_mode.c_str(), resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
@@ -155,7 +156,7 @@ MblError ResourceDefinitionParser::create_resources(
     m2m_resource->set_operation(m2m_operation); // Set allowed operations for accessing the resource
 
     // Create rbm2m resource and add it to rbm2m_object_instance's map
-    RBM2MResource *rbm2m_resource = rbm2m_object_instance->create_resource(
+    auto rbm2m_resource = rbm2m_object_instance->create_resource(
         resource_name,
         m2m_mode,
         resource_multiple_instance,
@@ -164,7 +165,7 @@ MblError ResourceDefinitionParser::create_resources(
         resource_res_type,
         m2m_res_type,
         resource_value);
-    if(!rbm2m_resource) {
+    if(nullptr == rbm2m_resource) {
         tr_error("%s - Create rbm2m_resource: %s failed", __PRETTY_FUNCTION__, resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
@@ -196,7 +197,7 @@ MblError ResourceDefinitionParser::parse_resource(
     std::string resource_type;
     std::string resource_res_type;
     std::string resource_operation;
-    uint8_t operation_mask = OP_MASK_NONE_ALLOWED;
+    uint32_t operation_mask = OP_MASK_NONE_ALLOWED;
     bool found_res_multiple_instance = false;
     bool resource_multiple_instance = false;
     bool found_res_observable = false;
@@ -325,14 +326,14 @@ MblError ResourceDefinitionParser::parse_object_instance(
     uint16_t object_instance_id_uint16 = static_cast<uint16_t>(object_instance_id); // We are safe after the above check
 
     // Create m2m object instance
-    M2MObjectInstance* m2m_object_instance = m2m_object->create_object_instance(object_instance_id_uint16);
-    if(!m2m_object_instance) {
+    auto m2m_object_instance = m2m_object->create_object_instance(object_instance_id_uint16);
+    if(nullptr == m2m_object_instance) {
         tr_error("%s - Create m2m_object_instance id: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
     // Create rbm2m object instance and add it to rbm2m_object's map
-    RBM2MObjectInstance *rbm2m_object_instance = rbm2m_object->create_object_instance(object_instance_id_uint16);
-    if(!rbm2m_object_instance){
+    auto rbm2m_object_instance = rbm2m_object->create_object_instance(object_instance_id_uint16);
+    if(nullptr == rbm2m_object_instance){
         tr_error("%s - Create rbm2m_object_instance: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
@@ -370,16 +371,16 @@ MblError ResourceDefinitionParser::parse_object(
         return Error::CCRBInvalidJson;
     }
     // Create m2m object and push it to list
-    M2MObject *m2m_object = M2MInterfaceFactory::create_object(object_name.c_str());
-    if(!m2m_object) {
+    auto m2m_object = M2MInterfaceFactory::create_object(object_name.c_str());
+    if(nullptr == m2m_object) {
         tr_error("%s - Create m2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Created m2m_object: %s [%p]", m2m_object->name(), m2m_object);
     m2m_object_list.push_back(m2m_object);
     // Create rbm2m object and add it to rbm2m_object_list
-    RBM2MObject * rbm2m_object = rbm2m_object_list.create_object(object_name);
-    if(!rbm2m_object){
+    auto rbm2m_object = rbm2m_object_list.create_object(object_name);
+    if(nullptr == rbm2m_object){
         tr_error("%s - Create rbm2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
@@ -458,9 +459,9 @@ MblError ResourceDefinitionParser::build_object_list(
 
     //Free allocated memory for object instances in case error occured
     if(retval != Error::None && !m2m_object_list.empty()) {
-        M2MObject* m2m_object = NULL;
-        for (auto itr = m2m_object_list.begin(); itr != m2m_object_list.end(); itr++) {
-            m2m_object = *itr;
+        M2MObject* m2m_object = nullptr;
+        for (auto &itr : m2m_object_list) {
+            m2m_object = itr;
             tr_debug("Deleting m2m_object: %s [%p]", m2m_object->name(), m2m_object);
             delete m2m_object; // This will delete all created object instances and all resources that belongs to it
         }

@@ -196,7 +196,7 @@ private:
         const std::string &resource_value, 
         bool resource_multiple_instance, 
         bool resource_observable,
-        uint8_t operation_mask);
+        uint32_t operation_mask);
 };
 
 } // namespace mbl

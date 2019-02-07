@@ -116,7 +116,7 @@ private:
     // which means that these objects can be created or
     // deleted only through a function provided by RBM2MObjectInstance.
     RBM2MResource(
-        const std::string &resource_name,
+        std::string resource_name,
         M2MBase::Mode mode,
         bool multiple_instances,
         M2MBase::Operation operation,
@@ -260,7 +260,7 @@ private:
     // Constructor and destructor are private
     // which means that these objects can be created or
     // deleted only through a function provided by the RBM2MObjectList.
-    RBM2MObject(const std::string &object_name);
+    RBM2MObject(std::string object_name);
     ~RBM2MObject();
 
     std::string object_name_;
