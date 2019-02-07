@@ -11,13 +11,14 @@ Output directory "test_files" holds several of such pairs.
 This script generate 4 test cases: 2 positive tests and 2 negative tests.
 """
 
-import sys
 import argparse
-import os
-import subprocess
-import logging
 import hashlib
 import json
+import logging
+import os
+import subprocess
+import sys
+
 
 __version__ = "1.0"
 
@@ -342,7 +343,11 @@ def _main():
             package_architecture="armv7vet2hf-neon",
             package_files=package_files,
             return_code_install=1,
-            return_code_remove=0,
+            # Expect removal failure because no attempt to install the app
+            # should be made if no package name is found. This is handled by
+            # mbl-app-manager directly as opposed to being handled by OPKG
+            # during an installation.
+            return_code_remove=1,
             ctrl_add_package_name=False,
         )
         app_manager_test_case_generator.create_test_files(test_case_config3)
@@ -356,6 +361,11 @@ def _main():
             package_architecture="invalid-architecture",
             package_files=package_files,
             return_code_install=1,
+            # Expect successful removal even if installation failed.
+            # This is because OPKG tries to install the package and puts some
+            # files where the application was to be installed.
+            # OPKG successfully removes the files upon request to remove the
+            # application.
             return_code_remove=0,
         )
         app_manager_test_case_generator.create_test_files(test_case_config4)

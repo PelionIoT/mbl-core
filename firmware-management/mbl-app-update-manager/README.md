@@ -27,10 +27,12 @@ pip install .
 
 ## Usage
 ```
-usage: mbl-app-update-manager [arguments] [<file>]
+usage: mbl-app-update-manager [-h] [-v] <update-package>
+
+MBL application update manager
 
 positional arguments:
-  [<file>]       package containing app(s) to install.
+  <update-package>  update package containing app(s) to install
 ```
 
 ## Return code
@@ -42,8 +44,22 @@ positional arguments:
 | 2    | Incorrect usage of the application                |
 
 ## Command line options
+
 ```
 optional arguments:
-  -h, --help     show this help message and exit
-  -v, --verbose  print application status information (default: False)
+  -h, --help        show this help message and exit
+  -v, --verbose     increase verbosity of status information (default: False)
 ```
+
+## License
+
+Please see the [License][mbl-license] document for more information.
+
+
+## Contributing
+
+Please see the [Contributing][mbl-contributing] document for more information.
+
+
+[mbl-license]: ../LICENSE.md
+[mbl-contributing]: ../CONTRIBUTING.md

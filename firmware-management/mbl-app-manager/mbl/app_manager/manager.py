@@ -9,7 +9,7 @@ import shutil
 import subprocess
 
 from .parser import ApplicationInfoParser
-from .utils import log, run_process
+from .utils import log
 
 
 class AppManager(object):
@@ -32,21 +32,24 @@ class AppManager(object):
     def get_app_name(self, app_pkg):
         """Get the name of an application from the package meta data."""
         try:
-            log.info("Getting app name from pkg '{}'".format(app_pkg))
-            app_name = self._pkg_info_parser.get_pkg_info(app_pkg)["Package"]
-            log.debug("Application name is '{}'".format(app_name))
-            return app_name
+            log.debug("Getting app name from pkg '{}'".format(app_pkg))
+            pkg_info = self._pkg_info_parser.parse_app_info(app_pkg)
+
+            if "Package" in pkg_info:
+                app_name = pkg_info["Package"]
+                log.info("Application name is '{}'".format(app_name))
+                return app_name
+            else:
+                msg = (
+                    "'{}' control data does not have a"
+                    " 'Package' field".format(app_pkg)
+                )
+                raise AppIdError(msg)
         except subprocess.CalledProcessError as error:
-            msg = "Process to get app name failed with error: {}".format(
-                error.returncode
+            err_output = error.stdout.decode("utf-8")
+            msg = "Getting the app name from '{}' failed, error: {}".format(
+                app_pkg, err_output
             )
-            log.exception(msg)
-            raise AppIdError(msg)
-        except KeyError:
-            msg = "'{}' control data does not have a 'Package' field".format(
-                app_pkg
-            )
-            log.exception(msg)
             raise AppIdError(msg)
 
     def install_app(self, app_pkg, app_path):
@@ -56,17 +59,17 @@ class AppManager(object):
         manager is able to install multiple version of the application for as
         long as the registration path is different.
         """
-        # Command syntax:
-        # opkg --add-dest <app_name>:<app_path> install <app_pkg>
         try:
-            log.info(
+            log.debug(
                 "installing package '{}' to '{}'".format(app_pkg, app_path)
             )
+            # Command syntax:
+            # opkg --add-dest <app_name>:<app_path> install <app_pkg>
             app_name = self.get_app_name(app_pkg)
-
             dest = "{}:{}".format(app_name, app_path)
             cmd = ["opkg", "--add-dest", dest, "install", app_pkg]
-            run_process(command=cmd, env_var=self._opkg_env)
+            log.debug("Execute command: {}".format(" ".join(cmd)))
+            subprocess.check_call(cmd, env=self._opkg_env)
             log.info(
                 "'{}' from '{}' package successfully installed at '{}'".format(
                     app_name, app_pkg, app_path
@@ -74,41 +77,40 @@ class AppManager(object):
             )
             return True
         except subprocess.CalledProcessError as error:
-            msg = "Installing '{}' at '{}' returned code: '{}'".format(
-                app_pkg, app_path, error.returncode
+            err_output = error.stdout.decode("utf-8")
+            msg = "Installing '{}' at '{}' failed, error: '{}'".format(
+                app_pkg, app_path, err_output
             )
-            log.exception(msg)
             raise AppInstallError(msg)
 
     def remove_app(self, app_name, app_path):
         """Remove an application.
 
-        The application found at the registered destination is uninstalled.
+        The application found at the registered destination is deleted.
         """
-        # Command syntax:
-        # opkg --add-dest <app_name>:<app_path> remove <app_name>
         try:
-            log.info("Removing app '{}' from '{}'".format(app_name, app_path))
+            log.debug("Removing app '{}' from '{}'".format(app_name, app_path))
             if not os.path.isdir(app_path):
                 msg = "The application path '{}' does not exist".format(
                     app_path
                 )
-                log.exception(msg)
-                raise AppUninstallError(msg)
-
+                raise AppPathInexistent(msg)
+            # Command syntax:
+            # opkg --add-dest <app_name>:<app_path> remove <app_name>
             dest = "{}:{}".format(app_name, app_path)
             cmd = ["opkg", "--add-dest", dest, "remove", app_name]
-            run_process(command=cmd, env_var=self._opkg_env)
+            log.debug("Execute command: {}".format(" ".join(cmd)))
+            subprocess.check_call(cmd, env=self._opkg_env)
             log.info(
                 "'{}' removal from '{}' successful".format(app_name, app_path)
             )
             shutil.rmtree(app_path)
             return True
         except subprocess.CalledProcessError as error:
-            msg = "Removing '{}' at '{}' returned code: '{}'".format(
-                app_name, app_path, error.returncode
+            err_output = error.stdout.decode("utf-8")
+            msg = "Removing '{}' at '{}' failed, error: {}".format(
+                app_name, app_path, err_output
             )
-            log.exception(msg)
             raise AppUninstallError(msg)
 
     def force_install_app(self, app_pkg, app_path):
@@ -129,7 +131,7 @@ class AppManager(object):
         Each application is supposed to have a directory within `apps_path`.
         Each application directory is named after the installed application.
         """
-        log.info("Installed application:\n")
+        log.debug("List of installed applications:\n")
         subdirs = [
             name
             for name in os.listdir(apps_path)
@@ -141,7 +143,7 @@ class AppManager(object):
             app_name = subdir
             dest = "{}:{}".format(app_name, os.path.join(apps_path, app_name))
             cmd = ["opkg", "--add-dest", dest, "list-installed"]
-            run_process(command=cmd, env_var=self._opkg_env, log_cmd=False)
+            subprocess.check_call(cmd, env=self._opkg_env)
 
 
 class AppIdError(Exception):
@@ -154,3 +156,7 @@ class AppInstallError(Exception):
 
 class AppUninstallError(Exception):
     """An exception for an app uninstallation failure."""
+
+
+class AppPathInexistent(Exception):
+    """An exception raised when an application path is inexistent."""

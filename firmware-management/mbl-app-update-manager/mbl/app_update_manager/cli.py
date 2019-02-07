@@ -12,7 +12,7 @@ import sys
 from enum import Enum
 
 from .manager import AppUpdateManager
-from .utils import log
+from .utils import log, set_log_verbosity
 
 
 class ReturnCode(Enum):
@@ -28,12 +28,11 @@ def parse_args():
     parser = ArgumentParserWithDefaultHelp(
         description="MBL application update manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="mbl-app-update-manager [arguments] <file>",
     )
 
     parser.add_argument(
-        "update-package",
-        metavar="<file>",
+        "update_package",
+        metavar="<update-package>",
         type=str,
         help="update package containing app(s) to install",
     )
@@ -42,7 +41,7 @@ def parse_args():
         "-v",
         "--verbose",
         action="store_true",
-        help="print application status information",
+        help="increase verbosity of status information",
     )
 
     return parser.parse_args()
@@ -52,7 +51,7 @@ def run_mbl_app_update_manager():
     """Application main algorithm."""
     args = parse_args()
 
-    log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    set_log_verbosity(args.verbose)
 
     log.info("Starting mbl-app-update-manager")
     log.debug("Command line arguments:{}".format(args))

@@ -17,8 +17,9 @@ pip install .
 ```
 
 ## Usage
+
 ```
-usage: mbl-app-manager [arguments] [<file>|<app>]
+usage: mbl-app-manager [-h] [-v] {install,force-install,remove,list} ...
 ```
 
 ## Return code
@@ -30,18 +31,78 @@ usage: mbl-app-manager [arguments] [<file>|<app>]
 | 2    | Incorrect usage of the application                |
 
 ## Command line options
+
 ```
 optional arguments:
   -h, --help            show this help message and exit
-  -i <file>, --install-app <file>
-                        package of the application to install. (default: None)
-  -f <file>, --force-install-app <file>
-                        remove an application if previously installed before
-                        installing (default: None)
-  -r <app>, --remove-app <app>
-                        remove installed application where <app> is the name
-                        of the application (default: None)
-  -l, --list-installed-apps
-                        list installed applications. (default: False)
-  -v, --verbose         print application status information (default: False)
+  -v, --verbose         increase verbosity of status information (default:
+                        False)
+
+subcommands:
+  The commands to control the application statuses.
+
+  {install,force-install,remove,list}
+    install             install a user application.
+    force-install       remove a previous installation of a user application
+                        before installing.
+    remove              remove a user application.
+    list                list installed applications.
 ```
+
+```
+usage: mbl-app-manager install [-h] -p APP_PATH app_package
+
+positional arguments:
+  app_package           application package to install a user application.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p APP_PATH, --app-path APP_PATH
+                        path to install the app.
+```
+
+```
+usage: mbl-app-manager force-install [-h] -p APP_PATH app_package
+
+positional arguments:
+  app_package           application package to install a user application.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p APP_PATH, --app-path APP_PATH
+                        path to install the app.
+```
+
+```
+usage: mbl-app-manager remove [-h] -p APP_PATH app_name
+
+positional arguments:
+  app_name              name of the user application to remove.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p APP_PATH, --app-path APP_PATH
+                        path the app was installed.
+```
+
+```
+usage: mbl-app-manager list [-h] -p APPS_PATH
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p APPS_PATH, --apps-path APPS_PATH
+                        path to look for installed applications.
+```
+
+## License
+
+Please see the [License][mbl-license] document for more information.
+
+
+## Contributing
+
+Please see the [Contributing][mbl-contributing] document for more information.
+
+
+[mbl-license]: ../LICENSE.md
+[mbl-contributing]: ../CONTRIBUTING.md

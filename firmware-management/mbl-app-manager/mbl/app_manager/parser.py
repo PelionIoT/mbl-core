@@ -3,11 +3,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Application meta data parser."""
 
-from .utils import log, get_output_from_process
+import subprocess
+
+from .utils import log
 
 
 class ApplicationInfoParser:
-    """Parse the application information."""
+    """Parse the application information.
+
+    The application information is fetched from the ipk 'control' file.
+    The control file contains entries of the form 'field: value' where each
+    field-value pair only occupy one line ended with a newline character.
+    """
 
     def __init__(self, opkg_env):
         """Create an application information parser."""
@@ -16,48 +23,28 @@ class ApplicationInfoParser:
 
     # ---------------------------- Public Methods -----------------------------
 
-    def get_pkg_info(self, app_pkg):
-        """
-        Get a dictionary that hold the various fields of an ipk control data.
-
-        Assume the 'Description' field is last and its value is followed by a
-        double new line char.
-        """
+    def parse_app_info(self, app_pkg):
+        """Parse the app info from the ipk control data."""
+        log.debug("Parse package info from {}".format(app_pkg))
         cmd = ["opkg", "info", app_pkg]
-        app_ctrl_data = get_output_from_process(
-            command=cmd, env_var=self._opkg_env, format="utf-8"
-        )
-        log.info("Package info:\n {}".format(app_ctrl_data))
-
-        # All package info fields includes "\n" only once, while description
-        # might have several. Since we use the new line as separator in the
-        # split operation, we want to get rid off the newline in this field.
-        app_ctrl_data_desc_start = app_ctrl_data.find("Description: ")
-        app_ctrl_data_desc_end = app_ctrl_data.find("\n\n")
-        app_ctrl_data_desc = app_ctrl_data[
-            app_ctrl_data_desc_start:app_ctrl_data_desc_end
-        ]
-        app_ctrl_data_desc_no_newline = app_ctrl_data_desc.replace("\n", "")
-        app_ctrl_data = app_ctrl_data.replace(
-            app_ctrl_data_desc, app_ctrl_data_desc_no_newline
-        )
+        app_ctrl_data = subprocess.check_output(
+            cmd, env=self._opkg_env
+        ).decode("utf-8")
+        log.debug("Package info:\n{}".format(app_ctrl_data))
 
         # create a list of all the fields in the application control data
-        app_ctrl_data_fields = list(app_ctrl_data.split("\n"))
+        lines = list(app_ctrl_data.split("\n"))
 
-        keys_and_values = []
-        for field in app_ctrl_data_fields:
-            if field:
-                # create a list containing field key and its value
-                key_and_value = field.split(":")
-                key_and_value[1] = key_and_value[1].lstrip(" ")
-                # collect all fields key-value pairs
-                keys_and_values.append(key_and_value)
-
-        # Fill dictionary to look something like:
-        # [Package][Package name]
-        # [Description][Package description...]
-        # [Architecture][...]
-        #  and so on.
-        for key_and_value in keys_and_values:
-            self.pkg_info[key_and_value[0]] = key_and_value[1]
+        for line in lines:
+            field_and_value = line.split(":")
+            # check that a valid entry was found
+            if len(field_and_value) != 1:
+                # strip white space at the end of the field
+                field_and_value[0] = field_and_value[0].rstrip()
+                # strip white space at the begining of the value
+                field_and_value[1] = field_and_value[1].lstrip()
+                # create a dictionary that has the fields as keys
+                # and the values as...well values.
+                self.pkg_info[field_and_value[0]] = field_and_value[1]
+        log.debug("Package '{}' info parsing completed".format(app_pkg))
+        return self.pkg_info

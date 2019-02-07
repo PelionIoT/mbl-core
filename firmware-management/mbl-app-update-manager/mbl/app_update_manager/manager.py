@@ -11,10 +11,10 @@ import tarfile
 
 from .utils import log
 import mbl.app_manager.manager as apm
-import mbl.app_lifecycle_manager.app_lifecycle_manager as alm
+import mbl.app_lifecycle_manager.manager as alm
+import mbl.app_lifecycle_manager.container as alc
 
 
-TIMEOUT_STOP_RUNNING_APP_IN_SECONDS = 3
 IPKS_EXCTRACTION_PATH = "/mnt/cache/opkg/src_ipk"
 APPS_INSTALLATION_PATH = "/home/app"
 
@@ -23,53 +23,53 @@ class AppUpdateManager:
     """
     Responsible for handling application package.
 
-    A package is a tar archive that can contain one or multiple ipks.
+    An update package is a tar archive that can contain one or multiple ipks.
     Each application found in an ipk can also be installed and run.
     """
 
-    def __init__(self, package):
+    def __init__(self, update_pkg):
         """Create an app package handler."""
         self._ipks = []
         self._pkg_arch_members = []
         self._installed_app_names = []
-        self._package = package
+        self.update_pkg = update_pkg
         self.app_mng = apm.AppManager()
-        self.app_lifecycle_mng = alm.AppLifecycleManager()
 
     # ---------------------------- Public Methods -----------------------------
 
     def unpack(self):
-        """Unpack the ipk(s) from the package.
+        """Unpack the ipk(s) from the update package.
 
-        Return `True` iff the package has been successfully unpacked and it
-        contained only ipks.
+        Return `True` iff the update package has been successfully unpacked
+        and it contained only ipks.
         """
-        log.info("Unpacking '{}'".format(self._package))
+        log.info("Unpacking '{}'".format(self.update_pkg))
 
-        if not tarfile.is_tarfile(self._package):
-            msg = "Package '{}' is not a tar file".format(self._package)
-            log.exception(msg)
+        if not tarfile.is_tarfile(self.update_pkg):
+            msg = "Package '{}' is not a tar file".format(self.update_pkg)
             raise IllegalPackage(msg)
 
         try:
-            with tarfile.open(self._package) as tar_file:
+            with tarfile.open(self.update_pkg) as tar_file:
                 self._get_ipks_from_pkg(tar_file)
                 if not self._ipks:
                     msg = "No 'ipk' file found in package '{}'".format(
-                        self._package
+                        self.update_pkg
                     )
-                    log.exception(msg)
                     raise IllegalPackage(msg)
                 tar_file.extractall(
                     path=IPKS_EXCTRACTION_PATH, members=self._pkg_arch_members
                 )
+                log.info(
+                    "Update package '{}' successfully unpacked".format(
+                        self.update_pkg
+                    )
+                )
                 return True
-
         except tarfile.TarError as error:
             msg = "Unarchiving package '{}' failed with error: {}".format(
-                self._package, error
+                self.update_pkg, error
             )
-            log.exception(msg)
             raise IllegalPackage(msg)
 
     def install_apps(self):
@@ -88,8 +88,13 @@ class AppUpdateManager:
     def start_installed_apps(self):
         """Run applications that have been successfully installed if any."""
         if self._installed_app_names:
+            log.info(
+                "Run installed apps: {}".format(self._installed_app_names)
+            )
             for app_name in self._installed_app_names:
-                start_app(app_name)
+                app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
+                log.info("Run '{}' form '{}'".format(app_name, app_path))
+                alm.run_app(app_name, app_path)
 
     # --------------------------- Private Methods -----------------------------
 
@@ -99,29 +104,30 @@ class AppUpdateManager:
         Return `True` if the archive member is a regular file with an ipk
         extension.
         """
-        log.info("Check that '{}' is a valid ipk".format(tar_info.name))
+        log.debug("Check that '{}' is a valid ipk".format(tar_info.name))
 
         if not tar_info.name.lower().endswith(".ipk"):
             msg = (
                 "IPK(s) expected to be found in package '{}'"
-                " however '{}' was found".format(self._package, tar_info.name)
+                " however '{}' was found".format(
+                    self.update_pkg, tar_info.name
+                )
             )
-            log.exception(msg)
             raise IllegalPackage(msg)
 
         if not tar_info.isfile():
             msg = "'{}' found in package '{}' isn't regular file".format(
-                tar_info.name, self._package
+                tar_info.name, self.update_pkg
             )
-            log.exception(msg)
             raise IllegalPackage(msg)
 
         if os.path.dirname(tar_info.name):
             msg = (
                 "Directories are not expected to be found in package '{}'"
-                " however '{}' was found".format(self._package, tar_info.name)
+                " however '{}' was found".format(
+                    self.update_pkg, tar_info.name
+                )
             )
-            log.exception(msg)
             raise IllegalPackage(msg)
 
         log.info("'{}' is a valid ipk".format(tar_info.name))
@@ -132,7 +138,7 @@ class AppUpdateManager:
         for tar_info in tar_file:
             log.info(
                 "Found archive member '{}' in '{}' archive".format(
-                    tar_info.name, self._package
+                    tar_info.name, self.update_pkg
                 )
             )
 
@@ -140,80 +146,43 @@ class AppUpdateManager:
                 self._ipks.append(tar_info.name)
                 self._pkg_arch_members.append(tar_info)
 
-    def _start_app(self, app_name):
-        """Start an application.
+    def _install_app(self, app_name, ipk):
+        """Install an application from an ipk.
 
-        Return `True` iff an application with the id was started.
+        Return `True` iff the application is successfully installed
         """
-        log.info("Starting app '{}'".format(app_name))
-
-        ret_code = self.app_lifecycle_mng.run_container(app_name, app_name)
-
-        if ret_code is not alm.Error.SUCCESS:
-            msg = "Starting app '{}' failed with error: {}".format(
-                app_name, ret_code
-            )
-            log.exception(msg)
-            raise AppOperationError(msg)
-
-        log.info("App '{}' successfully started".format(app_name))
-
-        return True
-
-    def _stop_app(self, app_name):
-        """Stop a running application.
-
-        Return `True` if an application running with the id was stopped or no
-        app with the specified id exist.
-        """
-        log.info("Stopping app '{}'".format(app_name))
-
-        ret_code = self.app_lifecycle_mng.stop_app(
-            app_name, TIMEOUT_STOP_RUNNING_APP_IN_SECONDS
-        )
-
-        if ret_code is not alm.Error.ERR_CONTAINER_DOES_NOT_EXIST:
-            # it is ok, the app may not be installed
-            log.debug("App '{}' does not exist".format(app_name))
-        elif ret_code is not alm.Error.SUCCESS:
-            msg = "Stopping app '{}' failed with error: {}".format(
-                app_name, ret_code
-            )
-            log.exception(msg)
-            raise AppOperationError(msg)
-
-        log.info("App '{}' successfully stopped".format(app_name))
-
-        return True
+        log.info("Installing '{}' from '{}'".format(app_name, ipk))
+        app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
+        if self.app_mng.install_app(ipk, app_path):
+            self._installed_app_names.append(app_name)
+            return True
 
     def _manage_app_installation(self, ipk):
         """Manage the process of installing application from ipk.
 
         Return `True` iff application is successfully installed.
         """
-        log.info("Installing ipk '{}'".format(ipk))
+        log.info("Installing app from '{}'".format(ipk))
 
         try:
+            log.info("Get the name of application from the ipk")
             app_name = self.app_mng.get_app_name(ipk)
-
             if app_name:
-                if self._stop_app(app_name):
-                    if self.app_mng.remove_app(
-                        app_name,
-                        os.path.join(APPS_INSTALLATION_PATH, app_name),
-                    ) and self.app_mng.install_app(
-                        ipk, os.path.join(APPS_INSTALLATION_PATH, app_name)
-                    ):
-                        self._installed_app_names.append(app_name)
-                        return True
-        except AppOperationError as error:
-            msg = "Failure to install '{}', Error: {}".format(ipk, error)
-            log.exception(msg)
-            raise AppOperationError(msg)
-
-
-class AppOperationError(Exception):
-    """An exception for an app operation failure."""
+                log.info("Stopping application '{}'".format(app_name))
+                if alm.terminate_app(app_name):
+                    app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
+                    log.info(
+                        "Removing '{}' from'{}".format(app_name, app_path)
+                    )
+                    if self.app_mng.remove_app(app_name, app_path):
+                        return self._install_app(app_name, ipk)
+        except alc.ContainerKillError as error:
+            if alc.ContainerState.DOES_NOT_EXIST.value in str(error):
+                log.info(
+                    "Application '{}' does not exist,"
+                    " proceed with installation".format(app_name)
+                )
+                return self._install_app(app_name, ipk)
 
 
 class IllegalPackage(Exception):

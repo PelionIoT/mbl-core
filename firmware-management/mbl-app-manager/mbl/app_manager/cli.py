@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Simple command line interface for mbl app manager."""
+"""Command line interface for mbl-app-manager."""
 
 import argparse
 import logging
@@ -12,10 +12,7 @@ import sys
 from enum import Enum
 
 from .manager import AppManager
-from .utils import log
-
-
-APPS_INSTALLATION_PATH = "/home/app"
+from .utils import log, set_log_verbosity
 
 
 class ReturnCode(Enum):
@@ -26,93 +23,138 @@ class ReturnCode(Enum):
     INVALID_OPTIONS = 2
 
 
+class CliActions:
+    """Handle the command line interface commands."""
+
+    @staticmethod
+    def install_action(args):
+        """Entry point for the 'install' cli command."""
+        handler = AppManager()
+        handler.install_app(args.app_package, args.app_path)
+
+    @staticmethod
+    def force_install_action(args):
+        """Entry point for the 'force-install' cli command."""
+        handler = AppManager()
+        handler.force_install_app(args.app_package, args.app_path)
+
+    @staticmethod
+    def remove_action(args):
+        """Entry point for the 'remove' cli command."""
+        handler = AppManager()
+        handler.remove_app(args.app_name, args.app_path)
+
+    @staticmethod
+    def list_action(args):
+        """Entry point for the 'list' cli command."""
+        handler = AppManager()
+        handler.list_installed_apps(args.apps_path)
+
+
 def parse_args():
     """Parse the command line args."""
     parser = ArgumentParserWithDefaultHelp(
         description="MBL application manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        usage="mbl-app-manager [arguments] [<file>|<app>]",
     )
 
-    group = parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "-i",
-        "--install-app",
-        metavar="<file>",
-        type=str,
-        help="package of the application to install.",
+    command_group = parser.add_subparsers(
+        description="The commands to control the application statuses."
     )
 
-    group.add_argument(
-        "-f",
-        "--force-install-app",
-        metavar="<file>",
-        type=str,
-        help="remove an application if previously installed before installing",
+    install = command_group.add_parser(
+        "install", help="install a user application."
     )
-
-    group.add_argument(
-        "-r",
-        "--remove-app",
-        metavar="<app>",
+    install.add_argument(
+        "app_package",
         type=str,
+        help="application package to install a user application.",
+    )
+    install.add_argument(
+        "-p",
+        "--app-path",
+        type=str,
+        required=True,
+        help="path to install the app.",
+    )
+    install.set_defaults(func=CliActions.install_action)
+
+    force_install = command_group.add_parser(
+        "force-install",
         help=(
-            "remove installed application"
-            " where <app> is the name of the application"
+            "remove a previous installation of a user"
+            " application before installing."
         ),
     )
-
-    group.add_argument(
-        "-l",
-        "--list-installed-apps",
-        action="store_true",
-        help="list installed applications.",
+    force_install.add_argument(
+        "app_package",
+        type=str,
+        help="application package to install a user application.",
     )
+    force_install.add_argument(
+        "-p",
+        "--app-path",
+        type=str,
+        required=True,
+        help="path to install the app.",
+    )
+    force_install.set_defaults(func=CliActions.force_install_action)
+
+    remove = command_group.add_parser(
+        "remove", help="remove a user application."
+    )
+    remove.add_argument(
+        "app_name", type=str, help="name of the user application to remove."
+    )
+    remove.add_argument(
+        "-p",
+        "--app-path",
+        type=str,
+        required=True,
+        help="path the app was installed.",
+    )
+    remove.set_defaults(func=CliActions.remove_action)
+
+    lister = command_group.add_parser(
+        "list", help="list installed applications."
+    )
+    lister.add_argument(
+        "-p",
+        "--apps-path",
+        type=str,
+        required=True,
+        help="path to look for installed applications.",
+    )
+    lister.set_defaults(func=CliActions.list_action)
 
     parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
-        help="print application status information",
+        help="increase verbosity of status information",
     )
 
-    return parser.parse_args()
+    args_namespace = parser.parse_args()
+
+    # We want to fail gracefully, with a consistent
+    # help message, in the no argument case.
+    # So here's an obligatory hasattr hack.
+    if not hasattr(args_namespace, "func"):
+        parser.error("No arguments given!")
+    else:
+        return args_namespace
 
 
 def run_mbl_app_manager():
     """Application main algorithm."""
     args = parse_args()
 
-    log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+    set_log_verbosity(args.verbose)
 
     log.info("Starting mbl-app-manager")
-    logger.debug("Command line arguments:{}".format(args))
+    log.debug("Command line arguments:{}".format(args))
 
-    handler = AppManager()
-
-    if args.install_app:
-        handler.install_app(
-            args.install_app,
-            os.path.join(
-                APPS_INSTALLATION_PATH, handler.get_app_name(args.install_app)
-            ),
-        )
-    elif args.remove_app:
-        handler.remove_app(
-            args.remove_app,
-            os.path.join(APPS_INSTALLATION_PATH, args.remove_app),
-        )
-    elif args.force_install_app:
-        handler.force_install_app(
-            args.force_install_app,
-            os.path.join(
-                APPS_INSTALLATION_PATH,
-                handler.get_app_name(args.force_install_app),
-            ),
-        )
-    elif args.list_installed_packages:
-        handler.list_installed_apps(APPS_INSTALLATION_PATH)
+    args.func(args)
 
     return ReturnCode.SUCCESS.value
 
