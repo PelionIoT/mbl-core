@@ -37,10 +37,27 @@ Run the following commands:
 In the folder `__x86_x64_NativeLinux_mbedtls` run: 
 `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake -DEXTARNAL_DEFINE_FILE=./../define.txt -DCODE_CHECK_MODE=ON`
 
-For clang-format run on all mbl-cloud-client sources and mbl-cloud-client gtest run:
+
+Running tools on all mbl-cloud-client sources and mbl-cloud-client gtest 
+For clang-format run:
 make clang-format
 
-For clang-tidy run on all mbl-cloud-client sources and mbl-cloud-client gtest run:
+For clang-tidy run:
 make clang-tidy
+
+
+Running tools on specific source file
+For clang-format run
+
+In checker mode: tool will print proposed file in stdout
+clang-format /absolute/path/to/file
+
+In formatter mode: tool will change the content of the file
+clang-format -i -style=file /absolute/path/to/file
+
+
+For clang-tidy run
+make clang-tidy
+clang-tidy -p=. -export-fixes=./clang-tidy-suggested-fixes.txt -checks=-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-* /absolute/path/to/file.cpp
 
 
