@@ -519,7 +519,7 @@ MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
     MblError status;
     //TODO : need to understand by design
     int exit_code = 0; //set 0 as exit code for now - we don't pass the exit code from outside
-    if (State::RUNNING != state_){
+    if (State::UNINITALIZED == state_){
         return Error::DBusErr_Temporary;
     }
 

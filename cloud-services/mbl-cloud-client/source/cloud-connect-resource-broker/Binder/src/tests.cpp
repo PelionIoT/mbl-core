@@ -23,7 +23,15 @@
 using namespace mbl;
 
 #define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
-#define DBUS_MAILBOX_MAX_WAIT_TIME_MS 10
+
+// In some tests, for simplicity, threads are not synchronized
+// In the real code they are -> using the event loop or other means. That's why the actual mailbox code
+// does not implement retries on timeout polling failures.
+// Since they are synchronized, read should always succeed.
+// That's why I wait up to 100 ms
+#define DBUS_MAILBOX_MAX_WAIT_TIME_MS 100
+
+static sem_t s_sem;
 
 ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////INFRA//////////////////////////////////////////
@@ -238,14 +246,16 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
     DBusAdapterMailbox mailbox;
     void *retval;
 
-    ASSERT_EQ(mailbox.init(), 0);
-    ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
-    ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
-    ASSERT_EQ(pthread_join(writer_tid, &retval), 0);
-    ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(pthread_join(reader_tid, &retval), 0);
-    ASSERT_EQ((uintptr_t)retval, 0);
-    ASSERT_EQ(mailbox.deinit(), 0);
+    for (auto i = 0; i < 100; i++){
+        ASSERT_EQ(mailbox.init(), 0);
+        ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
+        ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
+        ASSERT_EQ(pthread_join(writer_tid, &retval), 0);
+        ASSERT_EQ((uintptr_t)retval, 0);
+        ASSERT_EQ(pthread_join(reader_tid, &retval), 0);
+        ASSERT_EQ((uintptr_t)retval, 0);
+        ASSERT_EQ(mailbox.deinit(), 0);
+    }
 }
 
 TEST(DBusAdapeter1, init_deinit)
@@ -302,6 +312,9 @@ static void *mbl_cloud_client_thread(void *adapter_)
         pthread_exit((void *)status);
     }
 
+    if (sem_post(&s_sem) != 0) {
+        pthread_exit((void *)-1);
+    }
     status = adapter->run(stop_status);
     if (status != MblError::None){
         pthread_exit((void *)status);
@@ -324,21 +337,25 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
     DBusAdapter adapter;
     pthread_t tid;
     void *retval;
+    
 
-    //start stop 10 times
-    for (auto i = 0; i < 10; i++)
+    // i'm going to wait on the semaphore
+    ASSERT_EQ(sem_init(&s_sem, 0, 0), 0);
+
+    //start stop 100 times
+    for (auto i = 0; i < 100; i++)
     {
         ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
 
-        // TODO :replace with blocking query
-        // do not use semaphores - it's only a test - sleep for 10 millisec
-        SLEEP_MS(10); 
+        ASSERT_EQ(sem_wait(&s_sem), 0);
 
         ASSERT_EQ(adapter.stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), MblError::None);
 
         ASSERT_EQ(pthread_join(tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, MblError::None);
     }
+
+    ASSERT_EQ(sem_destroy(&s_sem), 0);
 }
 
 
@@ -356,7 +373,7 @@ TEST(DBusAdapeter_c, send_recv_RegisterResources)
 
 
 int main(int argc, char **argv)
-{
+{   
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

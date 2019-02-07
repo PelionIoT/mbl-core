@@ -4,16 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-//#define _GNU_SOURCE             /* See feature_test_macros(7) */
-
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>              /* Obtain O_* constant definitions */
-#include <stdint.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <errno.h> 
+#include <memory>
 
 #include "DBusAdapterMailbox.h"
 #include "DBusMailboxMsg.h"
@@ -76,7 +72,8 @@ MblError DBusAdapterMailbox::deinit()
     r = close(pipefds_[1]);
     if (r != 0){
         return MblError::DBusErr_Temporary;
-    }    
+    }
+    sequence_num_ = 0;
     return MblError::None;
 }
 
