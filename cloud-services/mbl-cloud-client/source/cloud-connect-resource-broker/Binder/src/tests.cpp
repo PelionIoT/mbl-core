@@ -42,10 +42,11 @@ class DBusAdapterTester
         sd_event* get_event_loop_handle();
 
         //use this call only if calling thread is the one to initialize the adapter!
-        int set_event_defer(sd_event_handler_t handler,void *userdata);
+        int add_event_defer(sd_event_handler_t handler,void *userdata);
 
 
         DBusAdapter &adapter_;
+        sd_event_source *source_;
 };
 
 MblError DBusAdapterTester::validate_deinitialized_adapter()
@@ -80,12 +81,13 @@ sd_event* DBusAdapterTester::get_event_loop_handle()
     return adapter_.impl_->event_loop_handle_;
 }
 
-int DBusAdapterTester::set_event_defer(sd_event_handler_t handler, void *userdata)
+int DBusAdapterTester::add_event_defer(
+    sd_event_handler_t handler, 
+    void *userdata)
 {
-    sd_event_source *source;
     return sd_event_add_defer(
         adapter_.impl_->event_loop_handle_,
-        &source,
+        &source_,
         handler,
         userdata);
 }
@@ -215,6 +217,7 @@ TEST(DBusAdapeter1, init_deinit)
     }
 }
 
+/*
 static int event_loop_request_stop(sd_event_source *s, void *userdata)
 {
     DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
@@ -230,7 +233,11 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 
     ASSERT_EQ(adapter.init(), MblError::None);
 
-    ASSERT_GE(tester.set_event_defer(event_loop_request_stop, &tester), 0);
+    sd_event_source *s;
+    sd_event_exit(tester.get_event_loop_handle(), DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
+    //ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
+        //sd_event *ev = tester.get_event_loop_handle();
+    //sd_event_loop(ev);
 
     // expect exit code to be event_exit_code since that what was sent
     ASSERT_EQ(tester.event_loop_run(
@@ -238,29 +245,30 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
+*/
 
 
-/*
 static void *mbl_cloud_client_thread(void *adapter_)
 {
     DBusAdapter *adapter = static_cast<DBusAdapter *>(adapter_);
     MblError status;
+    DBusAdapterStopStatus stop_status;
 
     status = adapter->init();
-    if (status != MblError::None)
-    {
+    if (status != MblError::None){
         pthread_exit((void *)status);
     }
 
-    status = adapter->run();
-    if (status != MblError::None)
-    {
+    status = adapter->run(stop_status);
+    if (status != MblError::None){
         pthread_exit((void *)status);
+    }
+    if (stop_status != DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR){
+        pthread_exit((void *)MblError::DBusErr_Temporary);
     }
 
     status = adapter->deinit();
-    if (status != MblError::None)
-    {
+    if (status != MblError::None){
         pthread_exit((void *)status);
     }
 
@@ -281,17 +289,15 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 
         // TODO :replace with blocking query
         // do not use semaphores - it's only a test - sleep for 10 millisec
-        SLEEP_MS(100000);       //TODO - temporary infinite - back to 10
+        SLEEP_MS(10); 
 
-        ASSERT_EQ(adapter.stop(), MblError::None);
+        ASSERT_EQ(adapter.stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), MblError::None);
 
         ASSERT_EQ(pthread_join(tid, &retval), 0);
-        ASSERT_EQ((uintptr_t)retval, 0);
-        printf("%d", i);
+        ASSERT_EQ((uintptr_t)retval, MblError::None);
     }
 }
 
-*/
 
 int main(int argc, char **argv)
 {
