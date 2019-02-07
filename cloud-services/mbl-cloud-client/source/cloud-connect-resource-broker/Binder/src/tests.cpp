@@ -24,6 +24,10 @@ using namespace mbl;
 
 #define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
 
+#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
+
 // In some tests, for simplicity, threads are not synchronized
 // In the real code they are -> using the event loop or other means. That's why the actual mailbox code
 // does not implement retries on timeout polling failures.
@@ -100,23 +104,24 @@ int DBusAdapterTester::add_event_defer(
         userdata);
 }
 
-class ClientThread
+class AppThread
 {
 public:
-    ClientThread(int (*func_to_invoke)(void*), void* func_input) :
+    typedef int (*AppThreadCallback)(void*, AppThread*);
+    AppThread(AppThreadCallback func_to_invoke, void* func_input) :
         func_to_invoke_(func_to_invoke), func_input_(func_input) 
         {};
 
-    int start() {
-        return pthread_create(&tid, NULL, client_thread, this);
+    int create() {
+        return pthread_create(&tid, NULL, thread_main, this);
     }
-    int end(void *retval) {
-        return pthread_join(tid, &retval);
+    int join(int &retval) {
+        return pthread_join(tid, (void**)&retval);
     }
-
-    static void* client_thread(void *data)
+    sd_bus *connection_handle_;
+private:
+    int start()
     {
-        ClientThread *data_ = static_cast<ClientThread*>(data);
         sd_bus *connection_handle_;
         int r;
 
@@ -128,17 +133,19 @@ public:
             pthread_exit((void *)-1);
         }
 
-        r = data_->func_to_invoke_(data_->func_input_);
-        if (r < 0){
-            pthread_exit((void *)-1);
-        }
-
+        // This one must be the last - return the value
+        int ret_val = func_to_invoke_(func_input_, this);
+       
         sd_bus_unref(connection_handle_);
-        pthread_exit((void *)0);
+        pthread_exit((void *)(uintptr_t)ret_val);
     }
-
-private:
-    int (*func_to_invoke_)(void*);
+    static void* thread_main(void *app_thread)
+    {
+        AppThread *app_thread_ = static_cast<AppThread*>(app_thread);
+        pthread_exit((void *)(uintptr_t)app_thread_->start());               
+    }
+    
+    AppThreadCallback func_to_invoke_;
     void *func_input_;
     pthread_t tid;
 };
@@ -359,18 +366,26 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 }
 
 
-int f(void *a)
+static int validate_Service_exist(void* user_data, AppThread* app_thread)
 {
-    int aa = 8;
-}
-TEST(DBusAdapeter_c, send_recv_RegisterResources)
-{
-    int retval;
-    ClientThread thread(f, nullptr);
-    thread.start();
-    thread.end(&retval);
+    AppThread *app_thread_ = static_cast<AppThread*>(app_thread);
+
+    //we expect this function to fail
+    int r = sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
+    int k = EEXIST;
+    return (r < 0) ? 0: -1;
 }
 
+
+TEST(DBusAdapeter_c, ValidateServiceExist)
+{
+    DBusAdapter adapter;
+    AppThread app_thread(validate_Service_exist, nullptr);
+    int retval;
+
+    ASSERT_EQ(app_thread.create(), 0);
+    app_thread.join(retval);
+}
 
 int main(int argc, char **argv)
 {   

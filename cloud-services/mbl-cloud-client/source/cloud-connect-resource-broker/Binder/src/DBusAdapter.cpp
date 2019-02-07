@@ -543,8 +543,6 @@ MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
     return status;
 }
 
-
-
 MblError DBusAdapter::DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(
     const uintptr_t ipc_conn_handle, 
     const std::string &access_token,

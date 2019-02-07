@@ -53,7 +53,8 @@
 			"utility": "cpp",
 			"dbusadaptermsg.h": "c",
 			"dbusadaptermailbox.h": "c",
-			"dbusadapterservice.h": "c"
+			"dbusadapterservice.h": "c",
+			"thread": "cpp"
 		},
 		"editor.tokenColorCustomizations": {
 			"textMateRules": [
