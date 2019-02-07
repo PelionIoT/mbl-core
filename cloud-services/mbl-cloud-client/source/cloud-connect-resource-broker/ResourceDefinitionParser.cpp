@@ -20,8 +20,8 @@
 #include "mbed-client/m2mresource.h"
 #include "mbed-client/m2minterfacefactory.h"
 
-#include <jsoncpp/json/json.h>
-#include <jsoncpp/json/reader.h>
+#include <json/json.h>
+#include <json/reader.h>
 #include <cassert>
 
 #define TRACE_GROUP "ccrb-resdefparser"
@@ -137,7 +137,7 @@ MblError ResourceDefinitionParser::create_resources(
             resource_name.c_str(),
             resource_res_type.c_str(),
             m2m_res_type,
-            (const unsigned char*)resource_value.c_str(),
+            (const uint8_t*)resource_value.c_str(),
             value_length,
             resource_multiple_instance);
     } else {
