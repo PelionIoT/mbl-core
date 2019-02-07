@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #include "MblError.h"
 
 namespace mbl {
@@ -67,6 +67,8 @@ const char* MblError_to_str(const MblError error)
 
         case Error::CCRBStartFailed: return "CCRBStartFailed";
         case Error::CCRBStopFailed: return "CCRBStopFailed";
+        case Error::CCRBInvalidJson: return "CCRBInvalidJson";
+        case Error::CCRBCreateM2MObjFailed: return "CCRBCreateM2MObjFailed";
     }
     return "Unrecognized error code";
 }
