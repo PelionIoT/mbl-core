@@ -422,7 +422,10 @@ MblError ResourceDefinitionParser::build_object_list(
         std::string errors;
 
         // Parse
-        bool parsing_successful = reader->parse(json_string.c_str(), json_string.c_str() + json_string.size(), &root, &errors);
+        const char * end = &*json_string.cend();
+        //const char * end = &(*it);
+
+        bool parsing_successful = reader->parse(json_string.c_str(), end, &root, &errors);
         delete reader;
         if (!parsing_successful) {
             tr_error("%s - parsing Json string failed with errors: %s.", __PRETTY_FUNCTION__, errors.c_str());
