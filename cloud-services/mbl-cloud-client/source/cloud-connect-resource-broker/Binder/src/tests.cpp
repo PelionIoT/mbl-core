@@ -91,6 +91,49 @@ int DBusAdapterTester::add_event_defer(
         handler,
         userdata);
 }
+
+class ClientThread
+{
+public:
+    ClientThread(int (*func_to_invoke)(void*), void* func_input) :
+        func_to_invoke_(func_to_invoke), func_input_(func_input) 
+        {};
+
+    int start() {
+        return pthread_create(&tid, NULL, client_thread, this);
+    }
+    int end(void *retval) {
+        return pthread_join(tid, &retval);
+    }
+
+    static void* client_thread(void *data)
+    {
+        ClientThread *data_ = static_cast<ClientThread*>(data);
+        sd_bus *connection_handle_;
+        int r;
+
+        r = sd_bus_open_user(&connection_handle_);    
+        if (r < 0){
+            pthread_exit((void *)-1);
+        }
+        if (nullptr == connection_handle_){
+            pthread_exit((void *)-1);
+        }
+
+        r = data_->func_to_invoke_(data_->func_input_);
+        if (r < 0){
+            pthread_exit((void *)-1);
+        }
+
+        sd_bus_unref(connection_handle_);
+        pthread_exit((void *)0);
+    }
+
+private:
+    int (*func_to_invoke_)(void*);
+    void *func_input_;
+    pthread_t tid;
+};
 ///////////////////////////////////////////////////////////////////////////
 
 
@@ -296,6 +339,19 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
         ASSERT_EQ(pthread_join(tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, MblError::None);
     }
+}
+
+
+int f(void *a)
+{
+    int aa = 8;
+}
+TEST(DBusAdapeter_c, send_recv_RegisterResources)
+{
+    int retval;
+    ClientThread thread(f, nullptr);
+    thread.start();
+    thread.end(&retval);
 }
 
 
