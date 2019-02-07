@@ -22,7 +22,6 @@
 
 #include <json/json.h>
 #include <json/reader.h>
-#include <cassert>
 
 #define TRACE_GROUP "ccrb-resdefparser"
 
@@ -148,15 +147,13 @@ MblError ResourceDefinitionParser::create_resources(
     M2MBase::Mode m2m_mode = M2MBase::Dynamic;
     tr_info("Create %s resource: %s", resource_mode.c_str(), resource_name.c_str());
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
-        uint8_t value[UINT8_MAX];
-        memcpy(value, resource_value.c_str(), resource_value.length());
         m2m_mode = M2MBase::Static;
         const uint8_t value_length = static_cast<uint8_t>(resource_value.length()); // During the JSON parsing we verify valid length so we are safe
         m2m_resource = m2m_object_instance->create_static_resource(
             resource_name.c_str(),
             resource_res_type.c_str(),
             m2m_res_type,
-            value,
+            (const uint8_t*)resource_value.c_str(),
             value_length,
             resource_multiple_instance);
     } else {
