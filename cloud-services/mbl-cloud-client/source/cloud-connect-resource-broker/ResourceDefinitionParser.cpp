@@ -95,7 +95,7 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
         return M2MResourceInstance::STRING;
     }
     // We already made validity checks on "resource_type" before calling this function so we shouldn't be here
-    tr_warning("%s - Invalid resource type: %s", __FUNCTION__, resource_type.c_str());
+    tr_warning("%s - Invalid resource type: %s", __PRETTY_FUNCTION__, resource_type.c_str());
     return M2MResourceInstance::OPAQUE;
 }
 
@@ -104,7 +104,7 @@ static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Oper
     // Verify operation mast is valid
     auto itr = operation_map.find(operation_mask);
     if(itr == operation_map.end()) {
-        tr_error("%s - Invalid operaion mask: %d", __FUNCTION__, operation_mask);
+        tr_error("%s - Invalid operaion mask: %d", __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
     }
     *operation = operation_map[operation_mask];
@@ -115,12 +115,12 @@ static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Oper
 
 ResourceDefinitionParser::ResourceDefinitionParser()
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 ResourceDefinitionParser::~ResourceDefinitionParser()
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 MblError ResourceDefinitionParser::create_resources(
@@ -135,12 +135,12 @@ MblError ResourceDefinitionParser::create_resources(
     bool resource_observable,
     uint8_t operation_mask)
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     M2MBase::Operation m2m_operation;
     M2MResourceInstance::ResourceType m2m_res_type = get_m2m_resource_type(resource_type);
     MblError retval = get_m2m_resource_operation(operation_mask, &m2m_operation);
     if(Error::None != retval) {
-        tr_error("%s - get_m2m_resource_operation failed", __FUNCTION__);
+        tr_error("%s - get_m2m_resource_operation failed", __PRETTY_FUNCTION__);
         return retval;
     }
 
@@ -148,13 +148,15 @@ MblError ResourceDefinitionParser::create_resources(
     M2MBase::Mode m2m_mode = M2MBase::Dynamic;
     tr_info("Create %s resource: %s", resource_mode.c_str(), resource_name.c_str());
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
+        uint8_t value[UINT8_MAX];
+        memcpy(value, resource_value.c_str(), resource_value.length());
         m2m_mode = M2MBase::Static;
         const uint8_t value_length = static_cast<uint8_t>(resource_value.length()); // During the JSON parsing we verify valid length so we are safe
         m2m_resource = m2m_object_instance->create_static_resource(
             resource_name.c_str(),
             resource_res_type.c_str(),
             m2m_res_type,
-            (const uint8_t*)resource_value.c_str(),
+            value,
             value_length,
             resource_multiple_instance);
     } else {
@@ -166,7 +168,7 @@ MblError ResourceDefinitionParser::create_resources(
             resource_multiple_instance);
     }
     if(nullptr == m2m_resource) {
-        tr_error("%s - Create %s m2m_resource: %s failed", __FUNCTION__, resource_mode.c_str(), resource_name.c_str());
+        tr_error("%s - Create %s m2m_resource: %s failed", __PRETTY_FUNCTION__, resource_mode.c_str(), resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Set M2MResource operation to %d", m2m_operation);
@@ -183,7 +185,7 @@ MblError ResourceDefinitionParser::create_resources(
         m2m_res_type,
         resource_value);
     if(nullptr == rbm2m_resource) {
-        tr_error("%s - Create rbm2m_resource: %s failed", __FUNCTION__, resource_name.c_str());
+        tr_error("%s - Create rbm2m_resource: %s failed", __PRETTY_FUNCTION__, resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
     rbm2m_resource->set_m2m_resource(m2m_resource);
@@ -197,7 +199,7 @@ MblError ResourceDefinitionParser::parse_resource(
     M2MObjectInstance* m2m_object_instance,
     RBM2MObjectInstance * rbm2m_object_instance)
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     tr_debug("--------");
     tr_debug("resource_name: %s", resource_name.c_str());
     //Leave the next debug line commented. Uncomment in case of heavy debuging
@@ -205,7 +207,7 @@ MblError ResourceDefinitionParser::parse_resource(
 
     if(json_value_resource.empty()) {
         //Error: Invalid JSON, we support only JSONs with 3 levels (Obj/ObjInstance/Resource)
-        tr_error("%s - Invalid JSON. Resource is empty.", __FUNCTION__);
+        tr_error("%s - Invalid JSON. Resource is empty.", __PRETTY_FUNCTION__);
         return Error::CCRBInvalidJson;
     }
 
@@ -230,14 +232,14 @@ MblError ResourceDefinitionParser::parse_resource(
         if(resource_mode.empty() && res_name.asString() == JSON_RESOURCE_MODE){
             resource_mode = res.asString();
             if(resource_mode != JSON_RESOURCE_MODE_STATIC && resource_mode != JSON_RESOURCE_MODE_DYNAMIC) {
-                tr_error("%s - Invalid JSON. Unknown mode: %s.", __FUNCTION__, resource_mode.c_str());
+                tr_error("%s - Invalid JSON. Unknown mode: %s.", __PRETTY_FUNCTION__, resource_mode.c_str());
                 return Error::CCRBInvalidJson;
             }
             tr_debug("mode: %s", resource_mode.c_str());
         } else if (resource_value.empty() && res_name.asString() == JSON_RESOURCE_VALUE){
             resource_value = res.asString();
             if (resource_value.length() > UINT8_MAX) {
-                tr_error("%s - Invalid JSON. Allowed value length should be between 0 and %d", __FUNCTION__, UINT8_MAX);
+                tr_error("%s - Invalid JSON. Allowed value length should be between 0 and %d", __PRETTY_FUNCTION__, UINT8_MAX);
                 return Error::CCRBInvalidJson;
             }
             tr_debug("value: %s", resource_value.c_str());
@@ -248,13 +250,13 @@ MblError ResourceDefinitionParser::parse_resource(
             resource_type = res.asString();
             //TODO: currently supporting only integer and string types. Need to support all types.
             if(resource_type != JSON_RESOURCE_TYPE_INTEGER && resource_type != JSON_RESOURCE_TYPE_STRING) {
-                tr_error("%s - Invalid JSON. Resource type not supported: %s.", __FUNCTION__, resource_type.c_str());
+                tr_error("%s - Invalid JSON. Resource type not supported: %s.", __PRETTY_FUNCTION__, resource_type.c_str());
                 return Error::CCRBInvalidJson;
             }
             tr_debug("type: %s", resource_type.c_str());
         } else if ( (operation_mask == OP_MASK_NONE_ALLOWED) && (res_name.asString() == JSON_RESOURCE_OPERATIONS) ) {
             if(!res.isArray()) {
-                tr_error("%s - Invalid JSON. %s field is expeted to be an array.", __FUNCTION__, JSON_RESOURCE_OPERATIONS);
+                tr_error("%s - Invalid JSON. %s field is expeted to be an array.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
                 return Error::CCRBInvalidJson;
             }
 
@@ -262,7 +264,7 @@ MblError ResourceDefinitionParser::parse_resource(
             // In case of operation we are going to be less strict and allow several same entries
             for (const auto& op : res) {
                 if(!op.isString()) {
-                    tr_error("%s - Invalid JSON. %s array entry not string element.", __FUNCTION__, JSON_RESOURCE_OPERATIONS);
+                    tr_error("%s - Invalid JSON. %s array entry not string element.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
                     return Error::CCRBInvalidJson;
                 }
                 resource_operation = op.asString().c_str();
@@ -279,7 +281,7 @@ MblError ResourceDefinitionParser::parse_resource(
                     operation_mask |= OP_MASK_DELETE_ALLOWED;
                     tr_debug("%s, ", JSON_RESOURCE_OPERATION_DELETE);
                 } else {
-                    tr_error("%s - Invalid JSON. Unknown operation: %s.", __FUNCTION__, resource_operation.c_str());
+                    tr_error("%s - Invalid JSON. Unknown operation: %s.", __PRETTY_FUNCTION__, resource_operation.c_str());
                     return Error::CCRBInvalidJson;
                 }
             }
@@ -292,7 +294,7 @@ MblError ResourceDefinitionParser::parse_resource(
             tr_debug("observable: %s [%d]", res.asString().c_str(), resource_observable);
             found_res_observable = true;
         } else {
-            tr_error("%s - Invalid JSON. Entry %s was either found twice or is unknown entry.", __FUNCTION__, res_name.asString().c_str());
+            tr_error("%s - Invalid JSON. Entry %s was either found twice or is unknown entry.", __PRETTY_FUNCTION__, res_name.asString().c_str());
             return Error::CCRBInvalidJson;
         }
     }
@@ -300,16 +302,16 @@ MblError ResourceDefinitionParser::parse_resource(
     // Logic checks on resource_mode
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
         if(found_res_observable) {
-            tr_error("%s - Invalid JSON. Observable entry should only be used in dynamic resource", __FUNCTION__);
+            tr_error("%s - Invalid JSON. Observable entry should only be used in dynamic resource", __PRETTY_FUNCTION__);
             return Error::CCRBInvalidJson;
         }
         if(operation_mask != OP_MASK_GET_ALLOWED) {
-            tr_error("%s - Invalid JSON. Static resource operation must be: get", __FUNCTION__);
+            tr_error("%s - Invalid JSON. Static resource operation must be: get", __PRETTY_FUNCTION__);
             return Error::CCRBInvalidJson;
         }
     } else {
         if(!found_res_observable) {
-            tr_error("%s - Invalid JSON. %s entry is mandatory for dynamic resource", __FUNCTION__, JSON_RESOURCE_OBSERVABLE);
+            tr_error("%s - Invalid JSON. %s entry is mandatory for dynamic resource", __PRETTY_FUNCTION__, JSON_RESOURCE_OBSERVABLE);
             return Error::CCRBInvalidJson;
         }
     }
@@ -325,19 +327,19 @@ MblError ResourceDefinitionParser::parse_object_instance(
     M2MObject *m2m_object,
     RBM2MObject * rbm2m_object)
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     tr_debug("--------");
     tr_debug("object instance id: %d", object_instance_id);
 
     if(json_value_object_instance.empty()) {
         //Error: Invalid JSON, we support only JSONs with 3 levels (Obj/ObjInstance/Resource)
-        tr_error("%s - Invalid JSON. ObjectInstance is empty.", __FUNCTION__);
+        tr_error("%s - Invalid JSON. ObjectInstance is empty.", __PRETTY_FUNCTION__);
         return Error::CCRBInvalidJson;
     }
 
     if (object_instance_id < 0 || object_instance_id > UINT16_MAX) {
-        tr_error("%s - Invalid JSON. object_instance_id allowed value should be between 0 and %d", __FUNCTION__, UINT16_MAX);
+        tr_error("%s - Invalid JSON. object_instance_id allowed value should be between 0 and %d", __PRETTY_FUNCTION__, UINT16_MAX);
         return Error::CCRBInvalidJson;
     }
     uint16_t object_instance_id_uint16 = static_cast<uint16_t>(object_instance_id); // We are safe after the above check
@@ -345,13 +347,13 @@ MblError ResourceDefinitionParser::parse_object_instance(
     // Create m2m object instance
     auto m2m_object_instance = m2m_object->create_object_instance(object_instance_id_uint16);
     if(nullptr == m2m_object_instance) {
-        tr_error("%s - Create m2m_object_instance id: %d failed", __FUNCTION__, object_instance_id);
+        tr_error("%s - Create m2m_object_instance id: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
     // Create rbm2m object instance and add it to rbm2m_object's map
     auto rbm2m_object_instance = rbm2m_object->create_object_instance(object_instance_id_uint16);
     if(nullptr == rbm2m_object_instance){
-        tr_error("%s - Create rbm2m_object_instance: %d failed", __FUNCTION__, object_instance_id);
+        tr_error("%s - Create rbm2m_object_instance: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Created rbm2m_object_instance: %d [%p]", object_instance_id, rbm2m_object_instance);
@@ -363,7 +365,7 @@ MblError ResourceDefinitionParser::parse_object_instance(
         Json::Value json_value_resource = *itr;
         Json::Value resource_name = itr.key();
         if(parse_resource(resource_name.asString(), json_value_resource, m2m_object_instance, rbm2m_object_instance) != Error::None){
-            tr_error("%s - parse_resource failed.", __FUNCTION__);
+            tr_error("%s - parse_resource failed.", __PRETTY_FUNCTION__);
             return Error::CCRBInvalidJson;
         }
     }
@@ -377,20 +379,20 @@ MblError ResourceDefinitionParser::parse_object(
     M2MObjectList &m2m_object_list,
     RBM2MObjectList &rbm2m_object_list)
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     tr_debug("----------------");
     tr_debug("object_name: %s", object_name.c_str());
 
     if(json_value_object.empty()) {
         //Error: Invalid JSON, we support only JSONs with 3 levels (Obj/Object Instance/Resource)
-        tr_error("%s - Invalid JSON. ObjectID is empty.", __FUNCTION__);
+        tr_error("%s - Invalid JSON. ObjectID is empty.", __PRETTY_FUNCTION__);
         return Error::CCRBInvalidJson;
     }
     // Create m2m object and push it to list
     auto m2m_object = M2MInterfaceFactory::create_object(object_name.c_str());
     if(nullptr == m2m_object) {
-        tr_error("%s - Create m2m_object: %s failed", __FUNCTION__, object_name.c_str());
+        tr_error("%s - Create m2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Created m2m_object: %s [%p]", m2m_object->name(), m2m_object);
@@ -398,7 +400,7 @@ MblError ResourceDefinitionParser::parse_object(
     // Create rbm2m object and add it to rbm2m_object_list
     auto rbm2m_object = rbm2m_object_list.create_object(object_name);
     if(nullptr == rbm2m_object){
-        tr_error("%s - Create rbm2m_object: %s failed", __FUNCTION__, object_name.c_str());
+        tr_error("%s - Create rbm2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Created rbm2m_object: %s [%p]", m2m_object->name(), rbm2m_object);
@@ -410,7 +412,7 @@ MblError ResourceDefinitionParser::parse_object(
         Json::Value json_value_object_instance = *itr;
         Json::Value object_instance_id = itr.key();
         if(parse_object_instance(std::stoi(object_instance_id.asString()), json_value_object_instance, m2m_object, rbm2m_object) != Error::None){
-            tr_error("%s - parse_object_instance failed.", __FUNCTION__);
+            tr_error("%s - parse_object_instance failed.", __PRETTY_FUNCTION__);
             return Error::CCRBInvalidJson;
         }
     }
@@ -423,7 +425,7 @@ MblError ResourceDefinitionParser::build_object_list(
     M2MObjectList &m2m_object_list,
     RBM2MObjectList &rbm2m_object_list)
 {
-    tr_debug("%s", __FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     MblError retval = Error::None;
     // We must catch exception to avoid crashes when application send invalid / corrupted JSON
@@ -443,11 +445,11 @@ MblError ResourceDefinitionParser::build_object_list(
         bool parsing_successful = reader->parse(json_string.c_str(), end_string, &root, &errors);
         delete reader;
         if (!parsing_successful) {
-            tr_error("%s - parsing Json string failed with errors: %s.", __FUNCTION__, errors.c_str());
+            tr_error("%s - parsing Json string failed with errors: %s.", __PRETTY_FUNCTION__, errors.c_str());
             return Error::CCRBInvalidJson;
         }
         if(root.empty()) {
-            tr_error("%s - Invalid JSON. Root is empty.", __FUNCTION__);
+            tr_error("%s - Invalid JSON. Root is empty.", __PRETTY_FUNCTION__);
             return Error::CCRBInvalidJson;
         }
         // Parse all objects:
@@ -457,21 +459,21 @@ MblError ResourceDefinitionParser::build_object_list(
             Json::Value object_name = itr.key();
             retval = parse_object(object_name.asString(), json_value_object, m2m_object_list, rbm2m_object_list);
             if(retval != Error::None) {
-                tr_error("%s - parse_object failed with error %s", __FUNCTION__, MblError_to_str(retval));
+                tr_error("%s - parse_object failed with error %s", __PRETTY_FUNCTION__, MblError_to_str(retval));
                 break;
             }
         }
     }
     catch (const std::runtime_error& e) {
-        tr_error("%s - BuildResourceList failed with runtime_error exception msg: %s.", __FUNCTION__, e.what ());
+        tr_error("%s - BuildResourceList failed with runtime_error exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
         retval = Error::CCRBInvalidJson;
     }
     catch (std::exception &e) {
-        tr_error("%s - BuildResourceList failed with std::exception exception msg: %s.", __FUNCTION__, e.what ());
+        tr_error("%s - BuildResourceList failed with std::exception exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
         retval = Error::CCRBInvalidJson;
     } 
     catch (...) {
-        tr_error("%s - BuildResourceList failed with exception.", __FUNCTION__);
+        tr_error("%s - BuildResourceList failed with exception.", __PRETTY_FUNCTION__);
         retval = Error::CCRBInvalidJson;
     }
 
