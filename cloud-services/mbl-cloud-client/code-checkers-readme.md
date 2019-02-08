@@ -4,7 +4,8 @@ http://releases.llvm.org/7.0.0/tools/clang/tools/extra/docs/clang-tidy/index.htm
 # clang-format description
 https://clang.llvm.org/docs/ClangFormat.html
 - We use clang-format in a code formatter mode, not as a checker. The files will be changed according to the provided configuration file. The proposed change is always correct.  
-- A comprehensive explanation about clang-format style configuration file  read here https://www.clangformat.com/. We can change clang-format configuration file in orer to support additional style rules.
+## clang-format configuration file
+- we use clang-format with a configuration file that defines our cpp style. See the file `mbl-core/cloud-services/mbl-cloud-client/.clang-format`. We can change the clang-format configuration file in order to support additional style rules. A comprehensive explanation about clang-format style configuration file read here https://www.clangformat.com/. 
 
 
 # Prerequisites
@@ -16,15 +17,17 @@ https://clang.llvm.org/docs/ClangFormat.html
 `sudo apt-get install clang-format`
 
 ## Libraries for mbl-cloud-client on PC compilation installations
-Install all required libraries in order to compile mbl-cloud-client code(among which systemd development library):
+Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
 
 `sudo apt-get install libsystemd-dev`
+
+Install all required libraries. 
 
 
 # Build
 ## Aggregate mbl-cloud-client code on your PC
-- Download mbl-core repository to the folder <mbl-core> on your PC. 
-- Download mbed-cloud-client repository to the `mbl-core/cloud-services/mbl-cloud-client/`. Pay attention, `mbed-cloud-client` release version should be the same as specified in `https://github.com/ARMmbed/mbl-core/blob/mbl-core-preq331/cloud-services/mbl-cloud-client/README.md`
+- Download mbl-core repository to the folder `mbl-core` on your PC. 
+- Download mbed-cloud-client repository to the `mbl-core/cloud-services/mbl-cloud-client/`. Pay attention, `mbed-cloud-client` release version should be the same as specified in this [README.md][mbl-cloud-client-README.md].
 - Copy `mbed_cloud_dev_credentials.c` and `update_default_resources.c` into the `mbl-core/cloud-services/mbl-cloud-client/` folder.
 
 ## Run the following commands 
@@ -59,3 +62,8 @@ Run the following commands from the `__x86_x64_NativeLinux_mbedtls` folder.
 - The tool will change the content of the file. Changes can be reviewed by running `git diff`.
 ### clang-tidy in a code static analysys mode
 `clang-tidy -p=. -export-fixes=./clang-tidy-suggested-fixes.txt -checks=-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-* /absolute_or_relative/path/to/file.cpp`
+- The tool will print warnings and recomendations on the code quality to the stdout. Proposed changes can be viewed in `__x86_x64_NativeLinux_mbedtls/clang-tidy-suggested-fixes.txt` file.
+
+
+[mbl-cloud-client-README.md]: https://github.com/ARMmbed/mbl-core/blob/mbl-core-preq331/cloud-services/mbl-cloud-client/README.md
+
