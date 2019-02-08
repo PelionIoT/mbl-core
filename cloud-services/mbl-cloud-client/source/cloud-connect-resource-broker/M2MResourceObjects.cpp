@@ -269,6 +269,11 @@ RBM2MObjectList::RBM2MObjectList()
 RBM2MObjectList::~RBM2MObjectList()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+    clear_object_map();
+}
+
+void RBM2MObjectList::clear_object_map()
+{
     RBM2MObject *object = nullptr;
     for (auto& itr : rbm2m_object_map_) {
         object = itr.second;
@@ -277,6 +282,7 @@ RBM2MObjectList::~RBM2MObjectList()
     }
     rbm2m_object_map_.clear();
 }
+
 
 const RBM2MObjectMap& RBM2MObjectList::get_object_map() const
 {

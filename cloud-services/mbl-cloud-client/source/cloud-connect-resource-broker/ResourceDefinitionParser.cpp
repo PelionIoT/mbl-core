@@ -475,7 +475,8 @@ MblError ResourceDefinitionParser::build_object_list(
     }
 
     //Free allocated memory for object instances in case error occured
-    if(retval != Error::None && !m2m_object_list.empty()) {
+    if(retval != Error::None) {
+        //Clear m2m_object list
         M2MObject* m2m_object = nullptr;
         for (auto &itr : m2m_object_list) {
             m2m_object = itr;
@@ -483,6 +484,9 @@ MblError ResourceDefinitionParser::build_object_list(
             delete m2m_object; // This will delete all created object instances and all resources that belongs to it
         }
         m2m_object_list.clear();
+
+        //Clear m2m_object list
+        rbm2m_object_list.clear_object_map();
     }
     return retval;
 }

@@ -286,6 +286,12 @@ public:
     const RBM2MObjectMap& get_object_map() const;
 
     /**
+     * @brief Clear all objects in the map
+     * 
+     */
+    void clear_object_map();
+
+    /**
      * @brief Create RBM2MObject
      * 
      * @param object_name - RBM2MObject name
