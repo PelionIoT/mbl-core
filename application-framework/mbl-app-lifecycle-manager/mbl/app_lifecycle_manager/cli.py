@@ -62,7 +62,7 @@ def parse_args():
     )
     run.add_argument(
         "-p",
-        "--app_path",
+        "--app-path",
         type=str,
         required=True,
         help="path of the application to start.",
