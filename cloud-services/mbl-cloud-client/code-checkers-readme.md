@@ -60,7 +60,7 @@ Run the following commands from the `__x86_x64_NativeLinux_mbedtls` folder.
 ### run clang-format in a code formatter mode
 `clang-format -i -style=file /absolute_or_relative/path/to/file.cpp`
 - The tool will change the content of the file. Changes can be reviewed by running `git diff`.
-### clang-tidy in a code static analysys mode
+### clang-tidy
 `clang-tidy -p=. -export-fixes=./clang-tidy-suggested-fixes.txt -checks=-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-* /absolute_or_relative/path/to/file.cpp`
 - The tool will print warnings and recomendations on the code quality to the stdout. Proposed changes can be viewed in `__x86_x64_NativeLinux_mbedtls/clang-tidy-suggested-fixes.txt` file.
 
