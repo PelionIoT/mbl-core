@@ -1,11 +1,11 @@
-# clang-tidy description
-http://releases.llvm.org/7.0.0/tools/clang/tools/extra/docs/clang-tidy/index.html
-
-# clang-format description
-https://clang.llvm.org/docs/ClangFormat.html
-- We use clang-format in a code formatter mode, not as a checker. The files will be changed according to the provided configuration file. The proposed change is always correct.  
-## clang-format configuration file
-- we use clang-format with a configuration file that defines our cpp style. See the file `mbl-core/cloud-services/mbl-cloud-client/.clang-format`. We can change the clang-format configuration file in order to support additional style rules. A comprehensive explanation about clang-format style configuration file read here https://www.clangformat.com/. 
+#Tools used
+## clang-tidy
+clang-tidy is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. This tool does not enforce C/C++ style. Read more about the [clang-tidy tool][clang-tidy]. 
+## clang-format
+clang-format enforces a set of rools on the C/C++ code style. It can help in finding and fixing of code style compliance failures. Read more about the [clang-format tool][clang-format].
+- By default, we use clang-format in a code formatter mode, not as only a checker. The tool will change the files according to the provided configuration file. The proposed change is always correct.
+### clang-format configuration file
+- We use clang-format with a configuration file that defines our C/C++ style. See the file `mbl-core/cloud-services/mbl-cloud-client/.clang-format`. We can change the clang-format configuration file in order to support additional style rules. A comprehensive explanation about clang-format style configuration file read here https://www.clangformat.com/. 
 
 
 # Prerequisites
@@ -66,4 +66,6 @@ Run the following commands from the `__x86_x64_NativeLinux_mbedtls` folder.
 
 
 [mbl-cloud-client-README.md]: https://github.com/ARMmbed/mbl-core/blob/mbl-core-preq331/cloud-services/mbl-cloud-client/README.md
+[clang-tidy]: http://releases.llvm.org/7.0.0/tools/clang/tools/extra/docs/clang-tidy/index.html
+[clang-format]: https://clang.llvm.org/docs/ClangFormat.html
 
