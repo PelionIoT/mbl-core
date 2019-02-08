@@ -1,4 +1,12 @@
-# Read full clang-format configuration file options list on this page: 
+# Based on: .clang-format
+# In open-source project: 
+# 
+# Original file: Copyright (c) 2015 Microsoft Corporation. All rights reserved. 
+# Modifications: Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+# 
+# SPDX-License-Identifier: MIT
+#
+# Full clang-format configuration file options listed on this page: 
 # http://releases.llvm.org/5.0.0/tools/clang/docs/ClangFormatStyleOptions.html
 #
 # Graphical tool for clang-format configuration file:
