@@ -106,7 +106,7 @@ if(CODE_CHECK_MODE)
       clang-tidy
       COMMAND ${CLANG_TIDY}
       -p=${EXECUTABLE_OUTPUT_PATH}/../
-      -export-fixes=${CMAKE_CURRENT_SOURCE_DIR}/clang-tidy-suggested-fixes.txt 
+      -export-fixes=${EXECUTABLE_OUTPUT_PATH}/../clang-tidy-suggested-fixes.txt 
       -checks=${CLANG_TIDY_CHECKS}
       ${MBL_CLOUD_CLIENT_SRC}
   )
