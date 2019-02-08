@@ -149,13 +149,16 @@ MblError ResourceDefinitionParser::create_resources(
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
         m2m_mode = M2MBase::Static;
         const uint8_t value_length = static_cast<uint8_t>(resource_value.length()); // During the JSON parsing we verify valid length so we are safe
+        auto value = new uint8_t[resource_value.length()];
+        memmove(value, resource_value.data(), resource_value.length());
         m2m_resource = m2m_object_instance->create_static_resource(
             resource_name.c_str(),
             resource_res_type.c_str(),
             m2m_res_type,
-            (const uint8_t*)resource_value.c_str(),
+            value,
             value_length,
             resource_multiple_instance);
+        delete []value;
     } else {
         m2m_resource = m2m_object_instance->create_dynamic_resource(
             resource_name.c_str(),

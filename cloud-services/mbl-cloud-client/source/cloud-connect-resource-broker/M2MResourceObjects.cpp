@@ -62,7 +62,7 @@ RBM2MResource::~RBM2MResource()
 
 void RBM2MResource::set_m2m_resource(M2MResource *m2m_resource)
 {
-    m2m_resource_ = m2m_resource; // It is allowed to set NULL M2MResource
+    m2m_resource_ = m2m_resource; // It is allowed to set nullptr M2MResource
 }
 
 M2MResource* RBM2MResource::get_m2m_resource()
@@ -274,6 +274,7 @@ RBM2MObjectList::~RBM2MObjectList()
 
 void RBM2MObjectList::clear_object_map()
 {
+    tr_debug("%s", __PRETTY_FUNCTION__);
     RBM2MObject *object = nullptr;
     for (auto& itr : rbm2m_object_map_) {
         object = itr.second;
