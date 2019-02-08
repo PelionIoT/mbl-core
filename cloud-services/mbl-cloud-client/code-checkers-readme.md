@@ -1,4 +1,4 @@
-#Tools used
+# Tools used
 ## clang-tidy
 clang-tidy is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. This tool does not enforce C/C++ style. Read more about the [clang-tidy tool][clang-tidy]. 
 ## clang-format
