@@ -55,16 +55,16 @@ def main():
 
     # setup regular expressions for PASSED and FAILED
     pass_re = re.compile(".*::.*::.*PASSED")
-    fail_re = re.compile(".*::.*::.*FAILED")
+    fail_re = re.compile(".*::.*::.*(FAILED|ERROR)")
 
     # Look for the results file and process it if it exists
     if os.path.isfile(options.input):
         with open(options.input) as file:
             for line in file:
                 if pass_re.search(line):
-                    results.append(CreateLavaOutputText(line, "PASS"))
+                    results.append(CreateLavaOutputText(line, "pass"))
                 elif fail_re.search(line):
-                    results.append(CreateLavaOutputText(line, "FAIL"))
+                    results.append(CreateLavaOutputText(line, "fail"))
     else:
         print("Input File not found")
 
