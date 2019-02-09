@@ -109,7 +109,9 @@ class AppThread
   public:
     AppThread(std::function<int(AppThread*, void *)> user_callback, void *user_data) : 
         user_callback_(user_callback), user_data_(user_data)
-    {};
+    {
+        assert(user_callback);
+    };
 
     int create()
     {
@@ -146,6 +148,7 @@ class AppThread
 
     static void *thread_main(void *app_thread)
     {
+        assert(app_thread);
         AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
         pthread_exit((void *)(uintptr_t)app_thread_->start());
     }
@@ -154,7 +157,7 @@ class AppThread
     void *user_data_;
     pthread_t tid_;
 };
-///////////////////////////////////////////////////////////////////////////
+/////////////////end INFRA//////////////////////////////////////////////////////////
 
 TEST(DBusAdapterMailBox1, InitDeinit)
 {
@@ -206,8 +209,9 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
-static void *reader_thread_start(void *mailbox)
+static void *SendReceiveRawMessage_MultiThread_reader_thread_start(void *mailbox)
 {
+    assert(mailbox);
     DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
     DBusMailboxMsg output_msg;
     uint64_t expected_sequence_num = 0;
@@ -229,8 +233,9 @@ static void *reader_thread_start(void *mailbox)
     pthread_exit((void *)0);
 }
 
-static void *writer_thread_start(void *mailbox)
+static void *SendReceiveRawMessage_MultiThread_writer_thread_start(void *mailbox)
 {
+    assert(mailbox);
     DBusMailboxMsg input_message;
     DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
 
@@ -259,8 +264,8 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
     for (auto i = 0; i < 100; i++)
     {
         ASSERT_EQ(mailbox.init(), 0);
-        ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
-        ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
+        ASSERT_EQ(pthread_create(&writer_tid, NULL, SendReceiveRawMessage_MultiThread_reader_thread_start, &mailbox), 0);
+        ASSERT_EQ(pthread_create(&reader_tid, NULL, SendReceiveRawMessage_MultiThread_writer_thread_start, &mailbox), 0);
         ASSERT_EQ(pthread_join(writer_tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, 0);
         ASSERT_EQ(pthread_join(reader_tid, &retval), 0);
@@ -282,13 +287,14 @@ TEST(DBusAdapeter1, init_deinit)
     }
 }
 
-/*
+
 static int event_loop_request_stop(sd_event_source *s, void *userdata)
 {
+    assert(userdata);
     DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
     return tester->event_loop_request_stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
 }
-
+/*
 TEST(DBusAdapeter1, run_stop_with_self_request)
 {
     DBusAdapter adapter;    
@@ -298,11 +304,9 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 
     ASSERT_EQ(adapter.init(), MblError::None);
 
-    sd_event_source *s;
-    sd_event_exit(tester.get_event_loop_handle(), DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
-    //ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
-        //sd_event *ev = tester.get_event_loop_handle();
-    //sd_event_loop(ev);
+    ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
+    sd_event *ev = tester.get_event_loop_handle();
+    sd_event_loop(ev);
 
     // expect exit code to be event_exit_code since that what was sent
     ASSERT_EQ(tester.event_loop_run(
@@ -312,13 +316,14 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 }
 */
 
-static void *mbl_cloud_client_thread(void *adapter_)
+static void *mbl_cloud_client_thread(void *adapter)
 {
-    DBusAdapter *adapter = static_cast<DBusAdapter *>(adapter_);
+    assert(adapter);
+    DBusAdapter *adapter_ = static_cast<DBusAdapter *>(adapter);
     MblError status;
     DBusAdapterStopStatus stop_status;
 
-    status = adapter->init();
+    status = adapter_->init();
     if (status != MblError::None)
     {
         pthread_exit((void *)status);
@@ -328,7 +333,7 @@ static void *mbl_cloud_client_thread(void *adapter_)
     {
         pthread_exit((void *)-1005);
     }
-    status = adapter->run(stop_status);
+    status = adapter_->run(stop_status);
     if (status != MblError::None)
     {
         pthread_exit((void *)status);
@@ -338,7 +343,7 @@ static void *mbl_cloud_client_thread(void *adapter_)
         pthread_exit((void *)MblError::DBusErr_Temporary);
     }
 
-    status = adapter->deinit();
+    status = adapter_->deinit();
     if (status != MblError::None)
     {
         pthread_exit((void *)status);
@@ -360,11 +365,8 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
     for (auto i = 0; i < 100; i++)
     {
         ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
-
         ASSERT_EQ(sem_wait(&s_sem), 0);
-
         ASSERT_EQ(adapter.stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), MblError::None);
-
         ASSERT_EQ(pthread_join(tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, MblError::None);
     }
@@ -374,6 +376,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 
 static int AppThreadCb_validate_service_exist(AppThread *app_thread, void *user_data)
 {
+    assert(app_thread);
     AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
     return sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
 }
