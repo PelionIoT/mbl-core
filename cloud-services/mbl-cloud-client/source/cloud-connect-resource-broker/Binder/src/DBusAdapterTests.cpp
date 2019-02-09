@@ -4,157 +4,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <pthread.h>
-#include <stdio.h>
-#include <stdint.h>
 #include <semaphore.h>
-#include <functional>
+#include <pthread.h>
 
 #include <gtest/gtest.h>
 
 #include "DBusAdapter.h"
-#include "DBusAdapterImpl.h"
+#include "DBusAdapter_Impl.h"
 #include "DBusAdapterMailbox.h"
 #include "MblError.h"
 #include "DBusMailboxMsg.h"
 #include "DBusAdapterService.h"
-#include "DBusAdapterTimer.h"
+#include "TestInfra_DBusAdapterTester.h"
+
+#include "TestInfra_AppThread.h"
+#include "TestInfra_Common.h"
 
 using namespace mbl;
 
-#define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
-
-#define DBUS_CLOUD_SERVICE_NAME "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH "/com/mbed/Cloud/Connect1"
-
-// In some tests, for simplicity, threads are not synchronized
-// In the real code they are -> using the event loop or other means. That's why the actual mailbox code
-// does not implement retries on timeout polling failures.
-// Since they are synchronized, read should always succeed.
-// That's why I wait up to 100 ms
-#define DBUS_MAILBOX_MAX_WAIT_TIME_MS 100
-
 static sem_t s_sem;
-
-///////////////////////////////////////////////////////////////////////////
-////////////////////////////INFRA//////////////////////////////////////////
-#define TESTER_VALIDATE_EQ(a, b) \
-    if (a != b)                  \
-    return MblError::DBusErr_Temporary
-
-class DBusAdapterTester
-{
-  public:
-    DBusAdapterTester(DBusAdapter &adapter) : adapter_(adapter){};
-
-    MblError validate_deinitialized_adapter();
-    MblError event_loop_request_stop(DBusAdapterStopStatus stop_status);
-    MblError event_loop_run(
-        DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
-    sd_event *get_event_loop_handle();
-
-    //use this call only if calling thread is the one to initialize the adapter!
-    int add_event_defer(sd_event_handler_t handler, void *userdata);
-
-    DBusAdapter &adapter_;
-};
-
-MblError DBusAdapterTester::validate_deinitialized_adapter()
-{
-    TESTER_VALIDATE_EQ(adapter_.impl_->state_, DBusAdapter::DBusAdapterImpl::State::UNINITALIZED);
-    TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
-    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
-    TESTER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
-    TESTER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
-    TESTER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
-    return MblError::None;
-}
-
-MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus stop_status)
-{
-    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
-    return MblError::None;
-}
-
-MblError DBusAdapterTester::event_loop_run(
-    DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status)
-{
-    TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
-    TESTER_VALIDATE_EQ(stop_status, expected_stop_status);
-    return MblError::None;
-}
-
-sd_event *DBusAdapterTester::get_event_loop_handle()
-{
-    return adapter_.impl_->event_loop_handle_;
-}
-
-int DBusAdapterTester::add_event_defer(
-    sd_event_handler_t handler,
-    void *userdata)
-{
-    return sd_event_add_defer(
-        adapter_.impl_->event_loop_handle_,
-        nullptr,
-        handler,
-        userdata);
-}
-
-class AppThread
-{
-  public:
-    AppThread(std::function<int(AppThread*, void *)> user_callback, void *user_data) : 
-        user_callback_(user_callback), user_data_(user_data)
-    {
-        assert(user_callback);
-    };
-
-    int create()
-    {
-        return pthread_create(&tid_, NULL, thread_main, this);
-    }
-
-    int join(void **retval)
-    {
-        return pthread_join(tid_, retval);
-    }
-
-    sd_bus *connection_handle_;
-
-  private:
-    int start()
-    {
-        int r;
-
-        r = sd_bus_open_user(&connection_handle_);
-        if (r < 0)
-        {
-            pthread_exit((void *)-1000);
-        }
-        if (nullptr == connection_handle_)
-        {
-            pthread_exit((void *)-1001);
-        }
-
-        // This part must be the last
-        int ret_val = user_callback_(this, user_data_);
-        sd_bus_unref(connection_handle_);
-        return ret_val;
-    }
-
-    static void *thread_main(void *app_thread)
-    {
-        assert(app_thread);
-        AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
-        pthread_exit((void *)(uintptr_t)app_thread_->start());
-    }
-
-    std::function<int(AppThread*,void *)> user_callback_;
-    void *user_data_;
-    pthread_t tid_;
-};
-/////////////////end INFRA//////////////////////////////////////////////////////////
 
 TEST(DBusAdapterMailBox1, InitDeinit)
 {
@@ -197,8 +65,8 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
     // send / receive / compare 100 times
     for (auto i = 0; i < 100; i++)
     {
-        ASSERT_EQ(mailbox.send_msg(write_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
-        ASSERT_EQ(mailbox.receive_msg(read_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(mailbox.send_msg(write_msg, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
+        ASSERT_EQ(mailbox.receive_msg(read_msg, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
         write_msg = read_msg;
         ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(DBusMailboxMsg)), 0);
     }
@@ -215,7 +83,7 @@ static void *SendReceiveRawMessage_MultiThread_reader_thread_start(void *mailbox
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch, ++expected_sequence_num)
     {
-        if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
+        if (mailbox_->receive_msg(output_msg, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
         {
             pthread_exit((void *)-1003);
         }
@@ -243,7 +111,7 @@ static void *SendReceiveRawMessage_MultiThread_writer_thread_start(void *mailbox
     for (char ch = 'A'; ch < 'Z' + 1; ++ch)
     {
         input_message.payload_.raw.bytes[0] = ch;
-        if (mailbox_->send_msg(input_message, DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
+        if (mailbox_->send_msg(input_message, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
         {
             pthread_exit((void *)-1);
         }

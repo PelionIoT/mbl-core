@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/cloud-services/mbl-cloud-client/source/cloud-connect-resource-broker/Binder/build/runTests",
-            //"args": [ "--gtest_filter=*run_stop_with_self_request*:*DBusAdapterMailBox1*init_deinit*" ],
+            "args": [ "--gtest_filter=**", "--gtest_repeat=20", "--gtest_shuffle" ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [ ],

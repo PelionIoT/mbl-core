@@ -14,11 +14,15 @@
 
 #include "MblError.h"
 #include "DBusAdapterMailbox.h"
-#include "DBusMailboxMsg.h"
 #include "DBusAdapter.h"
 
 #include <systemd/sd-bus.h>
 #include <systemd/sd-event.h>
+
+// sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
+#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
 class DBusAdapterTester;
 
