@@ -48,6 +48,7 @@ def parse_args():
         "--version",
         action="version",
         version="%(prog)s {}".format(__version__),
+        help="print application version",
     )
 
     return parser.parse_args()
