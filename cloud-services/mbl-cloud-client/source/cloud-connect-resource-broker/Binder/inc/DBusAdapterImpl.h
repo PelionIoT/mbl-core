@@ -115,14 +115,12 @@ private:
     std::set<const sd_bus_message*>    pending_messages_;
 
     // D-Bus
-    sd_bus                  *connection_handle_;
-    sd_bus_slot             *connection_slot_;         // TODO : needed?
+    sd_bus                  *connection_handle_ = nullptr;
     const char              *unique_name_;
     const char              *service_name_; 
 
-    // Event loop 
-    sd_event_source         *event_source_pipe_;      
-    sd_event                *event_loop_handle_;
+    // Event loop      
+    sd_event                *event_loop_handle_ = nullptr;
 
     DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
     pthread_t              initializer_thread_id_;

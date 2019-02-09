@@ -58,7 +58,6 @@ class DBusAdapterTester
     int add_event_defer(sd_event_handler_t handler, void *userdata);
 
     DBusAdapter &adapter_;
-    sd_event_source *source_;
 };
 
 MblError DBusAdapterTester::validate_deinitialized_adapter()
@@ -67,8 +66,6 @@ MblError DBusAdapterTester::validate_deinitialized_adapter()
     TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
-    TESTER_VALIDATE_EQ(adapter_.impl_->connection_slot_, nullptr);
-    TESTER_VALIDATE_EQ(adapter_.impl_->event_source_pipe_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->unique_name_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->service_name_, nullptr);
     return MblError::None;
@@ -99,7 +96,7 @@ int DBusAdapterTester::add_event_defer(
 {
     return sd_event_add_defer(
         adapter_.impl_->event_loop_handle_,
-        &source_,
+        nullptr,
         handler,
         userdata);
 }
@@ -287,34 +284,27 @@ TEST(DBusAdapeter1, init_deinit)
     }
 }
 
-
 static int event_loop_request_stop(sd_event_source *s, void *userdata)
 {
     assert(userdata);
     DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
     return tester->event_loop_request_stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
 }
-/*
+
+
 TEST(DBusAdapeter1, run_stop_with_self_request)
 {
     DBusAdapter adapter;    
-    DBusAdapterStopStatus stop_status = DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR;
+    DBusAdapterStopStatus stop_status = DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR;
     DBusAdapterTester tester(adapter);
-    sd_event_source *source;
 
     ASSERT_EQ(adapter.init(), MblError::None);
-
     ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
-    sd_event *ev = tester.get_event_loop_handle();
-    sd_event_loop(ev);
-
-    // expect exit code to be event_exit_code since that what was sent
-    ASSERT_EQ(tester.event_loop_run(
+    EXPECT_EQ(tester.event_loop_run(
         stop_status, DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), 0);
-
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
-*/
+
 
 static void *mbl_cloud_client_thread(void *adapter)
 {
@@ -352,17 +342,18 @@ static void *mbl_cloud_client_thread(void *adapter)
     pthread_exit((void *)0);
 }
 
+
 TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 {
     DBusAdapter adapter;
     pthread_t tid;
     void *retval;
-
-    // i'm going to wait on the semaphore
+    
+    // i'm going to wait on a semaphore
     ASSERT_EQ(sem_init(&s_sem, 0, 0), 0);
 
-    //start stop 100 times
-    for (auto i = 0; i < 100; i++)
+    //start stop 10 times
+    for (auto i = 0; i < 10; i++)
     {
         ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
         ASSERT_EQ(sem_wait(&s_sem), 0);
@@ -380,7 +371,6 @@ static int AppThreadCb_validate_service_exist(AppThread *app_thread, void *user_
     AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
     return sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
 }
-
 
 TEST(DBusAdapeter_c, ValidateServiceExist)
 {

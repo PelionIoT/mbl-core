@@ -49,21 +49,28 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
     tr_debug("%s", __PRETTY_FUNCTION__);    
     int r = -1;
     
+    if (nullptr == event_loop_handle_){
+        return MblError::DBusErr_Temporary;
+    }   
     r = sd_bus_open_user(&connection_handle_);    
     if (r < 0){
         return MblError::DBusErr_Temporary;
     }
     if (nullptr == connection_handle_){
         return MblError::DBusErr_Temporary;
+    }    
+    r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
+    if (r < 0){
+        return MblError::DBusErr_Temporary;
     }
-    
+
     const sd_bus_vtable* table = DBusAdapterService_get_service_vtable();
     if (nullptr == table){
         return MblError::DBusErr_Temporary;
     }
     // Install the object
     r = sd_bus_add_object_vtable(connection_handle_,
-                                 &connection_slot_,
+                                 nullptr,
                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                                  DBusAdapterService_get_service_vtable(),
@@ -120,31 +127,34 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
     if (r < 0) {
         return MblError::DBusErr_Temporary;
     }
+   
     return MblError::None;
 }
 
 MblError DBusAdapter::DBusAdapterImpl::bus_deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+    int r = 0;
+    
+    if (connection_handle_){
 
-    if (service_name_){
-        int r = sd_bus_release_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME);
+        if (service_name_){
+            r = sd_bus_release_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME);
+            if (r < 0){
+                // TODO : print error
+            }
+            else {
+                service_name_ = nullptr;
+            }        
+        }
+        r = sd_bus_detach_event(connection_handle_);
         if (r < 0){
             // TODO : print error
         }
-        else {
-            service_name_ = nullptr;
-        }        
+        connection_handle_ = sd_bus_flush_close_unref(connection_handle_);
     }
-    if (connection_slot_){
-        sd_bus_slot_unref(connection_slot_);
-        connection_slot_ = nullptr;
-    }
-    if (connection_handle_){
-        sd_bus_unref(connection_handle_);
-        connection_handle_ = nullptr;
-    }
-    return MblError::None;
+   
+    return (r < 0) ? MblError::DBusErr_Temporary : MblError::None;
 }
 
 MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
@@ -161,16 +171,11 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
 
     r = sd_event_add_io(
         event_loop_handle_, 
-        &event_source_pipe_, 
+        nullptr,    //event source will be destroyed with the event loop
         mailbox_.get_pipefd_read(), 
         EPOLLIN, 
         DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback,
         this);
-    if (r < 0){
-        return MblError::DBusErr_Temporary;
-    }
-
-    r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
     if (r < 0){
         return MblError::DBusErr_Temporary;
     }
@@ -181,10 +186,9 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_init()
 MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
 {    
     tr_debug("%s", __PRETTY_FUNCTION__);
-
-    if (event_loop_handle_){
+    
+    if (event_loop_handle_){       
         sd_event_unref(event_loop_handle_);
-        sd_event_source_unref(event_source_pipe_);
         event_loop_handle_ = nullptr;
     }
     return MblError::None;
@@ -252,12 +256,8 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
     DBusMailboxMsg msg;
     int r = -1;
 
-    if (revents & EPOLLIN == 0){
+    if ((revents & EPOLLIN) == 0){
          // TODO : print , fatal error. what to do?
-        return -1;
-    }
-    if (s != event_source_pipe_){
-        // TODO : print , fatal error. what to do?
         return -1;
     }
     if (fd != mailbox_.get_pipefd_read()){
@@ -422,17 +422,17 @@ MblError DBusAdapter::DBusAdapterImpl::init()
         return status;
     }
 
-    status = bus_init();
-    if (status != Error::None){
-        //bus is not an object, need to deinit
-        bus_deinit();    
-        return status;
-    }
-
     status = event_loop_init();
     if (status != Error::None){
         //event loop is not an object, need to deinit
         event_loop_deinit();
+        return status;
+    }
+
+    status = bus_init();
+    if (status != Error::None){
+        //bus is not an object, need to deinit
+        bus_deinit();    
         return status;
     }
 
@@ -450,7 +450,7 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
     if (State::INITALIZED != state_){
         return Error::DBusErr_Temporary;
     }
-    
+            
     status1 = mailbox_.deinit();
     status2 = bus_deinit();
     status3 = event_loop_deinit();
