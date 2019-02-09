@@ -362,6 +362,15 @@ int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback_impl(
     return 0;
 }
 
+int DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback(
+    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+{
+    assert(m);
+    assert(userdata);
+    DBusAdapter::DBusAdapterImpl *impl = static_cast<DBusAdapter::DBusAdapterImpl*>(userdata);
+    return impl->incoming_bus_message_callback_impl(m, ret_error);
+}
+
 int DBusAdapter::DBusAdapterImpl::process_incoming_message_RegisterResources(
     const sd_bus_message *m, 
     const char *appl_resource_definition_json)
@@ -398,6 +407,10 @@ MblError DBusAdapter::DBusAdapterImpl::init()
         return Error::DBusErr_Temporary;
     }
 
+    r = DBusAdapterService_init(DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback);
+    if (r < 0){
+        return Error::DBusErr_Temporary;
+    }
     status = mailbox_.init();
     if (status != Error::None){
         //mailbox deinit itself
@@ -426,31 +439,30 @@ MblError DBusAdapter::DBusAdapterImpl::init()
 MblError DBusAdapter::DBusAdapterImpl::deinit()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    MblError status1, status2, status3;
-    int r;
+    const size_t STATUS_ARRAY_SIZE = 4;
+    MblError status[STATUS_ARRAY_SIZE ] = { MblError::DBusErr_Temporary };
+    int r, i = 0;
 
     if (State::INITALIZED != state_){
         return Error::DBusErr_Temporary;
     }
-            
-    status1 = mailbox_.deinit();
-    status2 = bus_deinit();
-    status3 = event_loop_deinit();
+        
+    status[i++] = mailbox_.deinit();
+    status[i++] = bus_deinit();
+    status[i++] = event_loop_deinit();
+    status[i++] = (DBusAdapterService_deinit() < 0) ? MblError::DBusErr_Temporary : MblError::None;
 
     // TODO - clean all references to messages, timers etc. to unref all
     //for (auto &handle : bus_request_handles_){
         //sd_bus_message_unref((sd_bus_message*)handle);
     //}
 
-    if (MblError::None != status1) {
-        return status1;
+    for (auto i = 0; i < STATUS_ARRAY_SIZE; ++i){
+        if (status[i] != MblError::None){
+            return status[i];
+        }
     }
-    else if (MblError::None != status2) {
-        return status2;
-    }
-    else if (MblError::None != status3) {
-        return status3;
-    }
+
     state_ = State::UNINITALIZED;
     return Error::None;
 }

@@ -38,7 +38,6 @@ TEST(DBusAdapterService1, init_get_deinit)
     IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
 
     ASSERT_EQ(DBusAdapterService_init(callback), 0);
-    ASSERT_EQ(DBusAdapterService_init(callback), 0);
     ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
     ASSERT_EQ(DBusAdapterService_deinit(), 0);
 }

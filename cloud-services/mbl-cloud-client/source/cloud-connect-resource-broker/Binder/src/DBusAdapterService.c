@@ -110,11 +110,8 @@ static int incoming_bus_message_callback(
 int DBusAdapterService_init(IncomingDataCallback callback)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    int r;
-
     memset(&ctx_, 0, sizeof(ctx_));
     ctx_.incoming_bus_message_callback_ = callback;
-
     return 0;
 }
 
