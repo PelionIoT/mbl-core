@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _DBusAdapterService_h_
-#define _DBusAdapterService_h_
+#ifndef _DBusService_h_
+#define _DBusService_h_
 
 #include <inttypes.h>
 
@@ -26,12 +26,12 @@ extern "C"
 typedef int (*IncomingDataCallback)(sd_bus_message*, void*, sd_bus_error*);
 
 
-int                     DBusAdapterService_init(IncomingDataCallback incoming_data_callback);
-int                     DBusAdapterService_deinit();
-const sd_bus_vtable*    DBusAdapterService_get_service_vtable();
+int                     DBusService_init(IncomingDataCallback incoming_data_callback);
+int                     DBusService_deinit();
+const sd_bus_vtable*    DBusService_get_service_vtable();
 
 #ifdef __cplusplus
 } //extern "C" {
 #endif
 
-#endif //_DBusAdapterService_h_
+#endif //_DBusService_h_

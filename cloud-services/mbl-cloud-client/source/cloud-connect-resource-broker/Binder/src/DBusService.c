@@ -7,14 +7,14 @@
 
 #include <systemd/sd-bus.h>
 
-#include "DBusAdapterService.h"
+#include "DBusService.h"
 
-typedef struct DBusAdapterServiceContext_
+typedef struct DBusServiceContext_
 {   
     IncomingDataCallback    incoming_bus_message_callback_;
-}DBusAdapterServiceContext;
+}DBusServiceContext;
 
-static DBusAdapterServiceContext ctx_ = { 0 };
+static DBusServiceContext ctx_ = { 0 };
 static int incoming_bus_message_callback(
     sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
     
@@ -107,7 +107,7 @@ static int incoming_bus_message_callback(
 //////////////////////////////////////////////////////////////////////////////
 
 // the userdata will be transferred as part of vtable object add
-int DBusAdapterService_init(IncomingDataCallback callback)
+int DBusService_init(IncomingDataCallback callback)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     memset(&ctx_, 0, sizeof(ctx_));
@@ -115,14 +115,14 @@ int DBusAdapterService_init(IncomingDataCallback callback)
     return 0;
 }
 
-int DBusAdapterService_deinit()
+int DBusService_deinit()
 {   
     tr_debug("%s", __PRETTY_FUNCTION__);
     memset(&ctx_, 0, sizeof(ctx_));
     return 0;
 }
 
-const sd_bus_vtable* DBusAdapterService_get_service_vtable()
+const sd_bus_vtable* DBusService_get_service_vtable()
 {
     return cloud_connect_service_vtable;
 }

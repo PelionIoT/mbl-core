@@ -8,4 +8,5 @@
 #ifndef _DBusAdapterTimer_h_
 #define _DBusAdapterTimer_h_
 
+
 #endif // _DBusAdapterTimer_h_

@@ -7,9 +7,9 @@
 #include <cassert>
 
 #include "DBusAdapter.h"
-#include "DBusAdapterMailbox.h"
-#include "DBusMailboxMsg.h"
-#include "DBusAdapterService.h"
+#include "Mailbox.h"
+#include "MailboxMsg.h"
+#include "DBusService.h"
 #include "DBusAdapter_Impl.h"
 
 
@@ -46,7 +46,7 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
         return MblError::DBusErr_Temporary;
     }
 
-    const sd_bus_vtable* table = DBusAdapterService_get_service_vtable();
+    const sd_bus_vtable* table = DBusService_get_service_vtable();
     if (nullptr == table){
         return MblError::DBusErr_Temporary;
     }
@@ -55,7 +55,7 @@ MblError DBusAdapter::DBusAdapterImpl::bus_init()
                                  nullptr,
                                  DBUS_CLOUD_CONNECT_OBJECT_PATH,  
                                  DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                                 DBusAdapterService_get_service_vtable(),
+                                 DBusService_get_service_vtable(),
                                  this);
     if (r < 0) {
         return MblError::DBusErr_Temporary;
@@ -235,7 +235,7 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
  	uint32_t revents)
 {
     MblError status;
-    DBusMailboxMsg msg;
+    MailboxMsg msg;
     int r = -1;
 
     if ((revents & EPOLLIN) == 0){
@@ -247,20 +247,20 @@ int DBusAdapter::DBusAdapterImpl::incoming_mailbox_message_callback_impl(
     }
     status = mailbox_.receive_msg(
         msg, 
-        DBusAdapterMailbox::DBUS_MAILBOX_MAX_DEFAULT_TIMEOUT_MILLISECONDS);
+        Mailbox::DBUS_MAILBOX_MAX_DEFAULT_TIMEOUT_MILLISECONDS);
     if (status != MblError::None) {
         return r;
     }
 
     switch (msg.type_)
     {
-        case mbl::DBusMailboxMsg::MsgType::EXIT:
-            if (msg.payload_len_ != sizeof(mbl::DBusMailboxMsg::Msg_exit_)){
+        case mbl::MailboxMsg::MsgType::EXIT:
+            if (msg.payload_len_ != sizeof(mbl::MailboxMsg::Msg_exit_)){
                 break;
             }
             r = event_loop_request_stop(msg.payload_.exit.stop_status);
             break;
-        case mbl::DBusMailboxMsg::MsgType::RAW_DATA:
+        case mbl::MailboxMsg::MsgType::RAW_DATA:
             //pass 
             break;
     
@@ -407,7 +407,7 @@ MblError DBusAdapter::DBusAdapterImpl::init()
         return Error::DBusErr_Temporary;
     }
 
-    r = DBusAdapterService_init(DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback);
+    r = DBusService_init(DBusAdapter::DBusAdapterImpl::incoming_bus_message_callback);
     if (r < 0){
         return Error::DBusErr_Temporary;
     }
@@ -450,7 +450,7 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
     status[i++] = mailbox_.deinit();
     status[i++] = bus_deinit();
     status[i++] = event_loop_deinit();
-    status[i++] = (DBusAdapterService_deinit() < 0) ? MblError::DBusErr_Temporary : MblError::None;
+    status[i++] = (DBusService_deinit() < 0) ? MblError::DBusErr_Temporary : MblError::None;
 
     // TODO - clean all references to messages, timers etc. to unref all
     //for (auto &handle : bus_request_handles_){
@@ -527,9 +527,9 @@ MblError DBusAdapter::DBusAdapterImpl::stop(MblError stop_status)
         status = (r >= 0) ? Error::None : Error::DBusErr_Temporary;
     }
     else {
-        DBusMailboxMsg msg;
-        msg.type_ = mbl::DBusMailboxMsg::MsgType::EXIT;
-        msg.payload_len_ = sizeof(mbl::DBusMailboxMsg::Msg_exit_);
+        MailboxMsg msg;
+        msg.type_ = mbl::MailboxMsg::MsgType::EXIT;
+        msg.payload_len_ = sizeof(mbl::MailboxMsg::Msg_exit_);
         msg.payload_.exit.stop_status = stop_status;
         status = mailbox_.send_msg(msg, MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS);
         if (status != MblError::None){

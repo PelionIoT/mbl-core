@@ -15,7 +15,7 @@
     return MblError::DBusErr_Temporary
 
 
-MblError DBusAdapterTester::validate_deinitialized_adapter()
+MblError TestInfra_DBusAdapterTester::validate_deinitialized_adapter()
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->state_, DBusAdapter::DBusAdapterImpl::State::UNINITALIZED);
     TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
@@ -26,13 +26,13 @@ MblError DBusAdapterTester::validate_deinitialized_adapter()
     return MblError::None;
 }
 
-MblError DBusAdapterTester::event_loop_request_stop(MblError stop_status)
+MblError TestInfra_DBusAdapterTester::event_loop_request_stop(MblError stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
     return MblError::None;
 }
 
-MblError DBusAdapterTester::event_loop_run(
+MblError TestInfra_DBusAdapterTester::event_loop_run(
     MblError &stop_status, MblError expected_stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
@@ -40,12 +40,12 @@ MblError DBusAdapterTester::event_loop_run(
     return MblError::None;
 }
 
-sd_event *DBusAdapterTester::get_event_loop_handle()
+sd_event *TestInfra_DBusAdapterTester::get_event_loop_handle()
 {
     return adapter_.impl_->event_loop_handle_;
 }
 
-int DBusAdapterTester::add_event_defer(
+int TestInfra_DBusAdapterTester::send_event_defer(
     sd_event_handler_t handler,
     void *userdata)
 {

@@ -20,11 +20,11 @@ Simplify things here : allow maximum size of 4096 for now */
 //#define DBUS_MAX_MSG_SIZE   65536
 //#define DBUS_MAX_MSG_PAYLOAD_SIZE \
     //(DBUS_MAX_MSG_SIZE - \
-    //(sizeof(struct DBusMailboxMsg) - sizeof(union DBusMailboxMsgPayload)))
+    //(sizeof(struct MailboxMsg) - sizeof(union DBusMailboxMsgPayload)))
 
 
 //TODO :  add 2 static compile time casts to check that 
-//DBUS_MAX_MSG_RAW_PAYLOAD_SIZE<DBUS_MAX_MSG_SIZE and that max size of DBusMailboxMsg
+//DBUS_MAX_MSG_RAW_PAYLOAD_SIZE<DBUS_MAX_MSG_SIZE and that max size of MailboxMsg
 // is less than  MAX_MSG_SIZE
 
 
@@ -32,7 +32,7 @@ Simplify things here : allow maximum size of 4096 for now */
 // TODO : this struct has 2 members that should not be changed externaly
 // transforming it ointo class requiers extra work - more getters, copy ctor and =operator
 // I do not have time for this now
-struct DBusMailboxMsg
+struct MailboxMsg
 {   
     typedef struct Msg_raw_ 
     {

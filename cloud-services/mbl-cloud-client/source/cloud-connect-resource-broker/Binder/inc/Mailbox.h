@@ -15,18 +15,18 @@
 
 namespace mbl {
 
-struct DBusMailboxMsg;
+struct MailboxMsg;
 
-class DBusAdapterMailbox
+class Mailbox
 {
 public:    
     static const int DBUS_MAILBOX_MAX_DEFAULT_TIMEOUT_MILLISECONDS = 1000;
 
-    // TODO : fix all name of this module to DBusAdapterMailbox
+    // TODO : fix all name of this module to Mailbox
     MblError  init();
     MblError  deinit();
-    MblError  send_msg(DBusMailboxMsg &msg, int timeout_milliseconds);
-    MblError  receive_msg(DBusMailboxMsg &msg, int timeout_milliseconds);
+    MblError  send_msg(MailboxMsg &msg, int timeout_milliseconds);
+    MblError  receive_msg(MailboxMsg &msg, int timeout_milliseconds);
     int       get_pipefd_read();
 
 private:

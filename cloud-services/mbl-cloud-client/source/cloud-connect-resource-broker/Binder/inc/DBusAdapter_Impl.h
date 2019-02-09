@@ -13,7 +13,7 @@
 #include <set>
 
 #include "MblError.h"
-#include "DBusAdapterMailbox.h"
+#include "Mailbox.h"
 #include "DBusAdapter.h"
 
 #include <systemd/sd-bus.h>
@@ -24,13 +24,13 @@
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
-class DBusAdapterTester;
+class TestInfra_DBusAdapterTester;
 
 namespace mbl {
 
 class DBusAdapter::DBusAdapterImpl
 {
-friend class ::DBusAdapterTester;
+friend class ::TestInfra_DBusAdapterTester;
 public:
     DBusAdapterImpl();
     ~DBusAdapterImpl();
@@ -126,7 +126,7 @@ private:
     // Event loop      
     sd_event                *event_loop_handle_ = nullptr;
 
-    DBusAdapterMailbox     mailbox_;    // TODO - empty on deinit
+    Mailbox     mailbox_;    // TODO - empty on deinit
     pthread_t              initializer_thread_id_;
 };
 

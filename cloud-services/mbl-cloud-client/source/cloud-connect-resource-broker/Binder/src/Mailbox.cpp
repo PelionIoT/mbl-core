@@ -11,13 +11,13 @@
 #include <errno.h> 
 #include <memory>
 
-#include "DBusAdapterMailbox.h"
-#include "DBusMailboxMsg.h"
+#include "Mailbox.h"
+#include "MailboxMsg.h"
 #include "MblError.h"
 
 namespace mbl {
 
-MblError DBusAdapterMailbox::init()
+MblError Mailbox::init()
 {
     MblError status = do_init();
     if (status != MblError::None){
@@ -26,7 +26,7 @@ MblError DBusAdapterMailbox::init()
     return status;
 }
 
-MblError DBusAdapterMailbox::do_init()
+MblError Mailbox::do_init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // TODO - consider refacto all 'r' to 'retval'
@@ -55,7 +55,7 @@ MblError DBusAdapterMailbox::do_init()
     return MblError::None;
 }
 
-MblError DBusAdapterMailbox::deinit() 
+MblError Mailbox::deinit() 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;        
@@ -77,13 +77,13 @@ MblError DBusAdapterMailbox::deinit()
     return MblError::None;
 }
 
-MblError DBusAdapterMailbox::send_msg(DBusMailboxMsg &msg, int timeout_milliseconds)
+MblError Mailbox::send_msg(MailboxMsg &msg, int timeout_milliseconds)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;    
     // FIXME : We can avoid allocation at all. create vector of smart pointers with atomic bool which shows if
     // memory is used or not. this requires extra work. TBD.
-    DBusMailboxMsg *msg_ = new DBusMailboxMsg(msg);
+    MailboxMsg *msg_ = new MailboxMsg(msg);
 
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
     
@@ -103,12 +103,12 @@ MblError DBusAdapterMailbox::send_msg(DBusMailboxMsg &msg, int timeout_milliseco
     if (pollfds_[WRITE].revents & POLLOUT) {
         //can write - write the message pointer address
         msg_->_sequence_num = sequence_num_++;
-        r = write(pipefds_[WRITE], &msg_, sizeof(DBusMailboxMsg*));
+        r = write(pipefds_[WRITE], &msg_, sizeof(MailboxMsg*));
         if (r <= 0){
             //nothing written or error!
             return MblError::DBusErr_Temporary;
         }
-        if (r != sizeof(DBusMailboxMsg*)){
+        if (r != sizeof(MailboxMsg*)){
            return MblError::DBusErr_Temporary;
        }
    }
@@ -121,11 +121,11 @@ MblError DBusAdapterMailbox::send_msg(DBusMailboxMsg &msg, int timeout_milliseco
 }
 
 // receiver must free message
-MblError DBusAdapterMailbox::receive_msg(DBusMailboxMsg &msg, int timeout_milliseconds)
+MblError Mailbox::receive_msg(MailboxMsg &msg, int timeout_milliseconds)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
-    DBusMailboxMsg *msg_;
+    MailboxMsg *msg_;
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
 
     r = poll(&pollfds_[READ], 1, timeout_milliseconds);
@@ -138,12 +138,12 @@ MblError DBusAdapterMailbox::receive_msg(DBusMailboxMsg &msg, int timeout_millis
         return MblError::DBusErr_Temporary;
     }
     if (pollfds_[READ].revents & POLLIN) {
-        r = read(pipefds_[READ], &msg_, sizeof(DBusMailboxMsg*));
+        r = read(pipefds_[READ], &msg_, sizeof(MailboxMsg*));
         if (r <= 0){
             //nothing read or error!
            return MblError::DBusErr_Temporary;
         }
-        if (r != sizeof(DBusMailboxMsg*)){
+        if (r != sizeof(MailboxMsg*)){
             return MblError::DBusErr_Temporary;
         }
         if (nullptr == msg_){
@@ -160,7 +160,7 @@ MblError DBusAdapterMailbox::receive_msg(DBusMailboxMsg &msg, int timeout_millis
 }
 
 
-int DBusAdapterMailbox::get_pipefd_read()
+int Mailbox::get_pipefd_read()
 {
     return pipefds_[READ];
 }

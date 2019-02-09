@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _TestsInfra_Tester_h_
-#define _TestsInfra_Tester_h_
+#ifndef _TestInfra_DBusAdapterTester_h_
+#define _TestInfra_DBusAdapterTester_h_
 
 #include <systemd/sd-event.h>
 
@@ -14,10 +14,10 @@
 
 using namespace mbl;
 
-class DBusAdapterTester
+class TestInfra_DBusAdapterTester
 {
   public:
-    DBusAdapterTester(DBusAdapter &adapter) : adapter_(adapter) {};
+    TestInfra_DBusAdapterTester(DBusAdapter &adapter) : adapter_(adapter) {};
 
     MblError validate_deinitialized_adapter();
     MblError event_loop_request_stop(MblError stop_status);
@@ -25,9 +25,9 @@ class DBusAdapterTester
     sd_event *get_event_loop_handle();
 
     //use this call only if calling thread is the one to initialize the adapter!
-    int add_event_defer(sd_event_handler_t handler, void *userdata);
+    int send_event_defer(sd_event_handler_t handler, void *userdata);
 
     DBusAdapter &adapter_;
 };
 
-#endif //#ifndef _TestsInfra_Tester_h_
+#endif //#ifndef _TestInfra_DBusAdapterTester_h_

@@ -14,7 +14,7 @@
 #include "MblError.h"
 
 // to be used by Google Test testing
-class DBusAdapterTester;
+class TestInfra_DBusAdapterTester;
 
 namespace mbl {
 
@@ -35,7 +35,7 @@ enum CloudConnectStatus
  * service and client applications.
  */
 class DBusAdapter {
-friend class ::DBusAdapterTester;
+friend class ::TestInfra_DBusAdapterTester;
 public:    
     //TODO: fix gtest issue
     DBusAdapter();

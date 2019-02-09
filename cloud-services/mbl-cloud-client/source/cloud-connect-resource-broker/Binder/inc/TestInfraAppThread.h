@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _TestsInfra_AppThread_h_
-#define _TestsInfra_AppThread_h_
+#ifndef _TestInfraAppThread_h_
+#define _TestInfraAppThread_h_
 
 #include <functional>
 #include <pthread.h>
@@ -29,4 +29,4 @@ class AppThread
     pthread_t tid_;
 };
 
-#endif //#ifndef _TestsInfra_AppThread_h_
+#endif //#ifndef _TestInfraAppThread_h_

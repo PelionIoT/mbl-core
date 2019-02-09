@@ -17,15 +17,15 @@ message(STATUS "dirs: ${SYSTEMD_INCLUDE_DIRS}")
 # Link runTests with what we want to test and the GTest and pthread library
 add_executable(runTests 
     ${CMAKE_SOURCE_DIR}/src/DBusAdapterTests.cpp
-    ${CMAKE_SOURCE_DIR}/src/TestInfra_AppThread.cpp
+    ${CMAKE_SOURCE_DIR}/src/TestInfraAppThread.cpp
     ${CMAKE_SOURCE_DIR}/src/TestInfra_DBusAdapterTester.cpp
 
     ${CMAKE_SOURCE_DIR}/src/DBusAdapter.cpp
     ${CMAKE_SOURCE_DIR}/src/DBusAdapter_Impl.cpp
 
-    ${CMAKE_SOURCE_DIR}/src/DBusAdapterMailbox.cpp
-    ${CMAKE_SOURCE_DIR}/src/DBusAdapterTimer.cpp      
-    ${CMAKE_SOURCE_DIR}/src/DBusAdapterService.c
+    ${CMAKE_SOURCE_DIR}/src/Mailbox.cpp
+    ${CMAKE_SOURCE_DIR}/src/SelfEvent.cpp      
+    ${CMAKE_SOURCE_DIR}/src/DBusService.c
     )
     
 set_target_properties (runTests PROPERTIES

@@ -11,14 +11,14 @@
 
 #include "DBusAdapter.h"
 #include "DBusAdapter_Impl.h"
-#include "DBusAdapterMailbox.h"
+#include "Mailbox.h"
 #include "MblError.h"
-#include "DBusMailboxMsg.h"
-#include "DBusAdapterService.h"
+#include "MailboxMsg.h"
+#include "DBusService.h"
 #include "TestInfra_DBusAdapterTester.h"
 
-#include "TestInfra_AppThread.h"
-#include "TestInfra_Common.h"
+#include "TestInfraAppThread.h"
+#include "TestInfraCommon.h"
 
 using namespace mbl;
 
@@ -26,33 +26,33 @@ static sem_t s_sem;
 
 TEST(DBusAdapterMailBox1, InitDeinit)
 {
-    DBusAdapterMailbox mailbox;
+    Mailbox mailbox;
     ASSERT_EQ(mailbox.init(), MblError::None);
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
-TEST(DBusAdapterService1, init_get_deinit)
+TEST(DBusService1, init_get_deinit)
 {
     // initialize callback to non-zero. check null/non-null userdata
     uintptr_t none_zero_val = 1;
     IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
 
-    ASSERT_EQ(DBusAdapterService_init(callback), 0);
-    ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
-    ASSERT_EQ(DBusAdapterService_deinit(), 0);
+    ASSERT_EQ(DBusService_init(callback), 0);
+    ASSERT_NE(DBusService_get_service_vtable(), nullptr);
+    ASSERT_EQ(DBusService_deinit(), 0);
 }
 
 TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
 {
-    DBusAdapterMailbox mailbox;
-    DBusMailboxMsg write_msg;
-    DBusMailboxMsg read_msg;
+    Mailbox mailbox;
+    MailboxMsg write_msg;
+    MailboxMsg read_msg;
     uintptr_t msg_ptr_as_int;
     std::string str("Hello1 Hello2 Hello3");
 
     memset(&write_msg, 0, sizeof(write_msg));
     memset(&read_msg, 0, sizeof(read_msg));
-    write_msg.type_ = DBusMailboxMsg::MsgType::RAW_DATA;
+    write_msg.type_ = MailboxMsg::MsgType::RAW_DATA;
     read_msg.payload_len_ = str.length();
     strncpy(
         write_msg.payload_.raw.bytes,
@@ -67,7 +67,7 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
         ASSERT_EQ(mailbox.send_msg(write_msg, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
         ASSERT_EQ(mailbox.receive_msg(read_msg, TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS), 0);
         write_msg = read_msg;
-        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(DBusMailboxMsg)), 0);
+        ASSERT_EQ(memcmp(&write_msg, &read_msg, sizeof(MailboxMsg)), 0);
     }
 
     ASSERT_EQ(mailbox.deinit(), 0);
@@ -76,8 +76,8 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
 static void *SendReceiveRawMessage_MultiThread_reader_thread_start(void *mailbox)
 {
     assert(mailbox);
-    DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
-    DBusMailboxMsg output_msg;
+    Mailbox *mailbox_ = static_cast<Mailbox *>(mailbox);
+    MailboxMsg output_msg;
     uint64_t expected_sequence_num = 0;
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch, ++expected_sequence_num)
@@ -86,7 +86,7 @@ static void *SendReceiveRawMessage_MultiThread_reader_thread_start(void *mailbox
         {
             pthread_exit((void *)-1003);
         }
-        if ((output_msg.type_ != DBusMailboxMsg::MsgType::RAW_DATA) ||
+        if ((output_msg.type_ != MailboxMsg::MsgType::RAW_DATA) ||
             (output_msg.payload_len_ != 1) ||
             (output_msg.payload_.raw.bytes[0] != ch) ||
             (output_msg._sequence_num != expected_sequence_num))
@@ -100,11 +100,11 @@ static void *SendReceiveRawMessage_MultiThread_reader_thread_start(void *mailbox
 static void *SendReceiveRawMessage_MultiThread_writer_thread_start(void *mailbox)
 {
     assert(mailbox);
-    DBusMailboxMsg input_message;
-    DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
+    MailboxMsg input_message;
+    Mailbox *mailbox_ = static_cast<Mailbox *>(mailbox);
 
     memset(&input_message, 0, sizeof(input_message));
-    input_message.type_ = DBusMailboxMsg::MsgType::RAW_DATA;
+    input_message.type_ = MailboxMsg::MsgType::RAW_DATA;
     input_message.payload_len_ = 1;
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch)
@@ -122,7 +122,7 @@ static void *SendReceiveRawMessage_MultiThread_writer_thread_start(void *mailbox
 TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
 {
     pthread_t writer_tid, reader_tid;
-    DBusAdapterMailbox mailbox;
+    Mailbox mailbox;
     void *retval;
 
     for (auto i = 0; i < 100; i++)
@@ -141,7 +141,7 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
 TEST(DBusAdapeter1, init_deinit)
 {
     DBusAdapter adapter;
-    DBusAdapterTester tester(adapter);
+    TestInfra_DBusAdapterTester tester(adapter);
 
     for (auto i = 0; i < 10; ++i)
     {
@@ -154,7 +154,8 @@ TEST(DBusAdapeter1, init_deinit)
 static int event_loop_request_stop(sd_event_source *s, void *userdata)
 {
     assert(userdata);
-    DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
+    TestInfra_DBusAdapterTester *tester = static_cast<TestInfra_DBusAdapterTester*>(userdata);
+    sd_event_source_unref(s);
     return tester->event_loop_request_stop(MblError::None);
 }
 
@@ -163,10 +164,10 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 {
     DBusAdapter adapter;    
     MblError stop_status = MblError::DBusStopStatusErrorInternal;
-    DBusAdapterTester tester(adapter);
+    TestInfra_DBusAdapterTester tester(adapter);
 
     ASSERT_EQ(adapter.init(), MblError::None);
-    ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
+    ASSERT_GE(tester.send_event_defer(event_loop_request_stop, &tester), 0);
     EXPECT_EQ(tester.event_loop_run(
         stop_status, MblError::None), 0);
     ASSERT_EQ(adapter.deinit(), MblError::None);

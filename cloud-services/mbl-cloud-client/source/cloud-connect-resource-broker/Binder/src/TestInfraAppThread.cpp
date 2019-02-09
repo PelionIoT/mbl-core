@@ -8,7 +8,7 @@
 
 #include <systemd/sd-bus.h>
 
-#include "TestInfra_AppThread.h"
+#include "TestInfraAppThread.h"
 
 
 AppThread::AppThread(std::function<int(AppThread*, void *)> user_callback, void *user_data) : 

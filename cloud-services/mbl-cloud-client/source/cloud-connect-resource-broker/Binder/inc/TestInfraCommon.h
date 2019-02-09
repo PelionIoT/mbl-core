@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _TestsInfra_h_
-#define _TestsInfra_h_
+#ifndef _TestInfraCommon_h_
+#define _TestInfraCommon_h_
 
 
 #define TI_SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
@@ -18,4 +18,4 @@
 // That's why I wait up to 100 ms
 #define TI_DBUS_MAILBOX_MAX_WAIT_TIME_MS 100
 
-#endif //#ifndef _TestsInfra_h_
+#endif //#ifndef _TestInfraCommon_h_
