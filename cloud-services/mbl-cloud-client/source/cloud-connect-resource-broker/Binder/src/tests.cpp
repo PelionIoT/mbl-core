@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <semaphore.h>
+#include <functional>
 
 #include <gtest/gtest.h>
 
@@ -24,9 +24,9 @@ using namespace mbl;
 
 #define SLEEP_MS(time_to_sleep_im_ms) usleep(1000 * time_to_sleep_im_ms)
 
-#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
+#define DBUS_CLOUD_SERVICE_NAME "com.mbed.Cloud"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME "com.mbed.Cloud.Connect1"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH "/com/mbed/Cloud/Connect1"
 
 // In some tests, for simplicity, threads are not synchronized
 // In the real code they are -> using the event loop or other means. That's why the actual mailbox code
@@ -39,31 +39,31 @@ static sem_t s_sem;
 
 ///////////////////////////////////////////////////////////////////////////
 ////////////////////////////INFRA//////////////////////////////////////////
-#define TESTER_VALIDATE_EQ(a, b) if (a != b) return MblError::DBusErr_Temporary
+#define TESTER_VALIDATE_EQ(a, b) \
+    if (a != b)                  \
+    return MblError::DBusErr_Temporary
+
 class DBusAdapterTester
 {
-    public:
+  public:
+    DBusAdapterTester(DBusAdapter &adapter) : adapter_(adapter){};
 
-        DBusAdapterTester(DBusAdapter &adapter) : 
-            adapter_(adapter) {};
+    MblError validate_deinitialized_adapter();
+    MblError event_loop_request_stop(DBusAdapterStopStatus stop_status);
+    MblError event_loop_run(
+        DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
+    sd_event *get_event_loop_handle();
 
-        MblError validate_deinitialized_adapter();
-        MblError event_loop_request_stop(DBusAdapterStopStatus  stop_status);
-        MblError event_loop_run(
-            DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
-        sd_event* get_event_loop_handle();
+    //use this call only if calling thread is the one to initialize the adapter!
+    int add_event_defer(sd_event_handler_t handler, void *userdata);
 
-        //use this call only if calling thread is the one to initialize the adapter!
-        int add_event_defer(sd_event_handler_t handler,void *userdata);
-
-
-        DBusAdapter &adapter_;
-        sd_event_source *source_;
+    DBusAdapter &adapter_;
+    sd_event_source *source_;
 };
 
 MblError DBusAdapterTester::validate_deinitialized_adapter()
 {
-    TESTER_VALIDATE_EQ(adapter_.impl_->state_, DBusAdapter::DBusAdapterImpl::State::UNINITALIZED); 
+    TESTER_VALIDATE_EQ(adapter_.impl_->state_, DBusAdapter::DBusAdapterImpl::State::UNINITALIZED);
     TESTER_VALIDATE_EQ(adapter_.impl_->pending_messages_.empty(), true);
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_handle_, nullptr);
     TESTER_VALIDATE_EQ(adapter_.impl_->connection_handle_, nullptr);
@@ -74,7 +74,7 @@ MblError DBusAdapterTester::validate_deinitialized_adapter()
     return MblError::None;
 }
 
-MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus  stop_status)
+MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
     return MblError::None;
@@ -84,17 +84,17 @@ MblError DBusAdapterTester::event_loop_run(
     DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
-    TESTER_VALIDATE_EQ(stop_status, expected_stop_status);    
+    TESTER_VALIDATE_EQ(stop_status, expected_stop_status);
     return MblError::None;
 }
 
-sd_event* DBusAdapterTester::get_event_loop_handle()
+sd_event *DBusAdapterTester::get_event_loop_handle()
 {
     return adapter_.impl_->event_loop_handle_;
 }
 
 int DBusAdapterTester::add_event_defer(
-    sd_event_handler_t handler, 
+    sd_event_handler_t handler,
     void *userdata)
 {
     return sd_event_add_defer(
@@ -106,50 +106,55 @@ int DBusAdapterTester::add_event_defer(
 
 class AppThread
 {
-public:
-    typedef int (*AppThreadCallback)(void*, AppThread*);
-    AppThread(AppThreadCallback func_to_invoke, void* func_input) :
-        func_to_invoke_(func_to_invoke), func_input_(func_input) 
-        {};
+  public:
+    AppThread(std::function<int(AppThread*, void *)> user_callback, void *user_data) : 
+        user_callback_(user_callback), user_data_(user_data)
+    {};
 
-    int create() {
+    int create()
+    {
         return pthread_create(&tid_, NULL, thread_main, this);
     }
-    int join(int &retval) {
-        return pthread_join(tid_, (void**)&retval);
+
+    int join(void **retval)
+    {
+        return pthread_join(tid_, retval);
     }
+
     sd_bus *connection_handle_;
-private:
+
+  private:
     int start()
     {
         int r;
 
-        r = sd_bus_open_user(&connection_handle_);    
-        if (r < 0){
-            pthread_exit((void *)-1);
+        r = sd_bus_open_user(&connection_handle_);
+        if (r < 0)
+        {
+            pthread_exit((void *)-1000);
         }
-        if (nullptr == connection_handle_){
-            pthread_exit((void *)-1);
+        if (nullptr == connection_handle_)
+        {
+            pthread_exit((void *)-1001);
         }
 
-        // This one must be the last - return the value
-        int ret_val = func_to_invoke_(func_input_, this);
-       
+        // This part must be the last
+        int ret_val = user_callback_(this, user_data_);
         sd_bus_unref(connection_handle_);
-        pthread_exit((void *)(uintptr_t)ret_val);
+        return ret_val;
     }
-    static void* thread_main(void *app_thread)
+
+    static void *thread_main(void *app_thread)
     {
-        AppThread *app_thread_ = static_cast<AppThread*>(app_thread);
-        pthread_exit((void *)(uintptr_t)app_thread_->start());               
+        AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
+        pthread_exit((void *)(uintptr_t)app_thread_->start());
     }
-    
-    AppThreadCallback func_to_invoke_;
-    void *func_input_;
+
+    std::function<int(AppThread*,void *)> user_callback_;
+    void *user_data_;
     pthread_t tid_;
 };
 ///////////////////////////////////////////////////////////////////////////
-
 
 TEST(DBusAdapterMailBox1, InitDeinit)
 {
@@ -158,12 +163,12 @@ TEST(DBusAdapterMailBox1, InitDeinit)
     ASSERT_EQ(mailbox.deinit(), MblError::None);
 }
 
-TEST(DBusAdapterService1,init_get_deinit)
+TEST(DBusAdapterService1, init_get_deinit)
 {
     // initialize callback to non-zero. check null/non-null userdata
     uintptr_t none_zero_val = 1;
     IncomingDataCallback callback = (IncomingDataCallback)none_zero_val;
-        
+
     ASSERT_EQ(DBusAdapterService_init(callback), 0);
     ASSERT_EQ(DBusAdapterService_init(callback), 0);
     ASSERT_NE(DBusAdapterService_get_service_vtable(), nullptr);
@@ -201,7 +206,6 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessagePtr_SingleThread)
     ASSERT_EQ(mailbox.deinit(), 0);
 }
 
-
 static void *reader_thread_start(void *mailbox)
 {
     DBusAdapterMailbox *mailbox_ = static_cast<DBusAdapterMailbox *>(mailbox);
@@ -212,14 +216,14 @@ static void *reader_thread_start(void *mailbox)
     {
         if (mailbox_->receive_msg(output_msg, DBUS_MAILBOX_MAX_WAIT_TIME_MS) != 0)
         {
-            pthread_exit((void *)-1);
+            pthread_exit((void *)-1003);
         }
         if ((output_msg.type_ != DBusMailboxMsg::MsgType::RAW_DATA) ||
             (output_msg.payload_len_ != 1) ||
             (output_msg.payload_.raw.bytes[0] != ch) ||
             (output_msg._sequence_num != expected_sequence_num))
         {
-            pthread_exit((void *)-1);
+            pthread_exit((void *)-1004);
         }
     }
     pthread_exit((void *)0);
@@ -252,7 +256,8 @@ TEST(DBusAdapterMailBox1, SendReceiveRawMessage_MultiThread)
     DBusAdapterMailbox mailbox;
     void *retval;
 
-    for (auto i = 0; i < 100; i++){
+    for (auto i = 0; i < 100; i++)
+    {
         ASSERT_EQ(mailbox.init(), 0);
         ASSERT_EQ(pthread_create(&writer_tid, NULL, reader_thread_start, &mailbox), 0);
         ASSERT_EQ(pthread_create(&reader_tid, NULL, writer_thread_start, &mailbox), 0);
@@ -268,10 +273,11 @@ TEST(DBusAdapeter1, init_deinit)
 {
     DBusAdapter adapter;
     DBusAdapterTester tester(adapter);
-    
-    for (auto i = 0; i < 10; ++i){
-        ASSERT_EQ(adapter.init(), MblError::None);        
-        ASSERT_EQ(adapter.deinit(), MblError::None);        
+
+    for (auto i = 0; i < 10; ++i)
+    {
+        ASSERT_EQ(adapter.init(), MblError::None);
+        ASSERT_EQ(adapter.deinit(), MblError::None);
         tester.validate_deinitialized_adapter();
     }
 }
@@ -306,7 +312,6 @@ TEST(DBusAdapeter1, run_stop_with_self_request)
 }
 */
 
-
 static void *mbl_cloud_client_thread(void *adapter_)
 {
     DBusAdapter *adapter = static_cast<DBusAdapter *>(adapter_);
@@ -314,36 +319,39 @@ static void *mbl_cloud_client_thread(void *adapter_)
     DBusAdapterStopStatus stop_status;
 
     status = adapter->init();
-    if (status != MblError::None){
+    if (status != MblError::None)
+    {
         pthread_exit((void *)status);
     }
 
-    if (sem_post(&s_sem) != 0) {
-        pthread_exit((void *)-1);
+    if (sem_post(&s_sem) != 0)
+    {
+        pthread_exit((void *)-1005);
     }
     status = adapter->run(stop_status);
-    if (status != MblError::None){
+    if (status != MblError::None)
+    {
         pthread_exit((void *)status);
     }
-    if (stop_status != DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR){
+    if (stop_status != DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR)
+    {
         pthread_exit((void *)MblError::DBusErr_Temporary);
     }
 
     status = adapter->deinit();
-    if (status != MblError::None){
+    if (status != MblError::None)
+    {
         pthread_exit((void *)status);
     }
 
     pthread_exit((void *)0);
 }
 
-
 TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
 {
     DBusAdapter adapter;
     pthread_t tid;
     void *retval;
-    
 
     // i'm going to wait on the semaphore
     ASSERT_EQ(sem_init(&s_sem, 0, 0), 0);
@@ -364,10 +372,9 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
     ASSERT_EQ(sem_destroy(&s_sem), 0);
 }
 
-
-static int validate_Service_exist(void* user_data, AppThread* app_thread)
+static int AppThreadCb_validate_service_exist(AppThread *app_thread, void *user_data)
 {
-    AppThread *app_thread_ = static_cast<AppThread*>(app_thread);    
+    AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
     return sd_bus_request_name(app_thread_->connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
 }
 
@@ -375,19 +382,18 @@ static int validate_Service_exist(void* user_data, AppThread* app_thread)
 TEST(DBusAdapeter_c, ValidateServiceExist)
 {
     DBusAdapter adapter;
-    AppThread app_thread(validate_Service_exist, nullptr);
-    int retval;
+    AppThread app_thread(AppThreadCb_validate_service_exist, nullptr);
+    void *retval = nullptr;
 
-    ASSERT_EQ(adapter.init(), MblError::None);
-    SLEEP_MS(100);
+    ASSERT_EQ(adapter.init(), MblError::None);        
     ASSERT_EQ(app_thread.create(), 0);
-    ASSERT_EQ(app_thread.join(retval), 0);
-    ASSERT_EQ(retval, -EEXIST);
+    ASSERT_EQ(app_thread.join(&retval), 0);
+    ASSERT_EQ((uintptr_t)retval, -EEXIST);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
 int main(int argc, char **argv)
-{   
+{
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

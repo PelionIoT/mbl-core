@@ -199,7 +199,8 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(DBusAdapterStopSt
     //only my thread id is allowd to call this one, check no other thread
     //is using this function in order to prevent confusion.
     //any other thread should send a DBUS_ADAPTER_MSG_EXIT message via mailbox
-    if (pthread_self() != initializer_thread_id_){
+    if (pthread_equal(pthread_self(), initializer_thread_id_) == 0){
+        // current thread id !=  initializer_thread_id_
         return MblError::DBusErr_Temporary;
     }
     r = sd_event_exit(event_loop_handle_, (int)stop_status);
@@ -523,7 +524,8 @@ MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
         return Error::DBusErr_Temporary;
     }
 
-    if (pthread_self() == initializer_thread_id_){
+    if (pthread_equal(pthread_self(), initializer_thread_id_) != 0){
+        // current thread id ==  initializer_thread_id_
         int r = event_loop_request_stop(stop_status);
         if (r < 0){
             // print error
