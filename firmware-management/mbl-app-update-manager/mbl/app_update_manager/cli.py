@@ -44,6 +44,12 @@ def parse_args():
         help="increase verbosity of status information",
     )
 
+    parser.add_argument(
+        "--version",
+        action="version",
+        version="%(prog)s {}".format(__version__),
+    )
+
     return parser.parse_args()
 
 
