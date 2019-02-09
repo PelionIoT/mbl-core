@@ -37,8 +37,8 @@ public:
 
     MblError init();
     MblError deinit();
-    MblError run(DBusAdapterStopStatus &stop_status);
-    MblError stop(DBusAdapterStopStatus stop_status);
+    MblError run(MblError &stop_status);
+    MblError stop(MblError stop_status);
     
     MblError handle_ccrb_RegisterResources_status_update(
         const uintptr_t ipc_conn_handle, 
@@ -109,8 +109,8 @@ private:
 
     MblError event_loop_init();
     MblError event_loop_deinit();
-    MblError event_loop_run(DBusAdapterStopStatus &stop_status);
-    MblError event_loop_request_stop(DBusAdapterStopStatus stop_status);
+    MblError event_loop_run(MblError &stop_status);
+    MblError event_loop_request_stop(MblError stop_status);
 
     // A set which stores upper-layer-asynchronous bus request handles (e.g incoming method requests)
     // Keep here any handle which needs tracking - if the request is not fullfiled during the event dispatching

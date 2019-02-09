@@ -63,17 +63,17 @@ MblError DBusAdapter::deinit()
    return impl_->deinit(); 
 }
 
-MblError DBusAdapter::run(DBusAdapterStopStatus &stop_status)
+MblError DBusAdapter::run(MblError &stop_status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     MblError status = impl_->run(stop_status);
     if (status != MblError::None){
-        impl_->stop(DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR);
+        impl_->stop(MblError::DBusStopStatusErrorInternal);
     }
     return status;
 }
 
-MblError DBusAdapter::stop(DBusAdapterStopStatus stop_status)
+MblError DBusAdapter::stop(MblError stop_status)
 {
    tr_debug("%s", __PRETTY_FUNCTION__);
    return impl_->stop(stop_status); 

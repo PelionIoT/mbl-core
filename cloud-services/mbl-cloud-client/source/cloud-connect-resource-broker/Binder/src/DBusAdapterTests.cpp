@@ -156,20 +156,20 @@ static int event_loop_request_stop(sd_event_source *s, void *userdata)
 {
     assert(userdata);
     DBusAdapterTester *tester = static_cast<DBusAdapterTester*>(userdata);
-    return tester->event_loop_request_stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR);
+    return tester->event_loop_request_stop(MblError::None);
 }
 
 
 TEST(DBusAdapeter1, run_stop_with_self_request)
 {
     DBusAdapter adapter;    
-    DBusAdapterStopStatus stop_status = DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR;
+    MblError stop_status = MblError::DBusStopStatusErrorInternal;
     DBusAdapterTester tester(adapter);
 
     ASSERT_EQ(adapter.init(), MblError::None);
     ASSERT_GE(tester.add_event_defer(event_loop_request_stop, &tester), 0);
     EXPECT_EQ(tester.event_loop_run(
-        stop_status, DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), 0);
+        stop_status, MblError::None), 0);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
@@ -179,7 +179,7 @@ static void *mbl_cloud_client_thread(void *adapter)
     assert(adapter);
     DBusAdapter *adapter_ = static_cast<DBusAdapter *>(adapter);
     MblError status;
-    DBusAdapterStopStatus stop_status;
+    MblError stop_status;
 
     status = adapter_->init();
     if (status != MblError::None)
@@ -196,7 +196,7 @@ static void *mbl_cloud_client_thread(void *adapter)
     {
         pthread_exit((void *)status);
     }
-    if (stop_status != DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR)
+    if (stop_status != MblError::None)
     {
         pthread_exit((void *)MblError::DBusErr_Temporary);
     }
@@ -225,7 +225,7 @@ TEST(DBusAdapeter_c, run_stop_with_external_exit_msg)
     {
         ASSERT_EQ(pthread_create(&tid, NULL, mbl_cloud_client_thread, &adapter), 0);
         ASSERT_EQ(sem_wait(&s_sem), 0);
-        ASSERT_EQ(adapter.stop(DBusAdapterStopStatus::DBUS_ADAPTER_STOP_STATUS_NO_ERROR), MblError::None);
+        ASSERT_EQ(adapter.stop(MblError::None), MblError::None);
         ASSERT_EQ(pthread_join(tid, &retval), 0);
         ASSERT_EQ((uintptr_t)retval, MblError::None);
     }
@@ -254,7 +254,7 @@ TEST(DBusAdapeter_c, ValidateServiceExist)
 }
 
 int main(int argc, char **argv)
-{
+{    
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

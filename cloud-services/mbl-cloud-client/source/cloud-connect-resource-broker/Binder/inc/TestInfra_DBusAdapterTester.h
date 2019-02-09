@@ -20,8 +20,8 @@ class DBusAdapterTester
     DBusAdapterTester(DBusAdapter &adapter) : adapter_(adapter) {};
 
     MblError validate_deinitialized_adapter();
-    MblError event_loop_request_stop(DBusAdapterStopStatus stop_status);
-    MblError event_loop_run(DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status);
+    MblError event_loop_request_stop(MblError stop_status);
+    MblError event_loop_run(MblError &stop_status, MblError expected_stop_status);
     sd_event *get_event_loop_handle();
 
     //use this call only if calling thread is the one to initialize the adapter!

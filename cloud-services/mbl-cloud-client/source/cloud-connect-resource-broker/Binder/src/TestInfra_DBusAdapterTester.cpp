@@ -26,14 +26,14 @@ MblError DBusAdapterTester::validate_deinitialized_adapter()
     return MblError::None;
 }
 
-MblError DBusAdapterTester::event_loop_request_stop(DBusAdapterStopStatus stop_status)
+MblError DBusAdapterTester::event_loop_request_stop(MblError stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_request_stop(stop_status), MblError::None);
     return MblError::None;
 }
 
 MblError DBusAdapterTester::event_loop_run(
-    DBusAdapterStopStatus &stop_status, DBusAdapterStopStatus expected_stop_status)
+    MblError &stop_status, MblError expected_stop_status)
 {
     TESTER_VALIDATE_EQ(adapter_.impl_->event_loop_run(stop_status), MblError::None);
     TESTER_VALIDATE_EQ(stop_status, expected_stop_status);

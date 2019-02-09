@@ -41,7 +41,7 @@ struct DBusMailboxMsg
 
     typedef struct Msg_exit_ 
     {
-        DBusAdapterStopStatus     stop_status;
+        MblError     stop_status;
     }Msg_exit_;
 
     // Keep this enumerator

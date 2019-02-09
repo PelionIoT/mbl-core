@@ -63,6 +63,17 @@ enum Type {
     NotInitialized                      = 0x0301,
     DBusErr_Temporary                   = 0x0302,
 
+/*
+    This Error is used in low level sd-event loop
+    In order not to conflict with Linux error codes, start it from 0x3E0
+    For more details :
+    http://www-numi.fnal.gov/offline_software/srt_public_context/WebDocs/Errors/unix_system_errors.html
+    https://www.freedesktop.org/software/systemd/man/sd_event_loop.html#
+    https://www.freedesktop.org/software/systemd/man/sd_event_exit.html#
+*/
+
+    DBusStopStatusErrorInternal         = 0x03E1, //temporary - give better codes
+
     EnrollmentErrorBase                 = 0x0400,
     EnrollmentErrorEnd                  = 0x0401
 

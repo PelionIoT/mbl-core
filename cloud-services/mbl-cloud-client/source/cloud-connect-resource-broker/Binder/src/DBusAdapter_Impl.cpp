@@ -177,7 +177,7 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_deinit()
 }
 
 
-MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(DBusAdapterStopStatus stop_status) 
+MblError DBusAdapter::DBusAdapterImpl::event_loop_request_stop(MblError stop_status) 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     int r;
@@ -456,7 +456,7 @@ MblError DBusAdapter::DBusAdapterImpl::deinit()
 }
 
 
-MblError DBusAdapter::DBusAdapterImpl::event_loop_run(DBusAdapterStopStatus &stop_status) 
+MblError DBusAdapter::DBusAdapterImpl::event_loop_run(MblError &stop_status) 
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -469,13 +469,13 @@ MblError DBusAdapter::DBusAdapterImpl::event_loop_run(DBusAdapterStopStatus &sto
     sd_event_loop() returns the exit code specified when invoking sd_event_exit()
     */
     state_ = State::RUNNING;
-    stop_status = (DBusAdapterStopStatus)sd_event_loop(event_loop_handle_);
+    stop_status = (MblError)sd_event_loop(event_loop_handle_);
     state_ = State::INITALIZED;
     return MblError::None;
 }
 
 
-MblError DBusAdapter::DBusAdapterImpl::run(DBusAdapterStopStatus &stop_status)
+MblError DBusAdapter::DBusAdapterImpl::run(MblError &stop_status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     MblError status;
@@ -487,7 +487,7 @@ MblError DBusAdapter::DBusAdapterImpl::run(DBusAdapterStopStatus &stop_status)
         
     status = event_loop_run(stop_status);    
     if (status != MblError::None){
-        event_loop_request_stop(DBUS_ADAPTER_STOP_STATUS_INTERNAL_ERROR);
+        event_loop_request_stop(MblError::DBusStopStatusErrorInternal);
         return status;
     }
     state_ = State::INITALIZED;
@@ -496,7 +496,7 @@ MblError DBusAdapter::DBusAdapterImpl::run(DBusAdapterStopStatus &stop_status)
 }
 
 
-MblError DBusAdapter::DBusAdapterImpl::stop(DBusAdapterStopStatus stop_status)
+MblError DBusAdapter::DBusAdapterImpl::stop(MblError stop_status)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     MblError status;
