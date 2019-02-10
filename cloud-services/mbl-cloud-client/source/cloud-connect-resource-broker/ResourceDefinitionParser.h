@@ -75,6 +75,8 @@ In the above examples:
 "111" - Resource Name
 
 Notes:
+* JSON should be strictly compatible with the JSON specification 
+*   (e.g. the following are NOT allowed: Comments, duplicated keys, numeric keys, use of single quates)
 * Each Object must have at least one Object Instance with different ids
 * Each Object Instance must have at least one Resource with different names.
 * Object Instance Id should be a number smaller than UINT16_MAX

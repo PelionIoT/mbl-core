@@ -136,7 +136,6 @@ RBM2MObjectInstance::~RBM2MObjectInstance()
         delete resource;
     }
     rbm2m_resource_map_.clear();
-
 }
 
 void RBM2MObjectInstance::set_m2m__object_instance(M2MObjectInstance* m2m_object_instance)

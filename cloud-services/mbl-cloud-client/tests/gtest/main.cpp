@@ -21,6 +21,8 @@ int main(int argc, char **argv) {
         printf("Error init Cloud Client log: %s", MblError_to_str(retval));
     }
 
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
     // Make sure that trace level is debug as we want as much information posibble when running tests
     // in case error occured. This ovvirides mbl-cloud-client default trace level.
     mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
