@@ -17,6 +17,7 @@
 #include "MailboxMsg.h"
 #include "DBusService.h"
 #include "TestInfra_DBusAdapterTester.h"
+#include "EventManager.h"
 #include "SelfEvent.h"
 
 #include "TestInfraAppThread.h"
@@ -259,6 +260,12 @@ static MblError selfevent_test_callback(const SelfEvent *ev)
 {    
     const SelfEvent::EventData &event_data = ev->get_data();
     MblError result = MblError::None;
+    static uint64_t expected_id = 1;
+
+    if (expected_id != ev->get_id()){
+        return result = MblError::DBusErr_Temporary;
+    }
+    ++expected_id;
    
     for (auto i = 0; i < sizeof(event_data.raw.bytes); i++){
         if (event_data.raw.bytes[i] != i*2){
@@ -276,23 +283,28 @@ static MblError selfevent_test_callback(const SelfEvent *ev)
     return result;
 }
 
+
 TEST(SelfEvent, basic_no_adapter)
 {
     SelfEvent::EventData event_data = { 0 };
-    sd_event *e = nullptr;
-        
+    uint64_t my_event_id = 0;
+    
     for (auto i = 0; i < sizeof(event_data.raw.bytes); i++){
         event_data.raw.bytes[i] = i*2;
     }
-    ASSERT_GE(sd_event_default(&e) , 0);
-    std::unique_ptr<SelfEvent> ev(new SelfEvent(
-        event_data, 
-        SelfEvent::DataType::RAW, 
-        "0 to 198 in jumps of 2",
-        selfevent_test_callback));
-    ASSERT_EQ(ev->send(), MblError::None);
-    ASSERT_EQ(sd_event_loop(e), MblError::None);
-    sd_event_unref(e);
+
+    for (auto i = 0; i < 1000; i++){
+        sd_event *e = nullptr;
+        ASSERT_GE(sd_event_default(&e) , 0);
+        EventManager::send_event_immediate(
+            event_data, 
+            SelfEvent::DataType::RAW,
+            "0 to 198 in jumps of 2",
+            selfevent_test_callback,
+            my_event_id);
+        ASSERT_EQ(sd_event_loop(e), MblError::None);
+        sd_event_unref(e);
+    }
 }
 
 int main(int argc, char **argv)

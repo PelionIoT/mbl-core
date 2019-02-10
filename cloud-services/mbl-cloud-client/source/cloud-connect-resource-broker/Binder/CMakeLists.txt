@@ -25,6 +25,7 @@ add_executable(runTests
 
     ${CMAKE_SOURCE_DIR}/src/Mailbox.cpp
     ${CMAKE_SOURCE_DIR}/src/SelfEvent.cpp      
+    ${CMAKE_SOURCE_DIR}/src/EventManager.cpp
     ${CMAKE_SOURCE_DIR}/src/DBusService.c
     )
     

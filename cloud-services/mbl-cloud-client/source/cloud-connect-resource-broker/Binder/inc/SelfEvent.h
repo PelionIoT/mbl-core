@@ -11,6 +11,8 @@
 #include <string>
 #include <functional>
 #include <chrono>
+#include <memory>
+#include <map>
 
 #include <systemd/sd-event.h>
 
@@ -18,14 +20,13 @@
 
 namespace mbl {
 
+#define MAX_SIZE_EVENT_DATA_RAW  100
 typedef std::function<MblError(const class SelfEvent*)> SelfEventCallback;
 
-
 class SelfEvent
-{
+{    
+friend class EventManager;
 public:
-    static const int MAX_SIZE_EVENT_DATA_RAW  = 100;    
-
     typedef union DataType_ {
         //use this struct when data_type == DataType::RAW
         struct EventData_Raw {
@@ -38,13 +39,7 @@ public:
         RAW = 1,
     };
 
-    SelfEvent(EventData data, DataType data_type, const std::string& description, SelfEventCallback callback);
-    SelfEvent(EventData data, DataType data_type, const char* description, SelfEventCallback callback);
     ~SelfEvent();
-
-    MblError                    send();
-    int                         on_fire();
-
     const EventData&            get_data() const { return data_; }
     uint64_t                    get_id() const{ return id_; }
     DataType                    get_data_type() const{ return data_type_; };
@@ -68,20 +63,29 @@ protected:
     sd_event *                      event_loop_handle_;
 
 private:
-    static uint64_t     next_event_id_;
-
+    // Only EventManager creates objects
+    SelfEvent(EventData &data, DataType data_type, const std::string& description, SelfEventCallback callback);
+    SelfEvent(EventData &data, DataType data_type, const char* description, SelfEventCallback callback);    
     SelfEvent() = delete;
+    
     SelfEvent(const SelfEvent&) = delete;
     SelfEvent & operator = (const SelfEvent&) = delete;
     SelfEvent(SelfEvent&&) = delete;
     SelfEvent& operator = (SelfEvent&&) = delete; 
 };
 
-//class SelfEventDelayed : public SelfEvent
+
+//TODO - implement a periodic event later as needed (using event loop timer source support)
+//class SelfEventPeriodic : public SelfEvent
 //{
 
 //}
 
+//TODO - implement a delayed event later as needed (using event loop timer source support)
+//class SelfEventDelayed : public SelfEvent
+//{
+
+//}
 
 } // namespace mbl {
 

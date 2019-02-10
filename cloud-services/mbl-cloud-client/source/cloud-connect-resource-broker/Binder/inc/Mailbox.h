@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _DBusAdapterMailbox_h_
-#define _DBusAdapterMailbox_h_
+#ifndef _Mailbox_h_
+#define _Mailbox_h_
 
 #include <poll.h>
 #include <inttypes.h>
@@ -45,4 +45,4 @@ private:
 
 
 }//namespace mbl
-#endif // _DBusAdapterMailbox_h_
+#endif // _Mailbox_h_
