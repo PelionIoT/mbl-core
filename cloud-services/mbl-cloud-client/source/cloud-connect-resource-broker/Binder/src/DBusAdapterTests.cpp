@@ -6,6 +6,7 @@
 
 #include <semaphore.h>
 #include <pthread.h>
+#include <memory>
 
 #include <gtest/gtest.h>
 
@@ -16,6 +17,7 @@
 #include "MailboxMsg.h"
 #include "DBusService.h"
 #include "TestInfra_DBusAdapterTester.h"
+#include "SelfEvent.h"
 
 #include "TestInfraAppThread.h"
 #include "TestInfraCommon.h"
@@ -251,6 +253,46 @@ TEST(DBusAdapeter_c, ValidateServiceExist)
     ASSERT_EQ(app_thread.join(&retval), 0);
     ASSERT_EQ((uintptr_t)retval, -EEXIST);
     ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
+static MblError selfevent_test_callback(const SelfEvent *ev)
+{    
+    const SelfEvent::EventData &event_data = ev->get_data();
+    MblError result = MblError::None;
+   
+    for (auto i = 0; i < sizeof(event_data.raw.bytes); i++){
+        if (event_data.raw.bytes[i] != i*2){
+            result = MblError::DBusErr_Temporary;
+            break;
+        }
+    }
+    int r = sd_event_exit(ev->get_event_loop_handle(), (int)result);
+    if (r < 0){
+        if (result != MblError::None){
+            result = MblError::DBusErr_Temporary;      
+        }    
+    }
+
+    return result;
+}
+
+TEST(SelfEvent, basic_no_adapter)
+{
+    SelfEvent::EventData event_data = { 0 };
+    sd_event *e = nullptr;
+        
+    for (auto i = 0; i < sizeof(event_data.raw.bytes); i++){
+        event_data.raw.bytes[i] = i*2;
+    }
+    ASSERT_GE(sd_event_default(&e) , 0);
+    std::unique_ptr<SelfEvent> ev(new SelfEvent(
+        event_data, 
+        SelfEvent::DataType::RAW, 
+        "0 to 198 in jumps of 2",
+        selfevent_test_callback));
+    ASSERT_EQ(ev->send(), MblError::None);
+    ASSERT_EQ(sd_event_loop(e), MblError::None);
+    sd_event_unref(e);
 }
 
 int main(int argc, char **argv)
