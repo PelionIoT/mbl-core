@@ -30,15 +30,12 @@ Install all required libraries.
 - Download mbed-cloud-client repository to the `mbl-core/cloud-services/mbl-cloud-client/`. Pay attention, `mbed-cloud-client` release version should be the same as specified in this [README.md][mbl-cloud-client-README.md].
 - Copy `mbed_cloud_dev_credentials.c` and `update_default_resources.c` into the `mbl-core/cloud-services/mbl-cloud-client/` folder.
 
-## Run the following commands 
+## Configure PAL
 - `cd cloud-services/mbl-cloud-client/`
-
 - `python pal-platform/pal-platform.py deploy --target=x86_x64_NativeLinux_mbedtls generate`
 
+##  Generate makefiles
 - `cd __x86_x64_NativeLinux_mbedtls`
-
-In the folder `__x86_x64_NativeLinux_mbedtls` run:
-
 - `cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake -DEXTARNAL_DEFINE_FILE=./../define.txt -DCODE_CHECK_MODE=ON`
 
 The following command generates makefiles with the corresponding rules for clang-tidy and clang-format running.
@@ -47,22 +44,22 @@ The following command generates makefiles with the corresponding rules for clang
 # Run
 Run the following commands from the `__x86_x64_NativeLinux_mbedtls` folder.
 
-## Running tools on mbl-cloud-client and gtest sources
-### run clang-format in a code formatter mode
+## Running tools on mbl-cloud-client
+### Run clang-format in a code formatter mode
 `make clang-format`
 - The tool will change the content of the files. Changes can be reviewed by running `git diff`.
-### clang-tidy
+### Run clang-tidy
 `make clang-tidy`
 - The tool will print warnings and recomendations on the code quality to the stdout. Suggested changes can be viewed in `mbl-core/cloud-services/mbl-cloud-client/code-checkers/clang-tidy-suggested-fixes.txt` file.
 
 ## Running tools on the specific source file(s)
-### clang-format in a code checker mode
+### Run clang-format in a code checker mode
 `clang-format -style=file /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
 - The tool will print file(s) content after the suggested changes being applied to the stdout.
-### run clang-format in a code formatter mode
+### Run clang-format in a code formatter mode
 `clang-format -i -style=file /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
-- The tool will change the content of the file. Changes can be reviewed by running `git diff`.
-### clang-tidy
+- The tool will change the content of the file(s). Changes can be reviewed by running `git diff`.
+### Run clang-tidy
 `clang-tidy -p=. -export-fixes=./clang-tidy-suggested-fixes.txt -checks=-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
 - The tool will print warnings and recomendations on the code quality to the stdout. Suggested changes can be viewed in `mbl-core/cloud-services/mbl-cloud-client/code-checkers/clang-tidy-suggested-fixes.txt` file.
 
