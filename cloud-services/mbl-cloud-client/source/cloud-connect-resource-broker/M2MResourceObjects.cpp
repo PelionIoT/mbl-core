@@ -31,17 +31,17 @@ RBM2MResource::RBM2MResource(
     bool multiple_instances,
     M2MBase::Operation operation,
     bool observable,
-    const std::string &resource_type,
+    std::string resource_type,
     M2MResourceBase::ResourceType type,
-    const std::string &value)
+    std::string value)
 : resource_name_(std::move(resource_name)), 
 mode_(mode),
 multiple_instances_(multiple_instances),
 operation_(operation),
 observable_(observable),
-resource_type_(resource_type),
+resource_type_(std::move(resource_type)),
 type_(type),
-value_(value),
+value_(std::move(value)),
 m2m_resource_(nullptr)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);

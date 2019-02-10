@@ -121,9 +121,9 @@ private:
         bool multiple_instances,
         M2MBase::Operation operation,
         bool observable,
-        const std::string &resource_type,
+        std::string resource_type,
         M2MResourceBase::ResourceType type,
-        const std::string &value);
+        std::string value);
     ~RBM2MResource();
 
     std::string resource_name_;
