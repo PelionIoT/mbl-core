@@ -45,7 +45,6 @@ add_compile_options(-Wcast-qual)
 add_compile_options(-Wcast-align)
 add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
-add_compile_options(-Wlogical-op)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source)
 
@@ -67,6 +66,26 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
 )
+
+option(CODE_CHECK_MODE "Code check cmake mode" OFF)
+if(CODE_CHECK_MODE)
+
+  # generate compilation comands database that will be used by clang-tidy code checker
+  set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+  
+  # CODE_CHECK_SRC variable will be used in code-checkers/code-check.cmake
+  set(CODE_CHECK_SRC ${MBL_CLOUD_CLIENT_SRC})
+
+  include(${CMAKE_CURRENT_SOURCE_DIR}/code-checkers/code-check.cmake)
+
+else(CODE_CHECK_MODE)
+  # -Wlogical-op GCC compilation flag causes error when clang-tidy uses compilation commands list,
+  #              so we add this option only clang-tid is not used 
+  add_compile_options(-Wlogical-op)
+
+endif(CODE_CHECK_MODE)
+unset(CODE_CHECK_MODE CACHE)
+
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
