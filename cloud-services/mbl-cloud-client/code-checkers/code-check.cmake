@@ -11,9 +11,6 @@ endif()
 
 message("Run code check on file list \n ${CODE_CHECK_SRC}")
 
-# generate compilation comands database that will be used by clang-tidy code checker
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 # include directories required for clang-tidy code checker
 include_directories(${MBED_CLOUD_CLIENT_DIR})
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-client/mbed-client-c)
