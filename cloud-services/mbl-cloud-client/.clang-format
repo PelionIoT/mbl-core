@@ -1,0 +1,46 @@
+# Based on: .clang-format
+# In open-source project: 
+# 
+# Original file: Copyright (c) 2015 Microsoft Corporation. All rights reserved. 
+# Modifications: Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+# 
+# SPDX-License-Identifier: MIT
+#
+# Full clang-format configuration file options listed on this page: 
+# http://releases.llvm.org/5.0.0/tools/clang/docs/ClangFormatStyleOptions.html
+#
+# Graphical tool for clang-format configuration file:
+# https://zed0.co.uk/clang-format-configurator/
+
+ColumnLimit: 100
+
+UseTab: Never
+IndentWidth: 4
+AccessModifierOffset: -4
+NamespaceIndentation: Inner
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterNamespace: true
+  AfterEnum: true
+  AfterStruct: true
+  AfterClass: true
+  AfterControlStatement: true
+  AfterFunction: true
+  AfterUnion: true
+  BeforeElse: true
+
+AlwaysBreakTemplateDeclarations: true
+BreakConstructorInitializersBeforeComma: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+AllowShortBlocksOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+
+PointerAlignment: Left
+AlignConsecutiveAssignments: false
+AlignTrailingComments: true
+
+SpaceAfterCStyleCast: true
+CommentPragmas: '^ NO-FORMAT:'
