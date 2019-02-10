@@ -55,7 +55,9 @@
 			"dbusadaptermailbox.h": "c",
 			"dbusadapterservice.h": "c",
 			"thread": "cpp",
-			"condition_variable": "cpp"
+			"condition_variable": "cpp",
+			"cmath": "cpp",
+			"numeric": "cpp"
 		},
 		"editor.tokenColorCustomizations": {
 			"textMateRules": [

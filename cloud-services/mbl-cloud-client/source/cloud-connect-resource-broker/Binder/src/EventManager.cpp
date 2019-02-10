@@ -64,7 +64,7 @@ MblError EventManager::send_event_immediate(
         next_event_id_--;
         return MblError::DBusErr_Temporary;
     }
-    ev->id_ = next_event_id_;
+    ev->id_ = out_event_id = next_event_id_;
     events_[ev->event_source_handle_] = std::move(ev);
     return MblError::None;    
 }

@@ -67,10 +67,12 @@ MblError Mailbox::deinit()
     // usually each side closes its edge, but here we might make easier assumptions    
     r = close(pipefds_[0]);
     if (r != 0){
+        //there is not much you can do about errors on close()
         return MblError::DBusErr_Temporary;
     }    
     r = close(pipefds_[1]);
     if (r != 0){
+        //there is not much you can do about errors on close()
         return MblError::DBusErr_Temporary;
     }
     sequence_num_ = 0;

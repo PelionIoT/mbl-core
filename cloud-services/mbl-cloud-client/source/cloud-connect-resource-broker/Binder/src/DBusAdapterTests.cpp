@@ -7,6 +7,8 @@
 #include <semaphore.h>
 #include <pthread.h>
 #include <memory>
+#include <random>
+#include <stdlib.h>
 
 #include <gtest/gtest.h>
 
@@ -256,16 +258,10 @@ TEST(DBusAdapeter_c, ValidateServiceExist)
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
-static MblError selfevent_test_callback(const SelfEvent *ev)
+static MblError SelfEvent_basic_no_adapter_cb(const SelfEvent *ev)
 {    
     const SelfEvent::EventData &event_data = ev->get_data();
     MblError result = MblError::None;
-    static uint64_t expected_id = 1;
-
-    if (expected_id != ev->get_id()){
-        return result = MblError::DBusErr_Temporary;
-    }
-    ++expected_id;
    
     for (auto i = 0; i < sizeof(event_data.raw.bytes); i++){
         if (event_data.raw.bytes[i] != i*2){
@@ -275,14 +271,13 @@ static MblError selfevent_test_callback(const SelfEvent *ev)
     }
     int r = sd_event_exit(ev->get_event_loop_handle(), (int)result);
     if (r < 0){
-        if (result != MblError::None){
+        if (result == MblError::None){
             result = MblError::DBusErr_Temporary;      
         }    
     }
 
     return result;
 }
-
 
 TEST(SelfEvent, basic_no_adapter)
 {
@@ -293,19 +288,103 @@ TEST(SelfEvent, basic_no_adapter)
         event_data.raw.bytes[i] = i*2;
     }
 
-    for (auto i = 0; i < 1000; i++){
+    for (auto i = 0; i < 100; i++){
         sd_event *e = nullptr;
         ASSERT_GE(sd_event_default(&e) , 0);
         EventManager::send_event_immediate(
             event_data, 
             SelfEvent::DataType::RAW,
             "0 to 198 in jumps of 2",
-            selfevent_test_callback,
+            SelfEvent_basic_no_adapter_cb,
             my_event_id);
         ASSERT_EQ(sd_event_loop(e), MblError::None);
         sd_event_unref(e);
     }
 }
+
+class SelfEventTest : public ::testing::Test {
+public:
+    static const int32_t NUM_ITERATIONS = 100;
+    
+    void SetUp() override 
+    {
+        int num;
+        random_numbers_.empty();
+        callback_count_ = 1;
+
+        for (auto j = 0 ; j < NUM_ITERATIONS; ++j){
+            int n = rand();
+           
+            //check not repeating
+            auto iter = random_numbers_.find(n);
+            if (iter == random_numbers_.end()){
+                 random_numbers_.insert(n);
+            }
+            else {
+                j--;
+                continue;            
+            } 
+        }
+    }
+    static std::set< int > random_numbers_;
+    static uint64_t callback_count_;   
+};
+std::set< int > SelfEventTest::random_numbers_;
+uint64_t SelfEventTest::callback_count_ = 1;
+
+
+static MblError  SelfEventTest_with_adapter_cb(const SelfEvent *ev)
+{    
+    const SelfEvent::EventData &event_data = ev->get_data();
+    MblError result = MblError::None;       
+    int n;
+
+    memcpy(&n, event_data.raw.bytes, sizeof(n));
+    auto iter = SelfEventTest::random_numbers_.find(n);
+    if (iter == SelfEventTest::random_numbers_.end()){
+        sd_event_exit(ev->get_event_loop_handle(), (int)MblError::DBusErr_Temporary);
+        return MblError::DBusErr_Temporary; 
+    }
+    SelfEventTest::random_numbers_.erase(iter);
+    if (SelfEventTest::callback_count_ == SelfEventTest::NUM_ITERATIONS){
+        if (SelfEventTest::random_numbers_.size() > 0){
+            return MblError::DBusErr_Temporary;
+        }
+        int r = sd_event_exit(ev->get_event_loop_handle(), (int)result);
+        if (r < 0){
+            if (result != MblError::None){
+                return MblError::DBusErr_Temporary;      
+            }    
+        }
+    }
+    ++SelfEventTest::callback_count_;
+
+    return result;
+}
+
+TEST_F(SelfEventTest, with_adapter)
+{
+    SelfEvent::EventData event_data = { 0 };
+    uint64_t my_event_id = 0;
+    DBusAdapter adapter;
+    MblError stop_status;
+
+    ASSERT_EQ(adapter.init(), MblError::None);
+
+    //send SelfEventTest::NUM_ITERATIONS events with random non-repeating integers, then start the loop
+    for (auto &n : SelfEventTest::random_numbers_){
+        memcpy(event_data.raw.bytes, &n, sizeof(n));
+        EventManager::send_event_immediate(
+            event_data, 
+            SelfEvent::DataType::RAW,
+            "",
+            SelfEventTest_with_adapter_cb,
+            my_event_id); 
+    }
+    ASSERT_EQ(adapter.run(stop_status), MblError::None);
+    ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
 
 int main(int argc, char **argv)
 {    

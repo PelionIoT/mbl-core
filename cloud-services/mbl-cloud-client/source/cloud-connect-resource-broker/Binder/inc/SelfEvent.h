@@ -27,7 +27,7 @@ class SelfEvent
 {    
 friend class EventManager;
 public:
-    typedef union DataType_ {
+    typedef union EventData_ {
         //use this struct when data_type == DataType::RAW
         struct EventData_Raw {
             uint8_t     bytes[MAX_SIZE_EVENT_DATA_RAW];
