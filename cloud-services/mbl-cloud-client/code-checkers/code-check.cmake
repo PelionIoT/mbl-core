@@ -5,8 +5,11 @@
 
 cmake_minimum_required (VERSION 2.8)
 
+# CODE_CHECK_SRC variable will be used in code-checkers/code-check.cmake
+set(CODE_CHECK_SRC ${MBL_CLOUD_CLIENT_SRC})
+
 if(NOT CODE_CHECK_SRC)
-  message(FATAL_ERROR "Source list for code checkers is empty! Abort.")
+  message(FATAL_ERROR "Source list for code checkers is empty! Abort. CODE_CHECK_SRC variable should be set by caller cmake.")
 endif()
 
 message("Run code check on file list \n ${CODE_CHECK_SRC}")
