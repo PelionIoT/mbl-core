@@ -14,7 +14,6 @@
 # limitations under the License.
 
 cmake_minimum_required (VERSION 2.8)
-project(code-check)
 
 if(NOT CODE_CHECK_SRC)
   message(FATAL_ERROR "Source list for code checkers is empty! Abort.")
@@ -59,6 +58,11 @@ endif()
 # Important additonal values are: 
 # *                  Enable all possible checks
 # -*                 Remove all checks\
+#
+# Currently, we disable [cppcoreguidelines-pro-type-vararg] and 
+# [cppcoreguidelines-pro-bounds-array-to-pointer-decay] to avoid 
+# bunches of warnings on c functions that uses VARGS lists
+# (like assert()) and logging functions. 
 set(CLANG_TIDY_CHECKS "-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay")
 
 add_custom_target(
