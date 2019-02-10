@@ -48,21 +48,21 @@ The following command generates makefiles with the corresponding rules for clang
 Run the following commands from the `__x86_x64_NativeLinux_mbedtls` folder.
 
 ## Running tools on mbl-cloud-client and gtest sources
-### run clang-format in a code formatter mode
+### Run clang-format in a code formatter mode
 `make clang-format`
 - The tool will change the content of the files. Changes can be reviewed by running `git diff`.
-### clang-tidy
+### Run clang-tidy
 `make clang-tidy`
 - The tool will print warnings and recomendations on the code quality to the stdout. Suggested changes can be viewed in `mbl-core/cloud-services/mbl-cloud-client/code-checkers/clang-tidy-suggested-fixes.txt` file.
 
 ## Running tools on the specific source file(s)
-### clang-format in a code checker mode
+### Run clang-format in a code checker mode
 `clang-format -style=file /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
 - The tool will print file(s) content after the suggested changes being applied to the stdout.
-### run clang-format in a code formatter mode
+### Run clang-format in a code formatter mode
 `clang-format -i -style=file /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
 - The tool will change the content of the file. Changes can be reviewed by running `git diff`.
-### clang-tidy
+### Run clang-tidy
 `clang-tidy -p=. -export-fixes=./clang-tidy-suggested-fixes.txt -checks=-*,bugprone-*,cert-*,cppcoreguidelines-*,clang-analyzer-*,modernize-*,performance-*,readability-*,-cppcoreguidelines-pro-type-vararg,-cppcoreguidelines-pro-bounds-array-to-pointer-decay /absolute_or_relative/path/to/sigle_c_cpp_file_or_file_list`
 - The tool will print warnings and recomendations on the code quality to the stdout. Suggested changes can be viewed in `mbl-core/cloud-services/mbl-cloud-client/code-checkers/clang-tidy-suggested-fixes.txt` file.
 
