@@ -21,9 +21,11 @@ DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 # find the existing bus address on the X display (X11) environment
 DISPLAY = "0"
 
-DEFAULT_DBUS_NAME = "mbl.app.test1"
-DBUS_OBJECT_PATH_APP_CONNECTIVITY1 = "/mbl/app/test1/AppConnectivity1"
-DBUS_STOP_SIGNAL = "mbl.app.test1.stop"
+APPLICATION_DBUS_NAME = "com.test.app.AppLifeCycle1"
+DBUS_OBJECT_PATH_APP_CONNECTIVITY = (
+    "/com/test/app/AppLifeCycle1/AppConnectivity1"
+)
+DBUS_STOP_SIGNAL = "com.test.Framework1"
 
 DBUS_SERVICE_PUBLISHING_TIME = 1
 DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES = 15
@@ -46,28 +48,29 @@ class TestAppConnectivity:
     """
     dbus = """
     <node>
-        <interface name="mbl.app.test1.stop">
-            <signal name="stop_signal">
+        <interface name="com.test.Framework1">
+            <signal name="stop_request_signal">
             </signal>
         </interface>
     </node>
     """
 
-    stop_signal = signal()
+    stop_request_signal = signal()
 
     def setup_method(self, method):
         """Set up any state specific to the execution of the given method."""
         print("Setup method TestAppConnectivity...")
 
-        # get the session bus
         os.environ["DISPLAY"] = DISPLAY
         os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_CLOUD_BUS_ADDRESS
+        # get the session bus
         self.bus = SessionBus()
+        # publish stop signal
         self.obj = self.bus.publish(DBUS_STOP_SIGNAL, self)
 
         command = ["mbl-app-lifecycle", "-v"]
         print("Executing command: {}".format(command))
-
+        # run the application
         self.proc = subprocess.Popen(command)
         print("Finish executing command: {}".format(command))
 
@@ -75,8 +78,8 @@ class TestAppConnectivity:
         for timeout in range(DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES):
             try:
                 self.app_connectivity_obj = self.bus.get(
-                    DEFAULT_DBUS_NAME,
-                    object_path=DBUS_OBJECT_PATH_APP_CONNECTIVITY1,
+                    APPLICATION_DBUS_NAME,
+                    object_path=DBUS_OBJECT_PATH_APP_CONNECTIVITY,
                 )
                 break
             except GLib.GError:
@@ -88,17 +91,16 @@ class TestAppConnectivity:
                 time.sleep(DBUS_SERVICE_PUBLISHING_TIME)
 
         assert self.app_connectivity_obj, "Couldn't get {} DBus obj".format(
-            DBUS_OBJECT_PATH_APP_CONNECTIVITY1
+            DBUS_OBJECT_PATH_APP_CONNECTIVITY
         )
         print("Setup method TestAppConnectivity end")
 
     def teardown_method(self, method):
         """Teardown method: stop the D-Bus main loop."""
         print("Teardown method TestAppConnectivity start...")
-
         print("Stopping mbl-app-lifecycle main loop")
         # send stop signal
-        self.stop_signal()
+        self.stop_request_signal()
 
         try:
             print("Waiting for App Pydbus process to terminate.")
@@ -117,6 +119,7 @@ class TestAppConnectivity:
                 "TimeoutExpired for process wait for termination, killing "
                 "mbl-app-lifecycle process"
             )
+            # timeout expired, kill the process
             self.proc.kill()
             out_app_lifecycle, err_app_lifecycle = self.proc.communicate()
             print(

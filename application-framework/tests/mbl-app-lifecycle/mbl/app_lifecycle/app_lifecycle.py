@@ -20,8 +20,8 @@ from gi.repository import GLib
 
 
 __version__ = "1.0"
-DBUS_STOP_SIGNAL_FILTER = "/mbl/app/test1/stop"
-DEFAULT_DBUS_NAME = "mbl.app.test1"
+DBUS_STOP_SIGNAL_FILTER = "/com/test/Framework1"
+APP_DBUS_NAME = "com.test.app"
 
 
 class ReturnCode(Enum):
@@ -35,8 +35,8 @@ class AppLifeCycle:
     """Application life cycle."""
 
     dbus = """
-<node name='/mbl/app/test1'>
-    <interface name='mbl.app.test1'>
+<node name='/com/test/app'>
+    <interface name='com.test.app.AppLifeCycle1'>
         <method name='GetPid'>
             <arg type='n' name='pid' direction='out'/>
         </method>
@@ -52,10 +52,17 @@ class AppLifeCycle:
         self.logger.info(
             "Creating AppLifeCycle version {}".format(__version__)
         )
+
+        # tuples of a path and a object to be published on bus. In order to
+        # publish methods on bus, the inheriting class should call AddToPublish()
+        # method and add path and a object touples to
+        # all_methods_for_publish_on_dbus. Relative or absolute paths could be
+        # used.
         self.all_methods_for_publish_on_dbus = []
 
     def AddToPublish(self, methods_for_publish_on_dbus):
         """Add object interfaces to the data to be published on D-Bus."""
+        # Append interfaces to the list of all interfaces that will be published.
         self.all_methods_for_publish_on_dbus.append(
             methods_for_publish_on_dbus
         )
@@ -67,16 +74,21 @@ class AppLifeCycle:
 
     def Run(self):
         """Run Main loop."""
-        self.logger.info("Connect D-Bus: {}".format(DEFAULT_DBUS_NAME))
-
+        self.logger.info("Connect the D-Bus bus")
+        # get Session bus.
         bus = SessionBus()
+
         self.logger.debug(
             "Publishing following interfaces on D-Bus: {}".format(
                 *(self.all_methods_for_publish_on_dbus)
             )
         )
+        # publish() method could be used only once per a bus name. Multiple
+        # objects are exported here by passing them in additional parameter
+        # all_methods_for_publish_on_dbus. This parameter is composed of tuples
+        # of a relative path and a object.
         self.obj = bus.publish(
-            DEFAULT_DBUS_NAME,
+            APP_DBUS_NAME + ".AppLifeCycle1",
             AppLifeCycle(),
             *(self.all_methods_for_publish_on_dbus)
         )
@@ -107,6 +119,7 @@ class AppLifeCycle:
     def StopSignal(self, *args):
         """Stop D-Bus main loop."""
         self.logger.info("Got stop signal, quitting the D-Bus main loop")
+        # Quit D-Bus bus main loop.
         AppLifeCycle.bus_main_loop.quit()
 
 
@@ -114,8 +127,8 @@ class AppConnectivity(AppLifeCycle):
     """Checks connectivity of caller to the application through the D-Bus."""
 
     dbus = """
-<node name='/mbl/app/test1/AppConnectivity1'>
-    <interface name='mbl.app.test1.AppConnectivity1'>
+<node name='/com/test/app/AppLifeCycle1/AppConnectivity1'>
+    <interface name='com.test.app.AppLifeCycle1.AppConnectivity1'>
         <method name='Hello'>
             <arg type='s' name='result' direction='out'/>
         </method>
@@ -131,9 +144,12 @@ class AppConnectivity(AppLifeCycle):
     def Run(self):
         """Publish methods on D-Bus and run D-Bus main loop."""
         self.logger.info("AppConnectivity Run")
+        # Add tuple of a path and a object to be published on bus. Publish
+        # is performed by the parent class.
         AppLifeCycle.AddToPublish(
             self, methods_for_publish_on_dbus=("AppConnectivity1", self)
         )
+        # Call publish() and run D-Bus bus main loop.
         AppLifeCycle.Run(self)
 
     def Hello(self):
