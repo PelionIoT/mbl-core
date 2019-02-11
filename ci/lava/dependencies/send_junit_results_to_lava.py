@@ -42,9 +42,9 @@ def CreateLavaOutputText(testcase):
     name = testcase.classname.split(".")[-1]
 
     if testcase.result is not None:
-        result = "FAIL"
+        result = "fail"
     else:
-        result = "PASS"
+        result = "pass"
 
     return "{}{}::{} {}{}{}".format(
         lava_signal, name, testcase.name, result_str, result, terminator
@@ -88,7 +88,7 @@ def main():
                 "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=",
                 "NoResultsFound",
                 "RESULT=",
-                "SKIP",
+                "skip",
                 ">",
             )
         )
