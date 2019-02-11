@@ -174,6 +174,19 @@ private:
         RBM2MObjectInstance * rbm2m_object_instance);
 
     /**
+     * @brief Parse resource operation from JSON value.
+     * Operation should appear in JSON array, each operation will set the corresponding bit mask.
+     * Later on this bit mask will be converted to M2MBase::Operation
+     * 
+     * @param resource - JSON value array of operations (e.g. "operations" : ["get", "put", "post", "delete"])
+     * @param operation_mask - Output bitmask of allowed operations.
+     * @return MblError -
+     *      Error::None - If function succeeded
+     *      Error::CCRBInvalidJson - I case of invalid operation found in the JSON (e..g unknown operation or no operation at all)
+     */
+    MblError parse_operation(Json::Value& resource, uint8_t *operation_mask);
+
+    /**
      * @brief Create M2MResource using M2MObjectInstance
      * @param m2m_object_instance - M2MObjectInstance used to create M2MResource
      * @param rbm2m_object_instance - RBM2MObjectInstance used to create RBM2MResource

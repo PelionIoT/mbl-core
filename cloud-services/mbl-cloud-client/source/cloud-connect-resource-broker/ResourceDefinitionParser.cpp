@@ -199,15 +199,53 @@ MblError ResourceDefinitionParser::create_resources(
     return Error::None;
 }
 
+MblError ResourceDefinitionParser::parse_operation(Json::Value& resource, uint8_t *operation_mask)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    *operation_mask = OP_MASK_NONE_ALLOWED;
+    if(!resource.isArray()) {
+        tr_error("%s - Invalid JSON. %s field is expeted to be an array.",
+            __PRETTY_FUNCTION__,
+            JSON_RESOURCE_OPERATIONS);
+        return Error::CCRBInvalidJson;
+    }
+
+    // In case of operation we are going to be less strict and allow several same entries
+    std::string resource_operation;
+    for (const auto& op : resource) {
+        if(!op.isString()) {
+            tr_error("%s - Invalid JSON. %s array entry not string element.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
+            return Error::CCRBInvalidJson;
+        }
+        resource_operation = op.asString().c_str();
+        if (resource_operation == JSON_RESOURCE_OPERATION_PUT) {
+            *operation_mask |= OP_MASK_PUT_ALLOWED;
+            tr_debug("%s, ", JSON_RESOURCE_OPERATION_PUT);
+        } else if (resource_operation == JSON_RESOURCE_OPERATION_GET) {
+            *operation_mask |= OP_MASK_GET_ALLOWED;
+            tr_debug("%s, ", JSON_RESOURCE_OPERATION_GET);
+        } else if (resource_operation == JSON_RESOURCE_OPERATION_POST) {
+            *operation_mask |= OP_MASK_POST_ALLOWED;
+            tr_debug("%s, ", JSON_RESOURCE_OPERATION_POST);
+        } else if (resource_operation == JSON_RESOURCE_OPERATION_DELETE) {
+            *operation_mask |= OP_MASK_DELETE_ALLOWED;
+            tr_debug("%s, ", JSON_RESOURCE_OPERATION_DELETE);
+        } else {
+            tr_error("%s - Invalid JSON. Unknown operation: %s.", __PRETTY_FUNCTION__, resource_operation.c_str());
+            return Error::CCRBInvalidJson;
+        }
+    }
+    return Error::None;
+}
+
 MblError ResourceDefinitionParser::parse_resource(
     const std::string &resource_name,
     Json::Value &json_value_resource,
     M2MObjectInstance* m2m_object_instance,
     RBM2MObjectInstance * rbm2m_object_instance)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    tr_debug("--------");
-    tr_debug("resource_name: %s", resource_name.c_str());
+    tr_debug("%s: resource_name: %s", __PRETTY_FUNCTION__, resource_name.c_str());
     //Leave the next debug line commented. Uncomment in case of heavy debuging
     //tr_debug("value: %s", json_value_resource.toStyledString().c_str());
 
@@ -221,7 +259,6 @@ MblError ResourceDefinitionParser::parse_resource(
     std::string resource_value;
     std::string resource_type;
     std::string resource_res_type;
-    std::string resource_operation;
     uint8_t operation_mask = OP_MASK_NONE_ALLOWED;
     bool found_res_multiple_instance = false;
     bool resource_multiple_instance = false;
@@ -261,35 +298,10 @@ MblError ResourceDefinitionParser::parse_resource(
             }
             tr_debug("type: %s", resource_type.c_str());
         } else if ( (operation_mask == OP_MASK_NONE_ALLOWED) && (res_name.asString() == JSON_RESOURCE_OPERATIONS) ) {
-            if(!res.isArray()) {
-                tr_error("%s - Invalid JSON. %s field is expeted to be an array.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
+            const MblError parse_op_status = parse_operation(res, &operation_mask);
+            if(Error::None != parse_op_status) {
+                tr_error("%s - Invalid JSON. Error parsing %s entry.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
                 return Error::CCRBInvalidJson;
-            }
-
-            tr_debug("Operations: ");
-            // In case of operation we are going to be less strict and allow several same entries
-            for (const auto& op : res) {
-                if(!op.isString()) {
-                    tr_error("%s - Invalid JSON. %s array entry not string element.", __PRETTY_FUNCTION__, JSON_RESOURCE_OPERATIONS);
-                    return Error::CCRBInvalidJson;
-                }
-                resource_operation = op.asString().c_str();
-                if (resource_operation == JSON_RESOURCE_OPERATION_PUT) {
-                    operation_mask |= OP_MASK_PUT_ALLOWED;
-                    tr_debug("%s, ", JSON_RESOURCE_OPERATION_PUT);
-                } else if (resource_operation == JSON_RESOURCE_OPERATION_GET) {
-                    operation_mask |= OP_MASK_GET_ALLOWED;
-                    tr_debug("%s, ", JSON_RESOURCE_OPERATION_GET);
-                } else if (resource_operation == JSON_RESOURCE_OPERATION_POST) {
-                    operation_mask |= OP_MASK_POST_ALLOWED;
-                    tr_debug("%s, ", JSON_RESOURCE_OPERATION_POST);
-                } else if (resource_operation == JSON_RESOURCE_OPERATION_DELETE) {
-                    operation_mask |= OP_MASK_DELETE_ALLOWED;
-                    tr_debug("%s, ", JSON_RESOURCE_OPERATION_DELETE);
-                } else {
-                    tr_error("%s - Invalid JSON. Unknown operation: %s.", __PRETTY_FUNCTION__, resource_operation.c_str());
-                    return Error::CCRBInvalidJson;
-                }
             }
         } else if (!found_res_multiple_instance && res_name.asString() == JSON_RESOURCE_MULTIPLE_INSTANCE){
             resource_multiple_instance = res.asBool(); // Will throw exception if not bool!
@@ -333,10 +345,7 @@ MblError ResourceDefinitionParser::parse_object_instance(
     M2MObject *m2m_object,
     RBM2MObject * rbm2m_object)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    tr_debug("--------");
-    tr_debug("object instance id: %d", object_instance_id);
+    tr_debug("%s: object instance id: %d", __PRETTY_FUNCTION__, object_instance_id);
 
     if(json_value_object_instance.empty()) {
         //Error: Invalid JSON, we support only JSONs with 3 levels (Obj/ObjInstance/Resource)
@@ -385,10 +394,7 @@ MblError ResourceDefinitionParser::parse_object(
     M2MObjectList &m2m_object_list,
     RBM2MObjectList &rbm2m_object_list)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    tr_debug("----------------");
-    tr_debug("object_name: %s", object_name.c_str());
+    tr_debug("%s: object_name: %s", __PRETTY_FUNCTION__, object_name.c_str());
 
     if(json_value_object.empty()) {
         //Error: Invalid JSON, we support only JSONs with 3 levels (Obj/Object Instance/Resource)
