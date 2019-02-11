@@ -75,7 +75,6 @@ MblError DBusAdapter::stop()
 
 MblError DBusAdapter::update_registration_status(
     const uintptr_t , 
-    const std::string &,
     const CloudConnectStatus )
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
