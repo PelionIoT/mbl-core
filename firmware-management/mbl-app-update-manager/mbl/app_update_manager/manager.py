@@ -67,8 +67,8 @@ class AppUpdateManager:
                 )
                 return True
         except tarfile.TarError as error:
-            msg = "Unarchiving package '{}' failed with error: {}".format(
-                self.update_pkg, error
+            msg = "Unarchiving package '{}' failed, error: {}".format(
+                self.update_pkg, str(error)
             )
             raise IllegalPackage(msg)
 
