@@ -74,8 +74,8 @@ MblError DBusAdapter::stop()
 
 
 MblError DBusAdapter::update_registration_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t /*unused*/, 
+    const CloudConnectStatus /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
@@ -83,8 +83,8 @@ MblError DBusAdapter::update_registration_status(
 }
 
 MblError DBusAdapter::update_deregistration_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t /*unused*/, 
+    const CloudConnectStatus /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
@@ -92,8 +92,8 @@ MblError DBusAdapter::update_deregistration_status(
 }
 
 MblError DBusAdapter::update_add_resource_instance_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t /*unused*/, 
+    const CloudConnectStatus /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
@@ -101,8 +101,8 @@ MblError DBusAdapter::update_add_resource_instance_status(
 }
 
 MblError DBusAdapter::update_remove_resource_instance_status(
-    const uintptr_t , 
-    const CloudConnectStatus )
+    const uintptr_t /*unused*/, 
+    const CloudConnectStatus /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
