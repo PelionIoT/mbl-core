@@ -15,8 +15,8 @@ import mbl.app_lifecycle_manager.manager as alm
 import mbl.app_lifecycle_manager.container as alc
 
 
-IPKS_EXCTRACTION_PATH = "/mnt/cache/opkg/src_ipk"
-APPS_INSTALLATION_PATH = "/home/app"
+IPKS_EXCTRACTION_PATH = os.path.join(os.sep, "mnt", "cache", "opkg", "src_ipk")
+APPS_INSTALLATION_PATH = os.path.join(os.sep, "home", "app")
 
 
 class AppUpdateManager:

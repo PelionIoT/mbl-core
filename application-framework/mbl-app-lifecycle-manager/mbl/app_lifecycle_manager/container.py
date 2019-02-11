@@ -12,7 +12,7 @@ from enum import Enum
 from .utils import log
 
 
-DEFAULT_CONTAINER_LOG_DIR = "/var/log/app"
+DEFAULT_CONTAINER_LOG_DIR = os.path.join(os.sep, "var", "log", "app")
 
 
 class ContainerState(Enum):
