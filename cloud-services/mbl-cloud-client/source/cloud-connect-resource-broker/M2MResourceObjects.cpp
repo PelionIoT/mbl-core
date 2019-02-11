@@ -190,7 +190,6 @@ RBM2MResource *RBM2MObjectInstance::create_resource(
         type,
         value);
     tr_debug("Created rbm2m resource: %s", resource_name.c_str());
-    //rbm2m_resource_map_.insert(std::make_pair(resource_name, resource));
     rbm2m_resource_map_[resource_name] = resource;
     return resource;
 }
@@ -250,7 +249,6 @@ RBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_instanc
 
     auto object_instance = new RBM2MObjectInstance(object_instance_id);
     tr_debug("Created rbm2m object instance: %d", object_instance_id);
-    //rbm2m_object_instance_map_.insert(std::make_pair(object_instance_id, object_instance));
     rbm2m_object_instance_map_[object_instance_id] = object_instance;
     return object_instance;
 }
@@ -305,7 +303,6 @@ RBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
 
     auto object = new RBM2MObject(object_name);
     tr_debug("Created rbm2m object: %s", object_name.c_str());
-    //rbm2m_object_map_.insert(std::make_pair(object_name, object));
     rbm2m_object_map_[object_name] = object;
     return object;
 }

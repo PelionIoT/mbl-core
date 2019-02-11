@@ -47,6 +47,14 @@
 #define OP_MASK_POST_ALLOWED        4
 #define OP_MASK_DELETE_ALLOWED      8
 
+namespace mbl {
+
+/**
+ * @brief OPeration map is used to map bitmask operation with the corresponding
+ * M2MBase::Operation value. When parsing JSON, the operation are written in an array
+ * and for each operation we set the corresponding masp using or operator. Using this 
+ * map the right M2MBase::Operation is returned. * 
+ */
 static std::map<uint8_t, M2MBase::Operation> operation_map = {
     {OP_MASK_NONE_ALLOWED,
         M2MBase::NOT_ALLOWED},                      //0
@@ -81,8 +89,6 @@ static std::map<uint8_t, M2MBase::Operation> operation_map = {
     {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED| OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
         M2MBase::GET_PUT_POST_DELETE_ALLOWED},      //15
 };
-
-namespace mbl {
 
 // Helper functions:
 static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string &resource_type)
