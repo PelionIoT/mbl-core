@@ -9,7 +9,6 @@
 #include "mbed-trace/mbed_trace.h"
 #include "MblError.h"
 
-using namespace mbl;
 #define TRACE_GROUP "ccrb-gtest"
 
 int main(int argc, char **argv) {
@@ -17,9 +16,9 @@ int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
 
     // Init Cloud Client log
-    MblError retval = log_init();
-    if(Error::None != retval){
-        printf("Error init Cloud Client log: %s", MblError_to_str(retval));
+    mbl::MblError retval = mbl::log_init();
+    if(mbl::Error::None != retval){
+        printf("Error init Cloud Client log: %s", mbl::MblError_to_str(retval));
     }
 
     tr_debug("%s", __PRETTY_FUNCTION__);

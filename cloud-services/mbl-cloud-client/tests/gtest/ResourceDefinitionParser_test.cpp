@@ -21,7 +21,6 @@
 #include "mbed-trace/mbed_trace.h"
 #include "cloud-connect-resource-broker/ResourceDefinitionParser.h"
 
-using namespace mbl;
 #define TRACE_GROUP "ccrb-resdefparser-test"
 
 /**
@@ -36,7 +35,7 @@ using namespace mbl;
  * @return true  - if M2MResource and RBM2MResource contain are equal (in term of values)
  * @return false - if M2MResource and RBM2MResource contain are NOT equal (in term of values)
  */
-static void check_equal_resources(M2MResource *m2m_resource, RBM2MResource *rbm2m_resource, bool ignore_m2m_objects_compare)
+static void check_equal_resources(M2MResource *m2m_resource, mbl::RBM2MResource *rbm2m_resource, bool ignore_m2m_objects_compare)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -98,7 +97,7 @@ static void check_equal_resources(M2MResource *m2m_resource, RBM2MResource *rbm2
  * @return true  - if M2MObjectInstance and RBM2MObjectInstance contain are equal (in term of values)
  * @return false - if M2MObjectInstance and RBM2MObjectInstance contain are NOT equal (in term of values)
  */
-static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, RBM2MObjectInstance *rbm2m_object_instance, bool ignore_m2m_objects_compare)
+static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, mbl::RBM2MObjectInstance *rbm2m_object_instance, bool ignore_m2m_objects_compare)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -113,7 +112,7 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
 
     // Iterate all resources
     M2MResource *m2m_resource = nullptr;
-    RBM2MResource *rbm2m_resource = nullptr;
+    mbl::RBM2MResource *rbm2m_resource = nullptr;
     for(auto& itr : rbm2m_object_instance->get_resource_map())
     {
         std::string rbm2m_resource_name = itr.first;
@@ -138,7 +137,7 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
  * @return true  - if M2MObject and RBM2MObject contain are equal (in term of values)
  * @return false - if M2MObject and RBM2MObject contain are NOT equal (in term of values)
  */
-static void CheckEqualObject(M2MObject* m2m_object, RBM2MObject *rbm2m_object, bool ignore_m2m_objects_compare)
+static void CheckEqualObject(M2MObject* m2m_object, mbl::RBM2MObject *rbm2m_object, bool ignore_m2m_objects_compare)
 {
     // Compare number of object instances under each object
     ASSERT_TRUE(m2m_object->instance_count() == rbm2m_object->get_object_instance_map().size());
@@ -151,7 +150,7 @@ static void CheckEqualObject(M2MObject* m2m_object, RBM2MObject *rbm2m_object, b
 
     // Iterate all object instances
     M2MObjectInstance* m2m_object_instance = nullptr;
-    RBM2MObjectInstance* rbm2m_object_instance = nullptr;
+    mbl::RBM2MObjectInstance* rbm2m_object_instance = nullptr;
     for(auto& itr : rbm2m_object->get_object_instance_map())
     {
         uint16_t rbm2m_object_instance_id = itr.first;
@@ -172,7 +171,7 @@ static void CheckEqualObject(M2MObject* m2m_object, RBM2MObject *rbm2m_object, b
  * @return true  - if M2MObjectList and RBM2MObjectList contain are equal (in term of values)
  * @return false - if M2MObjectList and RBM2MObjectList contain are NOT equal (in term of values)
  */
-static void check_equal_object_lists(const M2MObjectList &m2m_object_list, RBM2MObjectList &rbm2m_object_list, bool ignore_m2m_objects_compare)
+static void check_equal_object_lists(const M2MObjectList &m2m_object_list, mbl::RBM2MObjectList &rbm2m_object_list, bool ignore_m2m_objects_compare)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -181,7 +180,7 @@ static void check_equal_object_lists(const M2MObjectList &m2m_object_list, RBM2M
 
     // Iterate all Objects
     M2MObject *m2m_object = nullptr;
-    RBM2MObject *rbm2m_object = nullptr;
+    mbl::RBM2MObject *rbm2m_object = nullptr;
     for(auto& itr : m2m_object_list)
     {
         m2m_object = itr;
@@ -200,17 +199,17 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
+    mbl::RBM2MObjectList rbm2m_object_list;
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "112" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } }, "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 999 , "operations" : ["get"], "multiple_instance" : true} }, "22" : { "221" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post","put"], "multiple_instance" : true, "observable" : true } } } })";
-    ResourceDefinitionParser resource_parser;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::None);
 
     // RBM2MObjectList (contains object_1 and object_2)
-    RBM2MObjectList rbm2m_object_list_test;
+    mbl::RBM2MObjectList rbm2m_object_list_test;
     // Object 1
-    RBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
+    mbl::RBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
     // Object 1 (contains object_instance_11)
-    RBM2MObjectInstance *object_instance_11 = object_1->create_object_instance(11);
+    mbl::RBM2MObjectInstance *object_instance_11 = object_1->create_object_instance(11);
     // Object instance 11 (contains resource_111 and resource_112)
     object_instance_11->create_resource(
         "111",                          // Resource name
@@ -234,9 +233,9 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     );
 
     // Object 2
-    RBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
+    mbl::RBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
     // Object 2 (contains object_instance_21 and object_instance_22)
-    RBM2MObjectInstance *object_instance_21 = object_2->create_object_instance(21);
+    mbl::RBM2MObjectInstance *object_instance_21 = object_2->create_object_instance(21);
     // Object instance 21 (contains resource_211)
     object_instance_21->create_resource(
         "211",                          // Resource name
@@ -248,7 +247,7 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
         M2MResourceInstance::INTEGER,   // Type
         "999"                           // Value
     );
-    RBM2MObjectInstance *object_instance_22 = object_2->create_object_instance(22);
+    mbl::RBM2MObjectInstance *object_instance_22 = object_2->create_object_instance(22);
     // Object instance 22 (contains resource_221)
     object_instance_22->create_resource(
         "221",                          // Resource name
@@ -272,17 +271,17 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     
     tr_debug("%s", __PRETTY_FUNCTION__);
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
+    mbl::RBM2MObjectList rbm2m_object_list;
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } , "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 123456 , "operations" : ["get"], "multiple_instance" : true} } } })";
-    ResourceDefinitionParser resource_parser;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::None);
 
     // RBM2MObjectList (contains object_1 and object_2)
-    RBM2MObjectList rbm2m_object_list_test;
+    mbl::RBM2MObjectList rbm2m_object_list_test;
     // Object 1
-    RBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
+    mbl::RBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
     // Object 1 (contains object_instance_11)
-    RBM2MObjectInstance *object_instance_11 = object_1->create_object_instance(11);
+    mbl::RBM2MObjectInstance *object_instance_11 = object_1->create_object_instance(11);
     // Object instance 11 (contains resource_111)
     object_instance_11->create_resource(
         "111",                          // Resource name
@@ -296,9 +295,9 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     );
 
     // Object 2
-    RBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
+    mbl::RBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
     // Object 2 (contains object_instance_21)
-    RBM2MObjectInstance *object_instance_21 = object_2->create_object_instance(21);
+    mbl::RBM2MObjectInstance *object_instance_21 = object_2->create_object_instance(21);
     // Object instance 21 (contains resource_211)
     object_instance_21->create_resource(
         "211",                          // Resource name
@@ -326,8 +325,8 @@ TEST(JsonTest_Negative, Invalid_Json_Not_3_Level) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"Obj1" : {}, "Obj2" : { "1" : {}, "2" : {}, "3" : {} }, "Obj3" : { "1" : { "0" : { "mode" : "static", "type" : "integer", "operations" : ["get"], "value" : 7 }, "1" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put"], "observable" : true } }, "2" : { "101" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post"], "multiple_instance" : true } } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 
     const std::string json_string_2 = R"({"32811" : {}})";
@@ -340,8 +339,8 @@ TEST(JsonTest_Negative, Invalid_Json_Missing_Observable) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "multiple_instance" : true } } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -351,8 +350,8 @@ TEST(JsonTest_Negative, Invalid_resource_mode) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "invalid_mode", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -362,8 +361,8 @@ TEST(JsonTest_Negative, Invalid_resource_operation) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["invalid_operation"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -373,8 +372,8 @@ TEST(JsonTest_Negative, Unsupported_resource_type) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "bla_bla_type", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -383,8 +382,8 @@ TEST(JsonTest_Negative, Two_same_resource_names) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -393,8 +392,8 @@ TEST(JsonTest_Negative, Two_same_object_instance_ids) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } , "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
 
@@ -403,7 +402,7 @@ TEST(JsonTest_Negative, Two_same_object_names) {
     tr_debug("%s", __PRETTY_FUNCTION__);
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } }, "1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
+    mbl::RBM2MObjectList rbm2m_object_list;
+    mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
 }
