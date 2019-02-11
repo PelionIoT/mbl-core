@@ -10,8 +10,8 @@ metadata:
 run:
     steps:
         - cd tutorials/helloworld
-        - su -c "docker build -t linux-armv7:latest ./cc-env/" ubuntu
-        - su -c "docker run --rm linux-armv7 > build-armv7" ubuntu
-        - su -c "chmod +x build-armv7 " ubuntu
-        - su -c "./build-armv7 make release" ubuntu
-        - su -c "./build-armv7 make debug" ubuntu
+        - su ubuntu -c "docker build -t linux-armv7:latest ./cc-env/"
+        - su ubuntu -c "docker run --rm linux-armv7 > ~/build-armv7"
+        - su ubuntu -c "chmod +x ~/build-armv7 "
+        - su ubuntu -c "~/build-armv7 make release"
+        - su ubuntu -c "~/build-armv7 make debug"
