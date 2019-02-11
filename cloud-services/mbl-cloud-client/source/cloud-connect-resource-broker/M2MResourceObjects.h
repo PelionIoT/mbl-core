@@ -148,11 +148,12 @@ friend class RBM2MObject;
 public:
 
     /**
-     * @brief Set M2MObjectInstance
+     * @brief Set M2MObjectInstance.
+     * m2m_resource ownership is not changed by this function call!
      * 
      * @param m2m_object_instance - M2MObjectInstance
      */
-    void set_m2m__object_instance(M2MObjectInstance* m2m_object_instance);
+    void set_m2m_object_instance(M2MObjectInstance* m2m_object_instance);
 
     /**
      * @brief Get M2MObjectInstance

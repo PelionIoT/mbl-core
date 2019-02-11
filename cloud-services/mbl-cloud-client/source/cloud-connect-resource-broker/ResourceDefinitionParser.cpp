@@ -356,9 +356,9 @@ MblError ResourceDefinitionParser::parse_object_instance(
         tr_error("%s - Create rbm2m_object_instance: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
-    tr_debug("Created rbm2m_object_instance: %d [%p]", object_instance_id, rbm2m_object_instance);
+    tr_debug("Created rbm2m_object_instance: %d", object_instance_id);
 
-    rbm2m_object_instance->set_m2m__object_instance(m2m_object_instance);
+    rbm2m_object_instance->set_m2m_object_instance(m2m_object_instance);
 
     for(auto itr = json_value_object_instance.begin() ; itr != json_value_object_instance.end() ; itr++) 
     {
@@ -395,7 +395,7 @@ MblError ResourceDefinitionParser::parse_object(
         tr_error("%s - Create m2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
-    tr_debug("Created m2m_object: %s [%p]", m2m_object->name(), m2m_object);
+    tr_debug("Created m2m_object: %s", m2m_object->name());
     m2m_object_list.push_back(m2m_object);
     // Create rbm2m object and add it to rbm2m_object_list
     auto rbm2m_object = rbm2m_object_list.create_object(object_name);
@@ -403,7 +403,7 @@ MblError ResourceDefinitionParser::parse_object(
         tr_error("%s - Create rbm2m_object: %s failed", __PRETTY_FUNCTION__, object_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
-    tr_debug("Created rbm2m_object: %s [%p]", m2m_object->name(), rbm2m_object);
+    tr_debug("Created rbm2m_object: %s", m2m_object->name());
 
     rbm2m_object->set_m2m_object(m2m_object);
 
@@ -483,7 +483,7 @@ MblError ResourceDefinitionParser::build_object_list(
         M2MObject* m2m_object = nullptr;
         for (auto &itr : m2m_object_list) {
             m2m_object = itr;
-            tr_debug("Deleting m2m_object: %s [%p]", m2m_object->name(), m2m_object);
+            tr_debug("Deleting m2m_object: %s", m2m_object->name());
             delete m2m_object; // This will delete all created object instances and all resources that belongs to it
         }
         m2m_object_list.clear();
