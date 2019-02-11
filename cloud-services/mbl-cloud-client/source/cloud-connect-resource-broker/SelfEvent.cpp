@@ -16,6 +16,7 @@
 #include <cassert>
 #include <chrono>
 #include <functional>
+#include <cassert>
 
 using namespace std::chrono;
 

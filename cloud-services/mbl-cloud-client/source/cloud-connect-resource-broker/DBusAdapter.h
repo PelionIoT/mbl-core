@@ -79,7 +79,7 @@ public:
  * client application. 
  * This function sends a final status of the registration request, 
  * that was initiated by a client application via calling 
- * register_resources API. 
+ * register_resources_async API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param reg_status status of registration of all resources. 
@@ -97,7 +97,7 @@ public:
  * @brief Sends deregistration request final status to the destination client 
  * application. This function sends a final status of the deregistration 
  * request, that was initiated by a client application via calling 
- * deregister_resources API. 
+ * deregister_resources_async API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information
  *        of the application that should be notified.
  * @param dereg_status status of deregistration of all resources. 

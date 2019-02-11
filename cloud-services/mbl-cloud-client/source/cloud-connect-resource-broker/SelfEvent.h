@@ -61,7 +61,7 @@ public:
     // Getters - inline implemented
     const EventData&                get_data() const { return data_; }
     uint64_t                        get_id() const{ return id_; }
-    EventDataType                        get_data_type() const{ return data_type_; };    
+    EventDataType                   get_data_type() const{ return data_type_; };    
     const char*                     get_description() const{ return description_.c_str(); }    
 	const std::chrono::milliseconds get_creation_time() const{ return creation_time_; }
     std::chrono::milliseconds       get_send_time() const{ return send_time_; }

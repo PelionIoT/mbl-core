@@ -11,7 +11,10 @@
 #include "DBusService.h"
 #include "Mailbox.h"
 #include "MailboxMsg.h"
+#include "DBusService.h"
+#include "DBusAdapter_Impl.h"
 #include "ResourceBroker.h"
+#include "CloudConnectTypes.h"
 
 #include <cassert>
 #include <sstream>
@@ -358,6 +361,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     assert(s);
     TR_DEBUG("Enter");
     UNUSED(s);
+    MblError status = MblError::Unknown;
 
     // Validate that revents contains epoll read event flag
     if ((revents & EPOLLIN) == 0) {
@@ -849,6 +853,7 @@ MblError DBusAdapterImpl::init()
         return status;
     }
 
+    initializer_thread_id_ = pthread_self();
     state_.set(DBusAdapterState::INITALIZED);
     TR_INFO("init finished with SUCCESS!");
     return Error::None;
@@ -898,6 +903,8 @@ MblError DBusAdapterImpl::deinit()
         TR_ERR("event_manager_.deinit() failed with error %s", MblError_to_str(status));
         // continue
     }
+
+    // TODO - make sure we clean all references to messages, timers etc. and unref all all sources
 
     DBusService_deinit();
 
