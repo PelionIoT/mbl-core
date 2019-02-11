@@ -476,7 +476,11 @@ MblError ResourceDefinitionParser::build_object_list(
             }
         }
     }
-    catch (const std::runtime_error& e) {
+    catch (Json::Exception &e) {
+        tr_error("%s - BuildResourceList failed with Json::Exception exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
+        retval = Error::CCRBInvalidJson;
+    }
+    catch (std::runtime_error& e) {
         tr_error("%s - BuildResourceList failed with runtime_error exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
         retval = Error::CCRBInvalidJson;
     }
@@ -484,10 +488,6 @@ MblError ResourceDefinitionParser::build_object_list(
         tr_error("%s - BuildResourceList failed with std::exception exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
         retval = Error::CCRBInvalidJson;
     } 
-    catch (...) {
-        tr_error("%s - BuildResourceList failed with exception.", __PRETTY_FUNCTION__);
-        retval = Error::CCRBInvalidJson;
-    }
 
     //Free allocated memory for object instances in case error occured
     if(retval != Error::None) {
