@@ -299,12 +299,12 @@ public:
     SPRBM2MObject* create_object(const std::string &object_name);
 
     /**
-     * @brief Get RBM2MObject by its name
+     * @brief Get SPRBM2MObject by its name
      * 
      * @param object_name - RBM2MObject name
-     * @return RBM2MObject* 
+     * @return SPRBM2MObject* 
      */
-    RBM2MObject* get_object(const std::string &object_name);
+    SPRBM2MObject* get_object(const std::string &object_name);
 
 private:
     RBM2MObjectMap rbm2m_object_map_;

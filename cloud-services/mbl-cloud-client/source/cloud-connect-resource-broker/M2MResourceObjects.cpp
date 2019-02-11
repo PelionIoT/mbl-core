@@ -284,12 +284,12 @@ SPRBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
     return &rbm2m_object_map_[object_name];
 }
 
-RBM2MObject* RBM2MObjectList::get_object(const std::string &object_name)
+SPRBM2MObject* RBM2MObjectList::get_object(const std::string &object_name)
 {
     // Check if object exist
     auto itr = rbm2m_object_map_.find(object_name);
     if(itr != rbm2m_object_map_.end()) {
-        return &(*(itr->second));
+        return &itr->second;
     }
     tr_info("%s: Object %s does not exist", __PRETTY_FUNCTION__, object_name.c_str());
     return nullptr;
