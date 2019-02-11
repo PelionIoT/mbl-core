@@ -78,12 +78,13 @@ class AppUpdateManager:
         Return `True` iff all applications in the package are successfully
         installed.
         """
-        for ipk in self._ipks:
-            if not self._manage_app_installation(
-                os.path.join(IPKS_EXCTRACTION_PATH, ipk)
-            ):
-                return False
-        return True
+        if self._ipks:
+            for ipk in self._ipks:
+                if not self._manage_app_installation(
+                    os.path.join(IPKS_EXCTRACTION_PATH, ipk)
+                ):
+                    return False
+            return True
 
     def start_installed_apps(self):
         """Run applications that have been successfully installed if any."""
