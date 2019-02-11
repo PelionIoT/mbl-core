@@ -22,6 +22,7 @@
 
 #include <json/json.h>
 #include <json/reader.h>
+#include <cassert>
 
 #define TRACE_GROUP "ccrb-resdefparser"
 
@@ -100,8 +101,7 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
         return M2MResourceInstance::STRING;
     }
     // We already made validity checks on "resource_type" before calling this function so we shouldn't be here
-    tr_warning("%s - Invalid resource type: %s", __PRETTY_FUNCTION__, resource_type.c_str());
-    return M2MResourceInstance::OPAQUE;
+    assert(0); // Shouldn't be here!
 }
 
 static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation *operation)
