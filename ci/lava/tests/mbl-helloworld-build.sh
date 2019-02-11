@@ -15,3 +15,6 @@ chmod +x ./build-armv7
 ./build-armv7 make release
 
 ./build-armv7 make debug
+
+cp debug/ipk/user-sample-app-package_1.0_armv7vet2hf-neon.ipk ~/user-sample-app-package_1.0_armv7vet2hf-neon.ipk
+
