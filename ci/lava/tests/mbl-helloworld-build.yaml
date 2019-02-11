@@ -9,6 +9,7 @@ metadata:
 
 run:
     steps:
+        - su ubuntu
         - cd tutorials/helloworld
         - docker build -t linux-armv7:latest ./cc-env/
         - docker run --rm linux-armv7 > build-armv7
