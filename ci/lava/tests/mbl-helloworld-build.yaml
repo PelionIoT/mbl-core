@@ -10,5 +10,4 @@ metadata:
 run:
     steps:
         - chmod a+w tutorials/helloworld
-        - cd ./ci/lava/tests/
-        - su ubuntu -c ./mbl-helloworld-build.sh
+        - su ubuntu -c ./ci/lava/tests/mbl-helloworld-build.sh
