@@ -158,6 +158,26 @@ class AppUpdateManager:
             self._installed_app_names.append(app_name)
             return True
 
+    def _perform_app_upgrade(self, app_name, ipk):
+        """Perform an application upgrade.
+
+        To allow for rollback after a failed application update attempt, it
+        should be possible for two installations of the application to live
+        side-by-side.  The following example illustrates a directory structure
+        where there is a parent directory for the application and two
+        sub-directories for side-by-side installations.
+        Return `True` iff an existing application has been successfully
+        replaced by a new version.
+        """
+        log.info("Stopping application '{}'".format(app_name))
+        if alm.terminate_app(app_name):
+            app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
+            log.info(
+                "Removing '{}' from'{}".format(app_name, app_path)
+            )
+            if self.app_mng.remove_app(app_name, app_path):
+                return self._install_app(app_name, ipk)
+
     def _manage_app_installation(self, ipk):
         """Manage the process of installing application from ipk.
 
@@ -169,14 +189,19 @@ class AppUpdateManager:
             log.info("Get the name of application from the ipk")
             app_name = self.app_mng.get_app_name(ipk)
             if app_name:
-                log.info("Stopping application '{}'".format(app_name))
-                if alm.terminate_app(app_name):
-                    app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
-                    log.info(
-                        "Removing '{}' from'{}".format(app_name, app_path)
+                if os.path.isdir(
+                    os.path.join(APPS_INSTALLATION_PATH, app_name)
+                ):
+                    log.debug(
+                        "Update '{}' as existing"
+                        " installation was found".format(app_name)
                     )
-                    if self.app_mng.remove_app(app_name, app_path):
-                        return self._install_app(app_name, ipk)
+                    return self._perform_app_upgrade(app_name, ipk)
+                else:
+                    log.debug(
+                        "'{}' is a brand new application".format(app_name)
+                    )
+                    return self._install_app(app_name, ipk)
         except alc.ContainerKillError as error:
             if alc.ContainerState.DOES_NOT_EXIST.value in str(error):
                 log.info(
