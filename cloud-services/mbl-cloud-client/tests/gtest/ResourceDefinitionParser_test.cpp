@@ -116,7 +116,7 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
     for(auto& itr : rbm2m_object_instance->get_resource_map())
     {
         std::string rbm2m_resource_name = itr.first;
-        rbm2m_resource = itr.second;
+        rbm2m_resource = &(*itr.second);
         tr_debug("rbm2m_resource_name: %s", rbm2m_resource_name.c_str());
         m2m_resource = m2m_object_instance->resource(rbm2m_resource_name.c_str());
         ASSERT_TRUE(m2m_resource != nullptr);
@@ -202,7 +202,7 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     mbl::RBM2MObjectList rbm2m_object_list;
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "112" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } }, "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 999 , "operations" : ["get"], "multiple_instance" : true} }, "22" : { "221" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post","put"], "multiple_instance" : true, "observable" : true } } } })";
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::None);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::None);
 
     // RBM2MObjectList (contains object_1 and object_2)
     mbl::RBM2MObjectList rbm2m_object_list_test;
@@ -274,7 +274,7 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     mbl::RBM2MObjectList rbm2m_object_list;
     const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } , "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 123456 , "operations" : ["get"], "multiple_instance" : true} } } })";
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::None);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::None);
 
     // RBM2MObjectList (contains object_1 and object_2)
     mbl::RBM2MObjectList rbm2m_object_list_test;
@@ -327,10 +327,10 @@ TEST(JsonTest_Negative, Invalid_Json_Not_3_Level) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 
     const std::string json_string_2 = R"({"32811" : {}})";
-    ASSERT_TRUE(resource_parser.build_object_list(json_string_2, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string_2, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Invalid_Json_Missing_Observable) {
@@ -341,7 +341,7 @@ TEST(JsonTest_Negative, Invalid_Json_Missing_Observable) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Invalid_resource_mode) {
@@ -352,7 +352,7 @@ TEST(JsonTest_Negative, Invalid_resource_mode) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Invalid_resource_operation) { 
@@ -363,7 +363,7 @@ TEST(JsonTest_Negative, Invalid_resource_operation) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Unsupported_resource_type) {
@@ -374,7 +374,7 @@ TEST(JsonTest_Negative, Unsupported_resource_type) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_resource_names) {
@@ -384,7 +384,7 @@ TEST(JsonTest_Negative, Two_same_resource_names) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_object_instance_ids) {
@@ -394,7 +394,7 @@ TEST(JsonTest_Negative, Two_same_object_instance_ids) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_object_names) {
@@ -404,5 +404,5 @@ TEST(JsonTest_Negative, Two_same_object_names) {
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == Error::CCRBInvalidJson);
+    ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }

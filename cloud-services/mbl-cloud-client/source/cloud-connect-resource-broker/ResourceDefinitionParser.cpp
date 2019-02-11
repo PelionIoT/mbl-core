@@ -194,7 +194,7 @@ MblError ResourceDefinitionParser::create_resources(
         tr_error("%s - Create rbm2m_resource: %s failed", __PRETTY_FUNCTION__, resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
-    rbm2m_resource->set_m2m_resource(m2m_resource);
+    (*rbm2m_resource)->set_m2m_resource(m2m_resource);
 
     return Error::None;
 }

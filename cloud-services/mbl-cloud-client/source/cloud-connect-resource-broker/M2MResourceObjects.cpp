@@ -127,12 +127,6 @@ RBM2MObjectInstance::RBM2MObjectInstance(uint16_t object_instance_id)
 RBM2MObjectInstance::~RBM2MObjectInstance()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    RBM2MResource *resource = nullptr;
-    for (auto& itr : rbm2m_resource_map_) {
-        resource = itr.second;
-        tr_debug("Deleting rbm2m resource: %s", resource->get_resource_name().c_str());
-        delete resource;
-    }
     rbm2m_resource_map_.clear();
 }
 
@@ -157,7 +151,7 @@ const RBM2MResourceMap& RBM2MObjectInstance::get_resource_map() const
     return rbm2m_resource_map_;
 }
 
-RBM2MResource *RBM2MObjectInstance::create_resource(
+SPRBM2MResource* RBM2MObjectInstance::create_resource(
     const std::string &resource_name,
     M2MBase::Mode mode,
     bool multiple_instances,
@@ -180,6 +174,17 @@ RBM2MResource *RBM2MObjectInstance::create_resource(
         return nullptr;
     }
 
+/*    auto resource = std::make_unique<RBM2MResource>(
+        resource_name,
+        mode,
+        multiple_instances,
+        operation,
+        observable,
+        resource_type,
+        type,
+        value);
+*/        
+/*    
     auto resource = new RBM2MResource(
         resource_name,
         mode,
@@ -189,9 +194,19 @@ RBM2MResource *RBM2MObjectInstance::create_resource(
         resource_type,
         type,
         value);
+*/        
     tr_debug("Created rbm2m resource: %s", resource_name.c_str());
-    rbm2m_resource_map_[resource_name] = resource;
-    return resource;
+    rbm2m_resource_map_[resource_name] = std::make_unique<RBM2MResource>(
+        resource_name,
+        mode,
+        multiple_instances,
+        operation,
+        observable,
+        resource_type,
+        type,
+        value);
+    
+    return &rbm2m_resource_map_[resource_name];
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -23,6 +23,7 @@
 #include "mbed-client/m2minterface.h"
 #include <map>
 #include <string>
+#include <memory>
 
 namespace mbl {
 
@@ -31,6 +32,18 @@ class RBM2MResource {
 friend class RBM2MObjectInstance;
 
 public:
+
+    RBM2MResource(
+        std::string resource_name,
+        M2MBase::Mode mode,
+        bool multiple_instances,
+        M2MBase::Operation operation,
+        bool observable,
+        std::string resource_type,
+        M2MResourceBase::ResourceType type,
+        std::string value);
+
+    ~RBM2MResource();
 
     /**
      * @brief Set M2MResource
@@ -112,20 +125,6 @@ public:
     int get_value_as_integer() const;
 
 private:
-    // Constructor and destructor are private
-    // which means that these objects can be created or
-    // deleted only through a function provided by RBM2MObjectInstance.
-    RBM2MResource(
-        std::string resource_name,
-        M2MBase::Mode mode,
-        bool multiple_instances,
-        M2MBase::Operation operation,
-        bool observable,
-        std::string resource_type,
-        M2MResourceBase::ResourceType type,
-        std::string value);
-    ~RBM2MResource();
-
     std::string resource_name_;
     M2MBase::Mode mode_;
     bool multiple_instances_;
@@ -137,7 +136,8 @@ private:
     M2MResource *m2m_resource_; // Assosiate M2M object
 };
 
-typedef std::map<std::string, RBM2MResource*> RBM2MResourceMap;
+typedef std::unique_ptr<RBM2MResource> SPRBM2MResource;
+typedef std::map<std::string, SPRBM2MResource> RBM2MResourceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -189,7 +189,7 @@ public:
      * @param value - Value (Integer values are also kept as string)
      * @return RBM2MResource* 
      */
-    RBM2MResource* create_resource(
+    SPRBM2MResource* create_resource(
         const std::string &resource_name,
         M2MBase::Mode mode,
         bool multiple_instances,
