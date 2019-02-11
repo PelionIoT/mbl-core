@@ -23,7 +23,7 @@ namespace mbl {
  * - send observers notifications from MbedCloudClient to applications.
  */
 class ResourceBroker {
-friend DBusAdapter;
+friend DBusAdapterImpl;
 public:
     ResourceBroker();
     ~ResourceBroker();
@@ -68,7 +68,7 @@ private:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError de_init();
+    MblError deinit();
 
 /**
  * @brief Runs CCRB event-loop.
@@ -306,7 +306,7 @@ private:
     pthread_t ipc_thread_id_ = 0;
 
     // pointer to ipc binder instance
-    std::unique_ptr<DBusAdapter> ipc_ = nullptr;
+    std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
 };
 
 } // namespace mbl

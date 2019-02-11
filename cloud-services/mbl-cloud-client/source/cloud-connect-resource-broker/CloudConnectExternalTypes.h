@@ -7,8 +7,6 @@
 #ifndef CloudConnectExternalTypes_h_
 #define CloudConnectExternalTypes_h_
 
-extern "C" {
-
 /**
  * @brief Status of Cloud Connect operations.
  */

@@ -9,6 +9,7 @@
 
 #include <cstdint>
 #include <vector>
+#include <string>
 
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
@@ -139,6 +140,23 @@ struct ResourceGetOperation
     CloudConnectStatus output_status_ = FAILED; // get operation output status
 };
 
+//TODO - add explenation here
+struct OneSetMblError
+{
+public:
+    OneSetMblError() : err_(MblError::None) {};
+    void set(MblError new_val) {
+        if (err_ != MblError::None) { 
+            return; 
+        }
+        err_ = new_val;
+    }
+    MblError get() { 
+        return err_; 
+    }
+private:
+    MblError err_;
+};
 /**
  * @brief Returns readable explanation of Cloud Connect Status.
  * 

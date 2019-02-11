@@ -20,7 +20,7 @@
 #include "MblCloudClient.h"
 #include "signals.h"
 
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectCommon_Internal.h"
 
 #include <cerrno>
 #include <cstdio>
