@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cassert>
-
 #include "CloudConnectTypes.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
+#include "MblError.h"
+
+#include <cassert>
 
 #define TRACE_GROUP "ccrb"
 
@@ -17,9 +18,9 @@ ResourceData::ResourceData(
     const std::string &path, 
     const ResourceDataType type)
 : path_(path),
-  data_type_(type) 
+  event_type_(type) 
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Enter");    
     // leave value not initialized
 }
 
@@ -28,59 +29,57 @@ ResourceData::ResourceData(
     const std::string &initial_value)
 : path_(path),
   string_value_(initial_value),
-  data_type_(ResourceDataType::STRING) 
+  event_type_(ResourceDataType::STRING) 
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Enter");    
 }
 
 ResourceData::ResourceData(const std::string &path, int64_t initial_value)
 : path_(path),
   integer_value_(initial_value),
-  data_type_(ResourceDataType::INTEGER)
+  event_type_(ResourceDataType::INTEGER)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 std::string ResourceData::get_path() const
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     return path_;        
 }
 
 ResourceDataType ResourceData::get_data_type() const
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    return data_type_;
+    TR_DEBUG("Enter");
+    return event_type_;
 }
 
 void ResourceData::set_value(const std::string &value) 
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(data_type_ == ResourceDataType::STRING);
+    TR_DEBUG("Enter");
+    assert(event_type_ == ResourceDataType::STRING);
     string_value_ = value;        
 }
 
 void ResourceData::set_value(int64_t value)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(data_type_ == ResourceDataType::INTEGER);
+    TR_DEBUG("Enter");
+    assert(event_type_ == ResourceDataType::INTEGER);
     integer_value_ = value;        
 }
 
 std::string ResourceData::get_value_string() const
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(data_type_ == ResourceDataType::STRING);
+    TR_DEBUG("Enter");
+    assert(event_type_ == ResourceDataType::STRING);
     return string_value_;        
 }
 
 int64_t ResourceData::get_value_integer() const
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    assert(data_type_ == ResourceDataType::INTEGER);
+    TR_DEBUG("Enter");
+    assert(event_type_ == ResourceDataType::INTEGER);
     return integer_value_;        
-}
-
 }
 
 const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
@@ -126,3 +125,41 @@ const char* ResourceDataType_stringify(const ResourceDataType type)
             return "Unknown Resource Data Type";
     }
 }
+
+
+OneSetMblError::OneSetMblError() : 
+    err_(MblError::None),
+    one_time_set_flag_(true)
+{
+    TR_DEBUG("Enter");
+};
+
+void OneSetMblError::set(MblError new_val) 
+{ 
+    TR_DEBUG("Enter");
+    if (new_val == err_) {
+        TR_DEBUG("Same value, return!");            
+        return; 
+    }
+    if (false == one_time_set_flag_){
+        TR_DEBUG("Set already, return!"); 
+        return;
+    }
+    err_ = new_val;
+    one_time_set_flag_ = false;
+    TR_DEBUG("Set to new value %s", get_status_str());
+}
+
+MblError OneSetMblError::get() 
+{
+    TR_DEBUG("Enter");
+    return err_; 
+}
+    
+const char* OneSetMblError::get_status_str() 
+{
+    TR_DEBUG("Enter");
+    return MblError_to_str(err_); 
+}
+
+} // namespace mbl {

@@ -7,12 +7,12 @@
 #ifndef ResourceBroker_h_
 #define ResourceBroker_h_
 
+#include "DBusAdapter.h"
+#include "CloudConnectTypes.h"
+
 #include <cstdint>
 #include <memory>
 #include <pthread.h>
-
-#include "DBusAdapter.h"
-#include "CloudConnectTypes.h"
 
 namespace mbl {
 
@@ -23,7 +23,7 @@ namespace mbl {
  * - send observers notifications from MbedCloudClient to applications.
  */
 class ResourceBroker {
-friend DBusAdapter;
+friend DBusAdapterImpl;
 public:
     ResourceBroker();
     ~ResourceBroker();
@@ -68,7 +68,7 @@ private:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError de_init();
+    MblError deinit();
 
 /**
  * @brief Runs CCRB event-loop.
@@ -91,7 +91,7 @@ private:
  * CCRB will send the final status of the registration to the application 
  * (when it will be ready) by calling update_registration_status API. 
  * 
- * @param ipc_conn_handle handle to the IPC unique connection information 
+ * @param ipc_request_handle handle to the IPC unique connection information 
  *        of the application that should get update_registration_status message.
  * @param appl_resource_definition_json json file that describes resources 
  *        that should be registered. The structure of the JSON document 
@@ -111,7 +111,7 @@ private:
  *         were successfully finished, or error code otherwise. 
  */
     MblError register_resources(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const std::string &appl_resource_definition_json,
         CloudConnectStatus &out_status,
         std::string &out_access_token);
@@ -124,7 +124,7 @@ private:
  * deregistration to the application (when it will be ready) by calling 
  * update_deregistration_status API. 
  * 
- * @param ipc_conn_handle handle to the IPC unique connection information 
+ * @param ipc_request_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token that defines set of resources that should be 
  *        deregistered.   
@@ -138,7 +138,7 @@ private:
  *         were successfully finished, or error code otherwise. 
  */
     MblError deregister_resources(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const std::string &access_token,
         CloudConnectStatus &out_status);
 
@@ -151,7 +151,7 @@ private:
  * to the application (when it will be ready) by calling 
  * update_add_resource_instance_status API.
  * 
- * @param ipc_conn_handle handle to the IPC unique connection information 
+ * @param ipc_request_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token used for access control to the resource which path 
  *        is provided in resource_path argument.
@@ -170,7 +170,7 @@ private:
  *         were successfully finished, or error code otherwise. 
  */
     MblError add_resource_instances(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids,
@@ -186,7 +186,7 @@ private:
  * to the application (when it will be ready) by calling 
  * update_remove_resource_instance_status API.
  * 
- * @param ipc_conn_handle handle to the IPC unique connection information 
+ * @param ipc_request_handle handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param access_token token used for access control to the resource which path 
  *        is provided in resource_path argument.
@@ -205,7 +205,7 @@ private:
  *         were successfully finished, or error code otherwise. 
  */
     MblError remove_resource_instances(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids,
@@ -296,7 +296,8 @@ private:
 
 private:
 
-    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    // No copying or moving 
+    // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     ResourceBroker(const ResourceBroker&) = delete;
     ResourceBroker & operator = (const ResourceBroker&) = delete;
     ResourceBroker(ResourceBroker&&) = delete;
@@ -306,7 +307,7 @@ private:
     pthread_t ipc_thread_id_ = 0;
 
     // pointer to ipc binder instance
-    std::unique_ptr<DBusAdapter> ipc_ = nullptr;
+    std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
 };
 
 } // namespace mbl

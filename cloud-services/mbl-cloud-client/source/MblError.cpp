@@ -70,6 +70,18 @@ const char* MblError_to_str(const MblError error)
         case Error::CCRBInvalidJson: return "CCRBInvalidJson";
         case Error::CCRBCreateM2MObjFailed: return "CCRBCreateM2MObjFailed";
         case Error::CCRBValueTypeError: return "CCRBValueTypeError";
+
+        case Error::DBA_IllegalState: return "DBA_IllegalState";
+        case Error::DBA_InvalidValue: return "DBA_InvalidValue";
+        case Error::DBA_ForbiddenCall: return "DBA_ForbiddenCall";
+        case Error::DBA_SdBusCallFailure: return "DBA_SdBusCallFailure";
+        case Error::DBA_SdBusRequestNameFailed: return "DBA_SdBusRequestNameFailed";
+        case Error::DBA_SdBusRequestAddMatchFailed: return "DBA_SdBusRequestAddMatchFailed";
+        case Error::DBA_SdEventCallFailure: return "DBA_SdEventCallFailure";
+        case Error::DBA_SdEventExitRequestFailure: return "DBA_SdEventExitRequestFailure";
+        case Error::DBA_MailBoxInvalidMsg: return "DBA_MailBoxInvalidMsg";
+        case Error::DBA_MailBoxSystemCallFailure: return "DBA_MailBoxSystemCallFailure";
+        case Error::DBA_MailBoxPollTimeout: return "DBA_MailBoxPollTimeout";
     }
     return "Unrecognized error code";
 }

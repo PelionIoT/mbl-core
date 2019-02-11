@@ -7,14 +7,21 @@
 #ifndef DBusAdapter_h_
 #define DBusAdapter_h_
 
-#include <cstdint>
-
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
+#include "SelfEvent.h"
+
+#include <inttypes.h>
+#include <memory>
+
+// to be used by Google Test testing
+class TestInfra_DBusAdapterTester;
 
 namespace mbl {
 
 class ResourceBroker;
+class DBusAdapterImpl;
+
 
 /**
  * @brief Implements an interface to the D-Bus IPC.
@@ -23,10 +30,13 @@ class ResourceBroker;
  * service and client applications.
  */
 class DBusAdapter {
-
-public:
-
+// Google test friend class (for tests to be able to reach private members)
+friend class ::TestInfra_DBusAdapterTester;
+public:    
     DBusAdapter(ResourceBroker &ccrb);
+
+    // dtor must be explicitly declared and get default implementation in source in order to allow
+    // member impl_ unique_ptr to reqcognize DBusAdapterImpl as a complete type and deestroy it
     ~DBusAdapter();
 
 /**
@@ -43,31 +53,33 @@ public:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError de_init();
+    MblError deinit();
 
 /**
  * @brief Runs IPC event-loop.
- * 
+ * @param stop_status is used in order to understand the reason for stoping the adapter
+ * This can be due to calling stop() , or due to other reasons
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError run();
+    MblError run(MblError &stop_status);
 
 /**
  * @brief Stops IPC event-loop.
- * 
+ * @param stop_status is used in order to understand the reason for stoping the adapter
+ *  use MblError::DBUS_ADAPTER_STOP_STATUS_NO_ERROR by default (no error)
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError stop();
+    MblError stop(MblError stop_status);
 
 /**
  * @brief Sends registration request final status to the destination 
  * client application. 
  * This function sends a final status of the registration request, 
  * that was initiated by a client application via calling 
- * register_resources API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information 
+ * register_resources_async API. 
+ * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param reg_status status of registration of all resources. 
  *        reg_status is SUCCESS only if registration of all resources was 
@@ -77,15 +89,15 @@ public:
  *         delivered, or error code otherwise. 
  */
     MblError update_registration_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus reg_status);
 
 /**
  * @brief Sends deregistration request final status to the destination client 
  * application. This function sends a final status of the deregistration 
  * request, that was initiated by a client application via calling 
- * deregister_resources API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information
+ * deregister_resources_async API. 
+ * @param ipc_request_handle is a handle to the IPC unique connection information
  *        of the application that should be notified.
  * @param dereg_status status of deregistration of all resources. 
  *        dereg_status is SUCCESS only if deregistration of all resources was 
@@ -94,15 +106,15 @@ public:
  *         or error code otherwise. 
  */
     MblError update_deregistration_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus dereg_status);
 
 /**
  * @brief Sends resource instances addition request final status to the destination
  * client application. This function sends a final status of the resource instances
  * addition request, that was initiated by a client application via calling 
- * add_resource_instances API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information of 
+ * add_resource_instances_async API. 
+ * @param ipc_request_handle is a handle to the IPC unique connection information of 
  *        the application that should be notified.
  * @param add_status status of resource instances addition. 
  *        add_status is SUCCESS only if the addition of all resources instances was 
@@ -111,15 +123,15 @@ public:
  *         or error code otherwise. 
  */
     MblError update_add_resource_instance_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus add_status);
 
 /**
  * @brief Sends resource instances removal request final status to the destination
  * client application. This function sends a final status of the resource instances
  * removal request, that was initiated by a client application via calling 
- * remove_resource_instances API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information 
+ * remove_resource_instances_async API. 
+ * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param remove_status status of resource instances removal. 
  *        remove_status is SUCCESS only if the removal of all resources instances was 
@@ -128,23 +140,38 @@ public:
  *         or error code otherwise. 
  */
     MblError update_remove_resource_instance_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus remove_status);
 
+/**
+ * @brief 
+ * Send 'deferred event' to the event loop using 
+ * sd_event_add_defer(). Must be called by CCRB thread only. 
+ * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
+ * @param data - the data to be sent, must be formatted according to the event_type
+ * @param data_length - length of data used, must be less than the maximum size allowed
+ * @param event_type - the type of data to be sent.
+ * @param callback - callback to be called when event is fired
+ * @param out_event_id  - generated event id (for debug or to cancel the event)
+ * @param description - optional - description for the event cause, can leave empty string or 
+ * not supply at all
+ * @return MblError - return MblError - Error::None for success, therwise the failure reason
+ */
+    MblError send_event_immediate(
+        SelfEvent::EventData data,
+        unsigned long data_length,
+        SelfEvent::EventType event_type,        
+        SelfEventCallback callback,
+        uint64_t &out_event_id,
+        const char *description="");
 
 private:
-   
-    // FIXME remove all this
-    // Temporary solution for exiting from simulated event-loop that should be removed after we introduce real sd-bus event-loop.
-    // Now we just use this boolean flag, that signals, that the thread should exit from simulated event-loop.
-    // In future we shall replace this flag with real mechanism, that will allow exiting from real sd-bus event-loop.
-    volatile bool exit_loop_;
+    // forward declaration - PIMPL implementation class - defined in cpp source file
+    // unique pointer impl_ will automatically  destroy the object    
+    std::unique_ptr<DBusAdapterImpl> impl_;    
 
-    // this class must have a reference that should be always valid to the CCRB instance. 
-    // reference class member satisfy this condition.   
-    ResourceBroker &ccrb_;
-
-    // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    // No copying or moving 
+    // (see: https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     DBusAdapter(const DBusAdapter&) = delete;
     DBusAdapter & operator = (const DBusAdapter&) = delete;
     DBusAdapter(DBusAdapter&&) = delete;

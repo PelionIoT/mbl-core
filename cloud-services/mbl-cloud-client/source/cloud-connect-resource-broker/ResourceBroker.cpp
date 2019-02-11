@@ -4,12 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cassert>
-#include <pthread.h>
-
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
+
+#include <cassert>
+#include <pthread.h>
 
 #define TRACE_GROUP "ccrb"
 
@@ -18,17 +18,17 @@ namespace mbl {
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker() 
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 ResourceBroker::~ResourceBroker()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 MblError ResourceBroker::start()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     // create new thread which will run IPC event loop
     const int thread_create_err = pthread_create(
@@ -39,8 +39,7 @@ MblError ResourceBroker::start()
         );
     if(0 != thread_create_err) {
         // thread creation failed, print errno value and exit
-        const int thread_create_errno = errno;
-        tr_err("Thread creation failed (%s)", strerror(thread_create_errno));
+        TR_ERR("Thread creation failed (%s)", strerror(errno));
         return Error::CCRBStartFailed;
     }
 
@@ -50,16 +49,16 @@ MblError ResourceBroker::start()
 
 MblError ResourceBroker::stop()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     
     // FIXME: handle properly all errors in this function. 
 
-    assert(ipc_);
+    assert(ipc_adapter_);
     
-    // try sending stop signal to ipc
-    const MblError ipc_stop_err = ipc_->stop();
+    // try sending stop signal to ipc (pass no error)
+    const MblError ipc_stop_err = ipc_adapter_->stop(MblError::None);
     if(Error::None != ipc_stop_err) {
-        tr_err("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
+        TR_ERR("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
 
         // FIXME: Currently, if ipc was not successfully signalled, we return error.
         //        Required to add "release resources best effort" functionality.
@@ -78,8 +77,7 @@ MblError ResourceBroker::stop()
     //        Required to use pthread_join with timeout.
     if(0 != thread_join_err) {
         // thread joining failed, print errno value
-        const int thread_join_errno = errno;
-        tr_err("Thread joining failed (%s)", strerror(thread_join_errno));
+        TR_ERR("Thread joining failed (%s)", strerror(errno));
         
         // FIXME: Currently, if pthread_join fails, we return error.
         //        Required to add "release resources best effort" functionality.
@@ -90,14 +88,14 @@ MblError ResourceBroker::stop()
     // value that was returned via pthread_Exit(MblError) from ccrb main function.
     MblError ret_value = (MblError)(uintptr_t)(thread_status);
     if(Error::None != ret_value) {
-        tr_err("ccrb_main() failed! (%s)", MblError_to_str(ret_value));
+        TR_ERR("ccrb_main() failed! (%s)", MblError_to_str(ret_value));
     }       
 
-    tr_info("ccrb_main() exit status = (%s)", MblError_to_str(ret_value));
+    TR_INFO("ccrb_main() exit status = (%s)", MblError_to_str(ret_value));
 
-    const MblError de_init_err = de_init();
+    const MblError de_init_err = deinit();
     if(Error::None != de_init_err) {
-        tr_err("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
+        TR_ERR("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
 
         ret_value = (ret_value == Error::None)? 
                     de_init_err : 
@@ -109,34 +107,34 @@ MblError ResourceBroker::stop()
 
 MblError ResourceBroker::init()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     
-    // verify that ipc_ member was not created yet
-    assert(nullptr == ipc_);
+    // verify that ipc_adapter_ member was not created yet
+    assert(nullptr == ipc_adapter_);
 
     // create ipc instance and pass ccrb instance to constructor
-    ipc_ = std::make_unique<DBusAdapter>(*this);
+    ipc_adapter_ = std::make_unique<DBusAdapter>(*this);
 
-    MblError status = ipc_->init();
+    MblError status = ipc_adapter_->init();
     if(Error::None != status) {
-        tr_error("ipc::init failed with error %s", MblError_to_str(status));
+        TR_ERR("ipc::init failed with error %s", MblError_to_str(status));
     }
 
     return status;
 }
 
-MblError ResourceBroker::de_init()
+MblError ResourceBroker::deinit()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     
-    assert(ipc_);
+    assert(ipc_adapter_);
    
-    // FIXME: Currently we call ipc_->de_init unconditionally. 
-    //        ipc_->de_init can't be called if ccrb thread was not finished.
-    //        Required to call ipc_->de_init only if ccrb thread was finished.  
-    MblError status = ipc_->de_init();
+    // FIXME: Currently we call ipc_adapter_->de_init unconditionally. 
+    //        ipc_adapter_->de_init can't be called if ccrb thread was not finished.
+    //        Required to call ipc_adapter_->de_init only if ccrb thread was finished.  
+    MblError status = ipc_adapter_->deinit();
     if(Error::None != status) {
-        tr_error("ipc::de_init failed with error %s", MblError_to_str(status));
+        TR_ERR("ipc::de_init failed with error %s", MblError_to_str(status));
     }
 
     return status;
@@ -144,13 +142,17 @@ MblError ResourceBroker::de_init()
 
 MblError ResourceBroker::run()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
+    MblError stop_status;
     
-    assert(ipc_);
+    assert(ipc_adapter_);
 
-    MblError status = ipc_->run();
+    MblError status = ipc_adapter_->run(stop_status);
     if(Error::None != status) {
-        tr_error("ipc::run failed with error %s", MblError_to_str(status));
+        TR_ERR("ipc::run failed with error %s", MblError_to_str(status));
+    }
+    else {
+        TR_ERR("ipc::run stopped with status %s", MblError_to_str(stop_status));
     }
 
     return status;
@@ -158,7 +160,7 @@ MblError ResourceBroker::run()
 
 void* ResourceBroker::ccrb_main(void* ccrb)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     
     assert(ccrb);
 
@@ -167,18 +169,24 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
     MblError status = this_ccrb->init();
     if(Error::None != status) {
-        tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
+        TR_ERR("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
     }
 
     status = this_ccrb->run();
     if(Error::None != status) {
-        tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit((void*)(uintptr_t)status);
+        TR_ERR("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
+        //continue to deinit and return status
     }
 
-    tr_info("%s thread function finished", __PRETTY_FUNCTION__);
-    pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
+    MblError status1 = this_ccrb->deinit();
+    if(Error::None != status1) {
+        TR_ERR("ccrb::deinit failed with error %s. Exit CCRB thread.", MblError_to_str(status1));
+        pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
+    }
+    
+    TR_INFO("thread function finished");
+    pthread_exit((void*)(uintptr_t)status); // pthread_exit does "return"
 }
 
 
@@ -188,7 +196,7 @@ MblError ResourceBroker::register_resources(
         CloudConnectStatus & /*unused*/,
         std::string & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     // empty for now
     return Error::None;
 }
@@ -199,7 +207,7 @@ MblError ResourceBroker::deregister_resources(
         const std::string & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Enter");    
     // empty for now
     return Error::None;
 }
@@ -211,7 +219,7 @@ MblError ResourceBroker::add_resource_instances(
         const std::vector<uint16_t> & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     // empty for now
     return Error::None;
 }
@@ -223,7 +231,7 @@ MblError ResourceBroker::remove_resource_instances(
     const std::vector<uint16_t> & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Enter");    
     // empty for now
     return Error::None;
 }
@@ -233,7 +241,7 @@ MblError ResourceBroker::set_resources_values(
         std::vector<ResourceSetOperation> & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Enter");    
     // empty for now
     return Error::None;
 }
@@ -243,7 +251,7 @@ MblError ResourceBroker::get_resources_values(
         std::vector<ResourceGetOperation> & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     // empty for now
     return Error::None;
 }
