@@ -9,9 +9,6 @@ metadata:
 
 run:
     steps:
-        - cd tutorials/helloworld
-        - su ubuntu -c "docker build -t linux-armv7:latest ./cc-env/"
-        - su ubuntu -c "docker run --rm linux-armv7 > ~/build-armv7"
-        - su ubuntu -c "chmod +x ~/build-armv7 "
-        - su ubuntu -c "~/build-armv7 make release"
-        - su ubuntu -c "~/build-armv7 make debug"
+        - chmod a+w tutorials/helloworld
+        - cd ./ci/lava/tests/
+        - su ubuntu -c mbl-helloworld-build.sh
