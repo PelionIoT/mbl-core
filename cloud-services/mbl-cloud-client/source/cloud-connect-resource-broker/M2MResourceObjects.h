@@ -27,12 +27,28 @@
 
 namespace mbl {
 
+/**
+ * @brief RBM2MResource represent application resource.
+ * It holds all relevant information such as name, mode (e.g. static / dynamic),
+ * resource type (integer/string), resource value and more.
+ * It also contains a pointer to Mbed cloud client m2m corresponding resource (but it is NOT its owner!)
+  */
 class RBM2MResource {
-
-friend class RBM2MObjectInstance;
 
 public:
 
+    /**
+     * @brief Construct a new RBM2MResource object
+     * 
+     * @param resource_name - Resource name
+     * @param mode - Resource mode dynamic / static
+     * @param multiple_instances - Signals if multiple instances allowed
+     * @param operation - Combination of allowed operation, e.g. get, put, post, delete
+     * @param observable - Signals if the resource is observable
+     * @param resource_type - String that describes resource type (e.g. "reset_button")
+     * @param type - Resource type string / integer
+     * @param value - Resource value
+     */
     RBM2MResource(
         std::string resource_name,
         M2MBase::Mode mode,
@@ -43,33 +59,38 @@ public:
         M2MResourceBase::ResourceType type,
         std::string value);
 
+    /**
+     * @brief Destroy the RBM2MResource object
+     * 
+     */
     ~RBM2MResource();
 
     /**
-     * @brief Set M2MResource
+     * @brief Set correcponding Mben client M2MResource
+     * m2m_resource ownership is not changed by this function call!
      * 
-     * @param m2m_resource - M2MResource
+     * @param m2m_resource - Mben client M2MResource
      */
     void set_m2m_resource(M2MResource *m2m_resource);
 
     /**
-     * @brief Get M2MResource
+     * @brief Get corresponding Mbed cloud client M2MResource
      * 
-     * @return M2MResource* 
+     * @return Pointer to Mbed cloud client M2MResource
      */
     M2MResource* get_m2m_resource();
 
     /**
      * @brief Get RBM2MResource name
      * 
-     * @return const std::string& 
+     * @return Resource name
      */
     const std::string& get_resource_name() const;
 
     /**
      * @brief Get RBM2MResource mode (e.g. M2MBase::Static)
      * 
-     * @return M2MBase::Mode 
+     * @return Resource M2MBase::Mode (dynamic / static)
      */
     M2MBase::Mode get_mode() const;
 
@@ -84,7 +105,7 @@ public:
     /**
      * @brief Get RBM2MResource allowed operations
      * 
-     * @return M2MBase::Operation 
+     * @return Mbed cloud client M2MBase::Operation (e.g. put, get, delete, post and their combination)
      */
     M2MBase::Operation get_operations() const;
 
@@ -99,28 +120,28 @@ public:
     /**
      * @brief Get RBM2MResource resource type (e.g. "button")
      * 
-     * @return const std::string& 
+     * @return Resource type (e.g. "reset_button")
      */
     const std::string& get_resource_type() const;
 
     /**
      * @brief Get RBM2MResource type (e.g. M2MResourceInstance::INTEGER)
      * 
-     * @return M2MResourceBase::ResourceType 
+     * @return Mbed cloud client M2MResourceBase::ResourceType (e.g. integer / string)
      */
     M2MResourceBase::ResourceType get_type() const;
 
     /**
      * @brief Get RBM2MResource value As String
      * 
-     * @return const std::string& 
+     * @return Resource value as string
      */
     const std::string& get_value_as_string() const;
 
     /**
      * @brief Get RBM2MResource value As Integer
      * 
-     * @return int 
+     * @return Resource value as integer
      */
     int get_value_as_integer() const;
 
@@ -141,42 +162,54 @@ typedef std::map<std::string, SPRBM2MResource> RBM2MResourceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @brief RBM2MObjectInstance represent application object instance.
+ * It is identified by object instance ID (uint16_t) and contains a map that holds
+ * all resources belongs to it.
+ * It also contains a pointer to Mbed cloud client m2m corresponding object instance (but it is NOT its owner!)
+  */
 class RBM2MObjectInstance {
-
-friend class RBM2MObject;
 
 public:
 
+    /**
+     * @brief Construct a new RBM2MObjectInstance object
+     * 
+     * @param object_instance_id - Object instance id
+     */
     RBM2MObjectInstance(uint16_t object_instance_id);
 
-    ~RBM2MObjectInstance();
-
     /**
-     * @brief Set M2MObjectInstance.
-     * m2m_resource ownership is not changed by this function call!
+     * @brief Destroy the RBM2MObjectInstance object
      * 
-     * @param m2m_object_instance - M2MObjectInstance
+     */
+    ~RBM2MObjectInstance();
+    /**
+     * @brief Set corresponding Mben client M2MObjectInstance
+     * m2m_object_instance ownership is not changed by this function call!
+     * 
+     * @param m2m_object_instance - Mben client M2MObjectInstance
      */
     void set_m2m_object_instance(M2MObjectInstance* m2m_object_instance);
 
     /**
-     * @brief Get M2MObjectInstance
+     * @brief Get the corresponding Mbed cloud client M2MObjectInstance
      * 
-     * @return M2MObjectInstance* 
+     * @return The corresponding Mbed cloud client M2MObjectInstance
      */
     M2MObjectInstance* get_m2m_object_instance();
 
     /**
      * @brief Get Object Instance Id
      * 
-     * @return uint16_t 
+     * @return Object Instance Id
      */
     uint16_t get_object_instance_id() const;
 
     /**
-     * @brief Get RBM2MResource Map
+     * @brief Get RBM2MResource Map that holds all child resources
      * 
-     * @return const RBM2MResourceMap& 
+     * @return RBM2MResource Map that holds all child resources
      */
     const RBM2MResourceMap& get_resource_map() const;
 
@@ -191,7 +224,7 @@ public:
      * @param resource_type - Resource type (e.g. "button")
      * @param type - Type (e.g. M2MResourceInstance::INTEGER)
      * @param value - Value (Integer values are also kept as string)
-     * @return SPRBM2MResource* 
+     * @return Smart pointer to RBM2MResource
      */
     SPRBM2MResource* create_resource(
         const std::string &resource_name,
@@ -205,7 +238,7 @@ public:
 
 private:
     uint16_t object_instance_id_;
-    M2MObjectInstance* m2m_object_instance_; // Associated M2MObjectInstance
+    M2MObjectInstance* m2m_object_instance_; // Corresponding Mbed cloud client M2MObjectInstance
     RBM2MResourceMap rbm2m_resource_map_;
 };
 
@@ -216,32 +249,40 @@ typedef std::map<uint16_t, SPRBM2MObjectInstance> RBM2MObjectInstanceMap;
 
 class RBM2MObject {
 
-friend class RBM2MObjectList;    
-
 public:
 
+    /**
+     * @brief Construct a new RBM2MObject object
+     * 
+     * @param Object name 
+     */
     RBM2MObject(std::string object_name);
 
+    /**
+     * @brief Destroy the RBM2MObject object
+     * 
+     */
     ~RBM2MObject();
 
     /**
-     * @brief Set M2MObject
+     * @brief Set corresponding Mben client M2MObject
+     * m2m_object ownership is not changed by this function call!
      * 
-     * @param m2m_object - M2MObject
+     * @param m2m_object - Corresponding Mben client M2MObject
      */
     void set_m2m_object(M2MObject *m2m_object);
 
     /**
-     * @brief Get M2MObject
+     * @brief Get the corresponding Mbed cloud client M2MObject
      * 
-     * @return M2MObject* 
+     * @return The corresponding Mbed cloud client M2MObject
      */
     M2MObject* get_m2m_object();
 
     /**
      * @brief Get RBM2MObject Name
      * 
-     * @return const std::string& 
+     * @return Object name
      */
     const std::string& get_object_name() const;
 
@@ -256,7 +297,7 @@ public:
      * @brief Create SPRBM2MObjectInstance
      * 
      * @param object_instance_id - RBM2MObjectInstance id
-     * @return SPRBM2MObjectInstance* 
+     * @return Smart pointer to RBM2MObjectInstance
      */
     SPRBM2MObjectInstance* create_object_instance(uint16_t object_instance_id);
    
@@ -278,9 +319,9 @@ public:
     ~RBM2MObjectList();
 
     /**
-     * @brief Get RBM2MObject Map
+     * @brief Get Get RBM2MObject Map that holds all child object instances
      * 
-     * @return const RBM2MObjectMap& 
+     * @return RBM2MObject Map
      */
     const RBM2MObjectMap& get_object_map() const;
 
@@ -294,7 +335,7 @@ public:
      * @brief Create SPRBM2MObject
      * 
      * @param object_name - RBM2MObject name
-     * @return SPRBM2MObject* 
+     * @return Smart pointer to RBM2MObject
      */
     SPRBM2MObject* create_object(const std::string &object_name);
 
@@ -302,7 +343,7 @@ public:
      * @brief Get SPRBM2MObject by its name
      * 
      * @param object_name - RBM2MObject name
-     * @return SPRBM2MObject* 
+     * @return Smart pointer to RBM2MObject
      */
     SPRBM2MObject* get_object(const std::string &object_name);
 

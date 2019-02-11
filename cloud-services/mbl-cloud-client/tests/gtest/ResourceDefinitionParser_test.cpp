@@ -398,10 +398,10 @@ TEST(JsonTest_Negative, Two_same_object_instances) {
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::CCRBInvalidJson);
 }
 
-TEST(JsonTest_Negative, Two_same_object_names) {
+TEST(JsonTest_Negative, Two_same_objects) {
     // Check that parsing of invalid JSON string with two same object names fails
     tr_debug("%s", __PRETTY_FUNCTION__);
-    const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } }, "1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+    const std::string json_string = INVALID_JSON_TWO_SAME_OBJECT;
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
     mbl::ResourceDefinitionParser resource_parser;
