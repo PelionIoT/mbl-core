@@ -7,8 +7,6 @@ metadata:
     name: Build Hello World Test
     description: "MBL Core Tests behaviour"
 
-params:
-
 run:
     steps:
         - cd tutorials/helloworld
