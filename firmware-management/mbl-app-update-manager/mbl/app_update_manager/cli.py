@@ -12,7 +12,7 @@ import sys
 from enum import Enum
 
 from .manager import AppUpdateManager
-from .utils import log, set_log_verbosity
+from .utils import log, set_log_verbosity, __version__
 
 
 class ReturnCode(Enum):
