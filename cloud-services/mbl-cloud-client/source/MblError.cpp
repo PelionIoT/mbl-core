@@ -69,6 +69,7 @@ const char* MblError_to_str(const MblError error)
         case Error::CCRBStopFailed: return "CCRBStopFailed";
         case Error::CCRBInvalidJson: return "CCRBInvalidJson";
         case Error::CCRBCreateM2MObjFailed: return "CCRBCreateM2MObjFailed";
+        case Error::CCRBLogicError: return "CCRBLogicError";
     }
     return "Unrecognized error code";
 }

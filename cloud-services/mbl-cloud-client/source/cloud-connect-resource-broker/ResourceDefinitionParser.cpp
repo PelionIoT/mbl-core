@@ -130,7 +130,7 @@ ResourceDefinitionParser::~ResourceDefinitionParser()
 
 MblError ResourceDefinitionParser::create_resources(
     M2MObjectInstance *m2m_object_instance,
-    SPRBM2MObjectInstance *sp_rbm2m_object_instance,
+    SPRBM2MObjectInstance sp_rbm2m_object_instance,
     const std::string &resource_name,
     const std::string &resource_mode,
     const std::string &resource_res_type,
@@ -181,7 +181,7 @@ MblError ResourceDefinitionParser::create_resources(
     m2m_resource->set_operation(m2m_operation); // Set allowed operations for accessing the resource
 
     // Create rbm2m resource and add it to sp_rbm2m_object_instance's map
-    auto rbm2m_resource = (*sp_rbm2m_object_instance)->create_resource(
+    auto rbm2m_resource = sp_rbm2m_object_instance->create_resource(
         resource_name,
         m2m_mode,
         resource_multiple_instance,
@@ -194,7 +194,7 @@ MblError ResourceDefinitionParser::create_resources(
         tr_error("%s - Create rbm2m_resource: %s failed", __PRETTY_FUNCTION__, resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
-    (*rbm2m_resource)->set_m2m_resource(m2m_resource);
+    rbm2m_resource->set_m2m_resource(m2m_resource);
 
     return Error::None;
 }
@@ -243,7 +243,7 @@ MblError ResourceDefinitionParser::parse_resource(
     const std::string &resource_name,
     Json::Value &json_value_resource,
     M2MObjectInstance* m2m_object_instance,
-    SPRBM2MObjectInstance* sp_rbm2m_object_instance)
+    SPRBM2MObjectInstance sp_rbm2m_object_instance)
 {
     tr_debug("%s: resource_name: %s", __PRETTY_FUNCTION__, resource_name.c_str());
     //Leave the next debug line commented. Uncomment in case of heavy debuging
@@ -334,16 +334,15 @@ MblError ResourceDefinitionParser::parse_resource(
         }
     }
 
-    create_resources(m2m_object_instance, sp_rbm2m_object_instance, resource_name, resource_mode, resource_res_type, resource_type,
+    return create_resources(m2m_object_instance, sp_rbm2m_object_instance, resource_name, resource_mode, resource_res_type, resource_type,
         resource_value, resource_multiple_instance, resource_observable, operation_mask);
-    return Error::None;
 }
 
 MblError ResourceDefinitionParser::parse_object_instance(
     int object_instance_id,
     Json::Value &json_value_object_instance,
     M2MObject *m2m_object,
-    SPRBM2MObject * sp_rbm2m_object)
+    SPRBM2MObject sp_rbm2m_object)
 {
     tr_debug("%s: object instance id: %d", __PRETTY_FUNCTION__, object_instance_id);
 
@@ -366,14 +365,14 @@ MblError ResourceDefinitionParser::parse_object_instance(
         return Error::CCRBCreateM2MObjFailed;
     }
     // Create rbm2m object instance and add it to sp_rbm2m_object's map
-    auto sp_rbm2m_object_instance = (*sp_rbm2m_object)->create_object_instance(object_instance_id_uint16);
+    auto sp_rbm2m_object_instance = sp_rbm2m_object->create_object_instance(object_instance_id_uint16);
     if(nullptr == sp_rbm2m_object_instance){
         tr_error("%s - Create sp_rbm2m_object_instance: %d failed", __PRETTY_FUNCTION__, object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
     tr_debug("Created sp_rbm2m_object_instance: %d", object_instance_id);
 
-    (*sp_rbm2m_object_instance)->set_m2m_object_instance(m2m_object_instance);
+    sp_rbm2m_object_instance->set_m2m_object_instance(m2m_object_instance);
 
     for(auto itr = json_value_object_instance.begin() ; itr != json_value_object_instance.end() ; itr++) 
     {
@@ -417,7 +416,7 @@ MblError ResourceDefinitionParser::parse_object(
     }
     tr_debug("Created sp_rbm2m_object: %s", m2m_object->name());
 
-    (*sp_rbm2m_object)->set_m2m_object(m2m_object);
+    sp_rbm2m_object->set_m2m_object(m2m_object);
 
     for(auto itr = json_value_object.begin() ; itr != json_value_object.end() ; itr++) 
     {
@@ -477,15 +476,15 @@ MblError ResourceDefinitionParser::build_object_list(
         }
     }
     catch (Json::Exception &e) {
-        tr_error("%s - BuildResourceList failed with Json::Exception exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
+        tr_error("%s - BuildResourceList failed with Json::Exception exception msg: %s.", __PRETTY_FUNCTION__, e.what());
         retval = Error::CCRBInvalidJson;
     }
     catch (std::runtime_error& e) {
-        tr_error("%s - BuildResourceList failed with runtime_error exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
+        tr_error("%s - BuildResourceList failed with runtime_error exception msg: %s.", __PRETTY_FUNCTION__, e.what());
         retval = Error::CCRBInvalidJson;
     }
     catch (std::exception &e) {
-        tr_error("%s - BuildResourceList failed with std::exception exception msg: %s.", __PRETTY_FUNCTION__, e.what ());
+        tr_error("%s - BuildResourceList failed with std::exception exception msg: %s.", __PRETTY_FUNCTION__, e.what());
         retval = Error::CCRBInvalidJson;
     } 
 

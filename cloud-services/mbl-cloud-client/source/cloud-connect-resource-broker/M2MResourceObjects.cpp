@@ -110,9 +110,14 @@ const std::string& RBM2MResource::get_value_as_string() const
     return value_;
 }
 
-int RBM2MResource::get_value_as_integer() const 
+MblError RBM2MResource::get_value_as_integer(int *value) const
 {
-    return std::stoi(value_);
+    if(M2MResourceBase::INTEGER != type_) {
+        tr_error("%s - Value type is not integer", __PRETTY_FUNCTION__);
+        return Error::CCRBLogicError;
+    }
+    *value = std::stoi(value_);
+    return Error::None;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -151,7 +156,7 @@ const RBM2MResourceMap& RBM2MObjectInstance::get_resource_map() const
     return rbm2m_resource_map_;
 }
 
-SPRBM2MResource* RBM2MObjectInstance::create_resource(
+SPRBM2MResource RBM2MObjectInstance::create_resource(
     const std::string &resource_name,
     M2MBase::Mode mode,
     bool multiple_instances,
@@ -175,7 +180,7 @@ SPRBM2MResource* RBM2MObjectInstance::create_resource(
     }
 
     tr_debug("Created rbm2m resource: %s", resource_name.c_str());
-    rbm2m_resource_map_[resource_name] = std::make_unique<RBM2MResource>(
+    rbm2m_resource_map_[resource_name] = std::make_shared<RBM2MResource>(
         resource_name,
         mode,
         multiple_instances,
@@ -185,7 +190,7 @@ SPRBM2MResource* RBM2MObjectInstance::create_resource(
         type,
         value);
     
-    return &rbm2m_resource_map_[resource_name];
+    return rbm2m_resource_map_[resource_name];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -223,7 +228,7 @@ const RBM2MObjectInstanceMap& RBM2MObject::get_object_instance_map() const
     return rbm2m_object_instance_map_;
 }
 
-SPRBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_instance_id)
+SPRBM2MObjectInstance RBM2MObject::create_object_instance(uint16_t object_instance_id)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -234,8 +239,8 @@ SPRBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_insta
         return nullptr;
     }
 
-    rbm2m_object_instance_map_[object_instance_id] = std::make_unique<RBM2MObjectInstance>(object_instance_id);    
-    return &rbm2m_object_instance_map_[object_instance_id];
+    rbm2m_object_instance_map_[object_instance_id] = std::make_shared<RBM2MObjectInstance>(object_instance_id);    
+    return rbm2m_object_instance_map_[object_instance_id];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -265,7 +270,7 @@ const RBM2MObjectMap& RBM2MObjectList::get_object_map() const
     return rbm2m_object_map_;
 }
 
-SPRBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
+SPRBM2MObject RBM2MObjectList::create_object(const std::string &object_name)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     if(object_name.empty()) {
@@ -280,16 +285,16 @@ SPRBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
         return nullptr;
     }
 
-    rbm2m_object_map_[object_name] = std::make_unique<RBM2MObject>(object_name);    
-    return &rbm2m_object_map_[object_name];
+    rbm2m_object_map_[object_name] = std::make_shared<RBM2MObject>(object_name);    
+    return rbm2m_object_map_[object_name];
 }
 
-SPRBM2MObject* RBM2MObjectList::get_object(const std::string &object_name)
+SPRBM2MObject RBM2MObjectList::get_object(const std::string &object_name)
 {
     // Check if object exist
     auto itr = rbm2m_object_map_.find(object_name);
     if(itr != rbm2m_object_map_.end()) {
-        return &itr->second;
+        return itr->second;
     }
     tr_info("%s: Object %s does not exist", __PRETTY_FUNCTION__, object_name.c_str());
     return nullptr;

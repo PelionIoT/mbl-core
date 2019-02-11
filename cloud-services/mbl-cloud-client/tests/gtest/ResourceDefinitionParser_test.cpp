@@ -36,54 +36,56 @@
  * @return true  - if M2MResource and SPRBM2MResource contain are equal (in term of values)
  * @return false - if M2MResource and SPRBM2MResource contain are NOT equal (in term of values)
  */
-static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MResource *sp_rbm2m_resource, bool ignore_m2m_objects_compare)
+static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MResource sp_rbm2m_resource, bool ignore_m2m_objects_compare)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     // Compare resource names
-    ASSERT_STREQ((*sp_rbm2m_resource)->get_resource_name().c_str(), m2m_resource->name());
-    tr_debug("Compare resource name succeeded (%s)", (*sp_rbm2m_resource)->get_resource_name().c_str());
+    ASSERT_STREQ(sp_rbm2m_resource->get_resource_name().c_str(), m2m_resource->name());
+    tr_debug("Compare resource name succeeded (%s)", sp_rbm2m_resource->get_resource_name().c_str());
 
     // Make sure sp_rbm2m_resource points to m2m_resource:
     if(!ignore_m2m_objects_compare) {
-        ASSERT_TRUE((*sp_rbm2m_resource)->get_m2m_resource() == m2m_resource);
+        ASSERT_TRUE(sp_rbm2m_resource->get_m2m_resource() == m2m_resource);
         tr_debug("Compare to M2MResource succeeded (%p)", m2m_resource);    
     }
     // Compare mode
-    ASSERT_TRUE(m2m_resource->mode() == (*sp_rbm2m_resource)->get_mode());
-    tr_debug("Compare mode succeeded (%d)", (*sp_rbm2m_resource)->get_mode());
-    if((*sp_rbm2m_resource)->get_mode() == M2MBase::Dynamic) {
+    ASSERT_TRUE(m2m_resource->mode() == sp_rbm2m_resource->get_mode());
+    tr_debug("Compare mode succeeded (%d)", sp_rbm2m_resource->get_mode());
+    if(sp_rbm2m_resource->get_mode() == M2MBase::Dynamic) {
         // Compare observable (only dynamic resources have this entry)
-        ASSERT_TRUE(m2m_resource->is_observable() == (*sp_rbm2m_resource)->get_observable());
-        tr_debug("Compare observable succeeded (%d)", (*sp_rbm2m_resource)->get_observable());
-    } else if ((*sp_rbm2m_resource)->get_mode() == M2MBase::Static){
+        ASSERT_TRUE(m2m_resource->is_observable() == sp_rbm2m_resource->get_observable());
+        tr_debug("Compare observable succeeded (%d)", sp_rbm2m_resource->get_observable());
+    } else if (sp_rbm2m_resource->get_mode() == M2MBase::Static){
         // Compare value (JSON conatins value only for static resources)
-        if((*sp_rbm2m_resource)->get_type() == M2MResourceInstance::INTEGER) 
+        if(sp_rbm2m_resource->get_type() == M2MResourceInstance::INTEGER) 
         {
             int m2m_integer_value = (int)m2m_resource->get_value_int();
-            EXPECT_TRUE((*sp_rbm2m_resource)->get_value_as_integer() == m2m_integer_value);
-        } else if((*sp_rbm2m_resource)->get_type() == M2MResourceInstance::STRING) 
+            int rbm2m2_integer_value = -1;
+            ASSERT_TRUE(mbl::Error::None == sp_rbm2m_resource->get_value_as_integer(&rbm2m2_integer_value));
+            EXPECT_TRUE(rbm2m2_integer_value == m2m_integer_value);
+        } else if(sp_rbm2m_resource->get_type() == M2MResourceInstance::STRING) 
         {
-            ASSERT_STREQ((*sp_rbm2m_resource)->get_value_as_string().c_str(), m2m_resource->get_value_string().c_str());
+            ASSERT_STREQ(sp_rbm2m_resource->get_value_as_string().c_str(), m2m_resource->get_value_string().c_str());
         }
-        tr_debug("Compare value succeeded (%s)", (*sp_rbm2m_resource)->get_value_as_string().c_str());
+        tr_debug("Compare value succeeded (%s)", sp_rbm2m_resource->get_value_as_string().c_str());
     }
     // Compare supports multiple instances
-    ASSERT_EQ(m2m_resource->supports_multiple_instances(), (*sp_rbm2m_resource)->get_supports_multiple_instances());
-    tr_debug("Compare supports multiple instances succeeded (%d)", (*sp_rbm2m_resource)->get_supports_multiple_instances());
+    ASSERT_EQ(m2m_resource->supports_multiple_instances(), sp_rbm2m_resource->get_supports_multiple_instances());
+    tr_debug("Compare supports multiple instances succeeded (%d)", sp_rbm2m_resource->get_supports_multiple_instances());
     // Compare type
-    ASSERT_EQ(m2m_resource->resource_instance_type(), (*sp_rbm2m_resource)->get_type());
-    tr_debug("Compare type succeeded (%d)", (*sp_rbm2m_resource)->get_type());
+    ASSERT_EQ(m2m_resource->resource_instance_type(), sp_rbm2m_resource->get_type());
+    tr_debug("Compare type succeeded (%d)", sp_rbm2m_resource->get_type());
     //Compare resource_type
     if(m2m_resource->resource_type() != nullptr) {
-        ASSERT_STREQ(m2m_resource->resource_type(), (*sp_rbm2m_resource)->get_resource_type().c_str());
+        ASSERT_STREQ(m2m_resource->resource_type(), sp_rbm2m_resource->get_resource_type().c_str());
     } else {
-        EXPECT_TRUE((*sp_rbm2m_resource)->get_resource_type().empty());
+        EXPECT_TRUE(sp_rbm2m_resource->get_resource_type().empty());
     }
-    tr_debug("Compare resource type succeeded (%s)", (*sp_rbm2m_resource)->get_resource_type().c_str());
+    tr_debug("Compare resource type succeeded (%s)", sp_rbm2m_resource->get_resource_type().c_str());
     // Copare operation
-    ASSERT_EQ(m2m_resource->operation(), (*sp_rbm2m_resource)->get_operations());
-    tr_debug("Compare operation succeeded (%d)", (*sp_rbm2m_resource)->get_operations());
+    ASSERT_EQ(m2m_resource->operation(), sp_rbm2m_resource->get_operations());
+    tr_debug("Compare operation succeeded (%d)", sp_rbm2m_resource->get_operations());
 }
 
 /**
@@ -98,26 +100,26 @@ static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MR
  * @return true  - if M2MObjectInstance and SPRBM2MObjectInstance contain are equal (in term of values)
  * @return false - if M2MObjectInstance and SPRBM2MObjectInstance contain are NOT equal (in term of values)
  */
-static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, const mbl::SPRBM2MObjectInstance *sp_rbm2m_object_instance, bool ignore_m2m_objects_compare)
+static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, const mbl::SPRBM2MObjectInstance sp_rbm2m_object_instance, bool ignore_m2m_objects_compare)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     // Compare number of resources under each object instance
-    ASSERT_TRUE(m2m_object_instance->resources().size() == (int)(*sp_rbm2m_object_instance)->get_resource_map().size());
+    ASSERT_TRUE(m2m_object_instance->resources().size() == (int)sp_rbm2m_object_instance->get_resource_map().size());
 
     // Make sure sp_rbm2m_object_instance points to m2m_object_instance:
     if(!ignore_m2m_objects_compare) {
-        ASSERT_TRUE((*sp_rbm2m_object_instance)->get_m2m_object_instance() == m2m_object_instance);
+        ASSERT_TRUE(sp_rbm2m_object_instance->get_m2m_object_instance() == m2m_object_instance);
         tr_debug("Compare to M2MObjectInstance succeeded (%p)", m2m_object_instance);
     }
 
     // Iterate all resources
     M2MResource *m2m_resource = nullptr;
-    const mbl::SPRBM2MResource *sp_rbm2m_resource = nullptr;
-    for(auto& itr : (*sp_rbm2m_object_instance)->get_resource_map())
+    mbl::SPRBM2MResource sp_rbm2m_resource = nullptr;
+    for(auto& itr : sp_rbm2m_object_instance->get_resource_map())
     {
         std::string rbm2m_resource_name = itr.first;
-        sp_rbm2m_resource = &itr.second;
+        sp_rbm2m_resource = itr.second;
         tr_debug("rbm2m_resource_name: %s", rbm2m_resource_name.c_str());
         m2m_resource = m2m_object_instance->resource(rbm2m_resource_name.c_str());
         ASSERT_TRUE(m2m_resource != nullptr);
@@ -138,24 +140,24 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
  * @return true  - if M2MObject and SPRBM2MObject contain are equal (in term of values)
  * @return false - if M2MObject and SPRBM2MObject contain are NOT equal (in term of values)
  */
-static void CheckEqualObject(M2MObject* m2m_object, mbl::SPRBM2MObject *sp_rbm2m_object, bool ignore_m2m_objects_compare)
+static void CheckEqualObject(M2MObject* m2m_object, mbl::SPRBM2MObject sp_rbm2m_object, bool ignore_m2m_objects_compare)
 {
     // Compare number of object instances under each object
-    ASSERT_TRUE(m2m_object->instance_count() == (*sp_rbm2m_object)->get_object_instance_map().size());
+    ASSERT_TRUE(m2m_object->instance_count() == (sp_rbm2m_object)->get_object_instance_map().size());
 
     // Make sure sp_rbm2m_object points to m2m_object:
     if(!ignore_m2m_objects_compare) {
-        ASSERT_TRUE((*sp_rbm2m_object)->get_m2m_object() == m2m_object);
+        ASSERT_TRUE((sp_rbm2m_object)->get_m2m_object() == m2m_object);
         tr_debug("Compare to M2MObjects succeeded (%p)", m2m_object);
     }
 
     // Iterate all object instances
     M2MObjectInstance* m2m_object_instance = nullptr;
-    const mbl::SPRBM2MObjectInstance* sp_rbm2m_object_instance = nullptr;
-    for(auto& itr : (*sp_rbm2m_object)->get_object_instance_map())
+    mbl::SPRBM2MObjectInstance sp_rbm2m_object_instance = nullptr;
+    for(auto& itr : (sp_rbm2m_object)->get_object_instance_map())
     {
         uint16_t rbm2m_object_instance_id = itr.first;
-        sp_rbm2m_object_instance = &itr.second;
+        sp_rbm2m_object_instance = itr.second;
         tr_debug("rbm2m_object_instance_id: %d", rbm2m_object_instance_id);
         m2m_object_instance = m2m_object->object_instance(rbm2m_object_instance_id);
         check_equal_object_instances(m2m_object_instance, sp_rbm2m_object_instance, ignore_m2m_objects_compare);
@@ -181,7 +183,7 @@ static void check_equal_object_lists(const M2MObjectList &m2m_object_list, mbl::
 
     // Iterate all Objects
     M2MObject *m2m_object = nullptr;
-    mbl::SPRBM2MObject *sp_rbm2m_object = nullptr;
+    mbl::SPRBM2MObject sp_rbm2m_object = nullptr;
     for(auto& itr : m2m_object_list)
     {
         m2m_object = itr;
@@ -208,11 +210,11 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     // RBM2MObjectList (contains object_1 and object_2)
     mbl::RBM2MObjectList rbm2m_object_list_test;
     // Object 1
-    mbl::SPRBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
+    mbl::SPRBM2MObject object_1 = rbm2m_object_list_test.create_object("1");
     // Object 1 (contains object_instance_11)
-    mbl::SPRBM2MObjectInstance *object_instance_11 = (*object_1)->create_object_instance(11);
+    mbl::SPRBM2MObjectInstance object_instance_11 = object_1->create_object_instance(11);
     // Object instance 11 (contains resource_111 and resource_112)
-    (*object_instance_11)->create_resource(
+    object_instance_11->create_resource(
         "111",                          // Resource name
         M2MBase::Static,                // M2MBase::Mode
         false,                          // Supports multiple instances
@@ -222,7 +224,7 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
         M2MResourceInstance::STRING,    // Type
         "string_val"                  // Value
     );
-    (*object_instance_11)->create_resource(
+    object_instance_11->create_resource(
         "112",                          // Resource name
         M2MBase::Dynamic,               // M2MBase::Mode
         true,                           // Supports multiple instances
@@ -234,11 +236,11 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     );
 
     // Object 2
-    mbl::SPRBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
+    mbl::SPRBM2MObject object_2 = rbm2m_object_list_test.create_object("2");
     // Object 2 (contains object_instance_21 and object_instance_22)
-    mbl::SPRBM2MObjectInstance *object_instance_21 = (*object_2)->create_object_instance(21);
+    mbl::SPRBM2MObjectInstance object_instance_21 = object_2->create_object_instance(21);
     // Object instance 21 (contains resource_211)
-    (*object_instance_21)->create_resource(
+    object_instance_21->create_resource(
         "211",                          // Resource name
         M2MBase::Static,                // M2MBase::Mode
         true,                           // Supports multiple instances
@@ -248,9 +250,9 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
         M2MResourceInstance::INTEGER,   // Type
         "999"                           // Value
     );
-    mbl::SPRBM2MObjectInstance *object_instance_22 = (*object_2)->create_object_instance(22);
+    mbl::SPRBM2MObjectInstance object_instance_22 = object_2->create_object_instance(22);
     // Object instance 22 (contains resource_221)
-    (*object_instance_22)->create_resource(
+    object_instance_22->create_resource(
         "221",                          // Resource name
         M2MBase::Dynamic,               // M2MBase::Mode
         true,                           // Supports multiple instances
@@ -280,11 +282,11 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     // RBM2MObjectList (contains object_1 and object_2)
     mbl::RBM2MObjectList rbm2m_object_list_test;
     // Object 1
-    mbl::SPRBM2MObject *object_1 = rbm2m_object_list_test.create_object("1");
+    mbl::SPRBM2MObject object_1 = rbm2m_object_list_test.create_object("1");
     // Object 1 (contains object_instance_11)
-    mbl::SPRBM2MObjectInstance *object_instance_11 = (*object_1)->create_object_instance(11);
+    mbl::SPRBM2MObjectInstance object_instance_11 = object_1->create_object_instance(11);
     // Object instance 11 (contains resource_111)
-    (*object_instance_11)->create_resource(
+    object_instance_11->create_resource(
         "111",                          // Resource name
         M2MBase::Static,                // M2MBase::Mode
         false,                          // Supports multiple instances
@@ -296,11 +298,11 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     );
 
     // Object 2
-    mbl::SPRBM2MObject *object_2 = rbm2m_object_list_test.create_object("2");
+    mbl::SPRBM2MObject object_2 = rbm2m_object_list_test.create_object("2");
     // Object 2 (contains object_instance_21)
-    mbl::SPRBM2MObjectInstance *object_instance_21 = (*object_2)->create_object_instance(21);
+    mbl::SPRBM2MObjectInstance object_instance_21 = object_2->create_object_instance(21);
     // Object instance 21 (contains resource_211)
-    (*object_instance_21)->create_resource(
+    object_instance_21->create_resource(
         "211",                          // Resource name
         M2MBase::Static,                // M2MBase::Mode
         true,                           // Supports multiple instances

@@ -32,6 +32,7 @@ namespace mbl {
  * It holds all relevant information such as name, mode (e.g. static / dynamic),
  * resource type (integer/string), resource value and more.
  * It also contains a pointer to Mbed cloud client m2m corresponding resource (but it is NOT its owner!)
+ * Note: Class is not thread safe
   */
 class RBM2MResource {
 
@@ -143,7 +144,16 @@ public:
      * 
      * @return Resource value as integer
      */
-    int get_value_as_integer() const;
+
+    /**
+     * @brief Get RBM2MResource value As Integer
+     * 
+     * @param value - Output integer value
+     * @return MblError -
+     *      Error::None - If function succeeded
+     *      Error::CCRBLogicError - In case resource type is not insteger
+     */
+    MblError get_value_as_integer(int *value) const;
 
 private:
     std::string resource_name_;
@@ -157,7 +167,7 @@ private:
     M2MResource *m2m_resource_; // Assosiate M2M object
 };
 
-typedef std::unique_ptr<RBM2MResource> SPRBM2MResource;
+typedef std::shared_ptr<RBM2MResource> SPRBM2MResource;
 typedef std::map<std::string, SPRBM2MResource> RBM2MResourceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -167,6 +177,7 @@ typedef std::map<std::string, SPRBM2MResource> RBM2MResourceMap;
  * It is identified by object instance ID (uint16_t) and contains a map that holds
  * all resources belongs to it.
  * It also contains a pointer to Mbed cloud client m2m corresponding object instance (but it is NOT its owner!)
+ * Note: Class is not thread safe
   */
 class RBM2MObjectInstance {
 
@@ -226,7 +237,7 @@ public:
      * @param value - Value (Integer values are also kept as string)
      * @return Smart pointer to RBM2MResource
      */
-    SPRBM2MResource* create_resource(
+    SPRBM2MResource create_resource(
         const std::string &resource_name,
         M2MBase::Mode mode,
         bool multiple_instances,
@@ -242,11 +253,18 @@ private:
     RBM2MResourceMap rbm2m_resource_map_;
 };
 
-typedef std::unique_ptr<RBM2MObjectInstance> SPRBM2MObjectInstance;
+typedef std::shared_ptr<RBM2MObjectInstance> SPRBM2MObjectInstance;
 typedef std::map<uint16_t, SPRBM2MObjectInstance> RBM2MObjectInstanceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @brief RBM2MObject represent application object.
+ * It is identified by object name and contains a map that holds
+ * all object instances belongs to it.
+ * It also contains a pointer to Mbed cloud client m2m corresponding object (but it is NOT its owner!)
+ * Note: Class is not thread safe
+  */
 class RBM2MObject {
 
 public:
@@ -299,7 +317,7 @@ public:
      * @param object_instance_id - RBM2MObjectInstance id
      * @return Smart pointer to RBM2MObjectInstance
      */
-    SPRBM2MObjectInstance* create_object_instance(uint16_t object_instance_id);
+    SPRBM2MObjectInstance create_object_instance(uint16_t object_instance_id);
    
 private:
     std::string object_name_;
@@ -307,11 +325,16 @@ private:
     RBM2MObjectInstanceMap rbm2m_object_instance_map_;
 };
 
-typedef std::unique_ptr<RBM2MObject> SPRBM2MObject;
+typedef std::shared_ptr<RBM2MObject> SPRBM2MObject;
 typedef std::map<std::string, SPRBM2MObject> RBM2MObjectMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @brief RBM2MObjectList is a container for RBM2MObjects
+ * It is used to create RBM2MObjects which is added to the container
+ * Note: Class is not thread safe
+  */
 class RBM2MObjectList {
     
 public:
@@ -337,7 +360,7 @@ public:
      * @param object_name - RBM2MObject name
      * @return Smart pointer to RBM2MObject
      */
-    SPRBM2MObject* create_object(const std::string &object_name);
+    SPRBM2MObject create_object(const std::string &object_name);
 
     /**
      * @brief Get SPRBM2MObject by its name
@@ -345,7 +368,7 @@ public:
      * @param object_name - RBM2MObject name
      * @return Smart pointer to RBM2MObject
      */
-    SPRBM2MObject* get_object(const std::string &object_name);
+    SPRBM2MObject get_object(const std::string &object_name);
 
 private:
     RBM2MObjectMap rbm2m_object_map_;
