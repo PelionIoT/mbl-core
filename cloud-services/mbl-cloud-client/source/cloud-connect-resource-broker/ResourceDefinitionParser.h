@@ -153,7 +153,7 @@ private:
         int object_instance_id,
         Json::Value &json_value_object_instance,
         M2MObject *m2m_object,
-        RBM2MObject * rbm2m_object);
+        SPRBM2MObject * rbm2m_object);
 
     /**
      * @brief Parse JSON value of a resource.
@@ -171,7 +171,7 @@ private:
         const std::string &resource_name,
         Json::Value &json_value_resource,
         M2MObjectInstance* m2m_object_instance,
-        RBM2MObjectInstance * rbm2m_object_instance);
+        SPRBM2MObjectInstance* rbm2m_object_instance);
 
     /**
      * @brief Parse resource operation from JSON value.
@@ -204,7 +204,7 @@ private:
      */
     MblError create_resources(
         M2MObjectInstance *m2m_object_instance,
-        RBM2MObjectInstance *rbm2m_object_instance,
+        SPRBM2MObjectInstance *rbm2m_object_instance,
         const std::string &resource_name,
         const std::string &resource_mode,
         const std::string &resource_res_type,

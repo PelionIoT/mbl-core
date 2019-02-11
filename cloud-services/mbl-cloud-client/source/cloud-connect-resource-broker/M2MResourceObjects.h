@@ -147,6 +147,10 @@ friend class RBM2MObject;
 
 public:
 
+    RBM2MObjectInstance(uint16_t object_instance_id);
+
+    ~RBM2MObjectInstance();
+
     /**
      * @brief Set M2MObjectInstance.
      * m2m_resource ownership is not changed by this function call!
@@ -177,7 +181,7 @@ public:
     const RBM2MResourceMap& get_resource_map() const;
 
     /**
-     * @brief Create a RBM2MResource
+     * @brief Create a SPRBM2MResource
      * 
      * @param resource_name - Resource name
      * @param mode - Mode
@@ -187,7 +191,7 @@ public:
      * @param resource_type - Resource type (e.g. "button")
      * @param type - Type (e.g. M2MResourceInstance::INTEGER)
      * @param value - Value (Integer values are also kept as string)
-     * @return RBM2MResource* 
+     * @return SPRBM2MResource* 
      */
     SPRBM2MResource* create_resource(
         const std::string &resource_name,
@@ -200,18 +204,13 @@ public:
         const std::string &value);
 
 private:
-    // Constructor and destructor are private
-    // which means that these objects can be created or
-    // deleted only through a function provided by RBM2MObject.
-    RBM2MObjectInstance(uint16_t object_instance_id);
-    ~RBM2MObjectInstance();
-
     uint16_t object_instance_id_;
     M2MObjectInstance* m2m_object_instance_; // Associated M2MObjectInstance
     RBM2MResourceMap rbm2m_resource_map_;
 };
 
-typedef std::map<uint16_t, RBM2MObjectInstance*> RBM2MObjectInstanceMap;
+typedef std::unique_ptr<RBM2MObjectInstance> SPRBM2MObjectInstance;
+typedef std::map<uint16_t, SPRBM2MObjectInstance> RBM2MObjectInstanceMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -220,6 +219,10 @@ class RBM2MObject {
 friend class RBM2MObjectList;    
 
 public:
+
+    RBM2MObject(std::string object_name);
+
+    ~RBM2MObject();
 
     /**
      * @brief Set M2MObject
@@ -250,26 +253,21 @@ public:
     const RBM2MObjectInstanceMap& get_object_instance_map() const;
 
     /**
-     * @brief Create RBM2MObjectInstance
+     * @brief Create SPRBM2MObjectInstance
      * 
      * @param object_instance_id - RBM2MObjectInstance id
-     * @return RBM2MObjectInstance* 
+     * @return SPRBM2MObjectInstance* 
      */
-    RBM2MObjectInstance* create_object_instance(uint16_t object_instance_id);
+    SPRBM2MObjectInstance* create_object_instance(uint16_t object_instance_id);
    
 private:
-    // Constructor and destructor are private
-    // which means that these objects can be created or
-    // deleted only through a function provided by the RBM2MObjectList.
-    RBM2MObject(std::string object_name);
-    ~RBM2MObject();
-
     std::string object_name_;
     M2MObject *m2m_object_; // Assosiated M2MObject
     RBM2MObjectInstanceMap rbm2m_object_instance_map_;
 };
 
-typedef std::map<std::string, RBM2MObject*> RBM2MObjectMap;
+typedef std::unique_ptr<RBM2MObject> SPRBM2MObject;
+typedef std::map<std::string, SPRBM2MObject> RBM2MObjectMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -293,12 +291,12 @@ public:
     void clear_object_map();
 
     /**
-     * @brief Create RBM2MObject
+     * @brief Create SPRBM2MObject
      * 
      * @param object_name - RBM2MObject name
-     * @return RBM2MObject* 
+     * @return SPRBM2MObject* 
      */
-    RBM2MObject* create_object(const std::string &object_name);
+    SPRBM2MObject* create_object(const std::string &object_name);
 
     /**
      * @brief Get RBM2MObject by its name

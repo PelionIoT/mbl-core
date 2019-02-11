@@ -174,27 +174,6 @@ SPRBM2MResource* RBM2MObjectInstance::create_resource(
         return nullptr;
     }
 
-/*    auto resource = std::make_unique<RBM2MResource>(
-        resource_name,
-        mode,
-        multiple_instances,
-        operation,
-        observable,
-        resource_type,
-        type,
-        value);
-*/        
-/*    
-    auto resource = new RBM2MResource(
-        resource_name,
-        mode,
-        multiple_instances,
-        operation,
-        observable,
-        resource_type,
-        type,
-        value);
-*/        
     tr_debug("Created rbm2m resource: %s", resource_name.c_str());
     rbm2m_resource_map_[resource_name] = std::make_unique<RBM2MResource>(
         resource_name,
@@ -221,13 +200,6 @@ RBM2MObject::RBM2MObject(std::string object_name)
 RBM2MObject::~RBM2MObject()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    RBM2MObjectInstance *object_instance = nullptr;
-    for (auto& itr : rbm2m_object_instance_map_) {
-        object_instance = itr.second;
-        tr_debug("Deleting rbm2m object instance: %d", 
-            object_instance->get_object_instance_id());
-        delete object_instance;
-    }
     rbm2m_object_instance_map_.clear();
 }
 
@@ -251,7 +223,7 @@ const RBM2MObjectInstanceMap& RBM2MObject::get_object_instance_map() const
     return rbm2m_object_instance_map_;
 }
 
-RBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_instance_id)
+SPRBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_instance_id)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -262,10 +234,8 @@ RBM2MObjectInstance* RBM2MObject::create_object_instance(uint16_t object_instanc
         return nullptr;
     }
 
-    auto object_instance = new RBM2MObjectInstance(object_instance_id);
-    tr_debug("Created rbm2m object instance: %d", object_instance_id);
-    rbm2m_object_instance_map_[object_instance_id] = object_instance;
-    return object_instance;
+    rbm2m_object_instance_map_[object_instance_id] = std::make_unique<RBM2MObjectInstance>(object_instance_id);    
+    return &rbm2m_object_instance_map_[object_instance_id];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -286,12 +256,6 @@ RBM2MObjectList::~RBM2MObjectList()
 void RBM2MObjectList::clear_object_map()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    RBM2MObject *object = nullptr;
-    for (auto& itr : rbm2m_object_map_) {
-        object = itr.second;
-        tr_debug("Deleting rbm2m object: %s", object->get_object_name().c_str());
-        delete object;
-    }
     rbm2m_object_map_.clear();
 }
 
@@ -301,7 +265,7 @@ const RBM2MObjectMap& RBM2MObjectList::get_object_map() const
     return rbm2m_object_map_;
 }
 
-RBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
+SPRBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     if(object_name.empty()) {
@@ -316,10 +280,8 @@ RBM2MObject *RBM2MObjectList::create_object(const std::string &object_name)
         return nullptr;
     }
 
-    auto object = new RBM2MObject(object_name);
-    tr_debug("Created rbm2m object: %s", object_name.c_str());
-    rbm2m_object_map_[object_name] = object;
-    return object;
+    rbm2m_object_map_[object_name] = std::make_unique<RBM2MObject>(object_name);    
+    return &rbm2m_object_map_[object_name];
 }
 
 RBM2MObject* RBM2MObjectList::get_object(const std::string &object_name)
@@ -327,7 +289,7 @@ RBM2MObject* RBM2MObjectList::get_object(const std::string &object_name)
     // Check if object exist
     auto itr = rbm2m_object_map_.find(object_name);
     if(itr != rbm2m_object_map_.end()) {
-        return itr->second;
+        return &(*(itr->second));
     }
     tr_info("%s: Object %s does not exist", __PRETTY_FUNCTION__, object_name.c_str());
     return nullptr;
