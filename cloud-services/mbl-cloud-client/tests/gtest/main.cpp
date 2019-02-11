@@ -10,6 +10,7 @@
 #include "MblError.h"
 
 using namespace mbl;
+#define TRACE_GROUP "ccrb-gtest"
 
 int main(int argc, char **argv) {
 
