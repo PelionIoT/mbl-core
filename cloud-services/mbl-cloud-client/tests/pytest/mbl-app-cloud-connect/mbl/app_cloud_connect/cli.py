@@ -8,7 +8,7 @@
 import argparse
 import logging
 import sys
-import mbl.app_lifecycle.app_lifecycle as alc
+import mbl.app_cloud_connect.app_cloud_connect as alc
 
 
 def get_argument_parser():
@@ -42,7 +42,7 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logger = logging.getLogger("mbl-app-lifecycle")
+    logger = logging.getLogger("mbl-app-cloud-connect")
     logger.debug("Command line arguments:{}".format(args))
 
     app = alc.AppConnectivity()

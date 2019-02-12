@@ -29,7 +29,7 @@ DBUS_STOP_SIGNAL = "com.test.Framework1"
 
 DBUS_SERVICE_PUBLISHING_TIME = 1
 DBUS_SERVICE_PUBLISHING_WAIT_MAX_RETRIES = 15
-APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT = 15
+APP_PROCESS_TERMINATION_TIMEOUT = 15
 
 
 class TstReturnCode(Enum):
@@ -68,7 +68,7 @@ class TestAppConnectivity:
         # publish stop signal
         self.obj = self.bus.publish(DBUS_STOP_SIGNAL, self)
 
-        command = ["mbl-app-lifecycle", "-v"]
+        command = ["mbl-app-cloud-connect", "-v"]
         print("Executing command: {}".format(command))
         # run the application
         self.proc = subprocess.Popen(command)
@@ -98,14 +98,14 @@ class TestAppConnectivity:
     def teardown_method(self, method):
         """Teardown method: stop the D-Bus main loop."""
         print("Teardown method TestAppConnectivity start...")
-        print("Stopping mbl-app-lifecycle main loop")
+        print("Stopping mbl-app-cloud-connect main loop")
         # send stop signal
         self.stop_request_signal()
 
         try:
             print("Waiting for App Pydbus process to terminate.")
             returncode = self.proc.wait(
-                timeout=APP_LIFECYCLE_PROCESS_TERMINATION_TIMEOUT
+                timeout=APP_PROCESS_TERMINATION_TIMEOUT
             )
             assert (
                 returncode == 0
@@ -117,14 +117,14 @@ class TestAppConnectivity:
         except subprocess.TimeoutExpired:
             print(
                 "TimeoutExpired for process wait for termination, killing "
-                "mbl-app-lifecycle process"
+                "mbl-app-cloud-connect process"
             )
             # timeout expired, kill the process
             self.proc.kill()
-            out_app_lifecycle, err_app_lifecycle = self.proc.communicate()
+            out_app_cloud_connect, err_app_cloud_connect = self.proc.communicate()
             print(
                 "Process communicate stdout: {}, stderr: {}".format(
-                    out_app_lifecycle, err_app_lifecycle
+                    out_app_cloud_connect, err_app_cloud_connect
                 )
             )
             assert 0, "Wait for process terminate: TimeoutExpired"

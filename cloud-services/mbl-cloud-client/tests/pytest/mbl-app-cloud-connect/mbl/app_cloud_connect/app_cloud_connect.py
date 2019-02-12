@@ -48,7 +48,7 @@ class AppLifeCycle:
 
     def __init__(self):
         """Create AppLifeCycle object."""
-        self.logger = logging.getLogger("mbl-app-lifecycle")
+        self.logger = logging.getLogger("mbl-app-cloud-connect")
         self.logger.info(
             "Creating AppLifeCycle version {}".format(__version__)
         )
