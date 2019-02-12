@@ -9,14 +9,20 @@
 
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
+
+#include "ResourceDefinitionParser.h"
+#include "MblCloudClient.h"
+
 
 #define TRACE_GROUP "ccrb"
 
 namespace mbl {
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker() 
+ResourceBroker::ResourceBroker()
+: cloud_client_(nullptr)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -26,9 +32,11 @@ ResourceBroker::~ResourceBroker()
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-MblError ResourceBroker::start()
+MblError ResourceBroker::start(MbedCloudClient* cloud_client)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+    assert(cloud_client);
+    cloud_client_ = cloud_client;
 
     // create new thread which will run IPC event loop
     const int thread_create_err = pthread_create(
@@ -171,6 +179,13 @@ void* ResourceBroker::ccrb_main(void* ccrb)
         pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
     }
 
+    uintptr_t a = 0;
+    std::string b = "A";
+    tr_info("%s @@@@@@ Call register_resources()", __PRETTY_FUNCTION__);
+    this_ccrb->register_resources(a,b);
+    tr_info("%s @@@@@@ AFTER Call register_resources()", __PRETTY_FUNCTION__);
+
+
     status = this_ccrb->run();
     if(Error::None != status) {
         tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
@@ -182,17 +197,89 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+typedef void(*on_registration_updated_cb)(int);
+
+void registration_updated_cb(int token)
+{
+    tr_info("%s @@@@@@ token = %d", __PRETTY_FUNCTION__,token);
+}
+
+class AppCallbackHandler
+{
+public:
+
+    AppCallbackHandler(MbedCloudClient *cloud_client, int token)
+    : cloud_client_(cloud_client), token_(token), on_registration_updated_cb_(nullptr)
+    {
+        //tr_debug("@@@@@@ %s: token = %d", __PRETTY_FUNCTION__, token);
+    }
+    
+    ~AppCallbackHandler(){}
+
+    void resiter_callbacks()
+    {
+        tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
+        cloud_client_->on_registration_updated(this, &AppCallbackHandler::client_registration_updated);
+    }
+
+    void set_on_registration_updated_callback(on_registration_updated_cb cb)
+    {
+        tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+        on_registration_updated_cb_ = cb;
+    }
+
+    void client_registration_updated()
+    {
+        tr_debug("@@@@@@ %s: token  = %d", __PRETTY_FUNCTION__, token_);
+        if (on_registration_updated_cb_) {
+            on_registration_updated_cb_(token_);
+        }
+    }
+
+private:
+    MbedCloudClient *cloud_client_;
+    int token_;
+    on_registration_updated_cb on_registration_updated_cb_;
+};
+
+////////////////////////////////////////////////////////////////////////////////
+#include <unistd.h>
+
 MblError ResourceBroker::register_resources(
         const uintptr_t /*unused*/, 
         const std::string & /*unused*/,
         CloudConnectStatus & /*unused*/,
         std::string & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
-    return Error::None;
-}
+    tr_debug("%s @@@@@ START", __PRETTY_FUNCTION__);
 
+    sleep(30);
+    MblError status = Error::None;
+    const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+    M2MObjectList m2m_object_list;
+    RBM2MObjectList rbm2m_object_list;
+    ResourceDefinitionParser resource_parser;
+    status = resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list);
+    if(Error::None != status) {
+        tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        return status;
+    }
+
+    AppCallbackHandler *app_callback_handler = new AppCallbackHandler(cloud_client_, 55); //55 is the token
+    app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
+    app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
+    tr_debug("@@@@@@ %s: Call add_objects", __PRETTY_FUNCTION__);
+    cloud_client_->add_objects(m2m_object_list);
+    tr_debug("@@@@@@ %s: Call register_update", __PRETTY_FUNCTION__);
+    cloud_client_->register_update();
+
+    while(1) {
+        sleep(10);
+    }
+    tr_debug("%s @@@@@ END", __PRETTY_FUNCTION__);
+    return status;
+}
 
 MblError ResourceBroker::deregister_resources(
         const uintptr_t /*unused*/, 

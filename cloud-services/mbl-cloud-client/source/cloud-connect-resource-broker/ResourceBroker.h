@@ -14,6 +14,9 @@
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
 
+class MbedCloudClient;
+class RBM2MObjectList;
+
 namespace mbl {
 
 /**
@@ -36,10 +39,12 @@ public:
  * @brief Starts CCRB.
  * In details: 
  * - initializes CCRB instance and runs event-loop.
+ *
+ * @param cloud_client - mbed cloud client
  * @return MblError returns value Error::None if function succeeded, 
  *         or Error::CCRBStartFailed otherwise. 
  */
-    MblError start();
+    MblError start(MbedCloudClient* cloud_client);
 
 /**
  * @brief Stops CCRB.
@@ -294,6 +299,8 @@ private:
  */
     static void *ccrb_main(void *ccrb);
 
+    //void registration_updated_cb(int token);
+
 private:
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
@@ -307,6 +314,8 @@ private:
 
     // pointer to ipc binder instance
     std::unique_ptr<DBusAdapter> ipc_ = nullptr;
+
+    MbedCloudClient* cloud_client_;
 };
 
 } // namespace mbl

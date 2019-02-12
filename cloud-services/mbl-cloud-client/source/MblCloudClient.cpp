@@ -112,7 +112,7 @@ MblError MblCloudClient::run()
     }
 
     // start running CCRB module
-    const MblError ccrb_start_err = s_instance->cloud_connect_resource_broker_.start();
+    const MblError ccrb_start_err = s_instance->cloud_connect_resource_broker_.start(s_instance->cloud_client_);
     if(Error::None != ccrb_start_err) {
         tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
         return ccrb_start_err;
