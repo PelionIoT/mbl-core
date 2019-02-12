@@ -69,19 +69,15 @@ public:
  * register_resources API. 
  * @param ipc_conn_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
- * @param access_token is a token that should be used by the client application
- *        in all APIs that access (in any way) to the registered set of 
- *        resources. Value of this argument should be used by the client 
- *        application only if registration was successfull for all resources.
  * @param reg_status status of registration of all resources. 
  *        reg_status is SUCCESS only if registration of all resources was 
  *        successfully finished, or error code otherwise.
+ * 
  * @return MblError returns Error::None if the message was successfully 
  *         delivered, or error code otherwise. 
  */
     MblError update_registration_status(
         const uintptr_t ipc_conn_handle, 
-        const std::string &access_token,
         const CloudConnectStatus reg_status);
 
 /**

@@ -96,13 +96,25 @@ private:
  * @param appl_resource_definition_json json file that describes resources 
  *        that should be registered. The structure of the JSON document 
  *        reflects the structure of the required resource tree. 
- * @return MblError returns Error::None if json file successfully
- *         parsed and the registration request was sent to the Cloud for 
- *         the processing, or error code otherwise. 
+ * @param out_status cloud connect operation status for operations like 
+ *        json file structure validity, sending registration request 
+ *        to the Cloud, and so on. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * @param out_access_token is a token that should be used by the client 
+ *        application in all APIs that access (in any way) to the provided 
+ *        (via appl_resource_definition_json) set of resources. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise. 
  */
     MblError register_resources(
         const uintptr_t ipc_conn_handle, 
-        const std::string &appl_resource_definition_json);
+        const std::string &appl_resource_definition_json,
+        CloudConnectStatus &out_status,
+        std::string &out_access_token);
 
 /**
  * @brief Starts asynchronous deregistration request of the resource set 
@@ -116,12 +128,19 @@ private:
  *        of the application that should be notified.
  * @param access_token token that defines set of resources that should be 
  *        deregistered.   
- * @return MblError returns Error::None if the deregistration request 
- *         was sent to the Cloud for the processing, or error code otherwise. 
+ * @param out_status cloud connect operation status for operations like 
+ *        access_token validity, sending deregistration request 
+ *        to the Cloud, and so on.  
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise. 
  */
     MblError deregister_resources(
         const uintptr_t ipc_conn_handle, 
-        const std::string &access_token);
+        const std::string &access_token,
+        CloudConnectStatus &out_status);
 
 /**
  * @brief Starts resource instances addition asynchronous request to 
@@ -141,15 +160,22 @@ private:
  * @param resource_instance_ids vector of instance ids. Each instance id 
  *        in the vector is an id of the resource instance that should be 
  *        added to the given resource (identified by resource_path).   
- * @return MblError returns Error::None if the resource instances addition 
- *         request was sent to the Cloud for the processing, or error 
- *         code otherwise.
+ * @param out_status cloud connect operation status for operations like 
+ *        access_token validity, access permissions to the resources, sending 
+ *        add resource instances request to the Cloud, and so on. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise. 
  */
     MblError add_resource_instances(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
-        const std::vector<uint16_t> &resource_instance_ids);
+        const std::vector<uint16_t> &resource_instance_ids,
+        CloudConnectStatus &out_status);
+
 
 /**
  * @brief Starts resource instances remove asynchronous request 
@@ -169,15 +195,21 @@ private:
  * @param resource_instance_ids vector of instance ids. Each instance id 
  *        in the vector is an id of the resource instance that should be 
  *        removed from the given resource (identified by resource_path).   
- * @return MblError returns Error::None if the resource instances removal 
- *         request was sent to the Cloud for the processing, or error 
- *         code otherwise.
+ * @param out_status cloud connect operation status for operations like 
+ *        access_token validity, access permissions to the resources, sending 
+ *        remove resource instances request to the Cloud, and so on.  
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise. 
  */
     MblError remove_resource_instances(
         const uintptr_t ipc_conn_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
-        const std::vector<uint16_t> &resource_instance_ids);
+        const std::vector<uint16_t> &resource_instance_ids,
+        CloudConnectStatus &out_status);
 
 /**
  * @brief Set resources values for multiple resources. 
@@ -195,15 +227,24 @@ private:
  *        output field: 
  *        - output_status is the status of the set operation for the corresponding 
  *          resource.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ *
  * 
- * @return MblError returns Error::None if all resources can be accessed according 
- *         to the provided access_token, or error code otherwise. The set operation 
- *         status is not returned via MblError, but by filling corresponding 
- *         value to the output output_status in inout_set_operations.
+ * @param out_status cloud connect operation status for operations like 
+ *        access_token validity, access permissions to the resources, and so on. 
+ *        The set operation status is not returned via MblError, but by filling 
+ *        corresponding value to the output_status in inout_set_operations.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise.
  */
     MblError set_resources_values(
         const std::string &access_token, 
-        std::vector<ResourceSetOperation> &inout_set_operations);
+        std::vector<ResourceSetOperation> &inout_set_operations,
+        CloudConnectStatus &out_status);
 
 /**
  * @brief Get resources values from multiple resources. 
@@ -224,15 +265,23 @@ private:
  *          resource.
  *        - inout_data.value field is the value that was gotten from resource. 
  *          Use inout_data.value only if the output_status has SUCCESS value. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  *
- * @return MblError returns Error::None if all resources can be accessed according 
- *         to the provided access_token, or error code otherwise. The set operation 
- *         status is not returned via MblError, but by filling corresponding 
- *         value to the output output_status field in inout_get_operations.
+ * @param out_status cloud connect operation status for operations like 
+ *        access_token validity, access permissions to the resources, and so on. 
+ *        The get operation status is not returned via MblError, but by filling 
+ *        corresponding value to the output_status in inout_get_operations.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ * 
+ * @return MblError returns Error::None if resource broker internal operations 
+ *         were successfully finished, or error code otherwise.
  */
     MblError get_resources_values(
         const std::string &access_token, 
-        std::vector<ResourceGetOperation> &inout_get_operations);
+        std::vector<ResourceGetOperation> &inout_get_operations,
+        CloudConnectStatus &out_status);
 
 /**
  * @brief CCRB thread main function.
