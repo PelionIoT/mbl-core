@@ -21,6 +21,7 @@
 #include "MblError.h"
 #include "mbed-trace/mbed_trace.h"
 #include "cloud-connect-resource-broker/ResourceDefinitionParser.h"
+#include <cinttypes>
 
 #define TRACE_GROUP "ccrb-resdefparser-test"
 

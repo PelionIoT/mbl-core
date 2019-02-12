@@ -17,6 +17,7 @@
 
 #include "M2MResourceObjects.h"
 #include "mbed-trace/mbed_trace.h"
+#include <cinttypes>
 
 #define TRACE_GROUP "ccrb-m2mobjects"
 

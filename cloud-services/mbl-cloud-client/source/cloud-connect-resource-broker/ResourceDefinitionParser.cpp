@@ -23,6 +23,7 @@
 #include <json/json.h>
 #include <json/reader.h>
 #include <cassert>
+#include <cinttypes>
 
 #define TRACE_GROUP "ccrb-resdefparser"
 
