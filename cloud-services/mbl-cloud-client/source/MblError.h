@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #ifndef MblError_h_
 #define MblError_h_
 
@@ -70,6 +70,9 @@ enum Type {
     // CCRB errors
     CCRBStartFailed                     = 0x0400,
     CCRBStopFailed                      = 0x0401,
+    CCRBInvalidJson                     = 0x0402,
+    CCRBCreateM2MObjFailed              = 0x0403,
+    CCRBValueTypeError                  = 0x0404,
 };
 } // namespace Error
 
