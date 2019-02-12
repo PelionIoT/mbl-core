@@ -51,7 +51,7 @@ static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MR
     }
     // Compare mode
     ASSERT_TRUE(m2m_resource->mode() == sp_rbm2m_resource->get_mode());
-    tr_debug("Compare mode succeeded (%d)", sp_rbm2m_resource->get_mode());
+    tr_debug("Compare mode succeeded (%d)", static_cast<int>(sp_rbm2m_resource->get_mode()));
     if(sp_rbm2m_resource->get_mode() == M2MBase::Dynamic) {
         // Compare observable (only dynamic resources have this entry)
         ASSERT_TRUE(m2m_resource->is_observable() == sp_rbm2m_resource->get_observable());
@@ -75,7 +75,7 @@ static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MR
     tr_debug("Compare supports multiple instances succeeded (%d)", sp_rbm2m_resource->get_supports_multiple_instances());
     // Compare type
     ASSERT_EQ(m2m_resource->resource_instance_type(), sp_rbm2m_resource->get_type());
-    tr_debug("Compare type succeeded (%d)", sp_rbm2m_resource->get_type());
+    tr_debug("Compare type succeeded (%d)", static_cast<int>(sp_rbm2m_resource->get_type()));
     //Compare resource_type
     if(m2m_resource->resource_type() != nullptr) {
         ASSERT_STREQ(m2m_resource->resource_type(), sp_rbm2m_resource->get_resource_type().c_str());
@@ -85,7 +85,7 @@ static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MR
     tr_debug("Compare resource type succeeded (%s)", sp_rbm2m_resource->get_resource_type().c_str());
     // Copare operation
     ASSERT_EQ(m2m_resource->operation(), sp_rbm2m_resource->get_operations());
-    tr_debug("Compare operation succeeded (%d)", sp_rbm2m_resource->get_operations());
+    tr_debug("Compare operation succeeded (%d)", static_cast<int>(sp_rbm2m_resource->get_operations()));
 }
 
 /**

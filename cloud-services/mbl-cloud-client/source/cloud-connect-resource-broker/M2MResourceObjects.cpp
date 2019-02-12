@@ -46,9 +46,9 @@ m2m_resource_(nullptr)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     tr_debug("resource_name: %s", resource_name_.c_str());
-    tr_debug("mode: %d", mode_);
+    tr_debug("mode: %d", static_cast<int>(mode_));
     tr_debug("multiple_instances: %s", multiple_instances_ ? "true" : "false");
-    tr_debug("operation: %d", operation_);
+    tr_debug("operation: %d", static_cast<int>(operation_));
     tr_debug("observable: %s", observable_ ? "true" : "false");
     tr_debug("resource_type: %s", resource_type.c_str());
     tr_debug("type: %d", type_);
