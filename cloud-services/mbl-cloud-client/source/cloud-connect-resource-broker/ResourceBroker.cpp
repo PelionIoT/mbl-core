@@ -183,8 +183,10 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 
 MblError ResourceBroker::register_resources(
-        const uintptr_t , 
-        const std::string &)
+        const uintptr_t /*unused*/, 
+        const std::string & /*unused*/,
+        CloudConnectStatus & /*unused*/,
+        std::string & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
@@ -193,8 +195,9 @@ MblError ResourceBroker::register_resources(
 
 
 MblError ResourceBroker::deregister_resources(
-        const uintptr_t , 
-        const std::string &)
+        const uintptr_t /*unused*/, 
+        const std::string & /*unused*/,
+        CloudConnectStatus & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
@@ -202,10 +205,11 @@ MblError ResourceBroker::deregister_resources(
 }
 
 MblError ResourceBroker::add_resource_instances(
-        const uintptr_t , 
-        const std::string &, 
-        const std::string &, 
-        const std::vector<uint16_t> &)
+        const uintptr_t /*unused*/, 
+        const std::string & /*unused*/, 
+        const std::string & /*unused*/, 
+        const std::vector<uint16_t> & /*unused*/,
+        CloudConnectStatus & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
@@ -213,10 +217,11 @@ MblError ResourceBroker::add_resource_instances(
 }
 
 MblError ResourceBroker::remove_resource_instances(
-    const uintptr_t , 
-    const std::string &, 
-    const std::string &, 
-    const std::vector<uint16_t> &)
+    const uintptr_t /*unused*/, 
+    const std::string & /*unused*/, 
+    const std::string & /*unused*/, 
+    const std::vector<uint16_t> & /*unused*/,
+        CloudConnectStatus & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
@@ -224,8 +229,9 @@ MblError ResourceBroker::remove_resource_instances(
 }
 
 MblError ResourceBroker::set_resources_values(
-        const std::string &, 
-        std::vector<ResourceSetOperation> &)
+        const std::string & /*unused*/, 
+        std::vector<ResourceSetOperation> & /*unused*/,
+        CloudConnectStatus & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);    
     // empty for now
@@ -233,8 +239,9 @@ MblError ResourceBroker::set_resources_values(
 }
 
 MblError ResourceBroker::get_resources_values(
-        const std::string &, 
-        std::vector<ResourceGetOperation> &)
+        const std::string & /*unused*/, 
+        std::vector<ResourceGetOperation> & /*unused*/,
+        CloudConnectStatus & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now

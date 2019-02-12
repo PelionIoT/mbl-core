@@ -20,6 +20,23 @@ enum CloudConnectStatus {
  
 typedef enum CloudConnectStatus CloudConnectStatus;
 
+
+/**
+ * @brief Cloud Connect resource data type.
+ * Currently supported LwM2M resource data types are STRING and INTEGER. 
+ */
+enum ResourceDataType {
+    STRING    = 1,  // supported as array of chars
+    INTEGER   = 2,  // supported as UINT64 
+    FLOAT     = 3,  // currently not supported
+    BOOLEAN   = 4,  // currently not supported
+    OPAQUE    = 5,  // currently not supported
+    TIME      = 6,  // currently not supported
+    OBJLINK   = 7,  // currently not supported
+};
+    
+typedef enum ResourceDataType ResourceDataType;
+
 }
 
 #endif // CloudConnectExternalTypes_h_
