@@ -90,8 +90,8 @@ const char* CloudConnectStatus_to_string(const CloudConnectStatus status)
         case SUCCESS: 
             return "SUCCESS";
 
-        case FAILURE: 
-            return "FAILURE";
+        case FAILED: 
+            return "FAILED";
 
         default:
             return "Unknown Cloud Connect Status";
