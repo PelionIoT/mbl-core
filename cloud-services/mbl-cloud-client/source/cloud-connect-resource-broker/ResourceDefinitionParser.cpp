@@ -104,15 +104,15 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
     assert(0); // Shouldn't be here!
 }
 
-static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation *operation)
+static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation &operation)
 {
     // Verify operation mast is valid
     auto itr = operation_map.find(operation_mask);
     if(itr == operation_map.end()) {
-        tr_error("%s - Invalid operaion mask: %d", __PRETTY_FUNCTION__, operation_mask);
+        tr_error("%s - Invalid operaion mask: %" PRId8, __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
     }
-    *operation = operation_map[operation_mask];
+    operation = operation_map[operation_mask];
     return Error::None;
 }
 
@@ -143,7 +143,7 @@ MblError ResourceDefinitionParser::create_resources(
     tr_debug("%s", __PRETTY_FUNCTION__);
     M2MBase::Operation m2m_operation;
     M2MResourceInstance::ResourceType m2m_res_type = get_m2m_resource_type(resource_type);
-    MblError retval = get_m2m_resource_operation(operation_mask, &m2m_operation);
+    MblError retval = get_m2m_resource_operation(operation_mask, m2m_operation);
     if(Error::None != retval) {
         tr_error("%s - get_m2m_resource_operation failed", __PRETTY_FUNCTION__);
         return retval;

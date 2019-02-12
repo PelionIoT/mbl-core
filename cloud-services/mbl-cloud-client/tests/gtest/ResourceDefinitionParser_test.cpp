@@ -158,7 +158,7 @@ static void CheckEqualObject(M2MObject* m2m_object, mbl::SPRBM2MObject sp_rbm2m_
     {
         uint16_t rbm2m_object_instance_id = itr.first;
         sp_rbm2m_object_instance = itr.second;
-        tr_debug("rbm2m_object_instance_id: %d", rbm2m_object_instance_id);
+        tr_debug("rbm2m_object_instance_id: %" PRId16, rbm2m_object_instance_id);
         m2m_object_instance = m2m_object->object_instance(rbm2m_object_instance_id);
         check_equal_object_instances(m2m_object_instance, sp_rbm2m_object_instance, ignore_m2m_objects_compare);
     }

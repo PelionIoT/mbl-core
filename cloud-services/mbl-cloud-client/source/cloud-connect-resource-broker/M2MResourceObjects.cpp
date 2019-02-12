@@ -235,7 +235,7 @@ SPRBM2MObjectInstance RBM2MObject::create_object_instance(uint16_t object_instan
     //Verify object_instance does not exist
     auto itr = rbm2m_object_instance_map_.find(object_instance_id);
     if(itr != rbm2m_object_instance_map_.end()) {
-        tr_error("%s - object instance %d already exist", __PRETTY_FUNCTION__, object_instance_id);
+        tr_error("%s - object instance %" PRId16 " already exist", __PRETTY_FUNCTION__, object_instance_id);
         return nullptr;
     }
 
