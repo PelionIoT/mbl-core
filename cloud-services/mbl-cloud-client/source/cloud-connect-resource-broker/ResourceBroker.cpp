@@ -22,7 +22,7 @@ namespace mbl {
 
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker()
-: cloud_client_(nullptr)
+: cloud_client_(nullptr), registration_state_(RegistrationState::KeepAlive)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -251,41 +251,89 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 void ResourceBroker::client_registration_updated_cb()
 {
-    tr_debug("Woho ! got cb from client @@@@@@");
+    tr_debug("@@@@@@ >>>>>>>>>>>>>>>>> Mbed client called client_registration_updated_cb");
+
+    //TODO: MUTEX to protect flags and DB?
+
+    if(RegistrationState::InProgress == registration_state_) {
+
+        // Move application endpoint from pending queue to registered map
+        SPApplicationEndpoint app_endpoint = pending_registration_queue_.front();
+        pending_registration_queue_.pop(); // Erase from pending registration queue
+        tr_debug("@@@@@@ %s pending_registration_queue_.pop(), REMAINING PENDING: %d", __PRETTY_FUNCTION__, (int)pending_registration_queue_.size());
+        registered_app_endpoints_map_[app_endpoint->uuid_] = app_endpoint; // Add to registered map
+        tr_debug("@@@@@@ %s Added app id %d to map, size = %d", __PRETTY_FUNCTION__, app_endpoint->uuid_, (int)registered_app_endpoints_map_.size());    
+        registration_state_ = RegistrationState::Registered;
+    }
+}
+
+MblError ResourceBroker::handle_registration_requests()
+{
+    //HANDLE KEEP ALIVE
+
+    // Update registration state
+    if(RegistrationState::InProgress == registration_state_) {
+        // Handle one registration at a time only
+        tr_debug("@@@@@@ %s: In progress....", __PRETTY_FUNCTION__);
+        return Error::None;
+    }
+    if(pending_registration_queue_.empty()) {
+        // No pending requests
+        registration_state_ = RegistrationState::KeepAlive;
+        return Error::None;
+    }
+
+    registration_state_ = RegistrationState::InProgress; //TODO: use MUTEX to protect registration_state_ 
+
+    SPApplicationEndpoint app_endpoint = pending_registration_queue_.front();
+    tr_debug("@@@@@@ %s: Call add_objects (%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
+    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
+    tr_debug("@@@@@@ %s: Call register_update(%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
+    cloud_client_->register_update();
+
+    return Error::None; // DO WE NEED RET VAL IN THIS FUNCTION?
 }
 
 MblError ResourceBroker::register_resources(
-        const uintptr_t /*unused*/, 
-        const std::string & /*unused*/,
+        const uintptr_t a, 
+        const std::string &)
         CloudConnectStatus & /*unused*/,
         std::string & /*unused*/)
 {
-    tr_debug("%s @@@@@ START", __PRETTY_FUNCTION__);
+    tr_debug("@@@@@ %s START", __PRETTY_FUNCTION__);
 
-    sleep(30);
     MblError status = Error::None;
-    const std::string json_string = R"({"555" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
-    M2MObjectList m2m_object_list;
-    RBM2MObjectList rbm2m_object_list;
-    ResourceDefinitionParser resource_parser;
-    status = resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list);
+   
+    // Generate UUID
+    int uuid = static_cast<int>(a);
+
+    // Init class that holds M2M lists
+    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(uuid);
+    if(nullptr == app_endpoint) {
+        tr_error("@@@@@@ %s: Create application endpoint failed.", __PRETTY_FUNCTION__);
+        return Error::CCRBRegisterFailed;
+    }
+
+    // Parse JSON
+    status = resource_parser_.build_object_list(
+        json_string, 
+        app_endpoint->m2m_object_list_,
+        app_endpoint->rbm2m_object_list_);
+
     if(Error::None != status) {
         tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         return status;
     }
 
-    //AppCallbackHandler *app_callback_handler = new AppCallbackHandler(cloud_client_, 55); //55 is the token
-    //app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
-    //app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
-    tr_debug("@@@@@@ %s: Call add_objects", __PRETTY_FUNCTION__);
-    cloud_client_->add_objects(m2m_object_list);
-    tr_debug("@@@@@@ %s: Call register_update", __PRETTY_FUNCTION__);
-    cloud_client_->register_update();
+    //Add new register request into pending queue
+    tr_debug("@@@@@@ pending_registration_queue_.push(%d)", uuid);
+    pending_registration_queue_.push(app_endpoint);
 
-    while(1) {
-        sleep(10);
-    }
-    tr_debug("%s @@@@@ END", __PRETTY_FUNCTION__);
+    // Trigger handing of new registration request
+    handle_registration_requests();
+
+    tr_debug("@@@@@ %s END", __PRETTY_FUNCTION__);    
+
     return status;
 }
 

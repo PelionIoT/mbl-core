@@ -11,6 +11,7 @@
 
 #include "mbed-trace/mbed_trace.h"
 #include "DBusAdapter.h"
+#include "ResourceBroker.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
@@ -50,10 +51,29 @@ MblError DBusAdapter::de_init()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+    static bool once = true;
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_) {
-        sleep(1);
+
+        if(once) {
+            sleep(10);
+
+            const std::string json_string1 = R"({"55551" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+
+            uintptr_t a = 55551;
+            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)a);
+            ccrb_.register_resources(a,json_string1);
+
+            uintptr_t b = 66661;
+            const std::string json_string2 = R"({"66661" : { "12" : { "222" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)b);
+            ccrb_.register_resources(b,json_string2);
+
+            once = false;
+        } else {
+            sleep(1); // 1 seconds
+            ccrb_.handle_registration_requests();
+        }
     }
 
     tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);

@@ -10,14 +10,34 @@
 #include <cstdint>
 #include <memory>
 #include <pthread.h>
+#include <queue>
 
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
+#include "ResourceDefinitionParser.h"
 
 class MbedCloudClient;
 class RBM2MObjectList;
 
 namespace mbl {
+
+////////////////////////////////////////////////////////////////////////////////
+class ApplicationEndpoint {
+public:
+
+    ApplicationEndpoint(int uuid)
+    : uuid_(uuid)
+    {}
+
+    int uuid_;
+    M2MObjectList m2m_object_list_;
+    RBM2MObjectList rbm2m_object_list_;
+};
+
+typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
+typedef std::map<int, SPApplicationEndpoint> ApplicationEndpointMap;
+
+////////////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Class implements functionality of Mbl Cloud Connect Resource 
@@ -314,6 +334,8 @@ private:
      * 
      */
     void client_registration_updated_cb();
+    
+    MblError handle_registration_requests();
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
@@ -322,6 +344,19 @@ private:
     std::unique_ptr<DBusAdapter> ipc_ = nullptr;
 
     MbedCloudClient* cloud_client_;
+
+    typedef enum {
+        KeepAlive,
+        Unregistered,
+        InProgress,
+        Pending,
+        Registered
+    }RegistrationState;
+
+    RegistrationState registration_state_;
+    ResourceDefinitionParser resource_parser_;
+    ApplicationEndpointMap registered_app_endpoints_map_;
+    std::queue<SPApplicationEndpoint>  pending_registration_queue_;
 };
 
 } // namespace mbl
