@@ -185,8 +185,8 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 MblError ResourceBroker::register_resources(
         const uintptr_t /*unused*/, 
         const std::string & /*unused*/,
-        std::string & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+        CloudConnectStatus & /*unused*/,
+        std::string & /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now

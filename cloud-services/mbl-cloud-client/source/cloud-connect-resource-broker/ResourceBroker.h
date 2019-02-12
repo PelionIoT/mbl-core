@@ -96,14 +96,14 @@ private:
  * @param appl_resource_definition_json json file that describes resources 
  *        that should be registered. The structure of the JSON document 
  *        reflects the structure of the required resource tree. 
+ * @param out_status cloud connect operation status for operations like 
+ *        json file structure validity, sending registration request 
+ *        to the Cloud, and so on.  
  * @param out_access_token is a token that should be used by the client 
  *        application in all APIs that access (in any way) to the provided 
  *        (via appl_resource_definition_json) set of resources. 
  *        Note: Value of this argument should be used only if MblError returned
  *        from this function was Error::None (success).
- * @param out_status cloud connect operation status for operations like 
- *        json file structure validity, sending registration request 
- *        to the Cloud, and so on.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
@@ -111,8 +111,8 @@ private:
     MblError register_resources(
         const uintptr_t ipc_conn_handle, 
         const std::string &appl_resource_definition_json,
-        std::string &out_access_token,
-        CloudConnectStatus &out_status);
+        CloudConnectStatus &out_status,
+        std::string &out_access_token);
 
 /**
  * @brief Starts asynchronous deregistration request of the resource set 
