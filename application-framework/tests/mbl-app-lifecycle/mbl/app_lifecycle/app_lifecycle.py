@@ -54,15 +54,16 @@ class AppLifeCycle:
         )
 
         # tuples of a path and a object to be published on bus. In order to
-        # publish methods on bus, the inheriting class should call AddToPublish()
-        # method and add path and a object touples to
+        # publish methods on bus, the inheriting class should call
+        # AddToPublish() method and add path and a object touples to
         # all_methods_for_publish_on_dbus. Relative or absolute paths could be
         # used.
         self.all_methods_for_publish_on_dbus = []
 
     def AddToPublish(self, methods_for_publish_on_dbus):
         """Add object interfaces to the data to be published on D-Bus."""
-        # Append interfaces to the list of all interfaces that will be published.
+        # Append interfaces to the list of all interfaces that will be
+        # published.
         self.all_methods_for_publish_on_dbus.append(
             methods_for_publish_on_dbus
         )
