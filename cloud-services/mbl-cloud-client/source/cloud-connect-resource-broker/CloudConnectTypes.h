@@ -151,6 +151,13 @@ struct ResourceGetOperation
     CloudConnectStatus output_status_ = FAILED; // get operation output status
 };
 
+/**
+ * @brief Returns stringified value of CloudConnectStatus.
+ * 
+ * @param CloudConnectStatus that should be stringified. 
+ * @return const char* stringified readable value of CloudConnectStatus. 
+ */
+const char* CloudConnectStatus_to_string(const CloudConnectStatus status);
 
 } //namespace mbl
 

@@ -82,3 +82,18 @@ int64_t ResourceData::get_value_integer() const
 }
 
 }
+
+const char* CloudConnectStatus_to_string(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        case SUCCESS: 
+            return "SUCCESS";
+
+        case FAILURE: 
+            return "FAILURE";
+
+        default:
+            return "Unknown Cloud Connect Status";
+    }
+}

@@ -20,14 +20,6 @@ enum CloudConnectStatus {
  
 typedef enum CloudConnectStatus CloudConnectStatus;
 
-/**
- * @brief Returns stringified value of CloudConnectStatus.
- * 
- * @param CloudConnectStatus that should be stringified. 
- * @return const char* stringified value of CloudConnectStatus. 
- */
-const char* CloudConnectStatus_to_string(CloudConnectStatus status);
-
 }
 
 #endif // CloudConnectExternalTypes_h_

@@ -98,12 +98,14 @@ private:
  *        reflects the structure of the required resource tree. 
  * @param out_status cloud connect operation status for operations like 
  *        json file structure validity, sending registration request 
- *        to the Cloud, and so on.  
+ *        to the Cloud, and so on. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * @param out_access_token is a token that should be used by the client 
  *        application in all APIs that access (in any way) to the provided 
  *        (via appl_resource_definition_json) set of resources. 
- *        Note: Value of this argument should be used only if MblError returned
- *        from this function was Error::None (success).
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
@@ -129,6 +131,8 @@ private:
  * @param out_status cloud connect operation status for operations like 
  *        access_token validity, sending deregistration request 
  *        to the Cloud, and so on.  
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
@@ -158,7 +162,9 @@ private:
  *        added to the given resource (identified by resource_path).   
  * @param out_status cloud connect operation status for operations like 
  *        access_token validity, access permissions to the resources, sending 
- *        add resource instances request to the Cloud, and so on.  
+ *        add resource instances request to the Cloud, and so on. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
@@ -192,6 +198,8 @@ private:
  * @param out_status cloud connect operation status for operations like 
  *        access_token validity, access permissions to the resources, sending 
  *        remove resource instances request to the Cloud, and so on.  
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
@@ -219,11 +227,16 @@ private:
  *        output field: 
  *        - output_status is the status of the set operation for the corresponding 
  *          resource.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
+ *
  * 
  * @param out_status cloud connect operation status for operations like 
  *        access_token validity, access permissions to the resources, and so on. 
  *        The set operation status is not returned via MblError, but by filling 
  *        corresponding value to the output_status in inout_set_operations.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise.
@@ -252,11 +265,15 @@ private:
  *          resource.
  *        - inout_data.value field is the value that was gotten from resource. 
  *          Use inout_data.value only if the output_status has SUCCESS value. 
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  *
  * @param out_status cloud connect operation status for operations like 
  *        access_token validity, access permissions to the resources, and so on. 
  *        The get operation status is not returned via MblError, but by filling 
  *        corresponding value to the output_status in inout_get_operations.
+ *        Note: This parameter is valid, if MblError return error code 
+ *        was Error::None.  
  * 
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise.
