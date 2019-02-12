@@ -51,7 +51,7 @@ m2m_resource_(nullptr)
     tr_debug("operation: %d", static_cast<int>(operation_));
     tr_debug("observable: %s", observable_ ? "true" : "false");
     tr_debug("resource_type: %s", resource_type.c_str());
-    tr_debug("type: %d", type_);
+    tr_debug("type: %d", static_cast<int>(type_));
     tr_debug("value: %s", value_.c_str());
 }
 
@@ -110,13 +110,13 @@ const std::string& RBM2MResource::get_value_as_string() const
     return value_;
 }
 
-MblError RBM2MResource::get_value_as_integer(int *value) const
+MblError RBM2MResource::get_value_as_integer(int &value) const
 {
     if(M2MResourceBase::INTEGER != type_) {
         tr_error("%s - Value type is not integer", __PRETTY_FUNCTION__);
-        return Error::CCRBLogicError;
+        return Error::CCRBValueTypeError;
     }
-    *value = std::stoi(value_);
+    value = std::stoi(value_);
     return Error::None;
 }
 

@@ -119,9 +119,9 @@ public:
     bool get_observable() const;
 
     /**
-     * @brief Get RBM2MResource resource type (e.g. "button")
+     * @brief Get RBM2MResource resource type (e.g. "reset_button")
      * 
-     * @return Resource type (e.g. "reset_button")
+     * @return Resource type
      */
     const std::string& get_resource_type() const;
 
@@ -151,9 +151,9 @@ public:
      * @param value - Output integer value
      * @return MblError -
      *      Error::None - If function succeeded
-     *      Error::CCRBLogicError - In case resource type is not insteger
+     *      Error::CCRBValueTypeError - In case resource type is not insteger
      */
-    MblError get_value_as_integer(int *value) const;
+    MblError get_value_as_integer(int &value) const;
 
 private:
     std::string resource_name_;

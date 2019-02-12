@@ -62,7 +62,7 @@ static void check_equal_resources(M2MResource *m2m_resource, const mbl::SPRBM2MR
         {
             int m2m_integer_value = (int)m2m_resource->get_value_int();
             int rbm2m2_integer_value = -1;
-            ASSERT_TRUE(mbl::Error::None == sp_rbm2m_resource->get_value_as_integer(&rbm2m2_integer_value));
+            ASSERT_TRUE(mbl::Error::None == sp_rbm2m_resource->get_value_as_integer(rbm2m2_integer_value));
             EXPECT_TRUE(rbm2m2_integer_value == m2m_integer_value);
         } else if(sp_rbm2m_resource->get_type() == M2MResourceInstance::STRING) 
         {
