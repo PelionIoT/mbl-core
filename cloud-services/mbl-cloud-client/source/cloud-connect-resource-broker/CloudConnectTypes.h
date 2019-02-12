@@ -13,22 +13,10 @@
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
 
+#define RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return #ENUM
+
 namespace mbl {
 
-/**
- * @brief Cloud Connect resource data type.
- * Currently supported LwM2M resource data types. 
- */
-enum class ResourceDataType {
-    STRING    = 0x1,  // uses std::string
-    INTEGER   = 0x2,  // uses int64_t
-    FLOAT     = 0x3,  // currently not supported
-    BOOLEAN   = 0x4,  // currently not supported
-    OPAQUE    = 0x5,  // currently not supported
-    TIME      = 0x6,  // currently not supported
-    OBJLINK   = 0x7,  // currently not supported
-};
-    
 /**
  * @brief Class that implements resource data value holder. 
  */
@@ -152,12 +140,28 @@ struct ResourceGetOperation
 };
 
 /**
- * @brief Returns stringified value of CloudConnectStatus.
+ * @brief Returns readable explanation of Cloud Connect Status.
+ * 
+ * @param CloudConnectStatus input status. 
+ * @return const char* stringified readable explanation of the status. 
+ */
+const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status);
+
+/**
+ * @brief Returns stringified value of Cloud Connect Status.
  * 
  * @param CloudConnectStatus that should be stringified. 
- * @return const char* stringified readable value of CloudConnectStatus. 
+ * @return const char* stringified value of CloudConnectStatus. 
  */
-const char* CloudConnectStatus_to_string(const CloudConnectStatus status);
+const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
+
+/**
+ * @brief Returns stringified value of Resource Data Type.
+ * 
+ * @param ResourceDataType that should be stringified. 
+ * @return const char* stringified value of ResourceDataType. 
+ */
+const char* ResourceDataType_stringify(const ResourceDataType type);
 
 } //namespace mbl
 

@@ -83,7 +83,7 @@ int64_t ResourceData::get_value_integer() const
 
 }
 
-const char* CloudConnectStatus_to_string(const CloudConnectStatus status)
+const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
 {
     switch (status)
     {
@@ -95,5 +95,34 @@ const char* CloudConnectStatus_to_string(const CloudConnectStatus status)
 
         default:
             return "Unknown Cloud Connect Status";
+    }
+}
+
+const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        RETURN_STRINGIFIED_VALUE(SUCCESS); 
+        RETURN_STRINGIFIED_VALUE(FAILED); 
+
+        default:
+            return "Unknown Cloud Connect Status";
+    }
+}
+
+const char* ResourceDataType_stringify(const ResourceDataType type)
+{
+    switch (type)
+    {
+        RETURN_STRINGIFIED_VALUE(STRING); 
+        RETURN_STRINGIFIED_VALUE(INTEGER); 
+        RETURN_STRINGIFIED_VALUE(FLOAT); 
+        RETURN_STRINGIFIED_VALUE(BOOLEAN); 
+        RETURN_STRINGIFIED_VALUE(OPAQUE); 
+        RETURN_STRINGIFIED_VALUE(TIME); 
+        RETURN_STRINGIFIED_VALUE(OBJLINK); 
+
+        default:
+            return "Unknown Resource Data Type";
     }
 }
