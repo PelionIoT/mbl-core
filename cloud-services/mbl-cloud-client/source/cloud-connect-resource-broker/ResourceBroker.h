@@ -307,7 +307,13 @@ private:
     ResourceBroker(const ResourceBroker&) = delete;
     ResourceBroker & operator = (const ResourceBroker&) = delete;
     ResourceBroker(ResourceBroker&&) = delete;
-    ResourceBroker& operator = (ResourceBroker&&) = delete;  
+    ResourceBroker& operator = (ResourceBroker&&) = delete;
+
+    /**
+     * @brief Registration callback function ////////////    ADD DOCUMENTATION ///////////////////
+     * 
+     */
+    void client_registration_updated_cb();
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;

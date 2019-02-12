@@ -130,6 +130,9 @@ MblError ResourceBroker::init()
         tr_error("ipc::init failed with error %s", MblError_to_str(status));
     }
 
+    // Register Cloud client callback:
+    cloud_client_->on_registration_updated(this, &ResourceBroker::client_registration_updated_cb);
+
     return status;
 }
 
@@ -198,53 +201,58 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-typedef void(*on_registration_updated_cb)(int);
+// typedef void(*on_registration_updated_cb)(int);
 
-void registration_updated_cb(int token)
-{
-    tr_info("%s @@@@@@ token = %d", __PRETTY_FUNCTION__,token);
-}
+// void registration_updated_cb(int token)
+// {
+//     tr_info("%s @@@@@@ token = %d", __PRETTY_FUNCTION__,token);
+// }
 
-class AppCallbackHandler
-{
-public:
+// class AppCallbackHandler
+// {
+// public:
 
-    AppCallbackHandler(MbedCloudClient *cloud_client, int token)
-    : cloud_client_(cloud_client), token_(token), on_registration_updated_cb_(nullptr)
-    {
-        //tr_debug("@@@@@@ %s: token = %d", __PRETTY_FUNCTION__, token);
-    }
+//     AppCallbackHandler(MbedCloudClient *cloud_client, int token)
+//     : cloud_client_(cloud_client), token_(token), on_registration_updated_cb_(nullptr)
+//     {
+//         //tr_debug("@@@@@@ %s: token = %d", __PRETTY_FUNCTION__, token);
+//     }
     
-    ~AppCallbackHandler(){}
+//     ~AppCallbackHandler(){}
 
-    void resiter_callbacks()
-    {
-        tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
-        cloud_client_->on_registration_updated(this, &AppCallbackHandler::client_registration_updated);
-    }
+//     void resiter_callbacks()
+//     {
+//         tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
+//         cloud_client_->on_registration_updated(this, &AppCallbackHandler::client_registration_updated);
+//     }
 
-    void set_on_registration_updated_callback(on_registration_updated_cb cb)
-    {
-        tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
-        on_registration_updated_cb_ = cb;
-    }
+//     void set_on_registration_updated_callback(on_registration_updated_cb cb)
+//     {
+//         tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+//         on_registration_updated_cb_ = cb;
+//     }
 
-    void client_registration_updated()
-    {
-        tr_debug("@@@@@@ %s: token  = %d", __PRETTY_FUNCTION__, token_);
-        if (on_registration_updated_cb_) {
-            on_registration_updated_cb_(token_);
-        }
-    }
+//     void client_registration_updated()
+//     {
+//         tr_debug("Woho ! got cb from client @@@@@@ %s: token  = %d", __PRETTY_FUNCTION__, token_);
+//         if (on_registration_updated_cb_) {
+//             on_registration_updated_cb_(token_);
+//         }
+//     }
 
-private:
-    MbedCloudClient *cloud_client_;
-    int token_;
-    on_registration_updated_cb on_registration_updated_cb_;
-};
+// private:
+//     MbedCloudClient *cloud_client_;
+//     int token_;
+//     on_registration_updated_cb on_registration_updated_cb_;
+// };
 
 ////////////////////////////////////////////////////////////////////////////////
 #include <unistd.h>
+
+void ResourceBroker::client_registration_updated_cb()
+{
+    tr_debug("Woho ! got cb from client @@@@@@");
+}
 
 MblError ResourceBroker::register_resources(
         const uintptr_t /*unused*/, 
@@ -256,7 +264,7 @@ MblError ResourceBroker::register_resources(
 
     sleep(30);
     MblError status = Error::None;
-    const std::string json_string = R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+    const std::string json_string = R"({"555" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
     M2MObjectList m2m_object_list;
     RBM2MObjectList rbm2m_object_list;
     ResourceDefinitionParser resource_parser;
@@ -266,9 +274,9 @@ MblError ResourceBroker::register_resources(
         return status;
     }
 
-    AppCallbackHandler *app_callback_handler = new AppCallbackHandler(cloud_client_, 55); //55 is the token
-    app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
-    app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
+    //AppCallbackHandler *app_callback_handler = new AppCallbackHandler(cloud_client_, 55); //55 is the token
+    //app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
+    //app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
     tr_debug("@@@@@@ %s: Call add_objects", __PRETTY_FUNCTION__);
     cloud_client_->add_objects(m2m_object_list);
     tr_debug("@@@@@@ %s: Call register_update", __PRETTY_FUNCTION__);
