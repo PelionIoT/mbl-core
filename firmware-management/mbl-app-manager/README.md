@@ -2,7 +2,7 @@
 
 `mbl-app-manager` is an application that manages the installation and removal user applications from an ipk on Mbed Linux OS.
 
-It expects an open package management (OPKG) packages known as `.ipk`s.
+It expects open package management (OPKG) packages known as `.ipk`s.
 
 The update package may be delivered via a trusted delivery method using [`mbl-app-update-manager`](../mbl-app-update-manager).
 
