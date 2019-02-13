@@ -15,6 +15,7 @@
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
 #include "ResourceDefinitionParser.h"
+#include "mbed-trace/mbed_trace.h"
 
 class MbedCloudClient;
 class RBM2MObjectList;
@@ -25,13 +26,20 @@ namespace mbl {
 class ApplicationEndpoint {
 public:
 
-    ApplicationEndpoint(int uuid)
-    : uuid_(uuid)
-    {}
+    ApplicationEndpoint(int uuid, ResourceBroker &ccrb);
+    ~ApplicationEndpoint();
+
+    void set_regsiter_callback();
+    void client_registration_updated_cb();
 
     int uuid_;
     M2MObjectList m2m_object_list_;
     RBM2MObjectList rbm2m_object_list_;
+
+private:
+    // this class must have a reference that should be always valid to the CCRB instance. 
+    // reference class member satisfy this condition.   
+    ResourceBroker &ccrb_;
 };
 
 typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
@@ -46,7 +54,10 @@ typedef std::map<int, SPApplicationEndpoint> ApplicationEndpointMap;
  * - send observers notifications from MbedCloudClient to applications.
  */
 class ResourceBroker {
+
 friend DBusAdapter;
+friend ApplicationEndpoint;
+
 public:
     ResourceBroker();
     ~ResourceBroker();
@@ -329,13 +340,7 @@ private:
     ResourceBroker(ResourceBroker&&) = delete;
     ResourceBroker& operator = (ResourceBroker&&) = delete;
 
-    /**
-     * @brief Registration callback function ////////////    ADD DOCUMENTATION ///////////////////
-     * 
-     */
-    void client_registration_updated_cb();
-    
-    MblError handle_registration_requests();
+    void client_registration_updated_cb(int uuid);
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
@@ -355,8 +360,7 @@ private:
 
     RegistrationState registration_state_;
     ResourceDefinitionParser resource_parser_;
-    ApplicationEndpointMap registered_app_endpoints_map_;
-    std::queue<SPApplicationEndpoint>  pending_registration_queue_;
+    ApplicationEndpointMap app_endpoints_map_;
 };
 
 } // namespace mbl

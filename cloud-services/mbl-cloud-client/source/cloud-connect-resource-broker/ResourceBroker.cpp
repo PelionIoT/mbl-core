@@ -131,7 +131,7 @@ MblError ResourceBroker::init()
     }
 
     // Register Cloud client callback:
-    cloud_client_->on_registration_updated(this, &ResourceBroker::client_registration_updated_cb);
+    //cloud_client_->on_registration_updated(this, &ResourceBroker::client_registration_updated_cb);
 
     return status;
 }
@@ -182,13 +182,6 @@ void* ResourceBroker::ccrb_main(void* ccrb)
         pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
     }
 
-    uintptr_t a = 0;
-    std::string b = "A";
-    tr_info("%s @@@@@@ Call register_resources()", __PRETTY_FUNCTION__);
-    this_ccrb->register_resources(a,b);
-    tr_info("%s @@@@@@ AFTER Call register_resources()", __PRETTY_FUNCTION__);
-
-
     status = this_ccrb->run();
     if(Error::None != status) {
         tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
@@ -220,12 +213,6 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     
 //     ~AppCallbackHandler(){}
 
-//     void resiter_callbacks()
-//     {
-//         tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
-//         cloud_client_->on_registration_updated(this, &AppCallbackHandler::client_registration_updated);
-//     }
-
 //     void set_on_registration_updated_callback(on_registration_updated_cb cb)
 //     {
 //         tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
@@ -246,57 +233,48 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 //     on_registration_updated_cb on_registration_updated_cb_;
 // };
 
+// app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
+// app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
+
 ////////////////////////////////////////////////////////////////////////////////
-#include <unistd.h>
-
-void ResourceBroker::client_registration_updated_cb()
+ApplicationEndpoint::ApplicationEndpoint(int uuid, ResourceBroker &ccrb)
+: uuid_(uuid), 
+ccrb_(ccrb)
 {
-    tr_debug("@@@@@@ >>>>>>>>>>>>>>>>> Mbed client called client_registration_updated_cb");
-
-    //TODO: MUTEX to protect flags and DB?
-
-    if(RegistrationState::InProgress == registration_state_) {
-
-        // Move application endpoint from pending queue to registered map
-        SPApplicationEndpoint app_endpoint = pending_registration_queue_.front();
-        pending_registration_queue_.pop(); // Erase from pending registration queue
-        tr_debug("@@@@@@ %s pending_registration_queue_.pop(), REMAINING PENDING: %d", __PRETTY_FUNCTION__, (int)pending_registration_queue_.size());
-        registered_app_endpoints_map_[app_endpoint->uuid_] = app_endpoint; // Add to registered map
-        tr_debug("@@@@@@ %s Added app id %d to map, size = %d", __PRETTY_FUNCTION__, app_endpoint->uuid_, (int)registered_app_endpoints_map_.size());    
-        registration_state_ = RegistrationState::Registered;
-    }
+    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
 }
 
-MblError ResourceBroker::handle_registration_requests()
+ApplicationEndpoint::~ApplicationEndpoint()
 {
-    //HANDLE KEEP ALIVE
+    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+}
 
-    // Update registration state
-    if(RegistrationState::InProgress == registration_state_) {
-        // Handle one registration at a time only
-        tr_debug("@@@@@@ %s: In progress....", __PRETTY_FUNCTION__);
-        return Error::None;
-    }
-    if(pending_registration_queue_.empty()) {
-        // No pending requests
-        registration_state_ = RegistrationState::KeepAlive;
-        return Error::None;
-    }
+void ApplicationEndpoint::set_regsiter_callback()
+{
+    tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
+    ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::client_registration_updated_cb);
+}
 
-    registration_state_ = RegistrationState::InProgress; //TODO: use MUTEX to protect registration_state_ 
+void ApplicationEndpoint::client_registration_updated_cb()
+{
+    tr_debug("@@@@@@ %s: calling client_registration_updated_cb(uuid_ = %d)", __PRETTY_FUNCTION__, uuid_);
+    ccrb_.client_registration_updated_cb(uuid_);
+}
 
-    SPApplicationEndpoint app_endpoint = pending_registration_queue_.front();
-    tr_debug("@@@@@@ %s: Call add_objects (%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
-    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-    tr_debug("@@@@@@ %s: Call register_update(%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
-    cloud_client_->register_update();
+////////////////////////////////////////////////////////////////////////////////
 
-    return Error::None; // DO WE NEED RET VAL IN THIS FUNCTION?
+void ResourceBroker::client_registration_updated_cb(int uuid)
+{
+    tr_debug("@@@@@@ >>>>>>>>>>>>>>>>> Mbed client called client_registration_updated_cb (%d)", uuid);
+
+    //TODO: update app endpoint that it is now registered.
+    //TODO: use std atomic
+    registration_state_ = RegistrationState::Registered;
 }
 
 MblError ResourceBroker::register_resources(
         const uintptr_t a, 
-        const std::string &)
+        const std::string &json_string,
         CloudConnectStatus & /*unused*/,
         std::string & /*unused*/)
 {
@@ -308,7 +286,7 @@ MblError ResourceBroker::register_resources(
     int uuid = static_cast<int>(a);
 
     // Init class that holds M2M lists
-    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(uuid);
+    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(uuid, *this);
     if(nullptr == app_endpoint) {
         tr_error("@@@@@@ %s: Create application endpoint failed.", __PRETTY_FUNCTION__);
         return Error::CCRBRegisterFailed;
@@ -325,12 +303,18 @@ MblError ResourceBroker::register_resources(
         return status;
     }
 
-    //Add new register request into pending queue
-    tr_debug("@@@@@@ pending_registration_queue_.push(%d)", uuid);
-    pending_registration_queue_.push(app_endpoint);
+    //TODO: use std::atomic 
+    registration_state_ = RegistrationState::InProgress; // Mark that we started registration
 
-    // Trigger handing of new registration request
-    handle_registration_requests();
+    //TODO: register error cb as well
+    app_endpoint->set_regsiter_callback(); // Register the next cloud client callback to this app end point
+
+    app_endpoints_map_[app_endpoint->uuid_] = app_endpoint;
+
+    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
+    tr_debug("@@@@@@ %s: Call register_update(%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
+
+    cloud_client_->register_update();
 
     tr_debug("@@@@@ %s END", __PRETTY_FUNCTION__);    
 
@@ -342,7 +326,7 @@ MblError ResourceBroker::deregister_resources(
         const std::string & /*unused*/,
         CloudConnectStatus & /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }

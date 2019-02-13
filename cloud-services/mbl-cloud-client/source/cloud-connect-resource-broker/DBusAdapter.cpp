@@ -58,21 +58,23 @@ MblError DBusAdapter::run()
         if(once) {
             sleep(10);
 
-            const std::string json_string1 = R"({"55551" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+            CloudConnectStatus out_status;
+            std::string out_access_token;
 
-            uintptr_t a = 55551;
+            const std::string json_string1 = R"({"77777" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+
+            uintptr_t a = 77777;
             tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)a);
-            ccrb_.register_resources(a,json_string1);
+            ccrb_.register_resources(a,json_string1, out_status, out_access_token);
 
-            uintptr_t b = 66661;
-            const std::string json_string2 = R"({"66661" : { "12" : { "222" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
-            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)b);
-            ccrb_.register_resources(b,json_string2);
+            // uintptr_t b = 66661;
+            // const std::string json_string2 = R"({"66661" : { "12" : { "222" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+            // tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)b);
+            // ccrb_.register_resources(b,json_string2, out_status, out_access_token);
 
             once = false;
         } else {
             sleep(1); // 1 seconds
-            ccrb_.handle_registration_requests();
         }
     }
 
