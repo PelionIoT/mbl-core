@@ -21,10 +21,19 @@ static int incoming_bus_message_callback(
 const sd_bus_vtable  cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
-    // TODO: Condier to remove Cloud Connect Status that is returned in the "method reply" 
-    // in to the following functions: RegisterResources, DeregisterResources, 
-    // AddResourceInstances, RemoveResourceInstances is placeholder. 
-    // If unneeded, JUST BEFORE publishing to a master consider to remove this status.
+    // TODO: Consider removing Cloud Connect Status that is returned in the "method reply" 
+    //       in to the following functions: RegisterResources, DeregisterResources, 
+    //       AddResourceInstances, RemoveResourceInstances is placeholder. 
+    //       If unneeded, JUST BEFORE publishing to a master consider to remove this status.
+
+    // TODO: Add readable explanation about each Cloud Client Status or Error that 
+    //       can be returned by any function or signal defined in this table:
+    // Types:
+    // CloudConnectStatus (Cloud Connect Status) :
+    // TBD
+    // CloudConnectError (Cloud Connect Error)
+    // TBD
+
 
     // com.mbed.Cloud.Connect1.RegisterResources
     //
