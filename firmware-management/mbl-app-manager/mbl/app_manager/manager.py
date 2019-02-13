@@ -52,7 +52,7 @@ class AppManager(object):
         """Install an application.
 
         The application is installed at a registered destination so the package
-        manager is able to install multiple version of the application for as
+        manager is able to install multiple version of the application, as
         long as the registration path is different.
         """
         try:
