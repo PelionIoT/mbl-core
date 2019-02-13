@@ -46,5 +46,17 @@ class ApplicationInfoParser:
                 # create a dictionary that has the fields as keys
                 # and the values as...well values.
                 self.pkg_info[field_and_value[0]] = field_and_value[1]
+
+        if "Package" not in self.pkg_info:
+            msg = (
+                    "'{}' control data does not have a"
+                    " 'Package' field".format(app_pkg)
+            )
+            raise AppInfoParserError(msg)
+
         log.debug("Package '{}' info parsing completed".format(app_pkg))
         return self.pkg_info
+
+
+class AppInfoParserError(Exception):
+    """An exception for an incorrect app information."""

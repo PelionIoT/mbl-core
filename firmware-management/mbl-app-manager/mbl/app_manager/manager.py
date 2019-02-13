@@ -8,7 +8,7 @@ import os
 import shutil
 import subprocess
 
-from .parser import ApplicationInfoParser
+from .parser import ApplicationInfoParser, AppInfoParserError
 from .utils import log
 
 
@@ -33,22 +33,18 @@ class AppManager(object):
         """Get the name of an application from the package meta data."""
         try:
             log.debug("Getting app name from pkg '{}'".format(app_pkg))
-            pkg_info = self._pkg_info_parser.parse_app_info(app_pkg)
-
-            if "Package" in pkg_info:
-                app_name = pkg_info["Package"]
-                log.info("Application name is '{}'".format(app_name))
-                return app_name
-            else:
-                msg = (
-                    "'{}' control data does not have a"
-                    " 'Package' field".format(app_pkg)
-                )
-                raise AppIdError(msg)
+            app_name = self._pkg_info_parser.parse_app_info(app_pkg)["Package"]
+            log.info("Application name is '{}'".format(app_name))
+            return app_name
         except subprocess.CalledProcessError as error:
             err_output = error.stdout.decode("utf-8")
             msg = "Getting the app name from '{}' failed, error: {}".format(
                 app_pkg, err_output
+            )
+            raise AppIdError(msg)
+        except AppInfoParserError as error:
+            msg = "Getting the app name from '{}' failed, error: {}".format(
+                app_pkg, str(error)
             )
             raise AppIdError(msg)
 
