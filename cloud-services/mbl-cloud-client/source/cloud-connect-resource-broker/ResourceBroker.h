@@ -27,8 +27,10 @@ namespace mbl {
 class ApplicationEndpoint {
 public:
 
-    ApplicationEndpoint(int uuid, ResourceBroker &ccrb);
+    ApplicationEndpoint(std::string access_token, ResourceBroker &ccrb);
     ~ApplicationEndpoint();
+
+    std::string get_access_token() const;
 
     void set_regsiter_callback();
 
@@ -47,7 +49,7 @@ private:
     void client_registration_updated_cb();
 
 
-    int uuid_;
+    std::string access_token_;
 
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
@@ -57,7 +59,7 @@ private:
 };
 
 typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
-typedef std::map<int, SPApplicationEndpoint> ApplicationEndpointMap;
+typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -366,7 +368,7 @@ private:
      * 
      * @param uuid 
      */
-    void app_registration_updated(int uuid);
+    void app_registration_updated(const std::string &access_token);
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;

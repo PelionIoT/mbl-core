@@ -71,6 +71,7 @@ const char* MblError_to_str(const MblError error)
         case Error::CCRBCreateM2MObjFailed: return "CCRBCreateM2MObjFailed";
         case Error::CCRBValueTypeError: return "CCRBValueTypeError";
         case Error::CCRBRegisterFailed: return "CCRBRegisterFailed";
+        case Error::CCRBGenerateUniqueIdFailed: return "CCRBGenerateUniqueIdFailed";
     }
     return "Unrecognized error code";
 }
