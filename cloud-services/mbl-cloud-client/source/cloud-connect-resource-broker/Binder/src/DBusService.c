@@ -21,27 +21,37 @@ static int incoming_bus_message_callback(
 const sd_bus_vtable  cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
+    // TODO: Condier to remove Cloud Connect Status that is returned in the "method reply" 
+    // in to the following functions: RegisterResources, DeregisterResources, 
+    // AddResourceInstances, RemoveResourceInstances is placeholder. 
+    // If unneeded, JUST BEFORE publishing to a master consider to remove this status.
+
     // com.mbed.Cloud.Connect1.RegisterResources
     //
     // As a Method :
-    // UINT32, STRING RegisterResources(STRING json_file)
+    // UINT32, STRING RegisterResources(STRING json)
     //
     // Description :
-    // Asynchronous request to register resources supplied by a JSON file.
-    // The final registration status will be  sent by RegisterResourcesStatus signal.
+    // Asynchronous request to register LwM2M resources supplied by a JSON string.
+    // When the registration is finished, the operation status will be sent by 
+    // RegisterResourcesStatus signal.
     // ==Input==
     // Argument	    Type    Description
-    // 0            STRING  JSON file (encoded UTF-8)
+    // 0            STRING  JSON string (encoded UTF-8)
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Temporary Cloud Connect Status of an attempt to start registration. 
-    //                      The final registration status will be signalled by 
-    //                      RegisterResourcesStatus.
-    // 1            STRING  access token. this paramter is valid only if Cloud Connect 
-    //                      Status was success.
+    // 0            UINT32  Cloud Connect Status of an attempt to start a registration. 
+    // 1            STRING  Access token.
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "RegisterResources",
@@ -55,14 +65,16 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // As a Signal :
     // RegisterResourcesStatus(UINT32 status)
-    // Emitted as a final status for RegisterResources asynchronous request.
-    // This signal notifies an application that the process of regestering resources 
-    // in the Pelion is finished.
+    // Emitted when the RegisterResources asynchronous request is finished in 
+    // the Pelion.
     //
     // Argument	    Type	Description
-    // 0	        UINT32  Final Cloud Connect Status of the RegisterResources.
+    // 0	        UINT32  Cloud Connect Status of the RegisterResources.
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_SIGNAL(
         "RegisterResourcesStatus",
@@ -76,24 +88,28 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // UINT32 DeregisterResources(STRING access_token)
     //
     // Description :
-    // Asynchronous request to deregister all previously registered resources for supplied 
-    // access-token. The final deregistration status will be sent by DeregisterResourcesStatus 
-    // signal. 
-    // If the resources were not registered (RegisterResourcesStatus was not signalled after 
-    // RegisterResources method), this method will gracefully finish registration process
-    // that was started (when RegisterResources was called). 
+    // Asynchronous request to deregister all previously registered LwM2M resources for supplied 
+    // access-token. When the deregistration is finished, the operation status will be sent by 
+    // DeregisterResourcesStatus signal. 
+    // If the RegisterResourcesStatus was not signalled after the RegisterResources method was 
+    // called, this method will gracefully finish registration attempt that was started. 
     //
     // ==Input==
     // Argument	    Type	Description
-    // 0	        STRING	access-token
+    // 0	        STRING	Access token
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Temporary Cloud Connect Status of an attempt to start deregistration. 
-    //                      The final deregistration status will be signalled by 
-    //                      DeregisterResourcesStatus.  
+    // 0            UINT32  Cloud Connect Status of an attempt to start deregistration. 
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "DeregisterResources",
@@ -107,14 +123,16 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // As a Signal :
     // DeregisterResourcesStatus(UINT32 status)
-    // Emitted as a final status for DeregisterResources asynchronous request.
-    // This signal notifies an application that the process of deregestering resources 
-    // in the Pelion is finished.  
+    // Emitted when the DeregisterResources asynchronous request is finished in 
+    // the Pelion.
     //
     // Argument	    Type	Description
-    // 0	        UINT32	Final Cloud Connect Status of the DeregisterResources.
+    // 0	        UINT32  Cloud Connect Status of the DeregisterResources.
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_SIGNAL(
         "DeregisterResourcesStatus",
@@ -131,24 +149,30 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //                             ARRAY_of_UINT16 instance_ids)
     //
     // Description :
-    // Request  
-    // Asynchronous request to add resource instances to the specific resource.
-    // The final status of the operation will be sent by AddResourceInstancesStatus signal.
+    // Asynchronous request to add LwM2M resource instances to the specific resource.
+    // When the addition operation is finished, the status will be sent by 
+    // AddResourceInstancesStatus signal.
     //
     // ==Input==
     // Argument	    Type    Description
-    // 0	        STRING  access-token
+    // 0	        STRING  Access token
     // 1	        STRING  path of the resource to which instances should be added.
     // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of 
     //              the resource instance that should be added to the given resource.  
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Temporary Cloud Connect Status of an attempt to add resource 
-    //                      instances. The final status will be signalled by 
-    //                      AddResourceInstancesStatus.      
+    // 0            UINT32  Cloud Connect Status of an attempt to add resource 
+    //                      instances.       
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "AddResourceInstances",
@@ -162,14 +186,16 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // As a Signal :
     // AddResourceInstancesStatus(UINT32 status)
-    // Emitted as a final status for AddResourceInstances asynchronous request.
-    // This signal notifies an application that the process of adding resource 
-    // instances is finished.  
+    // Emitted when the AddResourceInstances asynchronous request is finished in 
+    // the Pelion.
     //
     // Argument	    Type	Description
-    // 0	        UINT32	Final Cloud Connect Status of the AddResourceInstances.
+    // 0	        UINT32  Cloud Connect Status of the AddResourceInstances.
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_SIGNAL(
         "AddResourceInstancesStatus",
@@ -187,22 +213,29 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // Description :
     // Request  
     // Asynchronous request to remove resource instances from the specific resource.
-    // The final status of the operation will be sent by RemoveResourceInstancesStatus signal.
+    // When the removal operation is finished, the status will be sent by 
+    // RemoveResourceInstancesStatus signal.
     //
     // ==Input==
     // Argument	    Type    Description
-    // 0	        STRING  access-token
+    // 0	        STRING  Access token
     // 1	        STRING  path of the resource from which instances should be removed.
     // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of 
     //              the resource instance that should be removed from the given resource.  
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Temporary Cloud Connect Status of an attempt to emove resource 
-    //                      instances. The final status will be signalled by 
-    //                      RemoveResourceInstancesStatus.      
+    // 0            UINT32  Cloud Connect Status of an attempt to remove resource 
+    //                      instances. 
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "RemoveResourceInstances",
@@ -216,14 +249,16 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // As a Signal :
     // RemoveResourceInstancesStatus(UINT32 status)
-    // Emitted as a final status for RemoveResourceInstances asynchronous request.
-    // This signal notifies an application that the process of removing resource 
-    // instances is finished.  
+    // Emitted when the RemoveResourceInstances asynchronous request is finished in 
+    // the Pelion.
     //
     // Argument	    Type	Description
-    // 0	        UINT32	Final Cloud Connect Status of the RemoveResourceInstances.
+    // 0	        UINT32  Cloud Connect Status of the RemoveResourceInstances.
     //
     // ==Possible Cloud Connect Status values==
+    // TBD
+    //
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_SIGNAL(
         "RemoveResourceInstancesStatus",
@@ -255,7 +290,11 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // 0            ARRAY_of_UINT32 Cloud Connect Status array. Each entry [i] is the status of 
     //                              the set operation parameter at index [i] in the input array. 
     //
-    // ==Possible Cloud Connect Status values==
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "SetResourcesValues",
@@ -293,7 +332,11 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //                                              - resource [i] value (VARIANT). Valid only if the status 
     //                                                of the get operation is SUCCESS.
     //
-    // ==Possible Cloud Connect Status values==
+    // ==Error Reply==
+    // Argument     Type    Description
+    // 0            STRING Error description
+    // 1            UINT32 Cloud Connect Error
+    // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
         "GetResourcesValues",
