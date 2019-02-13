@@ -15,15 +15,17 @@ def read(fname):
 
 
 setup(
-    name="mbl-app-lifecycle",
+    name="mbl-app-cloud-connect",
     version="1",
     description="Mbed Linux OS Application connect to the Cloud Client",
     long_description=read("README.md"),
     author="Arm Ltd.",
     license="BSD-3-Clause",
-    packages=["mbl.app_lifecycle"],
+    packages=["mbl.app_cloud_connect"],
     zip_safe=False,
     entry_points={
-        "console_scripts": ["mbl-app-lifecycle = mbl.app_lifecycle.cli:_main"]
+        "console_scripts": [
+            "mbl-app-cloud-connect = mbl.app_cloud_connect.cli:_main"
+        ]
     },
 )
