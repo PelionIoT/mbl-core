@@ -11,6 +11,7 @@
 #include <memory>
 #include <pthread.h>
 #include <queue>
+#include <atomic>
 
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
@@ -30,16 +31,29 @@ public:
     ~ApplicationEndpoint();
 
     void set_regsiter_callback();
-    void client_registration_updated_cb();
 
-    int uuid_;
     M2MObjectList m2m_object_list_;
     RBM2MObjectList rbm2m_object_list_;
 
+    bool is_registered();
+
 private:
+
+    /**
+     * @brief Resitration callback
+     * When registration flow is finished - Mbed cloud client will call this callback.
+     * This function will notify the Resource broker that its registration finished successfully.
+     */
+    void client_registration_updated_cb();
+
+
+    int uuid_;
+
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
     ResourceBroker &ccrb_;
+
+   bool registered_;
 };
 
 typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
@@ -123,13 +137,13 @@ private:
  * @brief Starts asynchronous registration request of the resource set 
  * in the Cloud.  
  * This function parses the input json file, and creates resource objects 
- * from it. Created objects pends for the registration to the Cloud. 
+ * from it.
  * CCRB will send the final status of the registration to the application 
  * (when it will be ready) by calling update_registration_status API. 
  * 
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should get update_registration_status message.
- * @param appl_resource_definition_json json file that describes resources 
+ * @param appl_resource_definition_json json string that describes resources 
  *        that should be registered. The structure of the JSON document 
  *        reflects the structure of the required resource tree. 
  * @param out_status cloud connect operation status for operations like 
@@ -340,7 +354,19 @@ private:
     ResourceBroker(ResourceBroker&&) = delete;
     ResourceBroker& operator = (ResourceBroker&&) = delete;
 
-    void client_registration_updated_cb(int uuid);
+    /**
+     * @brief Keep alive registration updated callback
+     * Called by cloud client when keep alive registration is finished
+     */
+    void keep_alive_registration_updated_cb();
+
+    /**
+     * @brief Application registration updated function
+     * Called by application endpoint to notify it is now successfully registered
+     * 
+     * @param uuid 
+     */
+    void app_registration_updated(int uuid);
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
@@ -350,15 +376,7 @@ private:
 
     MbedCloudClient* cloud_client_;
 
-    typedef enum {
-        KeepAlive,
-        Unregistered,
-        InProgress,
-        Pending,
-        Registered
-    }RegistrationState;
-
-    RegistrationState registration_state_;
+    std::atomic_bool registration_in_progress_;
     ResourceDefinitionParser resource_parser_;
     ApplicationEndpointMap app_endpoints_map_;
 };

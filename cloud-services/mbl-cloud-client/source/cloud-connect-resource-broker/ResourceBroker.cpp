@@ -22,7 +22,7 @@ namespace mbl {
 
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker()
-: cloud_client_(nullptr), registration_state_(RegistrationState::KeepAlive)
+: cloud_client_(nullptr), registration_in_progress_(false)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -131,7 +131,7 @@ MblError ResourceBroker::init()
     }
 
     // Register Cloud client callback:
-    //cloud_client_->on_registration_updated(this, &ResourceBroker::client_registration_updated_cb);
+    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
 
     return status;
 }
@@ -192,54 +192,11 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-// typedef void(*on_registration_updated_cb)(int);
-
-// void registration_updated_cb(int token)
-// {
-//     tr_info("%s @@@@@@ token = %d", __PRETTY_FUNCTION__,token);
-// }
-
-// class AppCallbackHandler
-// {
-// public:
-
-//     AppCallbackHandler(MbedCloudClient *cloud_client, int token)
-//     : cloud_client_(cloud_client), token_(token), on_registration_updated_cb_(nullptr)
-//     {
-//         //tr_debug("@@@@@@ %s: token = %d", __PRETTY_FUNCTION__, token);
-//     }
-    
-//     ~AppCallbackHandler(){}
-
-//     void set_on_registration_updated_callback(on_registration_updated_cb cb)
-//     {
-//         tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
-//         on_registration_updated_cb_ = cb;
-//     }
-
-//     void client_registration_updated()
-//     {
-//         tr_debug("Woho ! got cb from client @@@@@@ %s: token  = %d", __PRETTY_FUNCTION__, token_);
-//         if (on_registration_updated_cb_) {
-//             on_registration_updated_cb_(token_);
-//         }
-//     }
-
-// private:
-//     MbedCloudClient *cloud_client_;
-//     int token_;
-//     on_registration_updated_cb on_registration_updated_cb_;
-// };
-
-// app_callback_handler->set_on_registration_updated_callback(registration_updated_cb); // Set app callback handler cb to broker's cb
-// app_callback_handler->resiter_callbacks(); // Sets client reg callback to callback handler own cb
-
 ////////////////////////////////////////////////////////////////////////////////
 ApplicationEndpoint::ApplicationEndpoint(int uuid, ResourceBroker &ccrb)
 : uuid_(uuid), 
-ccrb_(ccrb)
+ccrb_(ccrb),
+registered_(false)
 {
     tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
 }
@@ -258,31 +215,46 @@ void ApplicationEndpoint::set_regsiter_callback()
 void ApplicationEndpoint::client_registration_updated_cb()
 {
     tr_debug("@@@@@@ %s: calling client_registration_updated_cb(uuid_ = %d)", __PRETTY_FUNCTION__, uuid_);
-    ccrb_.client_registration_updated_cb(uuid_);
+    registered_ = true;
+    ccrb_.app_registration_updated(uuid_);
+}
+
+bool ApplicationEndpoint::is_registered()
+{
+    return registered_;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-void ResourceBroker::client_registration_updated_cb(int uuid)
+void ResourceBroker::keep_alive_registration_updated_cb()
 {
-    tr_debug("@@@@@@ >>>>>>>>>>>>>>>>> Mbed client called client_registration_updated_cb (%d)", uuid);
+    tr_debug("@@@@@@ %s: Keep alive registration finished successfully.", __PRETTY_FUNCTION__);
+}
 
-    //TODO: update app endpoint that it is now registered.
-    //TODO: use std atomic
-    registration_state_ = RegistrationState::Registered;
+void ResourceBroker::app_registration_updated(int uuid)
+{
+    tr_debug("@@@@@@ %s: Application (uuid: %d) is registered successfully.", __PRETTY_FUNCTION__, uuid);
+
+    // Return registration updated callback to CCRB
+    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
+    registration_in_progress_.store(false);
 }
 
 MblError ResourceBroker::register_resources(
         const uintptr_t a, 
         const std::string &json_string,
-        CloudConnectStatus & /*unused*/,
+        CloudConnectStatus &out_status,
         std::string & /*unused*/)
 {
-    tr_debug("@@@@@ %s START", __PRETTY_FUNCTION__);
+    tr_debug("@@@@@ %s", __PRETTY_FUNCTION__);
 
-    MblError status = Error::None;
-   
-    // Generate UUID
+    if (registration_in_progress_.load()) {
+        // We only allow one registration request at a time.
+        tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__);
+        out_status = CloudConnectStatus::REGISTRATION_ALREADY_IN_PROGRESS;
+        return Error::None;
+    }
+
+    //TODO: Generate real UUID
     int uuid = static_cast<int>(a);
 
     // Init class that holds M2M lists
@@ -293,32 +265,29 @@ MblError ResourceBroker::register_resources(
     }
 
     // Parse JSON
-    status = resource_parser_.build_object_list(
+    MblError status = resource_parser_.build_object_list(
         json_string, 
         app_endpoint->m2m_object_list_,
         app_endpoint->rbm2m_object_list_);
 
     if(Error::None != status) {
+        out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::INVALID_JSON : CloudConnectStatus::FAILED;
         tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
-        return status;
+        return Error::None;
     }
 
-    //TODO: use std::atomic 
-    registration_state_ = RegistrationState::InProgress; // Mark that we started registration
+    // Set atomic flag for registration in progress
+    registration_in_progress_.store(true);
 
     //TODO: register error cb as well
     app_endpoint->set_regsiter_callback(); // Register the next cloud client callback to this app end point
+    app_endpoints_map_[uuid] = app_endpoint; // Add application endpoint to map
 
-    app_endpoints_map_[app_endpoint->uuid_] = app_endpoint;
-
+    // Call cloud client to start registration
     cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-    tr_debug("@@@@@@ %s: Call register_update(%d)", __PRETTY_FUNCTION__, app_endpoint->uuid_);
-
     cloud_client_->register_update();
 
-    tr_debug("@@@@@ %s END", __PRETTY_FUNCTION__);    
-
-    return status;
+    return Error::None;
 }
 
 MblError ResourceBroker::deregister_resources(
