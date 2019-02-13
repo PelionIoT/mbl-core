@@ -9,6 +9,7 @@
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
 #include "UniqueTokenGenerator.h"
+#include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
 
@@ -192,58 +193,46 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
-////////////////////////////////////////////////////////////////////////////////
-ApplicationEndpoint::ApplicationEndpoint(std::string access_token, ResourceBroker &ccrb)
-: access_token_(std::move(access_token)), 
-ccrb_(ccrb),
-registered_(false)
+void ResourceBroker::regsiter_callback_handlers()
 {
-    tr_debug("@@@@@@ %s: out_access_token: %s", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
 }
 
-ApplicationEndpoint::~ApplicationEndpoint()
-{
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
-}
-
-void ApplicationEndpoint::set_regsiter_callback()
-{
-    tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
-    ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::client_registration_updated_cb);
-}
-
-void ApplicationEndpoint::client_registration_updated_cb()
-{
-    tr_debug("@@@@@@ %s: calling client_registration_updated_cb(access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
-    registered_ = true;
-    ccrb_.app_registration_updated(access_token_);
-}
-
-std::string ApplicationEndpoint::get_access_token() const
-{
-    return access_token_;
-}
-
-bool ApplicationEndpoint::is_registered()
-{
-    return registered_;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 void ResourceBroker::keep_alive_registration_updated_cb()
 {
     tr_debug("@@@@@@ %s: Keep alive registration finished successfully.", __PRETTY_FUNCTION__);
 }
 
-void ResourceBroker::app_registration_updated(const std::string &access_token)
+void ResourceBroker::handle_app_registered_cb(const std::string &access_token)
 {
     tr_debug("@@@@@@ %s: Application (access_token: %s) is registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
     // Return registration updated callback to CCRB
-    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
+    regsiter_callback_handlers();
 
     // Mark that registration is finished
     registration_in_progress_.store(false);
+}
+
+void ResourceBroker::handle_app_unregistered_cb(const std::string &access_token)
+{
+    tr_debug("@@@@@@ %s: Application (access_token: %s) is un-registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
+
+    // Return registration updated callback to CCRB
+    //////////////////cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
+
+    // Mark that registration is finished
+    /////////registration_in_progress_.store(false);
+
+}
+
+void ResourceBroker::handle_app_error_cb(const std::string &access_token, const MblError error)
+{
+    tr_debug("@@@@@@ %s: Application (access_token: %s) encountered an error: %s", 
+        __PRETTY_FUNCTION__, 
+        access_token.c_str(),
+        MblError_to_str(error));
 }
 
 MblError ResourceBroker::register_resources(
@@ -278,7 +267,8 @@ MblError ResourceBroker::register_resources(
     }
 
     // Parse JSON
-    status = resource_parser_.build_object_list(
+    ResourceDefinitionParser resource_parser;
+    status = resource_parser.build_object_list(
         json_string, 
         app_endpoint->m2m_object_list_,
         app_endpoint->rbm2m_object_list_);
@@ -293,12 +283,14 @@ MblError ResourceBroker::register_resources(
     registration_in_progress_.store(true);
 
     //TODO: register error cb as well
-    app_endpoint->set_regsiter_callback(); // Register the next cloud client callback to this app end point
+    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callback to this app end point
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration
     cloud_client_->add_objects(app_endpoint->m2m_object_list_);
     cloud_client_->register_update();
+
+    out_status = CloudConnectStatus::SUCCESS;
 
     return Error::None;
 }

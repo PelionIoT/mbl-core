@@ -104,6 +104,9 @@ MblError MblCloudClient::run()
     assert(s_instance);
 
     s_instance->register_handlers();
+    
+    // Add empty ObjectList which will be used to register the device for the first time
+    // in cloud_client_setup()
     s_instance->add_resources();
 
     const MblError ccs_err = s_instance->cloud_client_setup();

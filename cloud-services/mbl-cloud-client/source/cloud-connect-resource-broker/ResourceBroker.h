@@ -14,54 +14,14 @@
 #include <atomic>
 
 #include "DBusAdapter.h"
+#include "ApplicationEndpoint.h"
 #include "CloudConnectTypes.h"
-#include "ResourceDefinitionParser.h"
 #include "mbed-trace/mbed_trace.h"
 
 class MbedCloudClient;
 class RBM2MObjectList;
 
 namespace mbl {
-
-////////////////////////////////////////////////////////////////////////////////
-class ApplicationEndpoint {
-public:
-
-    ApplicationEndpoint(std::string access_token, ResourceBroker &ccrb);
-    ~ApplicationEndpoint();
-
-    std::string get_access_token() const;
-
-    void set_regsiter_callback();
-
-    M2MObjectList m2m_object_list_;
-    RBM2MObjectList rbm2m_object_list_;
-
-    bool is_registered();
-
-private:
-
-    /**
-     * @brief Resitration callback
-     * When registration flow is finished - Mbed cloud client will call this callback.
-     * This function will notify the Resource broker that its registration finished successfully.
-     */
-    void client_registration_updated_cb();
-
-
-    std::string access_token_;
-
-    // this class must have a reference that should be always valid to the CCRB instance. 
-    // reference class member satisfy this condition.   
-    ResourceBroker &ccrb_;
-
-   bool registered_;
-};
-
-typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
-typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
-
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Class implements functionality of Mbl Cloud Connect Resource 
@@ -356,6 +316,8 @@ private:
     ResourceBroker(ResourceBroker&&) = delete;
     ResourceBroker& operator = (ResourceBroker&&) = delete;
 
+    void regsiter_callback_handlers();
+
     /**
      * @brief Keep alive registration updated callback
      * Called by cloud client when keep alive registration is finished
@@ -368,7 +330,11 @@ private:
      * 
      * @param uuid 
      */
-    void app_registration_updated(const std::string &access_token);
+    void handle_app_registered_cb(const std::string &access_token);
+
+    void handle_app_unregistered_cb(const std::string &access_token);
+
+    void handle_app_error_cb(const std::string &access_token, const MblError error);
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
@@ -378,8 +344,10 @@ private:
 
     MbedCloudClient* cloud_client_;
 
+    typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
+    typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
+
     std::atomic_bool registration_in_progress_;
-    ResourceDefinitionParser resource_parser_;
     ApplicationEndpointMap app_endpoints_map_;
 };
 
