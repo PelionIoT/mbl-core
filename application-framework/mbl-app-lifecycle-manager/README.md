@@ -47,16 +47,15 @@ subcommands:
 ```
 
 ```
-usage: mbl-app-lifecycle-manager run [-h] -p APP_PATH app_name
+usage: mbl-app-lifecycle-manager run [-h] app_name app_path
 
 positional arguments:
-  app_name              name the application will be referred as once it has
-                        been started.
+  app_name    name the application will be referred as once it has been
+              started.
+  app_path    path of the application to start.
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -p APP_PATH, --app_path APP_PATH
-                        path of the application to start.
+  -h, --help  show this help message and exit
 ```
 
 ```

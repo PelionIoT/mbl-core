@@ -139,13 +139,12 @@ class TestAppLifecycleManager:
 
 def run_app(app_name, app_path, check_exit_code):
     """Run an app."""
-    # usage: mbl-app-lifecycle-manager run [-h] -p PATH -n NAME -v
+    # usage: mbl-app-lifecycle-manager run [-h] app_name app_path
     command = [
         MBL_APP_LIFECYCLE_MANAGER,
         "-v",
         "run",
         app_name,
-        "-p",
         app_path,
     ]
     print("Executing command: {}".format(command))
@@ -184,17 +183,17 @@ def kill_app(app_name, check_exit_code):
 
 def force_install_app(app_pkg, app_path):
     """Remove application if previously installed before installing."""
-    # usage: mbl-app-manager force-install [-h] -i APP_PACKAGE -p APP_PATH
+    # usage: mbl-app-manager force-install [-h] app_package app_path
     print("Force install {} at {}".format(app_pkg, app_path))
-    command = [MBL_APP_MANAGER, "-v", "force-install", app_pkg, "-p", app_path]
+    command = [MBL_APP_MANAGER, "-v", "force-install", app_pkg, app_path]
     print("Executing command: {}".format(command))
     return subprocess.run(command, check=False).returncode
 
 
 def remove_app(app_name, app_path):
     """Remove application."""
-    # usage: mbl-app-manager remove [-h] -n APP_NAME -p APP_PATH
+    # usage: mbl-app-manager remove [-h] app_name app_path
     print("Remove {} from {}".format(app_name, app_path))
-    command = [MBL_APP_MANAGER, "-v", "remove", app_name, "-p", app_path]
+    command = [MBL_APP_MANAGER, "-v", "remove", app_name, app_path]
     print("Executing command: {}".format(command))
     return subprocess.run(command, check=False).returncode

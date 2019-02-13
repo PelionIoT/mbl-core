@@ -61,11 +61,7 @@ def parse_args():
         " once it has been started.",
     )
     run.add_argument(
-        "-p",
-        "--app-path",
-        type=str,
-        required=True,
-        help="path of the application to start.",
+        "app_path", type=str, help="path of the application to start."
     )
 
     run.set_defaults(func=run_action)
