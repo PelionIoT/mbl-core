@@ -3,7 +3,7 @@
 # Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-set +x
+set -x
 
 # Find and select the device to talk to
 echo "1" | mbl-cli select
