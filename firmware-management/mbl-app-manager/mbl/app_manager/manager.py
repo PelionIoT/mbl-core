@@ -8,7 +8,7 @@ import os
 import shutil
 import subprocess
 
-from .parser import ApplicationInfoParser, AppInfoParserError
+from .parser import parse_app_info, AppInfoParserError
 from .utils import log
 
 
@@ -23,9 +23,7 @@ class AppManager(object):
         """Create an app manager."""
         # When opkg installs new package while "D" environment variable
         # is defined, opkg will not call ldconfig in rootfs partition
-        self._opkg_env = os.environ.copy()
-        self._opkg_env["D"] = "1"
-        self._pkg_info_parser = ApplicationInfoParser(self._opkg_env)
+        os.environ["D"] = "1"
 
     # ---------------------------- Public Methods -----------------------------
 
@@ -33,7 +31,7 @@ class AppManager(object):
         """Get the name of an application from the package meta data."""
         try:
             log.debug("Getting app name from pkg '{}'".format(app_pkg))
-            app_name = self._pkg_info_parser.parse_app_info(app_pkg)["Package"]
+            app_name = parse_app_info(app_pkg)["Package"]
             log.info("Application name is '{}'".format(app_name))
             return app_name
         except subprocess.CalledProcessError as error:
@@ -65,7 +63,7 @@ class AppManager(object):
             dest = "{}:{}".format(app_name, app_path)
             cmd = ["opkg", "--add-dest", dest, "install", app_pkg]
             log.debug("Execute command: {}".format(" ".join(cmd)))
-            subprocess.check_call(cmd, env=self._opkg_env)
+            subprocess.check_call(cmd)
             log.info(
                 "'{}' from '{}' package successfully installed at '{}'".format(
                     app_name, app_pkg, app_path
@@ -96,7 +94,7 @@ class AppManager(object):
             dest = "{}:{}".format(app_name, app_path)
             cmd = ["opkg", "--add-dest", dest, "remove", app_name]
             log.debug("Execute command: {}".format(" ".join(cmd)))
-            subprocess.check_call(cmd, env=self._opkg_env)
+            subprocess.check_call(cmd)
             log.info(
                 "'{}' removal from '{}' successful".format(app_name, app_path)
             )
@@ -139,7 +137,7 @@ class AppManager(object):
             app_name = subdir
             dest = "{}:{}".format(app_name, os.path.join(apps_path, app_name))
             cmd = ["opkg", "--add-dest", dest, "list-installed"]
-            subprocess.check_call(cmd, env=self._opkg_env)
+            subprocess.check_call(cmd)
 
 
 class AppIdError(Exception):
