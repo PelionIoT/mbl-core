@@ -47,9 +47,8 @@ class ApplicationInfoParser:
                 self.pkg_info[field] = value
 
         if "Package" not in self.pkg_info:
-            msg = (
-                    "'{}' control data does not have a"
-                    " 'Package' field".format(app_pkg)
+            msg = "'{}' control data does not have a 'Package' field".format(
+                app_pkg
             )
             raise AppInfoParserError(msg)
 
