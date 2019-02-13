@@ -125,17 +125,17 @@ def verify_md5(file_path, expected_md5):
 
 def install_app(app_pkg, app_path):
     """Install an application."""
-    # usage: mbl-app-manager install [-h] -i APP_PACKAGE -p APP_PATH
+    # usage: mbl-app-manager install [-h] app_package app_path
     print("Install {} at {}".format(app_pkg, app_path))
-    command = [MBL_APP_MANAGER, "-v", "install", app_pkg, "-p", app_path]
+    command = [MBL_APP_MANAGER, "-v", "install", app_pkg, app_path]
     print("Executing command: {}".format(command))
     return subprocess.run(command, check=False).returncode
 
 
 def remove_app(app_name, app_path):
     """Remove an application."""
-    # usage: mbl-app-manager remove [-h] -n APP_NAME -p APP_PATH
+    # usage: mbl-app-manager remove [-h] app_name app_path
     print("Remove {} from {}".format(app_name, app_path))
-    command = [MBL_APP_MANAGER, "-v", "remove", app_name, "-p", app_path]
+    command = [MBL_APP_MANAGER, "-v", "remove", app_name, app_path]
     print("Executing command: {}".format(command))
     return subprocess.run(command, check=False).returncode

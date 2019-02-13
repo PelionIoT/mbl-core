@@ -67,11 +67,9 @@ def parse_args():
         help="application package to install a user application.",
     )
     install.add_argument(
-        "-p",
-        "--app-path",
+        "app_path",
         type=str,
-        required=True,
-        help="path to install the app.",
+        help="path to install the application.",
     )
     install.set_defaults(func=install_action)
 
@@ -88,10 +86,8 @@ def parse_args():
         help="application package to install a user application.",
     )
     force_install.add_argument(
-        "-p",
-        "--app-path",
+        "app_path",
         type=str,
-        required=True,
         help="path to install the app.",
     )
     force_install.set_defaults(func=force_install_action)
@@ -103,10 +99,8 @@ def parse_args():
         "app_name", type=str, help="name of the user application to remove."
     )
     remove.add_argument(
-        "-p",
-        "--app-path",
+        "app_path",
         type=str,
-        required=True,
         help="path the app was installed.",
     )
     remove.set_defaults(func=remove_action)
@@ -115,10 +109,8 @@ def parse_args():
         "list", help="list installed applications."
     )
     lister.add_argument(
-        "-p",
-        "--apps-path",
+        "apps_path",
         type=str,
-        required=True,
         help="path to look for installed applications.",
     )
     lister.set_defaults(func=list_action)
