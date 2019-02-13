@@ -204,12 +204,11 @@ class ClientBuilder:
 
         # Configure PAL
         command = [
-            "cmake",
-            "-G",
-            "Unix Makefiles",
-            "-DCMAKE_BUILD_TYPE=Debug",
-            "-DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake",
-            "-DEXTARNAL_DEFINE_FILE=./../define.txt",
+            "python3",
+            "pal-platform/pal-platform.py",
+            "deploy",
+            "--target={}".format(PAL_TARGET),
+            "generate",
         ]
         self.logger.info("Configuring PAL")
         subprocess.check_call(command, cwd=self.mbl_cloud_client_directory)
