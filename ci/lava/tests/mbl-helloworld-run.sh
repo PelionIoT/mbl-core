@@ -13,15 +13,13 @@ mbl-cli list > device_list
 dut_address=`grep "mbed-linux-os" device_list | cut -d":" -f3-`
 rm device_list
 
-mbl_command="mbl-cli -a" $dut_address
+mbl_command="mbl-cli -a $dut_address"
 
 mbl_command="mbl-cli"
 
 
 
 # Initially attempt to cleanup any previous runs
-$mbl_command shell 'mbl-app-manager -r user-sample-app-package'
-$mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk'
 $mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
 
 # Now install the package - this should cause it to run
@@ -41,8 +39,8 @@ $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
 cat /home/ubuntu/user-sample-app-package.log
 
 # Attempt to cleanup anfter the run
-#$mbl_command shell 'mbl-app-manager -r user-sample-app-package'
-#$mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk'
-#$mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
+$mbl_command shell 'mbl-app-manager -r user-sample-app-package'
+$mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk'
+$mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
 
 
