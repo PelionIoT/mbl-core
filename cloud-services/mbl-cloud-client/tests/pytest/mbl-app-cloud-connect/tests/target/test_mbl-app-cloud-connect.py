@@ -121,7 +121,9 @@ class TestAppConnectivity:
             )
             # timeout expired, kill the process
             self.proc.kill()
-            out_app_cloud_connect, err_app_cloud_connect = self.proc.communicate()
+            out_app_cloud_connect, err_app_cloud_connect = (
+                self.proc.communicate()
+            )
             print(
                 "Process communicate stdout: {}, stderr: {}".format(
                     out_app_cloud_connect, err_app_cloud_connect

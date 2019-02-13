@@ -8,7 +8,8 @@
 import argparse
 import logging
 import sys
-import mbl.app_cloud_connect.app_cloud_connect as alc
+
+import mbl.app_cloud_connect.app_cloud_connect as acc
 
 
 def get_argument_parser():
@@ -45,7 +46,7 @@ def _main():
     logger = logging.getLogger("mbl-app-cloud-connect")
     logger.debug("Command line arguments:{}".format(args))
 
-    app = alc.AppConnectivity()
+    app = acc.AppConnectivity()
 
     logger.info("Call application Run")
     # Start the application main loop. This is a blocking call starting
