@@ -39,13 +39,12 @@ class ApplicationInfoParser:
             field_and_value = line.split(":")
             # check that a valid entry was found
             if len(field_and_value) != 1:
-                # strip white space at the end of the field
-                field_and_value[0] = field_and_value[0].rstrip()
-                # strip white space at the begining of the value
-                field_and_value[1] = field_and_value[1].lstrip()
+                field, value = field_and_value
+                field = field.rstrip()
+                value = value.lstrip()
                 # create a dictionary that has the fields as keys
                 # and the values as...well values.
-                self.pkg_info[field_and_value[0]] = field_and_value[1]
+                self.pkg_info[field] = value
 
         if "Package" not in self.pkg_info:
             msg = (
