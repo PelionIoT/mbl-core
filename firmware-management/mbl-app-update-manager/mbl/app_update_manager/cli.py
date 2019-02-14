@@ -66,7 +66,7 @@ def run_mbl_app_update_manager():
 def _main():
     """Run mbl-app-update-manager."""
     try:
-        sys.exit(run_mbl_app_update_manager())
+        run_mbl_app_update_manager()
     except Exception as error:
         print(error)
         return ReturnCode.ERROR.value
