@@ -157,7 +157,9 @@ def create(container_id, bundle_path):
             raise ContainerCreationError(msg)
 
         log.info(
-            "Container '{}' created from '{}'".format(container_id, bundle_path)
+            "Container '{}' created from '{}'".format(
+                container_id, bundle_path
+            )
         )
 
 

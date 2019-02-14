@@ -70,7 +70,7 @@ def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
 
 def _delete_stopped_app(app_name):
     """Delete a stopped application."""
-    container.delete(app_name):
+    container.delete(app_name)
     log.info("Application '{}' deleted".format(app_name))
 
 
