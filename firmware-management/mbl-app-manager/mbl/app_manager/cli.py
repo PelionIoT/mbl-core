@@ -12,7 +12,7 @@ import sys
 from enum import Enum
 
 from .manager import AppManager
-from .utils import log, set_log_verbosity, __version__
+from .utils import log, set_log_verbosity
 
 
 class ReturnCode(Enum):
@@ -112,13 +112,6 @@ def parse_args():
         "--verbose",
         action="store_true",
         help="increase verbosity of status information",
-    )
-
-    parser.add_argument(
-        "--version",
-        action="version",
-        version="%(prog)s {}".format(__version__),
-        help="print application version",
     )
 
     args_namespace = parser.parse_args()
