@@ -22,7 +22,7 @@ def parse_app_info(app_pkg):
     log.debug("Package info:\n{}".format(app_ctrl_data))
 
     # create a list of all the fields in the application control data
-    lines = list(app_ctrl_data.split("\n"))
+    lines = app_ctrl_data.split("\n")
 
     for line in lines:
         field_and_value = line.split(":")
