@@ -1,3 +1,11 @@
 # Python
 __pycache__/
 *.pyc
+*.orig
+*.rej
+cloud-services/mbl-cloud-client/__x86_x64_NativeLinux_mbedtls/
+cloud-services/mbl-cloud-client/compilation_info.txt
+cloud-services/mbl-cloud-client/mbed_cloud_dev_credentials.c
+cloud-services/mbl-cloud-client/pal-platform/Middleware/mbedtls/mbedtls/
+cloud-services/mbl-cloud-client/pal-platform/x86_x64_NativeLinux_mbedtls.txt
+cloud-services/mbl-cloud-client/update_default_resources.c
