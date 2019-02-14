@@ -16,18 +16,17 @@
 namespace mbl {
 
 /*
-For holding std::unique_ptr<DBusAdapterImpl*>, need to allow unique_ptr to 
-recognize DBusAdapterImpl as a complete type.
-std::unique_ptr checks  in its destructor if the definition of the type is visible 
-before calling delete.
+For holding std::unique_ptr<DBusAdapterImpl*>, need to allow unique_ptr to recognize DBusAdapterImpl
+as a complete type. std::unique_ptr checks  in its destructor if the definition of the type is 
+visible before calling delete.
 DBusAdapterImpl is forward decleared in header (that a call to delete is well-formed);
 std::unique_ptr will refuse to compile and to call delete if the type is only forward declared.
 Use the default implentation for the destructor after the definition of DBusAdapterImpl :
 */
 DBusAdapter::~DBusAdapter() = default;
 
-
 DBusAdapter::DBusAdapter(ResourceBroker &ccrb) :
+    // initialize impl_ unique_ptr
     impl_(new DBusAdapterImpl(ccrb))
 {
     tr_debug("Enter");
@@ -54,6 +53,7 @@ MblError DBusAdapter::run(MblError &stop_status)
     tr_debug("Enter");
     MblError status = impl_->run(stop_status);
     if (status != MblError::None){
+        //best effort - stop
         impl_->stop(MblError::DBA_Temporary);
     }
     return status;

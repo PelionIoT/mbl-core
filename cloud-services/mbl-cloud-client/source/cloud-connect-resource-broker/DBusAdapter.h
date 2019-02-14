@@ -29,9 +29,13 @@ class DBusAdapterImpl;
  * service and client applications.
  */
 class DBusAdapter {
+// Google test friend class (for tests to be able to reach private members)
 friend class ::TestInfra_DBusAdapterTester;
 public:    
     DBusAdapter(ResourceBroker &ccrb);
+
+    // dtor must be explicitly declared and get default implementation in source in order to allow
+    // member impl_ unique_ptr to reqcognize DBusAdapterImpl as a complete type and deestroy it
     ~DBusAdapter();
 
 /**
