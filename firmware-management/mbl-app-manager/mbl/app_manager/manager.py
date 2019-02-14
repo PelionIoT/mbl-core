@@ -117,7 +117,7 @@ class AppManager(object):
             app_name = self.get_app_name(app_pkg)
             self.remove_app(app_name, app_path)
 
-        self.install_app(app_pkg, app_path)
+        return self.install_app(app_pkg, app_path)
 
     def list_installed_apps(self, apps_path):
         """List all installed applications.
