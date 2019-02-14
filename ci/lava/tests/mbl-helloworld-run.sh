@@ -6,17 +6,12 @@
 set -x
 
 # Find and select the device to talk to
-echo "1" | mbl-cli select
-
 
 mbl-cli list > device_list
 dut_address=`grep "mbed-linux-os" device_list | cut -d":" -f3-`
 rm device_list
 
 mbl_command="mbl-cli -a $dut_address"
-
-mbl_command="mbl-cli"
-
 
 
 # Initially attempt to cleanup any previous runs
