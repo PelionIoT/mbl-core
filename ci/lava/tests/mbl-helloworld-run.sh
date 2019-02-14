@@ -23,8 +23,8 @@ mbl_command="mbl-cli"
 $mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
 
 # Now install the package - this should cause it to run
-$mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk /home/app
-$mbl_command shell 'mbl-app-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk'
+$mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/app
+$mbl_command shell 'mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar'
 
 # Check it is there
 $mbl_command shell 'mbl-app-manager -l'
