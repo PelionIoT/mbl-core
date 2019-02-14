@@ -19,7 +19,7 @@ all: ipk/$(IPK_PACKAGE)
 bundle/rootfs/*: src_bundle/config.json
 	@mkdir -p $(@D)
 	$(CP) src_bundle/config.json bundle/config.json
-	$(CP) -r src/* bundle/
+	$(CP) -r src/* $(@D)/
 	@echo ' '
 
 
@@ -36,3 +36,4 @@ clean:
 	-$(RM) bundle
 	-$(RM) ipk
 	@echo ' '
+
