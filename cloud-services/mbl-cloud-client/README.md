@@ -26,7 +26,7 @@ Valid options are:
 - TRACE_ACTIVE_LEVEL_CMD    - print only cmd line data
 - TRACE_ACTIVE_LEVEL_NONE   - trace nothing
 
-## Development on a Ubuntu Linux on PC
+## Development on an Ubuntu Linux on PC
 
 ### Prerequisites
 
