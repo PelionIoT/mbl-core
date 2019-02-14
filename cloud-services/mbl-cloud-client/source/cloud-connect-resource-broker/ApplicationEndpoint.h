@@ -35,8 +35,11 @@ public:
     ~ApplicationEndpoint();
 
     MblError init(const std::string json_string);
-    
+
+    void set_ipc_conn_handle(const uintptr_t ipc_conn_handle); //TODO: find a better name, update?
+
     uintptr_t get_ipc_conn_handle() const;
+
     std::string get_access_token() const;
 
     void regsiter_callback_handlers();
@@ -59,14 +62,14 @@ private:
 
     void handle_error_cb(const int cloud_client_code);
 
-    const uintptr_t ipc_conn_handle_;
+    uintptr_t ipc_conn_handle_;
     std::string access_token_;
 
     // this class must have a reference that should be always valid to the CCRB instance. 
     // reference class member satisfy this condition.   
     ResourceBroker &ccrb_;
 
-   bool registered_;
+   bool registered_; //TODO: use a more descriptive states (e.g. for deregister as well?)
 };
 
 } // namespace mbl

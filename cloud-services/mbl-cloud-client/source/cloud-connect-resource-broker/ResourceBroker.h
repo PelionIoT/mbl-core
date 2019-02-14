@@ -328,11 +328,11 @@ private:
      * 
      * @param uuid 
      */
-    void handle_app_register_cb(const std::string &access_token);
+    void handle_app_register_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
-    void handle_app_deregister_cb(const std::string &access_token);
+    void handle_app_deregister_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
-    void handle_app_error_cb(const std::string &access_token, const MblError error);
+    void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;

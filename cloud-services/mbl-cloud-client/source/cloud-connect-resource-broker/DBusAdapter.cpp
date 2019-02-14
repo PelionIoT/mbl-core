@@ -61,17 +61,24 @@ MblError DBusAdapter::run()
             CloudConnectStatus out_status;
             std::string out_access_token;
 
+            //REGISTER!
             const std::string json_string1 = R"({"77777" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+            uintptr_t ipc_conn_handle = 77777;
+            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)ipc_conn_handle);
+            MblError status  = ccrb_.register_resources(ipc_conn_handle,json_string1, out_status, out_access_token);
+            
+            if(Error::None == status) {
 
-            uintptr_t a = 77777;
-            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)a);
-            ccrb_.register_resources(a,json_string1, out_status, out_access_token);
+                tr_info("%s @@@@@@ wait 30 seconds before deregistring", __PRETTY_FUNCTION__);
+                sleep(30); //TO AVOID REGISTRATION IN PROGRESS ERROR
 
-            // uintptr_t b = 66661;
-            // const std::string json_string2 = R"({"66661" : { "12" : { "222" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
-            // tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)b);
-            // ccrb_.register_resources(b,json_string2, out_status, out_access_token);
-
+                //DEREGISTER!
+                tr_info("%s @@@@@@ Call de-register_resources", __PRETTY_FUNCTION__);
+                status = ccrb_.deregister_resources(
+                    ipc_conn_handle, 
+                    out_access_token,
+                    out_status);
+            }
             once = false;
         } else {
             sleep(1); // 1 seconds

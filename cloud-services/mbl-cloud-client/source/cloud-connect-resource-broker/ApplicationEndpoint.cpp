@@ -63,18 +63,23 @@ MblError ApplicationEndpoint::init(const std::string json_string)
     return status;
 }
 
+void ApplicationEndpoint::set_ipc_conn_handle(const uintptr_t ipc_conn_handle)
+{
+    ipc_conn_handle_ = ipc_conn_handle;
+}
+
 void ApplicationEndpoint::handle_register_cb()
 {
     tr_debug("@@@@@@ %s: Notify CCRB that registration was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = true;
-    ccrb_.handle_app_register_cb(access_token_);
+    ccrb_.handle_app_register_cb(ipc_conn_handle_, access_token_);
 }
 
 void ApplicationEndpoint::handle_deregister_cb()
 {
     tr_debug("@@@@@@ %s: Notify CCRB that un-register was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = false;
-    ccrb_.handle_app_deregister_cb(access_token_);
+    ccrb_.handle_app_deregister_cb(ipc_conn_handle_, access_token_);
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
@@ -87,7 +92,7 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
         MblError_to_str(mbl_code));
 
     tr_debug("@@@@@@ %s: Notify CCRB that error occured (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
-    ccrb_.handle_app_error_cb(access_token_, mbl_code);
+    ccrb_.handle_app_error_cb(ipc_conn_handle_, access_token_, mbl_code);
 }
 
 uintptr_t ApplicationEndpoint::get_ipc_conn_handle() const

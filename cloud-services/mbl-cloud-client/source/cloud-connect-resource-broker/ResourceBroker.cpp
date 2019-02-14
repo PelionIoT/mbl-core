@@ -201,10 +201,20 @@ void ResourceBroker::keep_alive_cb()
     tr_debug("@@@@@@ %s: Keep alive registration finished successfully.", __PRETTY_FUNCTION__);
 }
 
-void ResourceBroker::handle_app_register_cb(const std::string &access_token)
+////////////////////////////////////////////////////////////////////////////////
+void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, const std::string &access_token)
 {
     tr_debug("@@@@@@ %s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
+    // Send adapter the response:
+    CloudConnectStatus reg_status = CloudConnectStatus::SUCCESS;
+    MblError status = ipc_->update_registration_status(
+        ipc_conn_handle, 
+        reg_status);
+    if(Error::None != status) {
+        tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+    }
+        
     // Return registration updated callback to CCRB
     regsiter_callback_handlers();
 
@@ -212,7 +222,7 @@ void ResourceBroker::handle_app_register_cb(const std::string &access_token)
     registration_in_progress_.store(false);
 }
 
-void ResourceBroker::handle_app_deregister_cb(const std::string &access_token)
+void ResourceBroker::handle_app_deregister_cb(const uintptr_t /*ipc_conn_handle*/, const std::string &access_token)
 {
     tr_debug("@@@@@@ %s: Application (access_token: %s) deregistered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
@@ -224,19 +234,43 @@ void ResourceBroker::handle_app_deregister_cb(const std::string &access_token)
 
 }
 
-void ResourceBroker::handle_app_error_cb(const std::string &access_token, const MblError error)
+void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error)
 {
     tr_debug("@@@@@@ %s: Application (access_token: %s) encountered an error: %s", 
         __PRETTY_FUNCTION__, 
         access_token.c_str(),
         MblError_to_str(error));
+
+    CloudConnectStatus reg_status = CloudConnectStatus::FAILED;
+
+    SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
+    //TODO: check valid app_point
+    
+    // Send adapter the response:
+    if(app_endpoint->is_registered()) { 
+        // App is already registered which means the error is for deregistration
+        MblError status = ipc_->update_deregistration_status(
+            ipc_conn_handle, 
+            reg_status);
+        if(Error::None != status) {
+            tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        }
+    } else {
+        // App is not registered, which means the error is for register request
+        MblError status = ipc_->update_registration_status(
+            ipc_conn_handle, 
+            reg_status);
+        if(Error::None != status) {
+            tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        }
+    }
 }
 
 MblError ResourceBroker::register_resources(
-        const uintptr_t ipc_conn_handle, 
-        const std::string &json_string,
-        CloudConnectStatus &out_status,
-        std::string &out_access_token)
+    const uintptr_t ipc_conn_handle,
+    const std::string &json_string,
+    CloudConnectStatus &out_status,
+    std::string &out_access_token)
 {
     tr_debug("@@@@@ %s", __PRETTY_FUNCTION__);
 
@@ -272,8 +306,7 @@ MblError ResourceBroker::register_resources(
     // Set atomic flag for registration in progress
     registration_in_progress_.store(true);
 
-    //TODO: register error cb as well
-    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callback to this app end point
+    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration
@@ -286,12 +319,39 @@ MblError ResourceBroker::register_resources(
 }
 
 MblError ResourceBroker::deregister_resources(
-        const uintptr_t /*unused*/, 
-        const std::string & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+    const uintptr_t ipc_conn_handle, 
+    const std::string &access_token,
+    CloudConnectStatus &out_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
+    tr_debug("@@@@@ %s", __PRETTY_FUNCTION__);
+
+    if (registration_in_progress_.load()) {
+        // We only allow one registration request at a time.
+        tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__); //TODO: need better atomic name
+        out_status = CloudConnectStatus::REGISTRATION_ALREADY_IN_PROGRESS;
+        return Error::None;
+    }
+
+    SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
+    //TODO: check valid app_point
+
+    app_endpoint->set_ipc_conn_handle(ipc_conn_handle);
+    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
+
+    // Iterate all Objects
+    M2MObject *m2m_object = nullptr;
+    for(auto& itr : app_endpoint->m2m_object_list_)
+    {
+        m2m_object = itr;
+        std::string object_name = m2m_object->name();
+        tr_debug("Removeing object_name: %s", object_name.c_str());
+        cloud_client_->remove_object(m2m_object);
+
+    }
+    cloud_client_->register_update();
+
+    out_status = CloudConnectStatus::SUCCESS;
+
     return Error::None;
 }
 
