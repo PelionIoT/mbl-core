@@ -53,59 +53,57 @@ class AppManager(object):
         manager is able to install multiple version of the application, as
         long as the registration path is different.
         """
+        log.debug("installing package '{}' to '{}'".format(app_pkg, app_path))
+        # Command syntax:
+        # opkg --add-dest <app_name>:<app_path> install <app_pkg>
+        app_name = self.get_app_name(app_pkg)
+        dest = "{}:{}".format(app_name, app_path)
+        cmd = ["opkg", "--add-dest", dest, "install", app_pkg]
+        log.debug("Execute command: {}".format(" ".join(cmd)))
         try:
-            log.debug(
-                "installing package '{}' to '{}'".format(app_pkg, app_path)
-            )
-            # Command syntax:
-            # opkg --add-dest <app_name>:<app_path> install <app_pkg>
-            app_name = self.get_app_name(app_pkg)
-            dest = "{}:{}".format(app_name, app_path)
-            cmd = ["opkg", "--add-dest", dest, "install", app_pkg]
-            log.debug("Execute command: {}".format(" ".join(cmd)))
             subprocess.check_call(cmd)
-            log.info(
-                "'{}' from '{}' package successfully installed at '{}'".format(
-                    app_name, app_pkg, app_path
-                )
-            )
-            return True
         except subprocess.CalledProcessError as error:
             err_output = error.stdout.decode("utf-8")
             msg = "Installing '{}' at '{}' failed, error: '{}'".format(
                 app_pkg, app_path, err_output
             )
             raise AppInstallError(msg)
+        else:
+            log.info(
+                "'{}' from '{}' package successfully installed at '{}'".format(
+                    app_name, app_pkg, app_path
+                )
+            )
+            return True
 
     def remove_app(self, app_name, app_path):
         """Remove an application.
 
         The application found at the registered destination is deleted.
         """
+        log.debug("Removing app '{}' from '{}'".format(app_name, app_path))
+        if not os.path.isdir(app_path):
+            msg = "The application path '{}' does not exist".format(app_path)
+            raise AppPathInexistent(msg)
+        # Command syntax:
+        # opkg --add-dest <app_name>:<app_path> remove <app_name>
+        dest = "{}:{}".format(app_name, app_path)
+        cmd = ["opkg", "--add-dest", dest, "remove", app_name]
+        log.debug("Execute command: {}".format(" ".join(cmd)))
         try:
-            log.debug("Removing app '{}' from '{}'".format(app_name, app_path))
-            if not os.path.isdir(app_path):
-                msg = "The application path '{}' does not exist".format(
-                    app_path
-                )
-                raise AppPathInexistent(msg)
-            # Command syntax:
-            # opkg --add-dest <app_name>:<app_path> remove <app_name>
-            dest = "{}:{}".format(app_name, app_path)
-            cmd = ["opkg", "--add-dest", dest, "remove", app_name]
-            log.debug("Execute command: {}".format(" ".join(cmd)))
             subprocess.check_call(cmd)
-            log.info(
-                "'{}' removal from '{}' successful".format(app_name, app_path)
-            )
-            shutil.rmtree(app_path)
-            return True
         except subprocess.CalledProcessError as error:
             err_output = error.stdout.decode("utf-8")
             msg = "Removing '{}' at '{}' failed, error: {}".format(
                 app_name, app_path, err_output
             )
             raise AppUninstallError(msg)
+        else:
+            log.info(
+                "'{}' removal from '{}' successful".format(app_name, app_path)
+            )
+            shutil.rmtree(app_path)
+            return True
 
     def force_install_app(self, app_pkg, app_path):
         """
