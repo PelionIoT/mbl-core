@@ -149,7 +149,7 @@ def run_mbl_app_manager():
 def _main():
     """Run mbl-app-manager."""
     try:
-        sys.exit(run_mbl_app_manager())
+        return run_mbl_app_manager()
     except Exception as error:
         print(error)
         return ReturnCode.ERROR.value
