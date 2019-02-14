@@ -3,7 +3,6 @@
 # Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
-set -x
 
 # Find and select the device to talk to
 
