@@ -11,7 +11,7 @@ The update package may be delivered via a trusted delivery method using [`mbl-ap
 
 ### Installation
 
-`mbl-app-manager` can be installed by running:
+`mbl-app-manager` can be installed by running the following command when the current working directory is set to `mbl-core/firmware-management/mbl-app-manager`:
 ```
 pip install .
 ```
