@@ -136,13 +136,11 @@ def run_mbl_app_manager():
 
     args.func(args)
 
-    return ReturnCode.SUCCESS.value
-
 
 def _main():
     """Run mbl-app-manager."""
     try:
-        return run_mbl_app_manager()
+        run_mbl_app_manager()
     except Exception as error:
         print(error)
         return ReturnCode.ERROR.value
