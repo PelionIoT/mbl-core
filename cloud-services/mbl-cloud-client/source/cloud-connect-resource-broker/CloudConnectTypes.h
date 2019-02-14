@@ -119,7 +119,7 @@ struct ResourceSetOperation
     {}
 
     const ResourceData input_data_; // set operation input data
-    CloudConnectStatus output_status_ = FAILED; // set operation output status
+    CloudConnectStatus output_status_ = ERR_FAILED; // set operation output status
 };
 
 struct ResourceGetOperation
@@ -136,7 +136,7 @@ struct ResourceGetOperation
     {}
 
     ResourceData inout_data_;// get operation input and output data
-    CloudConnectStatus output_status_ = FAILED; // get operation output status
+    CloudConnectStatus output_status_ = ERR_FAILED; // get operation output status
 };
 
 /**
