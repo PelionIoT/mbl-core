@@ -18,5 +18,5 @@ chmod +x ./build-armv7
 
 cd debug/ipk/
 tar -cvf user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar user-sample-app-package_1.0_armv7vet2hf-neon.ipk
-cp user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar ~/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar
+cp user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar
 

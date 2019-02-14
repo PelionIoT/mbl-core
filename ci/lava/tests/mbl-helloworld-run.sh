@@ -38,7 +38,7 @@ $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
 # Echo it to the test run
 cat /home/ubuntu/user-sample-app-package.log
 
-# Attempt to cleanup anfter the run
+# Attempt to cleanup after the run
 $mbl_command shell 'mbl-app-manager -r user-sample-app-package'
 $mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar'
 $mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
