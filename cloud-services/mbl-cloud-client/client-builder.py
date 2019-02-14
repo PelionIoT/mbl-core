@@ -48,7 +48,7 @@ def get_argument_parser():
     parser.add_argument(
         "-a",
         "--action",
-        choices=["prepare", "configure", "build"],
+        choices=["prepare", "configure", "build", "rebuild"],
         default="prepare",
         help="Specify which action to perform",
     )
@@ -84,6 +84,9 @@ class ClientBuilder:
         )
         self.pal_target_directory = os.path.join(
             self.mbl_cloud_client_directory, "__{}".format(PAL_TARGET)
+        )
+        self.mbed_cloud_client_direcotry = os.path.join(
+            self.mbl_cloud_client_directory, "mbed-cloud-client"
         )
 
     def _apply_patches(self, meta_mbl_directory):
@@ -176,13 +179,12 @@ class ClientBuilder:
 
         # Delete inner mbed-cloud-client tree that downloaded by previous run
         # of this script
-        mbed_cloud_client_direcotry = os.path.join(
-            self.mbl_cloud_client_directory, "mbed-cloud-client"
+        client_dir_exists = os.path.exists(self.mbed_cloud_client_direcotry)
+        client_dir_is_directory = os.path.isdir(
+            self.mbed_cloud_client_direcotry
         )
-        client_dir_exists = os.path.exists(mbed_cloud_client_direcotry)
-        client_dir_is_directory = os.path.isdir(mbed_cloud_client_direcotry)
         if client_dir_exists and client_dir_is_directory:
-            shutil.rmtree(mbed_cloud_client_direcotry)
+            shutil.rmtree(self.mbed_cloud_client_direcotry)
 
         # Download mbed Cloud Client source code from the GIT repository
         command = ["mbed", "deploy", "--protocol", "ssh"]
@@ -220,6 +222,10 @@ class ClientBuilder:
 
         prepare() method should run before.
         """
+        client_dir_exists = os.path.exists(self.mbed_cloud_client_direcotry)
+        pal_configured = os.path.exists(self.pal_target_directory)
+        if not (client_dir_exists and pal_configured):
+            raise Exception("Not prepared. Run prepare command first.")
         command = [
             "cmake",
             "-G",
@@ -233,14 +239,25 @@ class ClientBuilder:
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("Configure: done")
 
-    def build(self):
+    def build(self, force_rebuild=False):
         """
         Run make.
 
         configure() method should run before.
         """
-        self.logger.info("Building mbl-cloud-client")
+        if not os.path.exists(
+            os.path.join(self.pal_target_directory, "CMakeFiles")
+        ):
+            raise Exception("Not configured. Run configure command first.")
+
+        self.logger.info(
+            "Building mbl-cloud-client, force rebuild: {}".format(
+                force_rebuild
+            )
+        )
         command = ["make", "mbl-cloud-client"]
+        if force_rebuild:
+            command += ["-B"]
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("Build: done")
 
@@ -265,6 +282,8 @@ def _main():
         client_builder.configure()
     elif args.action == "build":
         client_builder.build()
+    elif args.action == "rebuild":
+        client_builder.build(force_rebuild=True)
     else:
         assert 0, "Unknown value of 'action' parameter"
 

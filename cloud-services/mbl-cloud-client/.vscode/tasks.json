@@ -57,7 +57,34 @@
                 "panel": "shared",
                 "focus": true,
             },
-            "problemMatcher": []
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ]
+        },
+        {
+            "label": "MBL Client: Rebuild",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "./client-builder.py",
+                "-a",
+                "rebuild"
+              ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+            },
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ]
         },
     ],
 	"inputs":[
