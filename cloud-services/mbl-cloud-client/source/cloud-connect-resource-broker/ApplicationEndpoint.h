@@ -31,9 +31,12 @@ class ResourceBroker;
 class ApplicationEndpoint {
 public:
 
-    ApplicationEndpoint(std::string access_token, ResourceBroker &ccrb);
+    ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb);
     ~ApplicationEndpoint();
 
+    MblError init(const std::string json_string);
+    
+    uintptr_t get_ipc_conn_handle() const;
     std::string get_access_token() const;
 
     void regsiter_callback_handlers();
@@ -50,13 +53,13 @@ private:
      * When registration flow is finished - Mbed cloud client will call this callback.
      * This function will notify the Resource broker that its registration finished successfully.
      */
-    void handle_app_registered_cb();
+    void handle_register_cb();
 
-    void handle_app_unregistered_cb();
+    void handle_deregister_cb();
 
-    void handle_app_error_cb(const int cloud_client_code);
+    void handle_error_cb(const int cloud_client_code);
 
-
+    const uintptr_t ipc_conn_handle_;
     std::string access_token_;
 
     // this class must have a reference that should be always valid to the CCRB instance. 

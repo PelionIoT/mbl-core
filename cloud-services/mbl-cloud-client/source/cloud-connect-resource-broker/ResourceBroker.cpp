@@ -4,18 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <cassert>
-#include <pthread.h>
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
 #include "UniqueTokenGenerator.h"
-#include "ResourceDefinitionParser.h"
+#include "MblCloudClient.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
-
-#include "ResourceDefinitionParser.h"
-#include "MblCloudClient.h"
-
+#include <cassert>
+#include <pthread.h>
 
 #define TRACE_GROUP "ccrb"
 
@@ -132,7 +128,7 @@ MblError ResourceBroker::init()
     }
 
     // Register Cloud client callback:
-    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
+    regsiter_callback_handlers();
 
     return status;
 }
@@ -193,20 +189,21 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
+////////////////////////////////////////////////////////////////////////////////
 void ResourceBroker::regsiter_callback_handlers()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
+    cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_cb);
 }
 
-void ResourceBroker::keep_alive_registration_updated_cb()
+void ResourceBroker::keep_alive_cb()
 {
     tr_debug("@@@@@@ %s: Keep alive registration finished successfully.", __PRETTY_FUNCTION__);
 }
 
-void ResourceBroker::handle_app_registered_cb(const std::string &access_token)
+void ResourceBroker::handle_app_register_cb(const std::string &access_token)
 {
-    tr_debug("@@@@@@ %s: Application (access_token: %s) is registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
+    tr_debug("@@@@@@ %s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
     // Return registration updated callback to CCRB
     regsiter_callback_handlers();
@@ -215,9 +212,9 @@ void ResourceBroker::handle_app_registered_cb(const std::string &access_token)
     registration_in_progress_.store(false);
 }
 
-void ResourceBroker::handle_app_unregistered_cb(const std::string &access_token)
+void ResourceBroker::handle_app_deregister_cb(const std::string &access_token)
 {
-    tr_debug("@@@@@@ %s: Application (access_token: %s) is un-registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
+    tr_debug("@@@@@@ %s: Application (access_token: %s) deregistered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
     // Return registration updated callback to CCRB
     //////////////////cloud_client_->on_registration_updated(this, &ResourceBroker::keep_alive_registration_updated_cb);
@@ -236,7 +233,7 @@ void ResourceBroker::handle_app_error_cb(const std::string &access_token, const 
 }
 
 MblError ResourceBroker::register_resources(
-        const uintptr_t , 
+        const uintptr_t ipc_conn_handle, 
         const std::string &json_string,
         CloudConnectStatus &out_status,
         std::string &out_access_token)
@@ -259,22 +256,15 @@ MblError ResourceBroker::register_resources(
         return Error::None;
     }
 
-    // Init class that holds M2M lists
-    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(out_access_token, *this);
+    // Create and init application endpoint
+    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
     if(nullptr == app_endpoint) {
         tr_error("@@@@@@ %s: Create application endpoint failed.", __PRETTY_FUNCTION__);
         return Error::CCRBRegisterFailed;
     }
-
-    // Parse JSON
-    ResourceDefinitionParser resource_parser;
-    status = resource_parser.build_object_list(
-        json_string, 
-        app_endpoint->m2m_object_list_,
-        app_endpoint->rbm2m_object_list_);
-
+    status = app_endpoint->init(json_string);
     if(Error::None != status) {
-        tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        tr_error("@@@@@@ %s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::INVALID_JSON : CloudConnectStatus::FAILED;
         return Error::None;
     }

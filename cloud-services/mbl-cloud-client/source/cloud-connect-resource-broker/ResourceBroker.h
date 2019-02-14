@@ -7,19 +7,17 @@
 #ifndef ResourceBroker_h_
 #define ResourceBroker_h_
 
+#include "DBusAdapter.h"
+#include "ApplicationEndpoint.h"
+#include "CloudConnectTypes.h"
+#include "mbed-trace/mbed_trace.h"
 #include <cstdint>
 #include <memory>
 #include <pthread.h>
 #include <queue>
 #include <atomic>
 
-#include "DBusAdapter.h"
-#include "ApplicationEndpoint.h"
-#include "CloudConnectTypes.h"
-#include "mbed-trace/mbed_trace.h"
-
 class MbedCloudClient;
-class RBM2MObjectList;
 
 namespace mbl {
 
@@ -322,7 +320,7 @@ private:
      * @brief Keep alive registration updated callback
      * Called by cloud client when keep alive registration is finished
      */
-    void keep_alive_registration_updated_cb();
+    void keep_alive_cb();
 
     /**
      * @brief Application registration updated function
@@ -330,9 +328,9 @@ private:
      * 
      * @param uuid 
      */
-    void handle_app_registered_cb(const std::string &access_token);
+    void handle_app_register_cb(const std::string &access_token);
 
-    void handle_app_unregistered_cb(const std::string &access_token);
+    void handle_app_deregister_cb(const std::string &access_token);
 
     void handle_app_error_cb(const std::string &access_token, const MblError error);
 

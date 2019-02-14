@@ -17,6 +17,7 @@
 
 #include "ResourceBroker.h"
 #include "ApplicationEndpoint.h"
+#include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
 
@@ -24,8 +25,9 @@
 
 namespace mbl {
 
-ApplicationEndpoint::ApplicationEndpoint(std::string access_token, ResourceBroker &ccrb)
-: access_token_(std::move(access_token)), 
+ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb)
+: ipc_conn_handle_(ipc_conn_handle),
+access_token_(std::move(access_token)), 
 ccrb_(ccrb),
 registered_(false)
 {
@@ -39,37 +41,59 @@ ApplicationEndpoint::~ApplicationEndpoint()
 
 void ApplicationEndpoint::regsiter_callback_handlers()
 {
-    tr_debug("@@@@@@ %s - Call on_registration_updated()", __PRETTY_FUNCTION__);
-    ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::handle_app_registered_cb);
-    ccrb_.cloud_client_->on_unregistered(this, &ApplicationEndpoint::handle_app_unregistered_cb);
-    ccrb_.cloud_client_->on_error(this, &ApplicationEndpoint::handle_app_error_cb);
+    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::handle_register_cb);
+    ccrb_.cloud_client_->on_unregistered(this, &ApplicationEndpoint::handle_deregister_cb);
+    ccrb_.cloud_client_->on_error(this, &ApplicationEndpoint::handle_error_cb);
 }
 
-void ApplicationEndpoint::handle_app_registered_cb()
+MblError ApplicationEndpoint::init(const std::string json_string)
 {
-    tr_debug("@@@@@@ %s: calling handle_app_registered_cb(access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    // Parse JSON
+    ResourceDefinitionParser resource_parser;
+    const MblError status = resource_parser.build_object_list(
+        json_string, 
+        m2m_object_list_,
+        rbm2m_object_list_);
+
+    if(Error::None != status) {
+        tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+    }
+    return status;
+}
+
+void ApplicationEndpoint::handle_register_cb()
+{
+    tr_debug("@@@@@@ %s: Notify CCRB that registration was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = true;
-    ccrb_.handle_app_registered_cb(access_token_);
+    ccrb_.handle_app_register_cb(access_token_);
 }
 
-void ApplicationEndpoint::handle_app_unregistered_cb()
+void ApplicationEndpoint::handle_deregister_cb()
 {
-    tr_debug("@@@@@@ %s: calling handle_app_unregistered_cb(access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("@@@@@@ %s: Notify CCRB that un-register was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = false;
-    ccrb_.handle_app_unregistered_cb(access_token_);
+    ccrb_.handle_app_deregister_cb(access_token_);
 }
 
-void ApplicationEndpoint::handle_app_error_cb(const int cloud_client_code)
+void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
 {
+    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);    
     const MblError mbl_code = CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     tr_err("%s: Error occurred: %d: %s", 
         __PRETTY_FUNCTION__,
         mbl_code,
         MblError_to_str(mbl_code));
-    tr_debug("@@@@@@ %s: calling handle_app_error_cb(access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+
+    tr_debug("@@@@@@ %s: Notify CCRB that error occured (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     ccrb_.handle_app_error_cb(access_token_, mbl_code);
 }
 
+uintptr_t ApplicationEndpoint::get_ipc_conn_handle() const
+{
+    return ipc_conn_handle_;
+}
 
 std::string ApplicationEndpoint::get_access_token() const
 {
