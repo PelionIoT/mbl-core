@@ -58,9 +58,9 @@ def run_mbl_app_update_manager():
 
     handler = AppUpdateManager(args.update_package)
 
-    if handler.unpack():
-        if handler.install_apps():
-            handler.start_installed_apps()
+    handler.unpack()
+    handler.install_apps()
+    handler.start_installed_apps()
 
 
 def _main():
