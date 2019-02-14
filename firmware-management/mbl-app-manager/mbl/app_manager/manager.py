@@ -29,22 +29,18 @@ class AppManager(object):
 
     def get_app_name(self, app_pkg):
         """Get the name of an application from the package meta data."""
+        log.debug("Getting app name from pkg '{}'".format(app_pkg))
+        app_name = ""
         try:
-            log.debug("Getting app name from pkg '{}'".format(app_pkg))
             app_name = parse_app_info(app_pkg)["Package"]
-            log.info("Application name is '{}'".format(app_name))
-            return app_name
-        except subprocess.CalledProcessError as error:
-            err_output = error.stdout.decode("utf-8")
-            msg = "Getting the app name from '{}' failed, error: {}".format(
-                app_pkg, err_output
-            )
-            raise AppIdError(msg)
         except AppInfoParserError as error:
             msg = "Getting the app name from '{}' failed, error: {}".format(
                 app_pkg, str(error)
             )
             raise AppIdError(msg)
+        else:
+            log.info("Application name is '{}'".format(app_name))
+            return app_name
 
     def install_app(self, app_pkg, app_path):
         """Install an application.
