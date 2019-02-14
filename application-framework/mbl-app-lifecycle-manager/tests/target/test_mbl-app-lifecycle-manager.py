@@ -140,13 +140,7 @@ class TestAppLifecycleManager:
 def run_app(app_name, app_path, check_exit_code):
     """Run an app."""
     # usage: mbl-app-lifecycle-manager run [-h] app_name app_path
-    command = [
-        MBL_APP_LIFECYCLE_MANAGER,
-        "-v",
-        "run",
-        app_name,
-        app_path,
-    ]
+    command = [MBL_APP_LIFECYCLE_MANAGER, "-v", "run", app_name, app_path]
     print("Executing command: {}".format(command))
     process = subprocess.run(command, check=check_exit_code)
     print("run_app returned {}".format(process.returncode))
