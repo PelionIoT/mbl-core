@@ -9,7 +9,7 @@ OPKG_BUILD := opkg-build -Z "xz" -g root -o root
 
 MACHINE := armv7vet2hf-neon
 PACKAGE_VER := 1.0
-IPK_PACKAGE := user-container-sample-app-package_$(PACKAGE_VER)_$(MACHINE).ipk
+IPK_PACKAGE := resource-manager-sample-app-package_$(PACKAGE_VER)_$(MACHINE).ipk
 
 .phony: all clean
 
@@ -19,7 +19,6 @@ all: ipk/$(IPK_PACKAGE)
 bundle/rootfs/*: src_bundle/config.json
 	@mkdir -p $(@D)
 	$(CP) src_bundle/config.json bundle/config.json
-	$(CP) -r src/* $(@D)/
 	@echo ' '
 
 

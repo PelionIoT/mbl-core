@@ -7,11 +7,12 @@
 			"gid": 0
 		},
 		"args": [
-			"/bin/ls", "-al", "/"
+			"/bin/sh"
 		],
 		"env": [
-			"PATH=",
-			"TERM=xterm"
+			"PATH=bin:/usr/bin",
+			"TERM=xterm",
+			"DBUS_SESSION_BUS_ADDRESS=unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 		],
 		"cwd": "/",
 		"capabilities": {
@@ -60,6 +61,17 @@
 			"destination": "/proc",
 			"type": "proc",
 			"source": "proc"
+		},
+		{
+			"destination": "/tmp",
+			"type": "tmpfs",
+			"source": "tmpfs",
+			"options": [
+				"nosuid",
+				"strictatime",
+				"mode=755",
+				"size=65536k"
+			]
 		},
 		{
 			"destination": "/dev",
@@ -143,9 +155,9 @@
 			"options": ["rbind","ro"]
 		},
 		{
-			"destination": "/opt",
+			"destination": "/sbin",
 			"type": "bind",
-			"source": "/opt",
+			"source": "/sbin",
 			"options": ["rbind","ro"]
 		},
 		{
@@ -161,12 +173,6 @@
 			"options": ["rbind","ro"]
 		},
 		{
-			"destination": "/proc",
-			"type": "bind",
-			"source": "/proc",
-			"options": ["rbind","ro"]
-		},
-		{
 			"destination": "/lib",
 			"type": "bind",
 			"source": "/lib",
@@ -176,7 +182,7 @@
 			"destination": "/var",
 			"type": "bind",
 			"source": "/var",
-			"options": ["rbind","ro"]
+			"options": ["rbind","rw"]
 		}
 	],
 	"linux": {
