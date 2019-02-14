@@ -39,8 +39,6 @@ $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
 cat /home/ubuntu/user-sample-app-package.log
 
 # Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
-numberOfHellos=`grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log`
-
 if [ `grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log` = 10 ]
 then
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
