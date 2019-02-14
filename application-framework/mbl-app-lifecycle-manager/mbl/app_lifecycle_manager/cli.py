@@ -141,13 +141,11 @@ def run_mbl_app_lifecycle_manager():
 
     args.func(args)
 
-    return ReturnCode.SUCCESS.value
-
 
 def _main():
     """Run mbl-app-lifecycle-manager."""
     try:
-        return run_mbl_app_lifecycle_manager()
+        run_mbl_app_lifecycle_manager()
     except Exception as error:
         print(error)
         return ReturnCode.ERROR.value
