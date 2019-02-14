@@ -18,13 +18,13 @@ Log trace level can be set in the function log_init() in log.cpp file.
 
 Valid options are:
 
-TRACE_ACTIVE_LEVEL_ALL    - used to activate all trace levels
-TRACE_ACTIVE_LEVEL_DEBUG  - print all traces same as above
-TRACE_ACTIVE_LEVEL_INFO   - print info,warn and error traces
-TRACE_ACTIVE_LEVEL_WARN   - print warn and error traces
-TRACE_ACTIVE_LEVEL_ERROR  - print only error trace
-TRACE_ACTIVE_LEVEL_CMD    - print only cmd line data
-TRACE_ACTIVE_LEVEL_NONE   - trace nothing
+- TRACE_ACTIVE_LEVEL_ALL    - used to activate all trace levels
+- TRACE_ACTIVE_LEVEL_DEBUG  - print all traces same as above
+- TRACE_ACTIVE_LEVEL_INFO   - print info,warn and error traces
+- TRACE_ACTIVE_LEVEL_WARN   - print warn and error traces
+- TRACE_ACTIVE_LEVEL_ERROR  - print only error trace
+- TRACE_ACTIVE_LEVEL_CMD    - print only cmd line data
+- TRACE_ACTIVE_LEVEL_NONE   - trace nothing
 
 ## Development on a Ubuntu Linux on PC
 
@@ -59,14 +59,23 @@ Use ```client-builder.py``` script to build the MBL Cloud Client:
    - The ```build``` build only changed files.
    - The ```rebuild``` unconditionally build the whole project.
 
+Note:
+The execution order of those commands is important. The order should be:
+
+1. ```prepare```
+1. ```configure```
+1. ```build``` or ```rebuild```
+
+If a new files added to the project, need to run ```configure``` command before ```build``` or ```rebuild```.
+
 ### Running
 
 TBD
 
-### Optional installation of vscode IDE
+### Optional installation of Visual Studio Code IDE
 
-1. Install [vs-code][vs-code-installaiton]
-1. Install the following vs-code plugins:
+1. Install [Visual Studio Code IDE][vs-code-installaiton]
+1. Install the following Visual Studio Code plugins:
    - C/C++
    - Doxygen Documentation Generator
    - GitHub
@@ -74,7 +83,9 @@ TBD
    - Toggle Header/Source
    - Visual Studio Keymap
    - Python
-1. In order to build the project, run vscode IDE and press <kbd>control</kbd>+<kbd>shift</kbd>+<kbd>B</kbd> and chose command to run.
+1. In order to build the project:
+   - Launch Visual Studio Code IDE
+   - Press <kbd>control</kbd>+<kbd>shift</kbd>+<kbd>B</kbd> and chose command to run
 
 ## Issues
 
