@@ -8,4 +8,4 @@ RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-util
 	tar xvzf opkg-utils-0.3.6.tar.gz && make -C opkg-utils-0.3.6 install && \
 	rm -rf opkg-utils-0.3.6 opkg-utils-0.3.6.tar.gz
 
-CMD ["sh","-c", "cd resource_manager_app && sh create_package_in_container.sh"]
+CMD ["resource_manager_app/create_package.sh"]

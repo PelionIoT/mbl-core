@@ -1,26 +1,36 @@
 #!/bin/bash
-# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+
+# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-
-# Creates resource manager sample application package.
+# Create resource manager sample application package.
 #
-# This script creates and run container; resource manager sample application 
-# package is created inside the container with startup command
+# This script run inside the container and creates the resource
+# manager sample application package.
 
 
-#clean
-if [ "$1" = 'clean' ]; then
-    rm -rf bundle
-    rm -rf ipk
-    
-else
+SCRIPT_DIR=$(dirname ${0})
 
-    echo "*** Creating container:"
-    docker build cc-env/ -t resource_manager_app
+ROOTFS_DIR="${SCRIPT_DIR}/bundle/rootfs"
+CONTROL_DIR="${SCRIPT_DIR}/ipk/in/CONTROL"
+OPKG_BUILD="opkg-build -Z "xz" -g root -o root"
 
-    echo "*** Running container and creating package inside the container:"
-    docker run -v $(pwd):/resource_manager_app -it resource_manager_app
-
+# create rootfs directory
+if [ ! -e $ROOTFS_DIR ]; then
+    mkdir -p $ROOTFS_DIR
 fi
+
+cp ${SCRIPT_DIR}/src_bundle/config.json ${SCRIPT_DIR}/bundle/config.json
+
+# create CONTROL directory
+if [ ! -e $CONTROL_DIR ]; then
+    mkdir -p $CONTROL_DIR
+fi
+
+cp -r ${SCRIPT_DIR}/bundle/* ${SCRIPT_DIR}/ipk/in
+cp -r ${SCRIPT_DIR}/src_opkg/CONTROL ${SCRIPT_DIR}/ipk/in
+
+# create IPK
+$OPKG_BUILD $(realpath ${SCRIPT_DIR}/ipk/in) $(realpath ${SCRIPT_DIR}/ipk)
+
