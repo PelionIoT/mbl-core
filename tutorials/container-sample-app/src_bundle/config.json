@@ -7,7 +7,7 @@
 			"gid": 0
 		},
 		"args": [
-			"/hello_world"
+			"/bin/ls", "-al", "/"
 		],
 		"env": [
 			"PATH=",
@@ -56,11 +56,6 @@
 	},
 	"hostname": "runc",
 	"mounts": [
-		{
-			"destination": "/bin",
-			"type": "bin",
-			"source": "bin"
-		},
 		{
 			"destination": "/proc",
 			"type": "proc",
@@ -113,26 +108,6 @@
 			]
 		},
 		{
-			"destination": "/etc",
-			"type": "etc",
-			"source": "etc"
-		},
-		{
-			"destination": "/opt",
-			"type": "opt",
-			"source": "opt"
-		},
-		{
-			"destination": "/proc",
-			"type": "proc",
-			"source": "proc"
-		},
-		{
-			"destination": "/run",
-			"type": "run",
-			"source": "run"
-		},
-		{
 			"destination": "/sys",
 			"type": "sysfs",
 			"source": "sysfs",
@@ -156,9 +131,52 @@
 			]
 		},
 		{
+			"destination": "/bin",
+			"type": "bind",
+			"source": "/bin",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/etc",
+			"type": "bind",
+			"source": "/etc",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/opt",
+			"type": "bind",
+			"source": "/opt",
+			"options": ["rbind","ro"]
+		},
+		{
 			"destination": "/usr",
-			"type": "usr",
-			"source": "usr"
+			"type": "bind",
+			"source": "/usr",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/run",
+			"type": "bind",
+			"source": "/run",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/proc",
+			"type": "bind",
+			"source": "/proc",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/lib",
+			"type": "bind",
+			"source": "/lib",
+			"options": ["rbind","ro"]
+		},
+		{
+			"destination": "/var",
+			"type": "bind",
+			"source": "/var",
+			"options": ["rbind","ro"]
 		}
 	],
 	"linux": {
