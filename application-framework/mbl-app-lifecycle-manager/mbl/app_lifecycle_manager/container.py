@@ -324,6 +324,10 @@ class ContainerCreationError(Exception):
     """
 
 
+class ContainerStartError(Exception):
+    """An exception to indicate a failure to start a container."""
+
+
 class ContainerKillError(Exception):
     """An exception to indicate a failure during the killing of a container.
 
