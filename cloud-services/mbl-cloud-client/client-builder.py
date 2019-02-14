@@ -50,7 +50,7 @@ def get_argument_parser():
         "--action",
         choices=["prepare", "configure", "build"],
         default="prepare",
-        help="Specify which action to preform",
+        help="Specify which action to perform",
     )
 
     parser.add_argument(
@@ -86,7 +86,7 @@ class ClientBuilder:
             self.mbl_cloud_client_directory, "__{}".format(PAL_TARGET)
         )
 
-    def __apply_patches(self, meta_mbl_directory):
+    def _apply_patches(self, meta_mbl_directory):
         """
         Apply patches to the mbed Cloud Client and PAL code.
 
@@ -130,7 +130,7 @@ class ClientBuilder:
             if patch_run_status == 0:
                 # Patch is already applied, we can remove it
                 self.logger.debug(
-                    "Revesing old patch {} cwd: {}".format(
+                    "Reversing previously applied patch {} cwd: {}".format(
                         patch_full_path, patch_apply_path
                     )
                 )
@@ -200,7 +200,7 @@ class ClientBuilder:
                 GIT_META_MBL_URL, meta_mbl_directory
             )
             meta_mbl_cloned_repo.git.checkout(self.meta_mbl_revision)
-            self.__apply_patches(meta_mbl_directory)
+            self._apply_patches(meta_mbl_directory)
 
         # Configure PAL
         command = [
