@@ -87,14 +87,14 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
 {
     switch (status)
     {
-        case SUCCESS: 
-            return "SUCCESS";
+        case STATUS_SUCCESS: 
+            return "STATUS SUCCESS";
 
-        case FAILED: 
-            return "FAILED";
+        case ERR_FAILED: 
+            return "ERROR FAILED";
 
         default:
-            return "Unknown Cloud Connect Status";
+            return "Unknown Cloud Connect Status or Error";
     }
 }
 
@@ -102,11 +102,11 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(SUCCESS); 
-        RETURN_STRINGIFIED_VALUE(FAILED); 
+        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
+        RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
 
         default:
-            return "Unknown Cloud Connect Status";
+            return "Unknown CloudConnectStatus value";
     }
 }
 
