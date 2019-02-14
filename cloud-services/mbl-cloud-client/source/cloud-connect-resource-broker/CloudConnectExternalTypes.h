@@ -11,9 +11,13 @@
  * @brief Status of Cloud Connect operations.
  */
 enum CloudConnectStatus {
-    SUCCESS = 0x0000, 
-    FAILED  = 0x0001,
+    // Status range (non error statuses)
+    // Start all enums in status range with "STATUS_" prefix
+    STATUS_SUCCESS = 0x0000, 
 
+    // Error range
+    // Start all enums in this range with "ERR_" prefix
+    ERR_FAILED  = 0x1000,
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
