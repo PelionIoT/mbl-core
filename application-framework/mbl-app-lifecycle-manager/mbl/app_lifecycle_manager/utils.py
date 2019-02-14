@@ -5,8 +5,6 @@
 
 import logging
 
-__version__ = "1.1.0"
-
 log = logging.getLogger(__name__)
 
 HIGH_VERBOSITY_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
