@@ -298,6 +298,9 @@ void ResourceBroker::setup(const std::string &access_token)
         cloud_client_->remove_object(m2m_object);
 
     }
+    M2MObjectList objs;
+    cloud_client_->add_objects(objs);
+
     cloud_client_->register_update();
 
     // // app_endpoints_map_.clear();
