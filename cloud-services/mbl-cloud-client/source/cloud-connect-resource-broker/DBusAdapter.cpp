@@ -67,37 +67,35 @@ MblError DBusAdapter::stop(MblError stop_status)
 
 
 MblError DBusAdapter::update_registration_status(
-    const uintptr_t bus_request_handle, 
-    const std::string &access_token,
-    const CloudConnectStatus status)
+        const uintptr_t ipc_request_handle, 
+        const CloudConnectStatus reg_status)
 {
     tr_debug("Enter");
-    return impl_->handle_ccrb_RegisterResources_status_update(bus_request_handle, access_token, status); 
+    return impl_->handle_ccrb_RegisterResources_status_update(ipc_request_handle, reg_status); 
 }
 
-
 MblError DBusAdapter::update_deregistration_status(
-    const uintptr_t bus_request_handle, 
-    const CloudConnectStatus status)
+    const uintptr_t ipc_request_handle, 
+    const CloudConnectStatus dereg_status)
 {
     tr_debug("Enter");
-    return impl_->handle_ccrb_DeregisterResources_status_update(bus_request_handle, status);
+    return impl_->handle_ccrb_DeregisterResources_status_update(ipc_request_handle, dereg_status);
 }
 
 MblError DBusAdapter::update_add_resource_instance_status(
-    const uintptr_t bus_request_handle, 
-    const CloudConnectStatus status)
+    const uintptr_t ipc_request_handle, 
+    const CloudConnectStatus add_status)
 {
     tr_debug("Enter");
-    return impl_->handle_ccrb_AddResourceInstances_status_update(bus_request_handle, status);
+    return impl_->handle_ccrb_AddResourceInstances_status_update(ipc_request_handle, add_status);
 }
 
 MblError DBusAdapter::update_remove_resource_instance_status(
-    const uintptr_t bus_request_handle, 
-    const CloudConnectStatus status)
+    const uintptr_t ipc_request_handle, 
+    const CloudConnectStatus remove_status)
 {    
     tr_debug("Enter");
-    return impl_->handle_ccrb_RemoveResourceInstances_status_update(bus_request_handle, status);
+    return impl_->handle_ccrb_RemoveResourceInstances_status_update(ipc_request_handle, remove_status);
 }
 
 } // namespace mbl {

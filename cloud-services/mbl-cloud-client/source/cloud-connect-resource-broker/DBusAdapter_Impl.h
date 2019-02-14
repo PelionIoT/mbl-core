@@ -320,50 +320,52 @@ public:
      */
     MblError stop(MblError stop_status);
     
+    // TODO - IMPLEMENT
     /**
      * @brief   ===TBD===
      * 
-     * @param ipc_conn_handle 
-     * @param access_token 
+     * @param ipc_request_handle 
      * @param reg_status 
      * @return MblError 
      */
     MblError handle_ccrb_RegisterResources_status_update(
-        const uintptr_t ipc_conn_handle, 
-        const std::string &access_token,
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus reg_status);
 
+    // TODO - IMPLEMENT
     /**
      * @brief  ===TBD===
      * 
-     * @param ipc_conn_handle 
+     * @param ipc_request_handle 
      * @param dereg_status 
      * @return MblError 
      */
     MblError handle_ccrb_DeregisterResources_status_update(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus dereg_status);
 
+    // TODO - IMPLEMENT
     /**
      * @brief ===TBD===
      * 
-     * @param ipc_conn_handle 
+     * @param ipc_request_handle 
      * @param add_status 
      * @return MblError 
      */
     MblError handle_ccrb_AddResourceInstances_status_update(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus add_status);
 
+    // TODO - IMPLEMENT
     /**
      * @brief  ===TBD===
      * 
-     * @param ipc_conn_handle 
+     * @param ipc_request_handle 
      * @param remove_status 
      * @return MblError 
      */
     MblError handle_ccrb_RemoveResourceInstances_status_update(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus remove_status);
 
     using DBusAdapterState = State::eState;

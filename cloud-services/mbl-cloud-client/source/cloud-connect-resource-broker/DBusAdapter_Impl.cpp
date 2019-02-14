@@ -515,8 +515,8 @@ int DBusAdapterImpl::process_message_RegisterResources(
     // TODO:
     // validate app registered expected interface on bus? (use sd-bus track)
         
-    //call CCRB    
-    ccrb_.register_resources((uintptr_t)m, std::string(json_file_data));            
+    //TODO - call CCRB    
+    //ccrb_.register_resources();            
 
     //TODO - handle reply    
     assert(0);
@@ -557,8 +557,8 @@ int DBusAdapterImpl::process_message_DeregisterResources(
         return (-EINVAL);
     }  
         
-    //call CCRB    
-    ccrb_.deregister_resources((uintptr_t)m, std::string(access_token));            
+    //TODO call CCRB    
+    //ccrb_.deregister_resources();            
 
     //TODO - handle reply    
     assert(0);
@@ -745,14 +745,12 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
 }
 
 MblError DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(
-    const uintptr_t ipc_conn_handle, 
-    const std::string &access_token,
+    const uintptr_t ipc_request_handle, 
     const CloudConnectStatus reg_status)
 {
     //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_conn_handle);
+    UNUSED(ipc_request_handle);
     UNUSED(reg_status);
-    UNUSED(access_token);
     tr_debug("Enter");   
     assert(0);
 
@@ -765,11 +763,11 @@ MblError DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(
 }
 
 MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
-    const uintptr_t ipc_conn_handle, 
+    const uintptr_t ipc_request_handle, 
     const CloudConnectStatus dereg_status)
 {
     //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_conn_handle);
+    UNUSED(ipc_request_handle);
     UNUSED(dereg_status);
     tr_debug("Enter");
     assert(0);
@@ -783,11 +781,11 @@ MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
 }
 
 MblError DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(
-    const uintptr_t ipc_conn_handle, 
+    const uintptr_t ipc_request_handle, 
     const CloudConnectStatus add_status)
 {
     //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_conn_handle);
+    UNUSED(ipc_request_handle);
     UNUSED(add_status);    
     tr_debug("Enter");
     assert(0);
@@ -801,11 +799,11 @@ MblError DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(
 }
 
 MblError DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
-    const uintptr_t ipc_conn_handle, 
+    const uintptr_t ipc_request_handle, 
     const CloudConnectStatus remove_status)
 {
     //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_conn_handle);
+    UNUSED(ipc_request_handle);
     UNUSED(remove_status);
     tr_debug("Enter");
     assert(0);

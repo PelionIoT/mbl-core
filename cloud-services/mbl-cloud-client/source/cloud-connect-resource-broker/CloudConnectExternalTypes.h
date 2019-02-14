@@ -35,6 +35,4 @@ enum ResourceDataType {
     
 typedef enum ResourceDataType ResourceDataType;
 
-}
-
 #endif // CloudConnectExternalTypes_h_

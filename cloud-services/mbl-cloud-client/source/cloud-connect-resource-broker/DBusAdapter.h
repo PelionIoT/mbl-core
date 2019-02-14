@@ -74,7 +74,7 @@ public:
  * This function sends a final status of the registration request, 
  * that was initiated by a client application via calling 
  * register_resources_async API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information 
+ * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param reg_status status of registration of all resources. 
  *        reg_status is SUCCESS only if registration of all resources was 
@@ -84,7 +84,7 @@ public:
  *         delivered, or error code otherwise. 
  */
     MblError update_registration_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus reg_status);
 
 /**
@@ -92,7 +92,7 @@ public:
  * application. This function sends a final status of the deregistration 
  * request, that was initiated by a client application via calling 
  * deregister_resources_async API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information
+ * @param ipc_request_handle is a handle to the IPC unique connection information
  *        of the application that should be notified.
  * @param dereg_status status of deregistration of all resources. 
  *        dereg_status is SUCCESS only if deregistration of all resources was 
@@ -101,7 +101,7 @@ public:
  *         or error code otherwise. 
  */
     MblError update_deregistration_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus dereg_status);
 
 /**
@@ -109,7 +109,7 @@ public:
  * client application. This function sends a final status of the resource instances
  * addition request, that was initiated by a client application via calling 
  * add_resource_instances_async API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information of 
+ * @param ipc_request_handle is a handle to the IPC unique connection information of 
  *        the application that should be notified.
  * @param add_status status of resource instances addition. 
  *        add_status is SUCCESS only if the addition of all resources instances was 
@@ -118,7 +118,7 @@ public:
  *         or error code otherwise. 
  */
     MblError update_add_resource_instance_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus add_status);
 
 /**
@@ -126,7 +126,7 @@ public:
  * client application. This function sends a final status of the resource instances
  * removal request, that was initiated by a client application via calling 
  * remove_resource_instances_async API. 
- * @param ipc_conn_handle is a handle to the IPC unique connection information 
+ * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param remove_status status of resource instances removal. 
  *        remove_status is SUCCESS only if the removal of all resources instances was 
@@ -135,7 +135,7 @@ public:
  *         or error code otherwise. 
  */
     MblError update_remove_resource_instance_status(
-        const uintptr_t ipc_conn_handle, 
+        const uintptr_t ipc_request_handle, 
         const CloudConnectStatus remove_status);
 
 private:

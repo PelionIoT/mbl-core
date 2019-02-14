@@ -40,6 +40,11 @@ FILE(GLOB MyCSources
     "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/gtest/*.cpp"
 )
 
+list(REMOVE_ITEM MyCSources "M2MResourceObjects.cpp")
+list(REMOVE_ITEM MyCSources "ResourceDefinitionParser.cpp")
+list(REMOVE_ITEM MyCSources "CloudConnectTypes.cpp")
+
+
 # Link runTests with what we want to test and the GTest and pthread library
 add_executable(runTests ${MyCSources})
     
