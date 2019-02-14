@@ -87,7 +87,10 @@ class AppUpdateManager:
             return True
 
     def start_installed_apps(self):
-        """Run applications that have been successfully installed if any."""
+        """Run applications that have been successfully installed if any.
+
+        Return `True` iff all applications have been successfully started.
+        """
         if self._installed_app_names:
             log.info(
                 "Run installed apps: {}".format(self._installed_app_names)
@@ -96,6 +99,7 @@ class AppUpdateManager:
                 app_path = os.path.join(APPS_INSTALLATION_PATH, app_name)
                 log.info("Run '{}' form '{}'".format(app_name, app_path))
                 alm.run_app(app_name, app_path)
+            return True
 
     # --------------------------- Private Methods -----------------------------
 
