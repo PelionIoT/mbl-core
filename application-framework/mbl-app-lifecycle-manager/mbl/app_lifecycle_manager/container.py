@@ -36,11 +36,11 @@ def get_state(container_id):
 
     Return a ContainerState object.
     """
+    log.debug("Get the state info for container '{}'".format(container_id))
+    # Command syntax:
+    # `runc state <container_id>`
+    cmd = ["runc", "state", container_id]
     try:
-        log.debug("Get the state info for container '{}'".format(container_id))
-        # Command syntax:
-        # `runc state <container_id>`
-        cmd = ["runc", "state", container_id]
         process = subprocess.run(
             cmd,
             check=True,
@@ -48,28 +48,6 @@ def get_state(container_id):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        decoded_proc_output = process.stdout.decode("utf-8")
-        state_info_json_doc = json.loads(decoded_proc_output)
-
-        if "status" not in state_info_json_doc:
-            msg = (
-                "No 'status' found attribute in container '{}' state info.\n"
-                " JSON doc:\n'{}'".format(container_id, decoded_proc_output)
-            )
-            raise ContainerStateError(msg)
-        try:
-            # return the enum member associated with the value of the
-            # 'status' JSON attribute found
-            return ContainerState(state_info_json_doc["status"])
-        except ValueError:
-            # nest the exception because another ValueError exception
-            # can occur when deserializing the JSON doc above
-            log.error(
-                "Unrecognized status '{}' from container '{}'".format(
-                    state_info_json_doc["status"], container_id
-                )
-            )
-            return ContainerState.UNRECOGNIZED
     except subprocess.CalledProcessError as error:
         err_output = error.stdout.decode("utf-8")
         if ContainerState.DOES_NOT_EXIST.value in err_output:
@@ -79,11 +57,34 @@ def get_state(container_id):
             container_id, err_output
         )
         raise ContainerStateError(msg)
-    except (json.JSONDecodeError, ValueError, TypeError) as error:
+
+    decoded_proc_output = process.stdout.decode("utf-8")
+    try:
+        state_info_json_doc = json.loads(decoded_proc_output)
+    except json.JSONDecodeError as error:
         msg = "Deserializing '{}' state info failed, error: {}".format(
             container_id, str(error)
         )
         raise ContainerStateError(msg)
+
+    if "status" not in state_info_json_doc:
+        msg = (
+            "No 'status' found attribute in container '{}' state info.\n"
+            " JSON doc:\n'{}'".format(container_id, decoded_proc_output)
+        )
+        raise ContainerStateError(msg)
+
+    try:
+        # return the enum member associated with the value of the
+        # 'status' JSON attribute found
+        return ContainerState(state_info_json_doc["status"])
+    except ValueError:
+        log.error(
+            "Unrecognized status '{}' from container '{}'".format(
+                state_info_json_doc["status"], container_id
+            )
+        )
+        return ContainerState.UNRECOGNIZED
 
 
 def create(container_id, bundle_path):
@@ -99,9 +100,6 @@ def create(container_id, bundle_path):
     output.
     Instead, a container existence is first checked by attempting to fetch
     its state.
-
-    Return `True` iff a container with the given id has been successfully
-    created.
     """
     log.debug(
         "Create container with id '{}' from '{}' bundle".format(
@@ -121,6 +119,7 @@ def create(container_id, bundle_path):
             container_id
         )
     )
+
     if not os.path.isdir(bundle_path):
         msg = (
             "No bundle for '{}' found at '{}',"
@@ -136,12 +135,13 @@ def create(container_id, bundle_path):
         # result in a failure to create a container.
         container_log = container_log or subprocess.DEVNULL
 
+        log.debug("Creating container with id '{}'".format(container_id))
+        # Command syntax:
+        # `runc create --bundle <bundle_path> <container_id>`
+        cmd = ["runc", "create", "--bundle", bundle_path, container_id]
+        log.debug("Execute command: '{}'".format(" ".join(cmd)))
+
         try:
-            log.debug("Creating container with id '{}'".format(container_id))
-            # Command syntax:
-            # `runc create --bundle <bundle_path> <container_id>`
-            cmd = ["runc", "create", "--bundle", bundle_path, container_id]
-            log.debug("Execute command: '{}'".format(" ".join(cmd)))
             subprocess.run(
                 cmd,
                 check=True,
@@ -149,7 +149,6 @@ def create(container_id, bundle_path):
                 stdout=container_log,
                 stderr=container_log,
             )
-            return True
         except subprocess.CalledProcessError as error:
             err_output = error.stdout.decode("utf-8")
             msg = "Creating container '{}' failed, error: {}".format(
@@ -157,18 +156,19 @@ def create(container_id, bundle_path):
             )
             raise ContainerCreationError(msg)
 
+        log.info(
+            "Container '{}' created from '{}'".format(container_id, bundle_path)
+        )
+
 
 def start(container_id):
-    """Execute a user defined process in a created container.
-
-    Return `True` iff the specified container has been successfully started.
-    """
+    """Execute a user defined process in a created container."""
+    log.debug("Start container with id '{}'".format(container_id))
+    # Command syntax:
+    # `runc start <container_id>`
+    cmd = ["runc", "start", container_id]
+    log.debug("Execute command: '{}'".format(" ".join(cmd)))
     try:
-        log.debug("Start container with id '{}'".format(container_id))
-        # Command syntax:
-        # `runc start <container_id>`
-        cmd = ["runc", "start", container_id]
-        log.debug("Execute command: '{}'".format(" ".join(cmd)))
         subprocess.run(
             cmd,
             check=True,
@@ -176,8 +176,6 @@ def start(container_id):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        log.debug("Container '{}' started".format(container_id))
-        return True
     except subprocess.CalledProcessError as error:
         err_output = error.stdout.decode("utf-8")
         msg = "Starting container '{}' failed, error: '{}'".format(
@@ -185,20 +183,19 @@ def start(container_id):
         )
         raise ContainerStartError(msg)
 
+    log.debug("Container '{}' started".format(container_id))
+
 
 def kill(container_id, signal="SIGTERM"):
-    """Send the specified signal to a container's init process.
-
-    Return `True` iff the specified container has been successfully killed.
-    """
+    """Send the specified signal to a container's init process."""
+    log.debug(
+        "Kill container '{}' with signal '{}'".format(container_id, signal)
+    )
+    # Command syntax:
+    # `runc kill <container_id> <signal>`
+    cmd = ["runc", "kill", container_id, signal]
+    log.debug("Execute command: '{}'".format(" ".join(cmd)))
     try:
-        log.debug(
-            "Kill container '{}' with signal '{}'".format(container_id, signal)
-        )
-        # Command syntax:
-        # `runc kill <container_id> <signal>`
-        cmd = ["runc", "kill", container_id, signal]
-        log.debug("Execute command: '{}'".format(" ".join(cmd)))
         subprocess.run(
             cmd,
             check=True,
@@ -206,12 +203,6 @@ def kill(container_id, signal="SIGTERM"):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        log.debug(
-            "Container '{}' killed with signal '{}'".format(
-                container_id, signal
-            )
-        )
-        return True
     except subprocess.CalledProcessError as error:
         err_output = error.stdout.decode("utf-8")
         msg = "Killing container '{}' failed, error: '{}'".format(
@@ -219,15 +210,19 @@ def kill(container_id, signal="SIGTERM"):
         )
         raise ContainerKillError(msg)
 
+    log.debug(
+        "Container '{}' killed with signal '{}'".format(container_id, signal)
+    )
+
 
 def delete(container_id):
     """Delete any resources held by the container."""
+    log.debug("Delete container with id '{}'".format(container_id))
+    # Command syntax:
+    # `runc delete <container_id>`
+    cmd = ["runc", "delete", container_id]
+    log.debug("Execute command: '{}'".format(" ".join(cmd)))
     try:
-        log.debug("Delete container with id '{}'".format(container_id))
-        # Command syntax:
-        # `runc delete <container_id>`
-        cmd = ["runc", "delete", container_id]
-        log.debug("Execute command: '{}'".format(" ".join(cmd)))
         subprocess.run(
             cmd,
             check=True,
@@ -235,14 +230,14 @@ def delete(container_id):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
-        log.debug("Container '{}' deleted".format(container_id))
-        return True
     except subprocess.CalledProcessError as error:
         err_output = error.stdout.decode("utf-8")
         msg = "Deleting container '{}' failed, error: '{}'".format(
             container_id, err_output
         )
         raise ContainerDeleteError(msg)
+
+    log.debug("Container '{}' deleted".format(container_id))
 
 
 class ContainerLogFile:
