@@ -63,7 +63,7 @@ MblError ApplicationEndpoint::init(const std::string json_string)
     return status;
 }
 
-void ApplicationEndpoint::set_ipc_conn_handle(const uintptr_t ipc_conn_handle)
+void ApplicationEndpoint::update_ipc_conn_handle(const uintptr_t ipc_conn_handle)
 {
     ipc_conn_handle_ = ipc_conn_handle;
 }
@@ -77,7 +77,7 @@ void ApplicationEndpoint::handle_register_cb()
 
 void ApplicationEndpoint::handle_deregister_cb()
 {
-    tr_debug("@@@@@@ %s: Notify CCRB that un-register was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("@@@@@@ %s: Notify CCRB that deregister was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = false;
     ccrb_.handle_app_deregister_cb(ipc_conn_handle_, access_token_);
 }

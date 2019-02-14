@@ -56,7 +56,7 @@ MblError DBusAdapter::run()
     while(!exit_loop_) {
 
         if(once) {
-            sleep(10);
+            sleep(30); //10 is enough
 
             CloudConnectStatus out_status;
             std::string out_access_token;
@@ -78,6 +78,10 @@ MblError DBusAdapter::run()
                     ipc_conn_handle, 
                     out_access_token,
                     out_status);
+
+                tr_info("%s @@@@@@ wait 30 seconds before SETUP", __PRETTY_FUNCTION__);
+                sleep(30); //TO AVOID DEREGISTRATION IN PROGRESS ERROR
+                ccrb_.setup(out_access_token);
             }
             once = false;
         } else {

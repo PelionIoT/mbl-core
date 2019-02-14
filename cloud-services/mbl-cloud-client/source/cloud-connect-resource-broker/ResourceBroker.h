@@ -36,6 +36,9 @@ public:
     ResourceBroker();
     ~ResourceBroker();
 
+    void setup(const std::string &access_token);
+
+
 /////////////////////////////////////////////////////////////////////
 // API to be used by MblCloudClient class
 /////////////////////////////////////////////////////////////////////
@@ -316,12 +319,10 @@ private:
 
     void regsiter_callback_handlers();
 
-    /**
-     * @brief Keep alive registration updated callback
-     * Called by cloud client when keep alive registration is finished
-     */
-    void keep_alive_cb();
-
+    void handle_register_cb();
+    void handle_deregister_cb();
+    void handle_error_cb(const int cloud_client_code);
+    void handle_client_registered();
     /**
      * @brief Application registration updated function
      * Called by application endpoint to notify it is now successfully registered

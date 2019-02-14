@@ -36,7 +36,7 @@ public:
 
     MblError init(const std::string json_string);
 
-    void set_ipc_conn_handle(const uintptr_t ipc_conn_handle); //TODO: find a better name, update?
+    void update_ipc_conn_handle(const uintptr_t ipc_conn_handle);
 
     uintptr_t get_ipc_conn_handle() const;
 
