@@ -8,8 +8,6 @@ import logging
 import mbl.app_manager.utils as apu
 import mbl.app_lifecycle_manager.utils as alu
 
-__version__ = "1.1.0"
-
 log = logging.getLogger(__name__)
 
 HIGH_VERBOSITY_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
