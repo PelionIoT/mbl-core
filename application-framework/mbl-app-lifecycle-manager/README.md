@@ -1,6 +1,6 @@
 # mbl-app-lifecycle-manager - Mbed Linux OS user application lifecycle manager
 
-`mbl-app-lifecycle-manager` provides APIs for managing containerised user applications that run on Mbed Linux OS.
+`mbl-app-lifecycle-manager` is concerned with starting, stopping user applications runtime bundles. The OCI runtime used is `runC` which is included in Mbed Linux OS.
 
 ## Installation and usage
 
