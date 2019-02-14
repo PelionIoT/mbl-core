@@ -1,6 +1,6 @@
 # mbl-app-manager - Mbed Linux OS user application manager
 
-`mbl-app-manager` is an application that manages the installation and removal user applications from an ipk on Mbed Linux OS.
+`mbl-app-manager` is an application that manages the installation and removal of user applications on Mbed Linux OS.
 
 It expects open package management (OPKG) packages known as `.ipk`s.
 
