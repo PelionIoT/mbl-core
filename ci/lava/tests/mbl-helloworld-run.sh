@@ -38,6 +38,17 @@ $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
 # Echo it to the test run
 cat /home/ubuntu/user-sample-app-package.log
 
+# Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
+numberOfHellos=`grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log`
+
+if [ `grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log` = 10 ]
+then
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
+else
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
+fi
+
+
 # Attempt to cleanup after the run
 $mbl_command shell 'mbl-app-manager -r user-sample-app-package'
 $mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar'
