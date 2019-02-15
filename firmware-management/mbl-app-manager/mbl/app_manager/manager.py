@@ -128,7 +128,16 @@ class AppManager(object):
             app_name = subdir
             dest = "{}:{}".format(app_name, os.path.join(apps_path, app_name))
             cmd = ["opkg", "--add-dest", dest, "list-installed"]
-            subprocess.check_call(cmd)
+            try:
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as error:
+                err_output = error.stdout.decode("utf-8")
+                msg = (
+                    "Listing installed apps at '{}' failed, error: '{}'".format(
+                        os.path.join(apps_path, app_name), err_output
+                    )
+                )
+                raise AppListingError(msg)
 
 
 class AppIdError(Exception):
@@ -145,3 +154,7 @@ class AppUninstallError(Exception):
 
 class AppPathInexistent(Exception):
     """An exception raised when an application path is inexistent."""
+
+
+class AppListingError(Exception):
+    """An exception for a failure to list installed apps."""
