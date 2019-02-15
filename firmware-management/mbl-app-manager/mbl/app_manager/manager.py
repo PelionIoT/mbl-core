@@ -133,7 +133,8 @@ class AppManager(object):
             except subprocess.CalledProcessError as error:
                 err_output = error.stdout.decode("utf-8")
                 msg = (
-                    "Listing installed apps at '{}' failed, error: '{}'".format(
+                    "Listing installed apps at '{}' failed,"
+                    " error: '{}'".format(
                         os.path.join(apps_path, app_name), err_output
                     )
                 )
