@@ -185,8 +185,8 @@ def start(container_id):
             container_id, err_output
         )
         raise ContainerStartError(msg)
-
-    log.info("Container '{}' started".format(container_id))
+    else:
+        log.info("Container '{}' started".format(container_id))
 
 
 def kill(container_id, signal="SIGTERM"):
@@ -212,10 +212,12 @@ def kill(container_id, signal="SIGTERM"):
             container_id, err_output
         )
         raise ContainerKillError(msg)
-
-    log.debug(
-        "Container '{}' killed with signal '{}'".format(container_id, signal)
-    )
+    else:
+        log.debug(
+            "Container '{}' killed with signal '{}'".format(
+                container_id, signal
+            )
+        )
 
 
 def delete(container_id):
@@ -239,8 +241,8 @@ def delete(container_id):
             container_id, err_output
         )
         raise ContainerDeleteError(msg)
-
-    log.debug("Container '{}' deleted".format(container_id))
+    else:
+        log.debug("Container '{}' deleted".format(container_id))
 
 
 class ContainerLogFile:
@@ -283,9 +285,7 @@ class ContainerLogFile:
         except OSError as error:
             log.error(
                 "Failed to create container log directory {},"
-                " error: {}".format(
-                    self.container_log_dir, str(error)
-                )
+                " error: {}".format(self.container_log_dir, str(error))
             )
             return
 

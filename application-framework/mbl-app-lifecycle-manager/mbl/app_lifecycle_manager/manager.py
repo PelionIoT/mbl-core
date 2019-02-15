@@ -39,18 +39,14 @@ def terminate_app(
         container.kill(app_name, "SIGTERM")
     except container.ContainerKillError as error:
         log.debug(
-            "Failed to terminate '{}', error: '{}".format(
-                app_name, str(error)
-            )
+            "Failed to terminate '{}', error: '{}".format(app_name, str(error))
         )
-        if (
-            any(
-                x in str(error)
-                for x in [
-                    container.ContainerState.ALREADY_STOPPED.value,
-                    container.ContainerState.NOT_RUNNING.value
-                ]
-            )
+        if any(
+            x in str(error)
+            for x in [
+                container.ContainerState.ALREADY_STOPPED.value,
+                container.ContainerState.NOT_RUNNING.value,
+            ]
         ):
             log.debug("Application '{}' already stopped".format(app_name))
             _delete_stopped_app(app_name)
@@ -75,14 +71,12 @@ def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
         log.debug(
             "Failed to kill '{}', error: '{}".format(app_name, str(error))
         )
-        if (
-            any(
-                x in str(error)
-                for x in [
-                    container.ContainerState.ALREADY_STOPPED.value,
-                    container.ContainerState.NOT_RUNNING.value
-                ]
-            )
+        if any(
+            x in str(error)
+            for x in [
+                container.ContainerState.ALREADY_STOPPED.value,
+                container.ContainerState.NOT_RUNNING.value,
+            ]
         ):
             _delete_stopped_app(app_name)
         else:
