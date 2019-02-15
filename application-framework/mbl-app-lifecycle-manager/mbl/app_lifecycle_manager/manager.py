@@ -38,16 +38,29 @@ def terminate_app(
     try:
         container.kill(app_name, "SIGTERM")
     except container.ContainerKillError as error:
-        if container.ContainerState.ALREADY_STOPPED.value in str(error):
+        log.debug(
+            "Failed to terminate '{}', error: '{}".format(
+                app_name, str(error)
+            )
+        )
+        if (
+            any(
+                x in str(error)
+                for x in [
+                    container.ContainerState.ALREADY_STOPPED.value,
+                    container.ContainerState.NOT_RUNNING.value
+                ]
+            )
+        ):
             log.debug("Application '{}' already stopped".format(app_name))
             _delete_stopped_app(app_name)
         elif container.ContainerState.DOES_NOT_EXIST.value in str(error):
             raise error
         else:
             kill_app(app_name, sigkill_timeout)
-
-    _wait_for_app_stop(app_name, sigterm_timeout)
-    _delete_stopped_app(app_name)
+    else:
+        _wait_for_app_stop(app_name, sigterm_timeout)
+        _delete_stopped_app(app_name)
 
 
 def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
@@ -59,13 +72,24 @@ def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
     try:
         container.kill(app_name, "SIGKILL")
     except container.ContainerKillError as error:
-        if container.ContainerState.ALREADY_STOPPED.value in str(error):
+        log.debug(
+            "Failed to kill '{}', error: '{}".format(app_name, str(error))
+        )
+        if (
+            any(
+                x in str(error)
+                for x in [
+                    container.ContainerState.ALREADY_STOPPED.value,
+                    container.ContainerState.NOT_RUNNING.value
+                ]
+            )
+        ):
             _delete_stopped_app(app_name)
         else:
             raise error
-
-    _wait_for_app_stop(app_name, timeout)
-    _delete_stopped_app(app_name)
+    else:
+        _wait_for_app_stop(app_name, timeout)
+        _delete_stopped_app(app_name)
 
 
 def _delete_stopped_app(app_name):
@@ -80,6 +104,7 @@ def _wait_for_app_stop(app_name, timeout):
     Poll an application state until the timeout expiration or if the state is
     'stopped'.
     """
+    log.debug("Wait {} seconds for '{}' to stop".format(timeout, app_name))
     endtime = time.monotonic() + timeout
     while endtime > time.monotonic():
         if container.get_state(app_name) == container.ContainerState.STOPPED:

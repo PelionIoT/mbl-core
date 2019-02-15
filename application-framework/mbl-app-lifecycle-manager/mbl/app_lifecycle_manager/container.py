@@ -24,6 +24,7 @@ class ContainerState(Enum):
     DOES_NOT_EXIST = "does not exist"
     UNRECOGNIZED = "unrecognized"
     ALREADY_STOPPED = "process already finished"
+    NOT_RUNNING = "not running"
 
 
 def get_state(container_id):
