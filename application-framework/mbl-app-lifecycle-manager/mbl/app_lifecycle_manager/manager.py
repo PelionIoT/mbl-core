@@ -51,12 +51,19 @@ def terminate_app(
             log.debug("Application '{}' already stopped".format(app_name))
             _delete_stopped_app(app_name)
         elif container.ContainerState.DOES_NOT_EXIST.value in str(error):
-            raise error
-        else:
-            kill_app(app_name, sigkill_timeout)
+            return
     else:
-        _wait_for_app_stop(app_name, sigterm_timeout)
-        _delete_stopped_app(app_name)
+        try:
+            _wait_for_app_stop(app_name, sigterm_timeout)
+        except AppStopTimeoutError:
+            log.debug(
+                "Failed to stop '{}' in '{}' seconds. Try SIGKILL.".format(
+                    app_name, sigterm_timeout
+                )
+            )
+            kill_app(app_name, sigkill_timeout)
+        else:
+            _delete_stopped_app(app_name)
 
 
 def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
