@@ -282,8 +282,9 @@ class ContainerLogFile:
             os.makedirs(self.container_log_dir, exist_ok=True)
         except OSError as error:
             log.error(
-                "Failed to create container log directory {}".format(
-                    self.container_log_dir, error
+                "Failed to create container log directory {},"
+                " error: {}".format(
+                    self.container_log_dir, str(error)
                 )
             )
             return
@@ -293,8 +294,9 @@ class ContainerLogFile:
             return self.log_file
         except OSError as error:
             log.error(
-                "Failed to open log file {} for container {}".format(
-                    self.log_file_path, self.container_id, error
+                "Failed to open log file {} for container {},"
+                " error: {}".format(
+                    self.log_file_path, self.container_id, str(error)
                 )
             )
             return
