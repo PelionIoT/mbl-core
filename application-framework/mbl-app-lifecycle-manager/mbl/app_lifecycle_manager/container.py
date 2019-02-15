@@ -186,7 +186,7 @@ def start(container_id):
         )
         raise ContainerStartError(msg)
 
-    log.debug("Container '{}' started".format(container_id))
+    log.info("Container '{}' started".format(container_id))
 
 
 def kill(container_id, signal="SIGTERM"):
