@@ -248,7 +248,7 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     tr_debug("@@@@@@ %s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
     // Send adapter the response:
-    CloudConnectStatus reg_status = CloudConnectStatus::SUCCESS;
+    CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
     MblError status = ipc_->update_registration_status(
         ipc_conn_handle, 
         reg_status);
@@ -268,7 +268,7 @@ void ResourceBroker::handle_app_deregister_cb(const uintptr_t ipc_conn_handle, c
     tr_debug("@@@@@@ %s: Application (access_token: %s) deregistered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
     // Send adapter the response:
-    CloudConnectStatus reg_status = CloudConnectStatus::SUCCESS;
+    CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
     MblError status = ipc_->update_deregistration_status(
         ipc_conn_handle, 
         reg_status);
@@ -343,7 +343,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
         access_token.c_str(),
         MblError_to_str(error));
 
-    CloudConnectStatus reg_status = CloudConnectStatus::FAILED;
+    CloudConnectStatus reg_status = CloudConnectStatus::ERR_FAILED;
 
     SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
     //TODO: check valid app_point
@@ -381,7 +381,7 @@ MblError ResourceBroker::register_resources(
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
         tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__);
-        out_status = CloudConnectStatus::REGISTRATION_ALREADY_IN_PROGRESS;
+        out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return Error::None;
     }
 
@@ -389,7 +389,7 @@ MblError ResourceBroker::register_resources(
     UniqueTokenGenerator unique_token_generator;
     MblError status = unique_token_generator.generate_unique_token(out_access_token);
     if(Error::None != status) {
-        out_status = CloudConnectStatus::FAILED;
+        out_status = CloudConnectStatus::ERR_FAILED;
         tr_error("@@@@@@ %s: generate_unique_token failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         return Error::None;
     }
@@ -403,7 +403,7 @@ MblError ResourceBroker::register_resources(
     status = app_endpoint->init(json_string);
     if(Error::None != status) {
         tr_error("@@@@@@ %s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
-        out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::INVALID_JSON : CloudConnectStatus::FAILED;
+        out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::ERR_INVALID_JSON : CloudConnectStatus::ERR_FAILED;
         return Error::None;
     }
 
@@ -417,7 +417,7 @@ MblError ResourceBroker::register_resources(
     cloud_client_->add_objects(app_endpoint->m2m_object_list_);
     cloud_client_->register_update();
 
-    out_status = CloudConnectStatus::SUCCESS;
+    out_status = CloudConnectStatus::STATUS_SUCCESS;
 
     return Error::None;
 }
@@ -432,7 +432,7 @@ MblError ResourceBroker::deregister_resources(
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
         tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__); //TODO: need better atomic name
-        out_status = CloudConnectStatus::REGISTRATION_ALREADY_IN_PROGRESS;
+        out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return Error::None;
     }
 
@@ -456,7 +456,7 @@ MblError ResourceBroker::deregister_resources(
 
     //cloud_client_->close();
 
-    out_status = CloudConnectStatus::SUCCESS;
+    out_status = CloudConnectStatus::STATUS_SUCCESS;
 
     return Error::None;
 }
