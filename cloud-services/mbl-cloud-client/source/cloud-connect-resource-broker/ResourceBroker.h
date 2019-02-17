@@ -18,6 +18,7 @@
 #include <atomic>
 
 class MbedCloudClient;
+class ResourceBrokerTester;
 
 namespace mbl {
 
@@ -31,6 +32,7 @@ class ResourceBroker {
 
 friend DBusAdapter;
 friend ApplicationEndpoint;
+friend ResourceBrokerTester;
 
 public:
     ResourceBroker();
