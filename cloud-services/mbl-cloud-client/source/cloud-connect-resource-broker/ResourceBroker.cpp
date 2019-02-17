@@ -201,10 +201,10 @@ void ResourceBroker::regsiter_callback_handlers()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     cloud_client_->on_registration_updated(this, &ResourceBroker::handle_register_cb);
-    cloud_client_->on_unregistered(this, &ResourceBroker::handle_deregister_cb);
+    //cloud_client_->on_unregistered(this, &ResourceBroker::handle_deregister_cb);
     cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
     //??
-    cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
+    //cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
     // cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
     // cloud_client_->set_update_authorize_handler(&handle_authorize);
 }
@@ -442,19 +442,19 @@ MblError ResourceBroker::deregister_resources(
     app_endpoint->update_ipc_conn_handle(ipc_conn_handle);
     app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
 
-    // // Iterate all Objects
-    // M2MObject *m2m_object = nullptr;
-    // for(auto& itr : app_endpoint->m2m_object_list_)
-    // {
-    //     m2m_object = itr;
-    //     std::string object_name = m2m_object->name();
-    //     tr_debug("Removeing object_name: %s", object_name.c_str());
-    //     cloud_client_->remove_object(m2m_object);
+    // Iterate all Objects
+    M2MObject *m2m_object = nullptr;
+    for(auto& itr : app_endpoint->m2m_object_list_)
+    {
+        m2m_object = itr;
+        std::string object_name = m2m_object->name();
+        tr_debug("Removeing object_name: %s", object_name.c_str());
+        cloud_client_->remove_object(m2m_object);
 
-    // // }
+    }
     // // cloud_client_->register_update();
 
-    cloud_client_->close();
+    //cloud_client_->close();
 
     out_status = CloudConnectStatus::SUCCESS;
 

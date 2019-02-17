@@ -79,9 +79,9 @@ MblError DBusAdapter::run()
                     out_access_token,
                     out_status);
 
-                tr_info("%s @@@@@@ wait 30 seconds before SETUP", __PRETTY_FUNCTION__);
-                sleep(30); //TO AVOID DEREGISTRATION IN PROGRESS ERROR
-                ccrb_.setup(out_access_token);
+                //tr_info("%s @@@@@@ wait 30 seconds before SETUP", __PRETTY_FUNCTION__);
+                //sleep(30); //TO AVOID DEREGISTRATION IN PROGRESS ERROR
+                //ccrb_.setup(out_access_token);
             }
             once = false;
         } else {
