@@ -66,7 +66,7 @@ int main()
 
 
     if (!application_init()) {
-        tr_err("Cloud Client library initialization failed, exiting application!");
+        tr_err("Cloud Client library initialization failed, exiting application.");
         return 1;
     }
 

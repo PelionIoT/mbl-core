@@ -146,7 +146,7 @@ MblError MblCloudClient::run()
         const time_t time_s = get_monotonic_time_s();
         if (time_s >= next_registration_s) {
             tr_debug("Updating registration with LWM2M server");
-            s_instance->cloud_client_->register_update();
+            //s_instance->cloud_client_->register_update(); //////////////////////////////////////////// debug only! remove!
             next_registration_s = time_s + g_reregister_period_s;
         }
 

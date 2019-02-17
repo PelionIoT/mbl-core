@@ -69,8 +69,8 @@ MblError DBusAdapter::run()
             
             if(Error::None == status) {
 
-                tr_info("%s @@@@@@ wait 30 seconds before deregistring", __PRETTY_FUNCTION__);
-                sleep(30); //TO AVOID REGISTRATION IN PROGRESS ERROR
+                tr_info("%s @@@@@@ wait 20 seconds before deregistring", __PRETTY_FUNCTION__);
+                sleep(20); //TO AVOID REGISTRATION IN PROGRESS ERROR
 
                 //DEREGISTER!
                 tr_info("%s @@@@@@ Call de-register_resources", __PRETTY_FUNCTION__);
