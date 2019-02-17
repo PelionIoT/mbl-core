@@ -323,18 +323,40 @@ private:
 
     void handle_register_cb();
     void handle_deregister_cb();
+
+    /**
+     * @brief - Error callback function
+     * Called by Mdeb cloud client to indicate last mbed-cloud-client operation failure
+     * 
+     * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
+     */
+
     void handle_error_cb(const int cloud_client_code);
     void handle_client_registered();
+
     /**
-     * @brief Application registration updated function
+     * @brief Application registration callback function
      * Called by application endpoint to notify it is now successfully registered
      * 
-     * @param uuid 
+     * @param ipc_conn_handle - Handle to the IPC unique connection information 
+     *        of the application that should be notified.
+     * @param access_token - Token that should be used by the client 
+     *        application.
      */
     void handle_app_register_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
     void handle_app_deregister_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
+    /**
+     * @brief Application error callback function
+     * Called by Application endpoint to notify that the last mbed-cloud-client operation failed.
+     * 
+     * @param ipc_conn_handle - Handle to the IPC unique connection information 
+     *        of the application that should be notified.
+     * @param access_token - Token that should be used by the client 
+     *        application.
+     * @param error - Mbed cloud client error code for the last register / deregister operations.
+     */
     void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
 
     // thread id of the IPC thread
