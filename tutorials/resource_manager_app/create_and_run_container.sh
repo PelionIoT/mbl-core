@@ -8,20 +8,24 @@
 # Creates resource manager sample application package.
 #
 # This script creates and run container; resource manager sample application 
-# package is created inside the container with startup command
+# package is created inside the container with startup command.
 
+SCRIPT_DIR=$(dirname ${0})
 
-#clean
+# clean
 if [ "$1" = 'clean' ]; then
-    rm -rf bundle
-    rm -rf ipk
-    
+
+    echo "*** Removing an existing container artifacts"
+    rm -rf ${SCRIPT_DIR}/bundle
+    rm -rf ${SCRIPT_DIR}/ipk
+
+# create and run a container
 else
 
     echo "*** Creating container:"
-    docker build cc-env/ -t resource_manager_app
+    docker build ${SCRIPT_DIR}/cc-env/ -t resource_manager_app
 
     echo "*** Running container and creating package inside the container:"
-    docker run -v $(pwd):/resource_manager_app -it resource_manager_app
+    docker run -e USER_NAME=$(whoami) -e USER_ID=$UID -v $(realpath $(dirname ${0})):/resource_manager_app -it resource_manager_app
 
 fi

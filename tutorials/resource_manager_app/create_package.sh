@@ -4,33 +4,22 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Create resource manager sample application package.
+# Add non root user and call script creating resource manager sample application package.
 #
-# This script run inside the container and creates the resource
-# manager sample application package.
-
+# This script run inside the container; it adds non root user, switchs to it and calls
+# script which creates resource manager sample application package.
 
 SCRIPT_DIR=$(dirname ${0})
 
-ROOTFS_DIR="${SCRIPT_DIR}/bundle/rootfs"
-CONTROL_DIR="${SCRIPT_DIR}/ipk/in/CONTROL"
-OPKG_BUILD="opkg-build -Z "xz" -g root -o root"
+if ! getent passwd $USER_NAME > /dev/null ; then
 
-# create rootfs directory
-if [ ! -e $ROOTFS_DIR ]; then
-    mkdir -p $ROOTFS_DIR
+  # Add group and user.
+  groupadd -g $USER_ID $USER_NAME
+  useradd -u $USER_ID -g $USER_ID $USER_NAME
+  mkdir -p /home/$USER_NAME
+
 fi
 
-cp ${SCRIPT_DIR}/src_bundle/config.json ${SCRIPT_DIR}/bundle/config.json
-
-# create CONTROL directory
-if [ ! -e $CONTROL_DIR ]; then
-    mkdir -p $CONTROL_DIR
-fi
-
-cp -r ${SCRIPT_DIR}/bundle/* ${SCRIPT_DIR}/ipk/in
-cp -r ${SCRIPT_DIR}/src_opkg/CONTROL ${SCRIPT_DIR}/ipk/in
-
-# create IPK
-$OPKG_BUILD $(realpath ${SCRIPT_DIR}/ipk/in) $(realpath ${SCRIPT_DIR}/ipk)
+# Create package with a non root user
+sudo -i -u $USER_NAME /bin/bash -c "${SCRIPT_DIR}/create_package_non_root.sh"
 
