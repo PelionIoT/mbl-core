@@ -50,5 +50,5 @@ The container run  ```container_entry_point.sh``` which sets the user id and use
 After that ```create_sample_application.sh``` do IPK package using OPKG tools.
 ```Dockerfile``` could be found under ```cc-env/```. 
 
-After the application is installed on the device, run it inside the container. The container configuration could be found 
+After the application is installed on the device, run it inside the OCI container. The container configuration could be found 
 at ```src_bundle/config.json```.
