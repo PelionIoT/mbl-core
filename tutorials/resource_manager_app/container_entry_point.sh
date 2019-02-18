@@ -9,18 +9,19 @@
 # This script run inside the container; it adds non root user, switchs to it and calls
 # script which creates resource manager sample application package.
 
-SCRIPT_DIR=$(dirname ${0})
 
-if ! getent passwd $USER_NAME > /dev/null ; then
+CMD="$*" # command to be executed inside container
+
+if ! getent passwd "$USER_NAME" > /dev/null ; then
 
   # Add group and user.
-  groupadd -g $USER_ID $USER_NAME
-  useradd -u $USER_ID -g $USER_ID $USER_NAME
-  mkdir -p /home/$USER_NAME
+  groupadd -g "$USER_ID" "$USER_NAME"
+  useradd -u "$USER_ID" -g "$USER_ID" "$USER_NAME"
+  mkdir -p "/home/$USER_NAME"
 
 fi
 
-echo "Container entry point: run ${RUN_SCRIPT}"
+echo "Container entry point: run ${CMD}"
 
 # Create package with a non root user
-sudo -i -u $USER_NAME /bin/bash -c "${SCRIPT_DIR}/${RUN_SCRIPT}"
+sudo -i -u "$USER_NAME" /bin/bash -c "${CMD}"
