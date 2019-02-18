@@ -452,9 +452,10 @@ MblError ResourceBroker::deregister_resources(
         cloud_client_->remove_object(m2m_object);
 
     }
-    // // cloud_client_->register_update();
+    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
+    cloud_client_->register_update();
 
-    //cloud_client_->close();
+    tr_debug("@@@@@ %s END", __PRETTY_FUNCTION__);
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;
 
