@@ -12,8 +12,6 @@
 #include "mbed-trace/mbed_trace.h"
 #include <cassert>
 #include <pthread.h>
-#include <functional>
-
 
 #define TRACE_GROUP "ccrb"
 
@@ -128,6 +126,18 @@ MblError ResourceBroker::init()
     if(Error::None != status) {
         tr_error("ipc::init failed with error %s", MblError_to_str(status));
     }
+
+    // Set function pointers to point to mbed_client functions
+    tr_debug("%s   binding *************", __PRETTY_FUNCTION__);
+    register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
+
+    //void add_objects(const M2MObjectList& object_list);
+    //add_objects_func_ = std::bind(&MbedCloudClient::add_objects, cloud_client_);
+
+    add_objects_func_ = std::bind(static_cast<void(MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects), cloud_client_, std::placeholders::_1);
+    tr_debug("%s   AFTER binding *************", __PRETTY_FUNCTION__);
+    //auto a2 = std::bind(static_cast<void(Client::*)(int)>(&Client::foobar), cl,
+    //                std::placeholders::_1);
 
     // Register Cloud client callback:
     regsiter_callback_handlers();
@@ -325,11 +335,14 @@ MblError ResourceBroker::register_resources(
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration
-    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
+    tr_debug("%s   @@@@@@@@@@@@@@@@@@@@@ call add_objects_func_", __PRETTY_FUNCTION__);
+    add_objects_func_(app_endpoint->m2m_object_list_);
+    //cloud_client_->add_objects(app_endpoint->m2m_object_list_);
 
-    tr_error("%s: @@@@@@@@@@@@@@@@@@@@@@", __PRETTY_FUNCTION__);
-    std::function<void()> f = std::bind(&MbedCloudClient::register_update, cloud_client_);
-    f();
+    tr_error("%s: @@@@@@@@@@@@@@@@@@@@@@ call register_update_func_", __PRETTY_FUNCTION__);
+    //std::function<void()> f = std::bind(&MbedCloudClient::register_update, cloud_client_);
+    register_update_func_();
+    //f();
     tr_error("%s: 2@@@@@@@@@@@@@@@@@@@@@@", __PRETTY_FUNCTION__);
     //cloud_client_->register_update();
 

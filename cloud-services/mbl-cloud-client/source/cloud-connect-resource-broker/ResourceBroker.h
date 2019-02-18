@@ -16,6 +16,7 @@
 #include <pthread.h>
 #include <queue>
 #include <atomic>
+#include <functional>
 
 class MbedCloudClient;
 class ResourceBrokerTester;
@@ -378,6 +379,12 @@ private:
 
     std::atomic_bool registration_in_progress_;
     ApplicationEndpointMap app_endpoints_map_;
+
+
+    std::function<void()> register_update_func_;
+    std::function<void(const M2MObjectList& object_list)> add_objects_func_;
+    
+
 };
 
 } // namespace mbl
