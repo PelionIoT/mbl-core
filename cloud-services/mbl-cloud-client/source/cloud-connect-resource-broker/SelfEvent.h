@@ -46,12 +46,12 @@ public:
      * 
      */
     typedef union EventData_ {
-        //use this struct when event_type == EventType::RAW
+        //use this struct when data_type == EventType::RAW
         static const int MAX_BYTES = 100;
         struct EventData_Raw {
             char     bytes[MAX_BYTES];
         } raw;
-    }EventData;
+    }EventDataType;
 
     enum class EventType
     {
@@ -59,9 +59,9 @@ public:
     };
     
     // Getters - inline implemented
-    const EventData&                get_data() const { return data_; }
+    const EventDataType&                get_data() const { return data_; }
     uint64_t                        get_id() const{ return id_; }
-    EventType                       get_event_type() const{ return event_type_; };    
+    EventType                       get_data_type() const{ return data_type_; };    
     const char*                     get_description() const{ return description_.c_str(); }    
 	const std::chrono::milliseconds get_creation_time() const{ return creation_time_; }
     std::chrono::milliseconds       get_send_time() const{ return send_time_; }
@@ -73,13 +73,13 @@ public:
 
 protected:
     //event data, may be empty
-    EventData                       data_;
+    EventDataType                   data_;
 
     // length in bytes of data_
     unsigned long                   data_length_;
 
-    //the event type
-    EventType                       event_type_;
+    // the event type
+    EventType                       data_type_;
 
     //user callback
     SelfEventCallback               callback_;
@@ -105,16 +105,16 @@ private:
      * 
      * @param data - the data payload
      * @param data_length - length of actual used data in bytes - can't be more than maximum allowed
-     * by the matching type in EventData
-     * @param event_type the event type
+     * by the matching type in EventDataType
+     * @param data_type the event type
      * @param callback - user supplied callback to be called when event fired by event manager
      * @param description  as std::string
      */
     SelfEvent(
         EventManager &event_manager,
-        EventData &data,
+        EventDataType &data,
         unsigned long data_length,
-        EventType event_type,        
+        EventType data_type,        
         SelfEventCallback callback,
         const std::string& description);
 
@@ -126,9 +126,9 @@ private:
      */
     SelfEvent(
         EventManager &event_manager,
-        EventData &data,
+        EventDataType &data,
         unsigned long data_length,
-        EventType event_type,        
+        EventType data_type,        
         SelfEventCallback callback, 
         const char* description="");    
 

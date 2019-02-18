@@ -886,9 +886,9 @@ bool DBusAdapterImpl::State::is_not_equal(eState state)
 }
 
 MblError DBusAdapterImpl::send_event_immediate(
-    SelfEvent::EventData data,
+    SelfEvent::EventDataType data,
     unsigned long data_length,
-    SelfEvent::EventType event_type,        
+    SelfEvent::EventType data_type,        
     SelfEventCallback callback,
     uint64_t &out_event_id,
     const char *description)
@@ -901,7 +901,7 @@ MblError DBusAdapterImpl::send_event_immediate(
         return MblError::DBA_ForbiddenCall;
     }
     return event_manager_.send_event_immediate(
-        data, data_length, event_type, callback, out_event_id, description);    
+        data, data_length, data_type, callback, out_event_id, description);    
 }
     
 } // namespace mbl {

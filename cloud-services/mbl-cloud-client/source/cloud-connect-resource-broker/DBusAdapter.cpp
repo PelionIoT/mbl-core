@@ -101,9 +101,9 @@ MblError DBusAdapter::update_remove_resource_instance_status(
 }
 
 MblError DBusAdapter::send_event_immediate(
-    SelfEvent::EventData data,
+    SelfEvent::EventDataType data,
     unsigned long data_length,
-    SelfEvent::EventType event_type,        
+    SelfEvent::EventType data_type,        
     SelfEventCallback callback,
     uint64_t &out_event_id,
     const char *description)
@@ -111,7 +111,7 @@ MblError DBusAdapter::send_event_immediate(
     assert(callback);
     TR_DEBUG("Enter");
     return impl_->send_event_immediate(
-        data, data_length, event_type, callback, out_event_id, description);
+        data, data_length, data_type, callback, out_event_id, description);
 }
     
 } // namespace mbl {

@@ -48,18 +48,18 @@ public:
      * Must be called by CCRB thread only. Send 'defered event' to the event loop using 
      * sd_event_add_defer().
      * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
-     * @param data - the data to be sent, must be formatted according to the event_type
+     * @param data - the data to be sent, must be formatted according to the data_type
      * @param data_length - length of data used, must be less than the maximum size allowed
-     * @param event_type - the type of data to be sent.
+     * @param data_type - the type of data to be sent.
      * @param callback - callback to be called when event is fired
      * @param out_event_id  - generated event id (for debug or to cancel the event)
      * @param description - optional - description for the event cause, can leave empty string
      * @return MblError - return MblError - Error::None for success, therwise the failure reason
      */
     MblError send_event_immediate(
-        SelfEvent::EventData data,
+        SelfEvent::EventDataType data,
         unsigned long data_length,
-        SelfEvent::EventType event_type,        
+        SelfEvent::EventType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
         const std::string& description);
@@ -70,9 +70,9 @@ public:
      * @param description - optional - description for the event cause, can leave empty string
      */
     MblError send_event_immediate(
-        SelfEvent::EventData data,
+        SelfEvent::EventDataType data,
         unsigned long data_length,
-        SelfEvent::EventType event_type,        
+        SelfEvent::EventType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
         const char *description="");

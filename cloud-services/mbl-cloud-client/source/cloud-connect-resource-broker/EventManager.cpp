@@ -77,7 +77,7 @@ int EventManager::self_event_handler_impl(sd_event_source *s, SelfEvent *ev)
     UNUSED(status);
     
     TR_DEBUG("=SelfEvent fired= (callback status=%s) : id_=%" PRIu64 " send_time=%" PRIu64
-        " fire_time=%" PRIu64 " data_length=%lu event_type=%s description=%s",
+        " fire_time=%" PRIu64 " data_length=%lu data_type=%s description=%s",
         MblError_to_str(status),
         ev->id_,
         ev->send_time_.count(),
@@ -107,32 +107,32 @@ int EventManager::self_event_handler(sd_event_source *s, void *userdata)
 }
 
 MblError EventManager::send_event_immediate(
-    SelfEvent::EventData data, 
+    SelfEvent::EventDataType data, 
     unsigned long data_length,
-    SelfEvent::EventType event_type,     
+    SelfEvent::EventType data_type,     
     SelfEventCallback callback, 
     uint64_t &out_event_id,
     const std::string& description)
 {
     TR_DEBUG("Enter");    
-    switch (event_type)
+    switch (data_type)
     {
         case SelfEvent::EventType::RAW:
-            if (data_length > SelfEvent::EventData::MAX_BYTES){
+            if (data_length > SelfEvent::EventDataType::MAX_BYTES){
                 TR_ERR("Illegal data_length of size %lu > %d", 
-                    data_length, SelfEvent::EventData::MAX_BYTES);
+                    data_length, SelfEvent::EventDataType::MAX_BYTES);
                 return MblError::DBA_InvalidValue;
             }
             break;
 
         default:
-            TR_ERR("Invalid event_type!");
+            TR_ERR("Invalid data_type!");
             return MblError::DBA_InvalidValue;
     }
     
     //create the event
     std::unique_ptr<SelfEvent> ev
-        (new SelfEvent(*this, data, data_length, event_type, callback, description));    
+        (new SelfEvent(*this, data, data_length, data_type, callback, description));    
            
     //record event send time
     ev->send_time_ = duration_cast< milliseconds >(system_clock::now().time_since_epoch());
@@ -161,26 +161,26 @@ MblError EventManager::send_event_immediate(
     events_[out_event_id] = std::move(ev);
     
     TR_DEBUG("=SelfEvent sent== out_event_id=%" PRIu64 " send_time=%" PRIu64
-            " data_length=%lu event_type=%s description=%s",
+            " data_length=%lu data_type=%s description=%s",
         out_event_id,
         send_time.count(),
         data_length,
-        SelfEvent::EventType_to_str(event_type),
+        SelfEvent::EventType_to_str(data_type),
         description.c_str());
 
     return MblError::None;    
 }
 
 MblError EventManager::send_event_immediate(
-    SelfEvent::EventData data,
+    SelfEvent::EventDataType data,
     unsigned long data_length, 
-    SelfEvent::EventType event_type,
+    SelfEvent::EventType data_type,
     SelfEventCallback callback,
     uint64_t &out_event_id,
     const char *description)
 {
     return send_event_immediate(
-        data, data_length, event_type, callback, out_event_id, std::string(description));
+        data, data_length, data_type, callback, out_event_id, std::string(description));
 }
 
 } //namespace mbl {

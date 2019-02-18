@@ -62,9 +62,9 @@ int TestInfra_DBusAdapterTester::send_event_defer(
 }
 
 MblError TestInfra_DBusAdapterTester::send_event_immediate(
-        SelfEvent::EventData data,
+        SelfEvent::EventDataType data,
         unsigned long data_length,
-        SelfEvent::EventType event_type,        
+        SelfEvent::EventType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
         const char* description)
@@ -72,7 +72,7 @@ MblError TestInfra_DBusAdapterTester::send_event_immediate(
     return adapter_.impl_->event_manager_.send_event_immediate(
         data,
         data_length,
-        event_type,
+        data_type,
         callback,
         out_event_id,
         description);    

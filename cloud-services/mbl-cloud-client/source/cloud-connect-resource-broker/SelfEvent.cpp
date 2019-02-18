@@ -23,15 +23,15 @@ namespace mbl {
 
 SelfEvent::SelfEvent(
     EventManager &event_manager,
-    EventData &data,
+    EventDataType &data,
     unsigned long data_length,
-    EventType event_type,    
+    EventType data_type,    
     SelfEventCallback callback,
     const std::string& description) :
        
     data_(data),
     data_length_(data_length),
-    event_type_(event_type), 
+    data_type_(data_type), 
     callback_(callback),
     description_(description),    
     id_(0),   // id is assigned by event manager     
@@ -47,16 +47,16 @@ SelfEvent::SelfEvent(
 
 SelfEvent::SelfEvent(
     EventManager &event_manager,
-    EventData &data,
+    EventDataType &data,
     unsigned long data_length,
-    EventType event_type,    
+    EventType data_type,    
     SelfEventCallback callback,
     const char* description) :
     SelfEvent::SelfEvent(
         event_manager,
         data, 
         data_length,
-        event_type, 
+        data_type, 
         callback, 
         std::string(description))
 {
@@ -66,7 +66,7 @@ SelfEvent::SelfEvent(
 
 const char* SelfEvent::get_data_type_str()
 {
-    return  EventType_to_str(this->event_type_);
+    return  EventType_to_str(this->data_type_);
 }
 
 const char*  SelfEvent::EventType_to_str(EventType type)
