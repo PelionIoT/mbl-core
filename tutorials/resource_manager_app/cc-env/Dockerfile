@@ -10,4 +10,5 @@ RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-util
 	rm -rf opkg-utils-0.3.6 opkg-utils-0.3.6.tar.gz
 RUN apt-get install sudo
 
-CMD ["/resource_manager_app/create_package.sh"]
+ENV RUN_SCRIPT="create_sample_application.sh"
+CMD ["/resource_manager_app/container_entry_point.sh"]

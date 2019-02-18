@@ -6,8 +6,7 @@
 
 # Create resource manager sample application package.
 #
-# This script run inside the container and creates the resource
-# manager sample application package.
+# This script creates the LWM2M resource manager sample application package.
 
 
 SCRIPT_DIR=$(dirname ${0})
@@ -20,6 +19,10 @@ OPKG_BUILD="opkg-build -Z "xz" -g root -o root"
 mkdir -p $ROOTFS_DIR
 
 cp ${SCRIPT_DIR}/src_bundle/config.json ${SCRIPT_DIR}/bundle/config.json
+
+# copy source files 
+# in order to copy python source files under the rootfs directory uncomment next line
+# cp ${SCRIPT_DIR}/src/*.py ${ROOTFS_DIR}
 
 # create CONTROL directory
 mkdir -p $CONTROL_DIR

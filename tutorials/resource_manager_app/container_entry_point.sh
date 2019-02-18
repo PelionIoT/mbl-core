@@ -20,6 +20,7 @@ if ! getent passwd $USER_NAME > /dev/null ; then
 
 fi
 
-# Create package with a non root user
-sudo -i -u $USER_NAME /bin/bash -c "${SCRIPT_DIR}/create_package_non_root.sh"
+echo "Container entry point: run ${RUN_SCRIPT}"
 
+# Create package with a non root user
+sudo -i -u $USER_NAME /bin/bash -c "${SCRIPT_DIR}/${RUN_SCRIPT}"
