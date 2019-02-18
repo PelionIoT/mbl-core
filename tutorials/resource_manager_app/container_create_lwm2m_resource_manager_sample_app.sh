@@ -14,7 +14,7 @@
 # creation and packaging. 
 # To clean previously created artifacts call script with "clean" argument.
 
-SCRIPT_DIR="$(dirname ${0})"
+SCRIPT_DIR="$(dirname "${0}")"
 
 # clean
 if [ "$1" = 'clean' ]; then
@@ -31,7 +31,7 @@ else
 
     echo "*** Running container and creating package inside the container:"
     docker run --rm -e USER_NAME="$(whoami)" -e USER_ID="$UID" \
-    -v "$(realpath $(dirname ${0}))":/resource_manager_app \
+    -v "$(realpath "$(dirname "${0}")")":/resource_manager_app \
     -v /etc/localtime:/etc/localtime:ro \
     -v /etc/timezone:/etc/timezone:ro \
     -it resource_manager_app_builder
