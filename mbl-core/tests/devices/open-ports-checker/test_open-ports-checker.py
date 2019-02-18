@@ -11,7 +11,7 @@ import mbl.open_ports_checker.open_ports_checker as opc
 
 
 class TestOpenPortsScanner:
-    """ Open port scanner main class. """
+    """ Open port scanner test main class. """
 
     @pytest.fixture(autouse=True)
     def setup_port_scanner(self):
