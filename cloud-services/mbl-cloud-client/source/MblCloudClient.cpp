@@ -38,7 +38,7 @@ static volatile sig_atomic_t g_shutdown_signal = 0;
 // Period between re-registrations with the LWM2M server.
 // MBED_CLOUD_CLIENT_LIFETIME is how long we should stay registered after each
 // re-registration
-static const int g_reregister_period_s = 2 * MBED_CLOUD_CLIENT_LIFETIME; //////////////////////////////////////////// debug only! remove!
+static const int g_reregister_period_s = MBED_CLOUD_CLIENT_LIFETIME / 2;
 
 extern "C" void mbl_shutdown_handler(int signal)
 {
@@ -145,8 +145,8 @@ MblError MblCloudClient::run()
 
         const time_t time_s = get_monotonic_time_s();
         if (time_s >= next_registration_s) {
-            //tr_debug("Updating registration with LWM2M server");
-            //s_instance->cloud_client_->register_update();                       ///////////////////////////// DEBUG ONLY
+            tr_debug("Updating registration with LWM2M server");
+            s_instance->cloud_client_->register_update();
             next_registration_s = time_s + g_reregister_period_s;
         }
 

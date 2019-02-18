@@ -38,9 +38,6 @@ public:
     ResourceBroker();
     ~ResourceBroker();
 
-    void setup(const std::string &access_token);
-
-
 /////////////////////////////////////////////////////////////////////
 // API to be used by MblCloudClient class
 /////////////////////////////////////////////////////////////////////
@@ -319,10 +316,18 @@ private:
     ResourceBroker(ResourceBroker&&) = delete;
     ResourceBroker& operator = (ResourceBroker&&) = delete;
 
+    /**
+     * @brief Register callback function that will be called directly by Mbed cloud client
+     * 
+     */
     void regsiter_callback_handlers();
 
-    void handle_register_cb();
-    void handle_deregister_cb();
+    /**
+     * @brief - Registration update cllback.
+     * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
+     * 
+     */
+    void handle_registration_updated_cb();
 
     /**
      * @brief - Error callback function
@@ -330,9 +335,10 @@ private:
      * 
      * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
      */
-
     void handle_error_cb(const int cloud_client_code);
-    void handle_client_registered();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Callback functions that are being called by Application Endpoint
 
     /**
      * @brief Application registration callback function
@@ -345,8 +351,6 @@ private:
      */
     void handle_app_register_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
-    void handle_app_deregister_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
-
     /**
      * @brief Application error callback function
      * Called by Application endpoint to notify that the last mbed-cloud-client operation failed.
@@ -358,6 +362,8 @@ private:
      * @param error - Mbed cloud client error code for the last register / deregister operations.
      */
     void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;

@@ -196,42 +196,29 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
 }
 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Callbacks functions that are being called directly from Mbed CLient CLient
 void ResourceBroker::regsiter_callback_handlers()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    cloud_client_->on_registration_updated(this, &ResourceBroker::handle_register_cb);
-    //cloud_client_->on_unregistered(this, &ResourceBroker::handle_deregister_cb);
+
+    // Resource broker will now get Mbed cloud client callbacks on the following cases:
+    // 1. Registration update
+    // 2. Error occurred
+    cloud_client_->on_registration_updated(this, &ResourceBroker::handle_registration_updated_cb);
     cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
-    //??
-    //cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
-    // cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
-    // cloud_client_->set_update_authorize_handler(&handle_authorize);
 }
 
-
-void ResourceBroker::handle_client_registered()
+void ResourceBroker::handle_registration_updated_cb()
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
-}
-
-void ResourceBroker::handle_register_cb()
-{
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
-    // Mark that registration is finished
-    registration_in_progress_.store(false);    
-}
-
-void ResourceBroker::handle_deregister_cb()
-{
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // Mark that registration is finished
     registration_in_progress_.store(false);    
 }
 
 void ResourceBroker::handle_error_cb(const int cloud_client_code)
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     const MblError mbl_code = CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     tr_err("%s: Error occurred: %d: %s", 
         __PRETTY_FUNCTION__,
@@ -241,13 +228,13 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
     // Mark that registration is finished
     registration_in_progress_.store(false);    
 }
-
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Callbacks functions that are being called directly from Application Endpoint (e.g. during registeration)
 void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, const std::string &access_token)
 {
-    tr_debug("@@@@@@ %s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
+    tr_debug("%s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
 
-    // Send adapter the response:
+    // Send the response to adapter:
     CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
     MblError status = ipc_->update_registration_status(
         ipc_conn_handle, 
@@ -257,118 +244,47 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     }
         
     // Return registration updated callback to CCRB
-    //regsiter_callback_handlers();
+    regsiter_callback_handlers();
 
     // Mark that registration is finished
     registration_in_progress_.store(false);
 }
 
-void ResourceBroker::handle_app_deregister_cb(const uintptr_t ipc_conn_handle, const std::string &access_token)
-{
-    tr_debug("@@@@@@ %s: Application (access_token: %s) deregistered successfully.", __PRETTY_FUNCTION__, access_token.c_str());
-
-    // Send adapter the response:
-    CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
-    MblError status = ipc_->update_deregistration_status(
-        ipc_conn_handle, 
-        reg_status);
-    if(Error::None != status) {
-        tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
-    }
-        
-    // Return registration updated callbacks to CCRB
-    regsiter_callback_handlers();
-}
-
-void ResourceBroker::setup(const std::string &access_token)
-{
-    SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
-    //TODO: check valid app_point
-
-    //app_endpoint->update_ipc_conn_handle(nullptr);
-    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
-
-    // Iterate all Objects
-    M2MObject *m2m_object = nullptr;
-    for(auto& itr : app_endpoint->m2m_object_list_)
-    {
-        m2m_object = itr;
-        std::string object_name = m2m_object->name();
-        tr_debug("Removeing object_name: %s", object_name.c_str());
-        cloud_client_->remove_object(m2m_object);
-
-    }
-    M2MObjectList objs;
-    cloud_client_->add_objects(objs);
-
-    cloud_client_->register_update();
-
-    // // app_endpoints_map_.clear();
-    // // tr_debug("%s", __PRETTY_FUNCTION__);
-    // SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
-
-    // // Iterate all Objects and clean list
-    // M2MObject *m2m_object = nullptr;
-    // for(auto& itr : app_endpoint->m2m_object_list_)
-    // {
-    //     m2m_object = itr;
-    //     std::string object_name = m2m_object->name();
-    //     tr_debug("Removeing object_name: %s", object_name.c_str());
-    //     cloud_client_->remove_object(m2m_object);
-
-    // }
-    // cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-
-    // if (!application_init()) {
-    //     tr_err("Cloud Client library initialization failed, exiting application!");
-    //     return;
-    // }
-
-
-    // tr_debug("@@@@@@ %s: Call cloud_client_->setup", __PRETTY_FUNCTION__);
-    // const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
-    // if (!setup_ok) {
-    //     tr_err("@@@@@@ Client setup failed");
-    //     //return Error::ConnectUnknownError;
-    // }
-
-    // cloud_client_->register_update();
-    // tr_debug("@@@@@@ %s: Call cloud_client_->setup DONE", __PRETTY_FUNCTION__);
-}
-
 void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error)
 {
-    tr_debug("@@@@@@ %s: Application (access_token: %s) encountered an error: %s", 
+    tr_debug("%s: Application (access_token: %s) encountered an error: %s", 
         __PRETTY_FUNCTION__, 
         access_token.c_str(),
         MblError_to_str(error));
 
-    CloudConnectStatus reg_status = CloudConnectStatus::ERR_FAILED;
+    if(app_endpoints_map_.end() == app_endpoints_map_.find(access_token)) {
+        // Could not found application endpoint
+        tr_error("%s: Application (access_token: %s) does not exist.", __PRETTY_FUNCTION__, access_token.c_str());
+        return;
+    }
 
     SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
-    //TODO: check valid app_point
     
-    // Send adapter the response:
+    // Send the response to adapter:
     if(app_endpoint->is_registered()) { 
-        // App is already registered which means the error is for deregistration
-        MblError status = ipc_->update_deregistration_status(
-            ipc_conn_handle, 
-            reg_status);
-        if(Error::None != status) {
-            tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
-        }
+        //TODO: add call to update_deregistration_status when deregister is implemented
+        tr_error("%s: Application (access_token: %s) is already registered.", __PRETTY_FUNCTION__, access_token.c_str());
     } else {
-        // App is not registered, which means the error is for register request
+        // App is not registered yet, which means the error is for register request
         MblError status = ipc_->update_registration_status(
             ipc_conn_handle, 
-            reg_status);
+            CloudConnectStatus::ERR_FAILED);
         if(Error::None != status) {
-            tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+            tr_error("%s: Registration for Application (access_token: %s), failed with error: %s", 
+                __PRETTY_FUNCTION__,
+                access_token.c_str(),
+                MblError_to_str(status));
         }
+        // Mark that registration is finished (even if it was failed)
+        registration_in_progress_.store(false);        
     }
 }
-
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MblError ResourceBroker::register_resources(
     const uintptr_t ipc_conn_handle,
@@ -376,7 +292,7 @@ MblError ResourceBroker::register_resources(
     CloudConnectStatus &out_status,
     std::string &out_access_token)
 {
-    tr_debug("@@@@@ %s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
@@ -390,19 +306,19 @@ MblError ResourceBroker::register_resources(
     MblError status = unique_token_generator.generate_unique_token(out_access_token);
     if(Error::None != status) {
         out_status = CloudConnectStatus::ERR_FAILED;
-        tr_error("@@@@@@ %s: generate_unique_token failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        tr_error("%s: generate_unique_token failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         return Error::None;
     }
 
     // Create and init application endpoint
     SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
     if(nullptr == app_endpoint) {
-        tr_error("@@@@@@ %s: Create application endpoint failed.", __PRETTY_FUNCTION__);
+        tr_error("%s: Create application endpoint failed.", __PRETTY_FUNCTION__);
         return Error::CCRBRegisterFailed;
     }
     status = app_endpoint->init(json_string);
     if(Error::None != status) {
-        tr_error("@@@@@@ %s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        tr_error("%s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::ERR_INVALID_JSON : CloudConnectStatus::ERR_FAILED;
         return Error::None;
     }
@@ -423,43 +339,13 @@ MblError ResourceBroker::register_resources(
 }
 
 MblError ResourceBroker::deregister_resources(
-    const uintptr_t ipc_conn_handle, 
-    const std::string &access_token,
-    CloudConnectStatus &out_status)
+    const uintptr_t /*ipc_conn_handle*/, 
+    const std::string & /*access_token*/,
+    CloudConnectStatus & /*out_status*/)
 {
-    tr_debug("@@@@@ %s", __PRETTY_FUNCTION__);
-
-    if (registration_in_progress_.load()) {
-        // We only allow one registration request at a time.
-        tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__); //TODO: need better atomic name
-        out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
-        return Error::None;
-    }
-
-    SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
-    //TODO: check valid app_point
-
-    app_endpoint->update_ipc_conn_handle(ipc_conn_handle);
-    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
-
-    // Iterate all Objects
-    M2MObject *m2m_object = nullptr;
-    for(auto& itr : app_endpoint->m2m_object_list_)
-    {
-        m2m_object = itr;
-        std::string object_name = m2m_object->name();
-        tr_debug("Removeing object_name: %s", object_name.c_str());
-        cloud_client_->remove_object(m2m_object);
-
-    }
-    cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-    cloud_client_->register_update();
-
-    tr_debug("@@@@@ %s END", __PRETTY_FUNCTION__);
-
-    out_status = CloudConnectStatus::STATUS_SUCCESS;
-
-    return Error::None;
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    // empty for now
+    return Error::CCRBNotSupported;
 }
 
 MblError ResourceBroker::add_resource_instances(

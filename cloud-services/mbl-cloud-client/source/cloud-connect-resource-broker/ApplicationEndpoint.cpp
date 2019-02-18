@@ -31,25 +31,25 @@ access_token_(std::move(access_token)),
 ccrb_(ccrb),
 registered_(false)
 {
-    tr_debug("@@@@@@ %s: out_access_token: %s", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s: out_access_token: %s", __PRETTY_FUNCTION__, access_token_.c_str());
 }
 
 ApplicationEndpoint::~ApplicationEndpoint()
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 void ApplicationEndpoint::regsiter_callback_handlers()
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
     ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::handle_register_cb);
-    ccrb_.cloud_client_->on_unregistered(this, &ApplicationEndpoint::handle_deregister_cb);
     ccrb_.cloud_client_->on_error(this, &ApplicationEndpoint::handle_error_cb);
 }
 
 MblError ApplicationEndpoint::init(const std::string json_string)
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    
     // Parse JSON
     ResourceDefinitionParser resource_parser;
     const MblError status = resource_parser.build_object_list(
@@ -58,7 +58,7 @@ MblError ApplicationEndpoint::init(const std::string json_string)
         rbm2m_object_list_);
 
     if(Error::None != status) {
-        tr_error("@@@@@@ %s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
+        tr_error("%s: build_object_list failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
     }
     return status;
 }
@@ -70,28 +70,21 @@ void ApplicationEndpoint::update_ipc_conn_handle(const uintptr_t ipc_conn_handle
 
 void ApplicationEndpoint::handle_register_cb()
 {
-    tr_debug("@@@@@@ %s: Notify CCRB that registration was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s: Notify CCRB that registration was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = true;
     ccrb_.handle_app_register_cb(ipc_conn_handle_, access_token_);
 }
 
-void ApplicationEndpoint::handle_deregister_cb()
-{
-    tr_debug("@@@@@@ %s: Notify CCRB that deregister was successfull (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
-    registered_ = false;
-    ccrb_.handle_app_deregister_cb(ipc_conn_handle_, access_token_);
-}
-
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
 {
-    tr_debug("@@@@@@ %s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);    
     const MblError mbl_code = CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     tr_err("%s: Error occurred: %d: %s", 
         __PRETTY_FUNCTION__,
         mbl_code,
         MblError_to_str(mbl_code));
 
-    tr_debug("@@@@@@ %s: Notify CCRB that error occured (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s: Notify CCRB that error occured (access_token = %s)", __PRETTY_FUNCTION__, access_token_.c_str());
     ccrb_.handle_app_error_cb(ipc_conn_handle_, access_token_, mbl_code);
 }
 

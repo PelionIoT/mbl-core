@@ -58,8 +58,11 @@ private:
      */
     void handle_register_cb();
 
-    void handle_deregister_cb();
-
+    /**
+     * @brief Error callback
+     * When error occurred (e.g. during registration) - Mbed cloud client will call this callback.
+     * This function will notify the Resource broker that error occurred.
+     */
     void handle_error_cb(const int cloud_client_code);
 
     uintptr_t ipc_conn_handle_;

@@ -51,7 +51,7 @@ MblError DBusAdapter::de_init()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-//    static bool once = true;
+    //    static bool once = true; //////////////////////////////////////////////////////////////////////////// REMOVE BELOW COMMENTED CODE BEFORE PR
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_) {
 
