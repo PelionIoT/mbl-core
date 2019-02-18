@@ -13,7 +13,7 @@ cat device_list
 
 rm device_list
 
-if [ test_$dut_address = "test_" ]
+if [ -z $dut_address ]
 then
     echo "ERROR - mbl-cli failed to find MBL device"
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
