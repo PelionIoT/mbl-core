@@ -11,7 +11,7 @@
 
 SCRIPT_DIR=$(dirname "${0}")
 
-LWM2M_RESOURCE_MANAGER_DIR="${SCRIPT_DIR}/bundle/rootfs/lwm2m_resource_manager"
+LWM2M_RESOURCE_MANAGER_DIR="${SCRIPT_DIR}/bundle/rootfs/lwm2m_resource_manager_sample_app"
 IPK_IN_DIR="${SCRIPT_DIR}/ipk/in"
 OPKG_BUILD="opkg-build -Z xz -g root -o root"
 

@@ -4,8 +4,9 @@ Framework for creation python LWM2M resource manager sample application.
 
 ## Prerequisites
 
- * Host PC SO should be Ubuntu 16.04.
+ * Host PC OS should be Ubuntu 16.04.
  * Docker-CE should be installed on the host PC. Please refer [installing Docker-CE on Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
+ * In order to build Docker image, internet connection is required on Host PC.
 
 ## Create LWM2M resource manager sample application
 
@@ -24,9 +25,10 @@ container_create_lwm2m_resource_manager_sample_app.sh clean
 
 ## Install and run
 
-To install the application on the device:
+To install the application on the device use one of the following ways:
 
  * [Send the application as an over-the-air firmware update with Device Management](https://os.mbed.com/docs/mbed-linux-os/v0.5/getting-started/tutorial-updating-mbl-devices-and-applications.html).
+   Follow the workflow for an application update.
  * [Flash the application over USB with MBL CLI](https://os.mbed.com/docs/mbed-linux-os/v0.5/tools/device-update.html#update-an-application).
 
 
