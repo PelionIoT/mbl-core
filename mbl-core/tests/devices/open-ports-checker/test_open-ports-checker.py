@@ -9,6 +9,7 @@ import sys
 import pytest
 import mbl.open_ports_checker.open_ports_checker as opc
 
+
 class TestOpenPortsScanner:
     """ Open port scanner main class. """
 
@@ -40,7 +41,7 @@ class TestOpenPortsScanner:
     def test_check_expected_failure(self):
         """
         Run open port scan negative test.
-        
+
         Run open port scan with empty open ports whitelist and make sure test
         failed.
         """
