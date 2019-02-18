@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
 #
@@ -7,13 +7,13 @@
 # Find and select the device to talk to
 
 mbl-cli list > device_list
-dut_address=`grep "mbed-linux-os" device_list | cut -d":" -f3-`
+dut_address=$(grep "mbed-linux-os" device_list | cut -d":" -f3-)
 
 cat device_list
 
 rm device_list
 
-if [ -z $dut_address ]
+if [ -z "$dut_address" ]
 then
     echo "ERROR - mbl-cli failed to find MBL device"
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
@@ -23,14 +23,14 @@ else
 
 
     # Initially attempt to cleanup any previous runs
-    $mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
+    $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
     # Now install the package - this should cause it to run
     $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/app
-    $mbl_command shell 'mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar'
+    $mbl_command shell "mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
 
     # Check it is there
-    $mbl_command shell 'mbl-app-manager -l'
+    $mbl_command shell "mbl-app-manager -l"
 
     # The app takes 20 seconds to run, so wait for 30
     sleep 30
@@ -42,7 +42,8 @@ else
     cat /home/ubuntu/user-sample-app-package.log
 
     # Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
-    if [ `grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log` = 10 ]
+    count_hello_world=$(grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log)
+    if [ "$count_hello_world" = 10 ]
     then
         echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
     else
@@ -51,9 +52,9 @@ else
 
 
     # Attempt to cleanup after the run
-    $mbl_command shell 'mbl-app-manager -r user-sample-app-package'
-    $mbl_command shell 'rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar'
-    $mbl_command shell 'rm /var/log/app/user-sample-app-package.log'
+    $mbl_command shell "mbl-app-manager -r user-sample-app-package"
+    $mbl_command shell "rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+    $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
 fi
 

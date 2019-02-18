@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-cd tutorials/helloworld
+cd tutorials/helloworld || exit
 
 docker build -t linux-armv7:latest ./cc-env/
 
@@ -16,7 +16,8 @@ chmod +x ./build-armv7
 
 ./build-armv7 make debug
 
-cd debug/ipk/
+cd debug/ipk/ || exit
+
 tar -cvf user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar user-sample-app-package_1.0_armv7vet2hf-neon.ipk
 cp user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar
 
