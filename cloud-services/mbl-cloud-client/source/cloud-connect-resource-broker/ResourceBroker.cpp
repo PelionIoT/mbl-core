@@ -128,19 +128,13 @@ MblError ResourceBroker::init()
     }
 
     // Set function pointers to point to mbed_client functions
-    tr_debug("%s   binding *************", __PRETTY_FUNCTION__);
+    // In gtest our friend test class will override these pointers to get all teh calls
     register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
-
-    //void add_objects(const M2MObjectList& object_list);
-    //add_objects_func_ = std::bind(&MbedCloudClient::add_objects, cloud_client_);
-
     add_objects_func_ = std::bind(static_cast<void(MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects), cloud_client_, std::placeholders::_1);
-    tr_debug("%s   AFTER binding *************", __PRETTY_FUNCTION__);
-    //auto a2 = std::bind(static_cast<void(Client::*)(int)>(&Client::foobar), cl,
-    //                std::placeholders::_1);
+    regsiter_callback_handlers_func_ = std::bind(&ResourceBroker::regsiter_callback_handlers, this);
 
     // Register Cloud client callback:
-    regsiter_callback_handlers();
+    regsiter_callback_handlers_func_();
 
     return status;
 }
@@ -203,7 +197,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callbacks functions that are being called directly from Mbed CLient CLient
-void ResourceBroker::regsiter_callback_handlers()
+void ResourceBroker::regsiter_callback_handlers() // NOTE! do not call directly, use regsiter_callback_handlers_func_
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -249,7 +243,7 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     }
         
     // Return registration updated callback to CCRB
-    regsiter_callback_handlers();
+    regsiter_callback_handlers_func_();
 
     // Mark that registration is finished
     registration_in_progress_.store(false);
@@ -335,16 +329,8 @@ MblError ResourceBroker::register_resources(
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration
-    tr_debug("%s   @@@@@@@@@@@@@@@@@@@@@ call add_objects_func_", __PRETTY_FUNCTION__);
     add_objects_func_(app_endpoint->m2m_object_list_);
-    //cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-
-    tr_error("%s: @@@@@@@@@@@@@@@@@@@@@@ call register_update_func_", __PRETTY_FUNCTION__);
-    //std::function<void()> f = std::bind(&MbedCloudClient::register_update, cloud_client_);
     register_update_func_();
-    //f();
-    tr_error("%s: 2@@@@@@@@@@@@@@@@@@@@@@", __PRETTY_FUNCTION__);
-    //cloud_client_->register_update();
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;
 
