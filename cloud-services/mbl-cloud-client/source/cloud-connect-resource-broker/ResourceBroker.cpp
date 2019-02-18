@@ -12,15 +12,10 @@
 #include "mbed-trace/mbed_trace.h"
 #include <cassert>
 #include <pthread.h>
-#include "application_init.h"
+#include <functional>
+
 
 #define TRACE_GROUP "ccrb"
-
-// static void* get_dummy_network_interface()
-// {
-//     static uint32_t network = 0xFFFFFFFF;
-//     return &network;
-// }
 
 namespace mbl {
 
@@ -331,7 +326,12 @@ MblError ResourceBroker::register_resources(
 
     // Call cloud client to start registration
     cloud_client_->add_objects(app_endpoint->m2m_object_list_);
-    cloud_client_->register_update();
+
+    tr_error("%s: @@@@@@@@@@@@@@@@@@@@@@", __PRETTY_FUNCTION__);
+    std::function<void()> f = std::bind(&MbedCloudClient::register_update, cloud_client_);
+    f();
+    tr_error("%s: 2@@@@@@@@@@@@@@@@@@@@@@", __PRETTY_FUNCTION__);
+    //cloud_client_->register_update();
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;
 
