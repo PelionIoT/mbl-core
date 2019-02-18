@@ -72,6 +72,7 @@ MblError DBusAdapter::update_registration_status(
 {
     tr_debug("Enter");
     assert(impl_);
+    assert(ipc_request_handle);
     return impl_->handle_ccrb_async_process_status_update(
         ipc_request_handle, 
         DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status); 
@@ -83,6 +84,7 @@ MblError DBusAdapter::update_deregistration_status(
 {
     tr_debug("Enter");
     assert(impl_);
+    assert(ipc_request_handle);
     return impl_->handle_ccrb_async_process_status_update(
         ipc_request_handle, 
         DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status); 

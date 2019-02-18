@@ -20,7 +20,6 @@ enum CloudConnectStatus {
     FIRST_ERROR = 0x1000,
     ERR_FAILED  = FIRST_ERROR,
     ERR_INTERNAL_ERROR = 0x1001,
-    
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
@@ -32,6 +31,10 @@ static inline bool is_CloudConnectStatus_not_error(const CloudConnectStatus val)
 static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
     return val >= FIRST_ERROR;
 }
+
+// mbed.Cloud.Connect DBus errors definitions 
+#define CLOUD_CONNECT_ERR_FAILED "mbed.Cloud.Connect.Failed"
+#define CLOUD_CONNECT_ERR_INTERNAL_ERROR "mbed.Cloud.Connect.InternalError"
 
 /**
  * @brief Cloud Connect resource data type.

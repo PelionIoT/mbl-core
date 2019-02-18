@@ -166,6 +166,20 @@ private:
 const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status);
 
 /**
+ * @brief FIXME
+ * 
+ */
+#define RETURN_DBUS_FORMAT_ERROR(ENUM) case ENUM: return CLOUD_CONNECT_ ## ENUM
+
+/**
+ * @brief FIXME
+ * 
+ * @param status 
+ * @return const char* 
+ */
+const char* CloudConnectStatus_error_to_DBus_format_string(const CloudConnectStatus status);
+
+/**
  * @brief Returns stringified value of Cloud Connect Status.
  * 
  * @param CloudConnectStatus that should be stringified. 

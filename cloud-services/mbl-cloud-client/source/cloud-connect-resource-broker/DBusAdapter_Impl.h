@@ -131,6 +131,15 @@ private:
         sd_bus_error *ret_error,
         const char *types_format, ... /*values*/);
 
+    /**
+     * @brief FIXME
+     * Sends error in the following format:
+     * Error mbed.Cloud.Connect.<Error Name>: <String explanation>
+     * @param message_to_reply_on 
+     * @param ret_error 
+     * @param error 
+     * @return int 
+     */
     int reply_error_on_message(
         sd_bus_message *message_to_reply_on,
         sd_bus_error *ret_error,

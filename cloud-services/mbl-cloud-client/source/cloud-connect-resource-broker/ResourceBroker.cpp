@@ -207,6 +207,18 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
     }
 }
 
+const char* CloudConnectStatus_error_to_DBus_format_string(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED); 
+        RETURN_DBUS_FORMAT_ERROR(ERR_INTERNAL_ERROR);
+ 
+        default:
+            return "mbed.Cloud.Connect.UnknownError";
+    }
+}
+
 MblError ResourceBroker::register_resources(
         const uintptr_t /*unused*/, 
         const std::string & json/*unused*/,
