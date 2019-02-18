@@ -194,13 +194,13 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
     switch (status)
     {
         case STATUS_SUCCESS: 
-            return "STATUS SUCCESS";
+            return "Status success";
 
         case ERR_FAILED: 
-            return "ERROR FAILED";
+            return "General failure";
 
         case ERR_INTERNAL_ERROR:
-            return "INTERNAL ERROR IN CLOUD CONNECT INFRASTRUCTURE";
+            return "Internal error in Cloud Connect infrastructure";
 
         default:
             return "Unknown Cloud Connect Status or Error";
