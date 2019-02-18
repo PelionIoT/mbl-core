@@ -11,19 +11,19 @@
 
 SCRIPT_DIR=$(dirname "${0}")
 
-LWM2M_RESOURCE_MANAGER_DIR="${SCRIPT_DIR}/bundle/rootfs/lwm2m_resource_manager_sample_app"
+LWM2M_RESOURCE_MANAGER_SAMPLE_APP_DIR="${SCRIPT_DIR}/bundle/rootfs/lwm2m_resource_manager_sample_app"
 IPK_IN_DIR="${SCRIPT_DIR}/ipk/in"
 OPKG_BUILD="opkg-build -Z xz -g root -o root"
 
 # create rootfs and lwm2m resource manager directory under it
-mkdir -p "$LWM2M_RESOURCE_MANAGER_DIR"
+mkdir -p "$LWM2M_RESOURCE_MANAGER_SAMPLE_APP_DIR"
 
 cp "${SCRIPT_DIR}/src_bundle/config.json" "${SCRIPT_DIR}/bundle/config.json"
 
-# copy source files under LWM2M_RESOURCE_MANAGER_DIR
-# in order to copy python source files under LWM2M_RESOURCE_MANAGER_DIR
+# copy source files under LWM2M_RESOURCE_MANAGER_SAMPLE_APP_DIR
+# in order to copy python source files under LWM2M_RESOURCE_MANAGER_SAMPLE_APP_DIR
 # directory uncomment next line
-# cp -r ${SCRIPT_DIR}/src/* ${LWM2M_RESOURCE_MANAGER_DIR}
+# cp -r ${SCRIPT_DIR}/src/* ${LWM2M_RESOURCE_MANAGER_SAMPLE_APP_DIR}
 
 # create IPK_IN_DIR directory
 mkdir -p "$IPK_IN_DIR"
