@@ -6,8 +6,6 @@
 
 # Find and select the device to talk to
 
-set -x
-
 mbl-cli list > device_list
 dut_address=`grep "mbed-linux-os" device_list | cut -d":" -f3-`
 
@@ -15,7 +13,7 @@ cat device_list
 
 rm device_list
 
-if [ $dut_address eq "" ]
+if [ $dut_address == "" ]
 then
     echo "ERROR - mbl-cli failed to find MBL device"
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
