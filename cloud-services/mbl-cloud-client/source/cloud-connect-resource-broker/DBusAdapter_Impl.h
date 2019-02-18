@@ -10,12 +10,13 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <set>
+#include <string>
+#include <systemd/sd-bus.h>
+#include <systemd/sd-event.h>
 
 #include "MblError.h"
 #include "Mailbox.h"
-
-#include <systemd/sd-bus.h>
-#include <systemd/sd-event.h>
+#include "CloudConnectExternalTypes.h"
 
 // sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
 // Keep those definitions here for testing
@@ -23,7 +24,35 @@
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
+#define DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME     "RegisterResources"
+#define DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME   "DeregisterResources"
+
 namespace mbl {
+
+/**
+ * @brief FIXME
+ * https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
+ * @tparam T 
+ */
+template <class T> 
+class sd_objects_cleaner {
+public:
+    typedef void (*clean_func)(T**);
+
+    sd_objects_cleaner(T **object_to_clean, clean_func func)
+    : object_(object_to_clean), clean_func_(func) {}
+    
+    ~sd_objects_cleaner(){
+        clean_func_(object_);
+    }
+
+private:
+    T **object_;
+    clean_func clean_func_;
+    
+    sd_objects_cleaner(sd_objects_cleaner const&) = delete;
+    sd_objects_cleaner& operator=(sd_objects_cleaner const&) = delete;
+};
 
 /**
  * @brief DBusAdapter Implementation class
@@ -91,6 +120,15 @@ private:
     static int incoming_bus_message_callback(
        sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
 
+    int method_reply_on_message(
+        sd_bus_message *message_to_reply_on,
+        sd_bus_error *ret_error,
+        const char *types_format, ... /*values*/);
+
+    int reply_error_on_message(
+        sd_bus_message *message_to_reply_on,
+        sd_bus_error *ret_error,
+        const CloudConnectStatus error);
 
     /**
      * @brief - process incoming RegisterResources message. parse JSON file and send it to CCRB.

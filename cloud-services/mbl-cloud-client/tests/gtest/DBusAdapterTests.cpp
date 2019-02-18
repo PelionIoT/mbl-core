@@ -411,3 +411,17 @@ TEST_F(SelfEventTest, with_adapter)
     ASSERT_EQ(adapter.run(stop_status), MblError::None);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
+
+
+
+
+TEST(MAXIM, test)
+{
+    GTEST_LOG_START_TEST;
+    ResourceBroker ccrb;
+    DBusAdapter adapter(ccrb);
+    MblError stop_status;
+
+    ASSERT_EQ(adapter.init(), MblError::None);
+    ASSERT_EQ(adapter.run(stop_status), MblError::None);
+}

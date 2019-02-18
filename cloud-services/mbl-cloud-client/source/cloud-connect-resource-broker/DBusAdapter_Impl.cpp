@@ -288,7 +288,7 @@ int DBusAdapterImpl::name_changed_match_callback_impl(
     // org.freedesktop.DBus.NameOwnerChanged
     // org.freedesktop.DBus.NameLost
     // org.freedesktop.DBus.NameAcquired
-    assert(0);
+    //assert(0);
 
     return (-EINVAL); // FIXME
 }
@@ -394,7 +394,6 @@ int DBusAdapterImpl::incoming_bus_message_callback(
     tr_debug("Enter");
     assert(userdata);
     int r = -1;
-    MblError status;
 
     //TODO - For all failues here, might need to send an error reply ONLY if the message is of 
     // kind method_call (can check that) check what is done in other implementations
@@ -455,17 +454,19 @@ int DBusAdapterImpl::incoming_bus_message_callback(
         message_type_to_str(type), sd_bus_message_get_sender(m));
 
     DBusAdapterImpl *impl = static_cast<DBusAdapterImpl*>(userdata);
-    if (sd_bus_message_is_method_call(m, 0, "RegisterResources")){
+    if (sd_bus_message_is_method_call(m, 0, DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME)){
         r = impl->process_message_RegisterResources(m, ret_error);
-        UNUSED(status); //FIXME
-        //TODO - handle return value and continue implementation
-        assert(0);
+        if(r < 0){
+            tr_error("process_message_RegisterResources failed!");
+            return (-EINVAL);
+        }
     }
-    else if (sd_bus_message_is_method_call(m, 0, "DeregisterResources")) {
+    else if (sd_bus_message_is_method_call(m, 0, DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME)) {
         r = impl->process_message_DeregisterResources(m, ret_error);
-        UNUSED(status); 
-        //TODO - handle return value and continue implementation
-        assert(0);
+        if(r < 0){
+            tr_error("process_message_DeregisterResources failed!");
+            return (-EINVAL);
+        }
     }
     else {
         //TODO - probably need to reply with error reply to sender?
@@ -476,6 +477,110 @@ int DBusAdapterImpl::incoming_bus_message_callback(
 
     return 0;
 }
+
+
+int DBusAdapterImpl::method_reply_on_message(
+    sd_bus_message *message_to_reply_on,
+    sd_bus_error *ret_error,
+    const char *types_format, ... /*values*/)
+{
+    UNUSED(ret_error);
+    UNUSED(types_format);
+    
+    tr_debug("Enter");
+    assert(message_to_reply_on);
+    
+    const char* api_name = sd_bus_message_get_member(message_to_reply_on);    
+    const char* sender_name = sd_bus_message_get_sender(message_to_reply_on);
+    UNUSED(sender_name);
+    sd_bus_message *reply = NULL;
+    sd_objects_cleaner<sd_bus_message> ref_cleaner (&reply, sd_bus_message_unrefp);
+ 
+    int r = sd_bus_message_new_method_return(message_to_reply_on, &reply);
+    if (r < 0){
+        tr_error("sd_bus_message_new_method_return failed(err=%d) in reply to %s", 
+                r, sender_name);  
+        return (-EINVAL);
+    }
+
+    va_list arg_list;
+    va_start(arg_list, types_format);
+
+    if(0 == strncmp(api_name, 
+                DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME, 
+                strlen(DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME))){
+        // we expect types_format = "us" for RegisterResources
+        uint32_t cc_status = va_arg( arg_list, uint32_t);
+        const char* access_token = va_arg( arg_list, const char*);
+        r = sd_bus_message_append(reply, types_format, cc_status, access_token);
+    } else if(0 == strncmp(api_name, 
+                       DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME, 
+                       strlen(DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME))){
+        // we expect types_format = "u" for DeregisterResources
+        uint32_t cc_status = va_arg( arg_list, uint32_t);
+        r = sd_bus_message_append(reply, types_format, cc_status);
+    } else {
+        tr_error("Unexpected api name (%s) in reply to %s", 
+                api_name, sender_name); 
+        assert(0);
+    }
+
+    va_end(arg_list);
+
+    if (r < 0){
+        tr_error("sd_bus_message_append with types_format=%s failed(err=%d) in reply to %s", 
+                types_format, r, sender_name);  
+        return (-EINVAL);
+    }
+    
+    r = sd_bus_send(connection_handle_, reply, NULL);
+    if (r < 0){
+        tr_error("sd_bus_send failed(err=%d) in reply to %s", r, sender_name);  
+        return (-EINVAL);
+    }
+
+    tr_debug("Reply on %s successfully sent to %s", api_name, sender_name);  
+
+    return 0;
+}
+
+int DBusAdapterImpl::reply_error_on_message(
+    sd_bus_message *message_to_reply_on,
+    sd_bus_error *ret_error,
+    const CloudConnectStatus error)
+{
+    UNUSED(ret_error);
+
+    tr_debug("Enter");
+    assert(message_to_reply_on);
+    const char* api_name = sd_bus_message_get_member(message_to_reply_on);    
+    const char* sender_name = sd_bus_message_get_sender(message_to_reply_on);
+    UNUSED(sender_name);
+    UNUSED(api_name);
+
+    sd_bus_message *reply = NULL;
+    sd_objects_cleaner<sd_bus_message> ref_cleaner (&reply, sd_bus_message_unrefp);
+ 
+    int r = sd_bus_message_new_method_errnof(
+        message_to_reply_on, &reply, (int)error, 
+        "%s", mbl::CloudConnectStatus_to_readable_string(error));
+    if (r < 0){
+        tr_error("sd_bus_message_new_method_errnof failed(err=%d) in reply error to %s",
+                r, sender_name);
+        return (-EINVAL);
+    }
+
+    r = sd_bus_send(connection_handle_, reply, NULL);
+    if (r < 0){
+        tr_error("sd_bus_send failed(err=%d) in reply error to %s", r, sender_name);  
+        return (-EINVAL);
+    }
+
+    tr_debug("Reply error API %s successfully sent to %s", api_name, sender_name);  
+
+    return 0;
+}
+
 
 // TODO - this function is incomplete!!
 int DBusAdapterImpl::process_message_RegisterResources(
@@ -489,6 +594,12 @@ int DBusAdapterImpl::process_message_RegisterResources(
         
     tr_info("Starting to process RegisterResources method call from sender %s",
         sd_bus_message_get_sender(m));
+
+    if (sd_bus_message_get_expect_reply(m) == 0) {
+        // reply to the message m is not expected.
+        tr_err("Unexpected message type: no reply expected");
+        return (-EINVAL);
+    }
 
     if (sd_bus_message_has_signature(m, "s") == false){
         tr_err("Unexpected signature %s", sd_bus_message_get_signature(m, 1));
@@ -504,24 +615,56 @@ int DBusAdapterImpl::process_message_RegisterResources(
         return (-EINVAL);
     }
      
-    // Register resources is an asynchronous process towards the cloud -> store handle and
-    // increase refcount
+    // TODO:
+    // validate app registered expected interface on bus? (use sd-bus track)
+
+    // call register_resources resource broker APi and handle output
+    CloudConnectStatus out_cc_reg_status = ERR_FAILED;
+    std::string out_access_token;
+    MblError mbl_reg_err = ccrb_.register_resources(
+        (uintptr_t)m, std::string(json_file_data), 
+        out_cc_reg_status, out_access_token);            
+
+    if(MblError::None != mbl_reg_err || is_CloudConnectStatus_error(out_cc_reg_status)){
+
+        CloudConnectStatus reg_status_to_send = ERR_INTERNAL_ERROR;
+        if(MblError::None != mbl_reg_err){
+            // we have internal error in resource broker 
+            tr_error("register_resources failed with MblError %s", MblError_to_str(mbl_reg_err));
+        }else{
+            // we have cloud connect related error in resource broker 
+            tr_error("register_resources failed with cloud connect error %s", 
+                CloudConnectStatus_stringify(out_cc_reg_status));
+            reg_status_to_send = out_cc_reg_status;
+        }
+
+        r = reply_error_on_message(m, ret_error, reg_status_to_send);
+        if(r < 0){
+            tr_error("reply_error_on_message failed!");
+            return (-EINVAL);
+        }
+
+        // altough register_resources failed, process_message_RegisterResources succeeded 
+        return 0;
+    }
+
+    r = method_reply_on_message(m, ret_error, "us", out_cc_reg_status, out_access_token.c_str());
+    if(r < 0){
+        tr_error("method_reply_on_message failed!");
+        return (-EINVAL);
+    }
+
+    // We have got success from register_resources. Register resources is an asynchronous 
+    // process towards the cloud, so we need to store handle and increase refcount
     sd_bus_message_ref(m);
     if (pending_messages_.insert(m).second == false){
         tr_error("pending_messages_.insert failed!");
         return (-EINVAL);
     }  
 
-    // TODO:
-    // validate app registered expected interface on bus? (use sd-bus track)
-        
-    //TODO - call CCRB    
-    //ccrb_.register_resources();            
-
-    //TODO - handle reply    
-    assert(0);
     return 0;
 }
+
 
 int DBusAdapterImpl::process_message_DeregisterResources(
     sd_bus_message *m, 
@@ -549,19 +692,49 @@ int DBusAdapterImpl::process_message_DeregisterResources(
         return (-EINVAL);
     }
      
-    // Deregister resources is an asynchronous process towards the cloud -> store handle and
-    // increase refcount
+    // call deregister_resources resource broker APi and handle output
+    CloudConnectStatus out_cc_dereg_status = ERR_FAILED;
+    MblError mbl_dereg_err = ccrb_.deregister_resources(
+        (uintptr_t)m, std::string(access_token), 
+        out_cc_dereg_status);            
+
+    if(MblError::None != mbl_dereg_err || is_CloudConnectStatus_error(out_cc_dereg_status)){
+
+        CloudConnectStatus dereg_status_to_send = ERR_INTERNAL_ERROR;
+        if(MblError::None != mbl_dereg_err){
+            // we have internal error in resource broker 
+            tr_error("deregister_resources failed with MblError %s", MblError_to_str(mbl_dereg_err));
+        }else{
+            // we have cloud connect related error in resource broker 
+            tr_error("deregister_resources failed with cloud connect error %s", 
+                CloudConnectStatus_stringify(out_cc_dereg_status));
+            dereg_status_to_send = out_cc_dereg_status;
+        }
+
+        r = reply_error_on_message(m, ret_error, dereg_status_to_send);
+        if(r < 0){
+            tr_error("reply_error_on_message failed!");
+            return (-EINVAL);
+        }
+
+        // altough deregister_resources failed, process_message_DeregisterResources succeeded 
+        return 0;
+    }
+
+    r = method_reply_on_message(m, ret_error, "u", out_cc_dereg_status);
+    if(r < 0){
+        tr_error("method_reply_on_message failed!");
+        return (-EINVAL);
+    }
+
+    // We have got success from deregister_resources. Deregister resources is an asynchronous 
+    // process towards the cloud, so we need to store handle and increase refcount
     sd_bus_message_ref(m);
     if (pending_messages_.insert(m).second == false){
         tr_error("pending_messages_.insert failed!");
         return (-EINVAL);
     }  
-        
-    //TODO call CCRB    
-    //ccrb_.deregister_resources();            
 
-    //TODO - handle reply    
-    assert(0);
     return 0;
 }
 

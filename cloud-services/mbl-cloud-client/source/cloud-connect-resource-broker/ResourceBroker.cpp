@@ -189,14 +189,35 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*)(uintptr_t)status); // pthread_exit does "return"
 }
 
+const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        case STATUS_SUCCESS: 
+            return "STATUS SUCCESS";
+
+        case ERR_FAILED: 
+            return "ERROR FAILED";
+
+        case ERR_INTERNAL_ERROR:
+            return "INTERNAL ERROR IN CLOUD CONNECT INFRASTRUCTURE";
+
+        default:
+            return "Unknown Cloud Connect Status or Error";
+    }
+}
 
 MblError ResourceBroker::register_resources(
         const uintptr_t /*unused*/, 
-        const std::string & /*unused*/,
-        CloudConnectStatus & /*unused*/,
-        std::string & /*unused*/)
+        const std::string & json/*unused*/,
+        CloudConnectStatus & status /*unused*/,
+        std::string &token /*unused*/)
 {
     tr_debug("Enter");
+
+    status = (CloudConnectStatus)atoi(json.c_str());
+    token = std::string(json) + std::string(json) + std::string(json) + std::string(json);
+
     // empty for now
     return Error::None;
 }
@@ -204,10 +225,11 @@ MblError ResourceBroker::register_resources(
 
 MblError ResourceBroker::deregister_resources(
         const uintptr_t /*unused*/, 
-        const std::string & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+        const std::string & token/*unused*/,
+        CloudConnectStatus & status /*unused*/)
 {
     tr_debug("Enter");    
+    status = (CloudConnectStatus)atoi(token.c_str());
     // empty for now
     return Error::None;
 }

@@ -17,11 +17,21 @@ enum CloudConnectStatus {
 
     // Error range
     // Start all enums in this range with "ERR_" prefix
-    ERR_FAILED  = 0x1000,
+    FIRST_ERROR = 0x1000,
+    ERR_FAILED  = FIRST_ERROR,
+    ERR_INTERNAL_ERROR = 0x1001,
+    
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
 
+static inline bool is_CloudConnectStatus_not_error(const CloudConnectStatus val){
+    return val >= STATUS_SUCCESS && val < FIRST_ERROR;
+}
+
+static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
+    return val >= FIRST_ERROR;
+}
 
 /**
  * @brief Cloud Connect resource data type.

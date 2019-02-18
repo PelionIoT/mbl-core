@@ -83,20 +83,7 @@ int64_t ResourceData::get_value_integer() const
 
 }
 
-const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
-{
-    switch (status)
-    {
-        case STATUS_SUCCESS: 
-            return "STATUS SUCCESS";
 
-        case ERR_FAILED: 
-            return "ERROR FAILED";
-
-        default:
-            return "Unknown Cloud Connect Status or Error";
-    }
-}
 
 const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
 {
@@ -104,6 +91,7 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
     {
         RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
         RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
+        RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
 
         default:
             return "Unknown CloudConnectStatus value";
