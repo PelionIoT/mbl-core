@@ -24,8 +24,12 @@
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
 
-#define DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME     "RegisterResources"
-#define DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME   "DeregisterResources"
+#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME     "RegisterResources"
+#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME   "DeregisterResources"
+
+#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME     "RegisterResourcesStatus"
+#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME   "DeregisterResourcesStatus"
+
 
 namespace mbl {
 
@@ -52,6 +56,8 @@ private:
     
     sd_objects_cleaner(sd_objects_cleaner const&) = delete;
     sd_objects_cleaner& operator=(sd_objects_cleaner const&) = delete;
+    sd_objects_cleaner(sd_objects_cleaner&&) = delete;
+    sd_objects_cleaner& operator = (sd_objects_cleaner&&) = delete; 
 };
 
 /**
@@ -129,6 +135,11 @@ private:
         sd_bus_message *message_to_reply_on,
         sd_bus_error *ret_error,
         const CloudConnectStatus error);
+
+    int emit_signal(
+        sd_bus_message *message_to_reply_on, 
+        const char *signal_name, 
+        const CloudConnectStatus status);
 
     /**
      * @brief - process incoming RegisterResources message. parse JSON file and send it to CCRB.
@@ -358,53 +369,18 @@ public:
      */
     MblError stop(MblError stop_status);
     
-    // TODO - IMPLEMENT
     /**
-     * @brief   ===TBD===
+     * @brief 
      * 
      * @param ipc_request_handle 
+     * @param signal_name 
      * @param reg_status 
      * @return MblError 
      */
-    MblError handle_ccrb_RegisterResources_status_update(
-        const uintptr_t ipc_request_handle, 
+    MblError handle_ccrb_async_process_status_update(
+        const uintptr_t ipc_request_handle,
+        const char* signal_name, 
         const CloudConnectStatus reg_status);
-
-    // TODO - IMPLEMENT
-    /**
-     * @brief  ===TBD===
-     * 
-     * @param ipc_request_handle 
-     * @param dereg_status 
-     * @return MblError 
-     */
-    MblError handle_ccrb_DeregisterResources_status_update(
-        const uintptr_t ipc_request_handle, 
-        const CloudConnectStatus dereg_status);
-
-    // TODO - IMPLEMENT
-    /**
-     * @brief ===TBD===
-     * 
-     * @param ipc_request_handle 
-     * @param add_status 
-     * @return MblError 
-     */
-    MblError handle_ccrb_AddResourceInstances_status_update(
-        const uintptr_t ipc_request_handle, 
-        const CloudConnectStatus add_status);
-
-    // TODO - IMPLEMENT
-    /**
-     * @brief  ===TBD===
-     * 
-     * @param ipc_request_handle 
-     * @param remove_status 
-     * @return MblError 
-     */
-    MblError handle_ccrb_RemoveResourceInstances_status_update(
-        const uintptr_t ipc_request_handle, 
-        const CloudConnectStatus remove_status);
 
     using DBusAdapterState = State::eState;
 };

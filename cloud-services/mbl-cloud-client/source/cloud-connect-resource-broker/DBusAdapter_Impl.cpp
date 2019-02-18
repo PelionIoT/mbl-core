@@ -454,14 +454,14 @@ int DBusAdapterImpl::incoming_bus_message_callback(
         message_type_to_str(type), sd_bus_message_get_sender(m));
 
     DBusAdapterImpl *impl = static_cast<DBusAdapterImpl*>(userdata);
-    if (sd_bus_message_is_method_call(m, 0, DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME)){
+    if (sd_bus_message_is_method_call(m, 0, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)){
         r = impl->process_message_RegisterResources(m, ret_error);
         if(r < 0){
             tr_error("process_message_RegisterResources failed!");
             return (-EINVAL);
         }
     }
-    else if (sd_bus_message_is_method_call(m, 0, DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME)) {
+    else if (sd_bus_message_is_method_call(m, 0, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME)) {
         r = impl->process_message_DeregisterResources(m, ret_error);
         if(r < 0){
             tr_error("process_message_DeregisterResources failed!");
@@ -505,17 +505,16 @@ int DBusAdapterImpl::method_reply_on_message(
 
     va_list arg_list;
     va_start(arg_list, types_format);
-
     if(0 == strncmp(api_name, 
-                DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME, 
-                strlen(DBUS_CLOUD_CONNECT_REGISTER_RESOURCES_API_NAME))){
+                DBUS_CC_REGISTER_RESOURCES_METHOD_NAME, 
+                strlen(DBUS_CC_REGISTER_RESOURCES_METHOD_NAME))){
         // we expect types_format = "us" for RegisterResources
         uint32_t cc_status = va_arg( arg_list, uint32_t);
         const char* access_token = va_arg( arg_list, const char*);
         r = sd_bus_message_append(reply, types_format, cc_status, access_token);
     } else if(0 == strncmp(api_name, 
-                       DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME, 
-                       strlen(DBUS_CLOUD_CONNECT_DEREGISTER_RESOURCES_API_NAME))){
+                       DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME, 
+                       strlen(DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))){
         // we expect types_format = "u" for DeregisterResources
         uint32_t cc_status = va_arg( arg_list, uint32_t);
         r = sd_bus_message_append(reply, types_format, cc_status);
@@ -524,7 +523,6 @@ int DBusAdapterImpl::method_reply_on_message(
                 api_name, sender_name); 
         assert(0);
     }
-
     va_end(arg_list);
 
     if (r < 0){
@@ -580,6 +578,8 @@ int DBusAdapterImpl::reply_error_on_message(
 
     return 0;
 }
+
+
 
 
 // TODO - this function is incomplete!!
@@ -917,75 +917,67 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
     return status;
 }
 
-MblError DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(
+
+MblError DBusAdapterImpl::handle_ccrb_async_process_status_update(
     const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus reg_status)
+    const char* signal_name,
+    const CloudConnectStatus status)
 {
-    //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(reg_status);
     tr_debug("Enter");   
-    assert(0);
+    assert(ipc_request_handle);
+    assert(signal_name);
 
+    sd_bus_message *signal = NULL;
+    sd_objects_cleaner<sd_bus_message> sig_cleaner (&signal, sd_bus_message_unrefp);
+    
+    sd_bus_message *message_to_signal_on = (sd_bus_message *)ipc_request_handle;
+    sd_objects_cleaner<sd_bus_message> mess_cleaner (&message_to_signal_on, sd_bus_message_unrefp);
+    
     if (state_.is_not_equal(DBusAdapterState::RUNNING)){
         tr_error("Unexpected state (expected %s), returning error %s", 
             state_.to_string(), MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
-    return MblError::None;
-}
+    
+    // try find message in pending_messages
+    auto it = pending_messages_.find(message_to_signal_on);
 
-MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
-    const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus dereg_status)
-{
-    //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(dereg_status);
-    tr_debug("Enter");
-    assert(0);
+    // if not found - exit
 
-    if (state_.is_not_equal(DBusAdapterState::RUNNING)){
-        tr_error("Unexpected state (expected %s), returning error %s", 
-            state_.to_string(), MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
+    // remove message from pending messages
+    pending_messages_.erase (it);
+
+    int r = sd_bus_message_new_signal(
+        connection_handle_, &signal, 
+        DBUS_CLOUD_CONNECT_OBJECT_PATH, 
+        DBUS_CLOUD_CONNECT_INTERFACE_NAME, 
+        signal_name);
+    if(r < 0){
+        tr_error("sd_bus_message_new_signal failed!");
+        return MblError::DBA_SdBusCallFailure;
     }
-    return MblError::None;
-}
 
-MblError DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(
-    const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus add_status)
-{
-    //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(add_status);    
-    tr_debug("Enter");
-    assert(0);
-
-    if (state_.is_not_equal(DBusAdapterState::RUNNING)){
-        tr_error("Unexpected state (expected %s), returning error %s", 
-            state_.to_string(), MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
+    // set destination of signal message
+    const char *signal_dest = sd_bus_message_get_sender(message_to_signal_on);
+    r = sd_bus_message_set_destination(signal, signal_dest);
+    if (r < 0){
+        tr_error("sd_bus_message_set_destination failed(err=%d)", r);  
+        return MblError::DBA_SdBusCallFailure;
     }
-    return MblError::None;
-}
 
-MblError DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
-    const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus remove_status)
-{
-    //TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(remove_status);
-    tr_debug("Enter");
-    assert(0);
-
-    if (state_.is_not_equal(DBusAdapterState::RUNNING)){
-        tr_error("Unexpected state (expected %s), returning error %s", 
-            state_.to_string(), MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
+    // append status
+    r = sd_bus_message_append(signal, "u", status);
+    if (r < 0){
+        tr_error("sd_bus_message_append %s failed(err=%d)", "u", r);  
+        return MblError::DBA_SdBusCallFailure;
     }
+
+    r = sd_bus_send(connection_handle_, signal, NULL);
+    if (r < 0){
+        tr_error("signal_on_async_process_finished failed!");
+        return MblError::DBA_SdBusCallFailure;
+    }
+
     return MblError::None;
 }
 

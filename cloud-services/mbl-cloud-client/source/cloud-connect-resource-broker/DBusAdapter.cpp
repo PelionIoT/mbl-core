@@ -71,7 +71,10 @@ MblError DBusAdapter::update_registration_status(
         const CloudConnectStatus reg_status)
 {
     tr_debug("Enter");
-    return impl_->handle_ccrb_RegisterResources_status_update(ipc_request_handle, reg_status); 
+    assert(impl_);
+    return impl_->handle_ccrb_async_process_status_update(
+        ipc_request_handle, 
+        DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status); 
 }
 
 MblError DBusAdapter::update_deregistration_status(
@@ -79,23 +82,10 @@ MblError DBusAdapter::update_deregistration_status(
     const CloudConnectStatus dereg_status)
 {
     tr_debug("Enter");
-    return impl_->handle_ccrb_DeregisterResources_status_update(ipc_request_handle, dereg_status);
-}
-
-MblError DBusAdapter::update_add_resource_instance_status(
-    const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus add_status)
-{
-    tr_debug("Enter");
-    return impl_->handle_ccrb_AddResourceInstances_status_update(ipc_request_handle, add_status);
-}
-
-MblError DBusAdapter::update_remove_resource_instance_status(
-    const uintptr_t ipc_request_handle, 
-    const CloudConnectStatus remove_status)
-{    
-    tr_debug("Enter");
-    return impl_->handle_ccrb_RemoveResourceInstances_status_update(ipc_request_handle, remove_status);
+    assert(impl_);
+    return impl_->handle_ccrb_async_process_status_update(
+        ipc_request_handle, 
+        DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status); 
 }
 
 } // namespace mbl {
