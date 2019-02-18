@@ -51,42 +51,42 @@ MblError DBusAdapter::de_init()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    //    static bool once = true; //////////////////////////////////////////////////////////////////////////// REMOVE BELOW COMMENTED CODE BEFORE PR
+    static bool once = true; //////////////////////////////////////////////////////////////////////////// REMOVE BELOW COMMENTED CODE BEFORE PR
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_) {
 
-        // if(once) {
-        //     sleep(30); //10 is enough
+        if(once) {
+            sleep(30); //10 is enough
 
-        //     CloudConnectStatus out_status;
-        //     std::string out_access_token;
+            CloudConnectStatus out_status;
+            std::string out_access_token;
 
-        //     //REGISTER!
-        //     const std::string json_string1 = R"({"77777" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
-        //     uintptr_t ipc_conn_handle = 77777;
-        //     tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)ipc_conn_handle);
-        //     MblError status  = ccrb_.register_resources(ipc_conn_handle,json_string1, out_status, out_access_token);
+            //REGISTER!
+            const std::string json_string1 = R"({"77777" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
+            uintptr_t ipc_conn_handle = 77777;
+            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)ipc_conn_handle);
+            MblError status  = ccrb_.register_resources(ipc_conn_handle,json_string1, out_status, out_access_token);
             
-        //     if(Error::None == status) {
+            if(Error::None == status) {
 
-        //         tr_info("%s @@@@@@ wait 20 seconds before deregistring", __PRETTY_FUNCTION__);
-        //         sleep(20); //TO AVOID REGISTRATION IN PROGRESS ERROR
+                tr_info("%s @@@@@@ wait 20 seconds before deregistring", __PRETTY_FUNCTION__);
+                sleep(20); //TO AVOID REGISTRATION IN PROGRESS ERROR
 
-        //         //DEREGISTER!
-        //         tr_info("%s @@@@@@ Call de-register_resources", __PRETTY_FUNCTION__);
-        //         status = ccrb_.deregister_resources(
-        //             ipc_conn_handle, 
-        //             out_access_token,
-        //             out_status);
+                //DEREGISTER!
+                tr_info("%s @@@@@@ Call de-register_resources", __PRETTY_FUNCTION__);
+                status = ccrb_.deregister_resources(
+                    ipc_conn_handle, 
+                    out_access_token,
+                    out_status);
 
-        //         //tr_info("%s @@@@@@ wait 30 seconds before SETUP", __PRETTY_FUNCTION__);
-        //         //sleep(30); //TO AVOID DEREGISTRATION IN PROGRESS ERROR
-        //         //ccrb_.setup(out_access_token);
-        //     }
-        //     once = false;
-        // } else {
-        //     sleep(1); // 1 seconds
-        // }
+                //tr_info("%s @@@@@@ wait 30 seconds before SETUP", __PRETTY_FUNCTION__);
+                //sleep(30); //TO AVOID DEREGISTRATION IN PROGRESS ERROR
+                //ccrb_.setup(out_access_token);
+            }
+            once = false;
+        } else {
+            sleep(1); // 1 seconds
+        }
     }
 
     tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);
