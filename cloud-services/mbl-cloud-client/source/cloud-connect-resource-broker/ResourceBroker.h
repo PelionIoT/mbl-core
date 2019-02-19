@@ -31,8 +31,8 @@ namespace mbl {
  */
 class ResourceBroker {
 
+friend ::ResourceBrokerTester;
 friend DBusAdapter;
-friend ResourceBrokerTester;
 friend ApplicationEndpoint;
 
 public:
@@ -309,7 +309,7 @@ private:
 
     //void registration_updated_cb(int token);
 
-private:
+ private:
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
     ResourceBroker(const ResourceBroker&) = delete;
@@ -364,7 +364,7 @@ private:
      */
     void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////    
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;

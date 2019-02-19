@@ -96,4 +96,9 @@ bool ApplicationEndpoint::is_registered()
     return registered_;
 }
 
+M2MObjectList& ApplicationEndpoint::get_m2m_object_list()
+{
+    return m2m_object_list_;
+}
+
 } // namespace mbl

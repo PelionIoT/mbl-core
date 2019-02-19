@@ -337,7 +337,7 @@ MblError ResourceBroker::register_resources(
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration
-    add_objects_func_(app_endpoint->m2m_object_list_);
+    add_objects_func_(app_endpoint->get_m2m_object_list());
     register_update_func_();
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;

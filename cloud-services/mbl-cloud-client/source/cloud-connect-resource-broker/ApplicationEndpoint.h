@@ -23,16 +23,16 @@
 #include <string>
 #include <memory>
 
+class ResourceBrokerTester;
 
 namespace mbl {
 
-class ResourceBrokerTester;
-//class ResourceBroker;
+class ResourceBroker;
 
 class ApplicationEndpoint {
 
-friend ResourceBrokerTester;
-//friend ResourceBroker;
+friend ::ResourceBrokerTester;
+friend ResourceBroker;
 
 public:
 
@@ -61,10 +61,9 @@ public:
      */
     void handle_error_cb(const int cloud_client_code);
 
-    M2MObjectList m2m_object_list_;
-    RBM2MObjectList rbm2m_object_list_;
-
     bool is_registered();
+
+    M2MObjectList& get_m2m_object_list();
 
 private:
 
@@ -76,6 +75,9 @@ private:
     ResourceBroker &ccrb_;
 
     bool registered_; //TODO: use a more descriptive states (e.g. for deregister as well?)
+
+    M2MObjectList m2m_object_list_;
+    RBM2MObjectList rbm2m_object_list_;
 };
 
 } // namespace mbl
