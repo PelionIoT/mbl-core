@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -13,13 +13,11 @@ class TestMblAppUpdateManager:
 
     def test_app_update_manager_mbl_subpackage(self):
         """
-        Test that App Update Manager is a subpackage of the "mbl" package.
-
-        The App Update Manager subpackage should be accessible via the "mbl"
-        namespace.
+        Test that all modules can be imported as part of the `mbl` namespace
         """
         # Assert that the package can be imported as a subpackage to
+        assert importlib.__import__("mbl.app_update_manager.cli") is not None
         assert (
-            importlib.__import__("mbl.app_update_manager.app_update_manager")
-            is not None
+            importlib.__import__("mbl.app_update_manager.manager") is not None
         )
+        assert importlib.__import__("mbl.app_update_manager.utils") is not None

@@ -23,7 +23,7 @@ wait_for_app_update_file() {
 }
 
 update_apps() {
-    mbl-app-update-manager --install-packages "$(cat /scratch/firmware_path)"
+    mbl-app-update-manager "$(cat /scratch/firmware_path)"
     printf "%s\n" "$?" > /scratch/app_update_rc
     rm /scratch/firmware_path
     touch "/scratch/done_app_update"
