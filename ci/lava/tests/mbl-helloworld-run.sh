@@ -30,12 +30,12 @@ else
     $mbl_command put ./ci/lava/dependencies/check_container.py /home/app
 
     # Now install the package - this should cause it to run
-    $mbl_command shell "mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+    $mbl_command shell "mbl-app-update-manager /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
 
     # Check it is executing as expected
     $mbl_command shell "python3 /home/app/check_container.py user-sample-app-package"
 
-    # Extract the log file from the device. Nothe that the parsing of the log 
+    # Extract the log file from the device. Note that the parsing of the log
     # file could be done on the DUT but doing it this way tests the mbl-cli get
     # functionality.
     $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
@@ -54,7 +54,7 @@ else
 
 
     # Attempt to cleanup after the run
-    $mbl_command shell "mbl-app-manager -r user-sample-app-package"
+    $mbl_command shell "mbl-app-manager remove user-sample-app-package"
     $mbl_command shell "rm /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
