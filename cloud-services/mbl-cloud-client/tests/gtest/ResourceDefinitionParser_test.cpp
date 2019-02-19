@@ -204,7 +204,7 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
 
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
-    const std::string json_string = VALID_JASON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
+    const std::string json_string = VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
     mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::None);
 
@@ -276,7 +276,7 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     tr_debug("%s", __PRETTY_FUNCTION__);
     M2MObjectList m2m_object_list;
     mbl::RBM2MObjectList rbm2m_object_list;
-    const std::string json_string = VALID_JASON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     mbl::ResourceDefinitionParser resource_parser;
     ASSERT_TRUE(resource_parser.build_object_list(json_string, m2m_object_list, rbm2m_object_list) == mbl::Error::None);
 
