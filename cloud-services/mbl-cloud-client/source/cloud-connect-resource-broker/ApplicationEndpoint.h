@@ -29,7 +29,9 @@ namespace mbl {
 class ResourceBroker;
 
 class ApplicationEndpoint {
+
 friend ResourceBroker;
+
 public:
 
     ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb);
@@ -42,8 +44,6 @@ public:
     uintptr_t get_ipc_conn_handle() const;
 
     std::string get_access_token() const;
-
-    //void regsiter_callback_handlers();
 
     M2MObjectList m2m_object_list_;
     RBM2MObjectList rbm2m_object_list_;
@@ -73,7 +73,7 @@ private:
     // reference class member satisfy this condition.   
     ResourceBroker &ccrb_;
 
-   bool registered_; //TODO: use a more descriptive states (e.g. for deregister as well?)
+    bool registered_; //TODO: use a more descriptive states (e.g. for deregister as well?)
 };
 
 } // namespace mbl

@@ -39,15 +39,6 @@ ApplicationEndpoint::~ApplicationEndpoint()
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-// void ApplicationEndpoint::regsiter_callback_handlers()
-// {
-//     tr_debug("%s", __PRETTY_FUNCTION__);
-//     if(ccrb_.cloud_client_ != nullptr) {
-//         ccrb_.cloud_client_->on_registration_updated(this, &ApplicationEndpoint::handle_register_cb);
-//         ccrb_.cloud_client_->on_error(this, &ApplicationEndpoint::handle_error_cb);
-//     }
-// }
-
 MblError ApplicationEndpoint::init(const std::string json_string)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);

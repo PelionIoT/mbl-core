@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "cloud-connect-resource-broker/ResourceBroker.h"
+//#include "cloud-connect-resource-broker/DBusAdapter.h"
 #include "MblError.h"
 #include "log.h"
 #include "mbed-trace/mbed_trace.h"
@@ -26,7 +27,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 
-class ResourceBrokerTester {
+class ResourceBrokerTester /* : public DBusAdapter */{
 
 public:
     
@@ -34,7 +35,6 @@ public:
     ~ResourceBrokerTester();
 
     mbl::MblError init();
-    void regsiter_callback_handlers();
 
     void add_objects(const M2MObjectList& object_list);
     void register_update();
@@ -44,6 +44,11 @@ public:
         const std::string &appl_resource_definition_json,
         CloudConnectStatus &out_status,
         std::string &out_access_token);
+
+    // virtual mbl::MblError update_registration_status(
+    //     const uintptr_t ipc_conn_handle, 
+    //     const CloudConnectStatus reg_status);
+
 
 private:
 
@@ -63,22 +68,14 @@ ResourceBrokerTester::~ResourceBrokerTester()
 mbl::MblError ResourceBrokerTester::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    //return cloud_connect_resource_broker_.init();
-
-    // Set function pointers to point to this class
-    // This part should come after cloud_connect_resource_broker_.init()
-
+    // Set REsource Broker function pointers to point to this class instead of Mbed Client
+    // This replaces what cloud_connect_resource_broker_.init() does so dont call it...
     cloud_connect_resource_broker_.register_update_func_ = std::bind(&ResourceBrokerTester::register_update, this);
     cloud_connect_resource_broker_.add_objects_func_ = std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::add_objects), this, std::placeholders::_1);
-    cloud_connect_resource_broker_.regsiter_callback_handlers_func_ = std::bind(&ResourceBrokerTester::regsiter_callback_handlers, this);
 
     return mbl::Error::None;
 }
 
-void ResourceBrokerTester::regsiter_callback_handlers()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-}
 void ResourceBrokerTester::add_objects(const M2MObjectList& /*object_list*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -96,6 +93,13 @@ void ResourceBrokerTester::register_update()
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
+// mbl::MblError ResourceBrokerTester::update_registration_status(
+//     const uintptr_t ipc_conn_handle, 
+//     const CloudConnectStatus reg_status)
+// {
+    
+// }
+
 mbl::MblError ResourceBrokerTester::register_resources(
     const uintptr_t ipc_conn_handle, 
     const std::string &appl_resource_definition_json,
@@ -103,11 +107,45 @@ mbl::MblError ResourceBrokerTester::register_resources(
     std::string &out_access_token)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    return cloud_connect_resource_broker_.register_resources(
+    mbl::MblError status = cloud_connect_resource_broker_.register_resources(
     ipc_conn_handle, 
     appl_resource_definition_json,
     out_status,
     out_access_token);
+
+    if(mbl::Error::None != status) {
+        tr_error("%s: register_resources failed with error: %s",
+            __PRETTY_FUNCTION__,
+            mbl::MblError_to_str(status));
+        return status;
+    }
+
+    //Call Application Endpoint to notify registration was successful
+    mbl::ResourceBroker::SPApplicationEndpoint app_endpoint = 
+        cloud_connect_resource_broker_.app_endpoints_map_[out_access_token];
+
+    // Make sure application is not yet registered
+    if(app_endpoint->is_registered()) {
+        tr_error("%s: Application (access_token: %s) should have not marked as registered.",
+            __PRETTY_FUNCTION__,
+            out_access_token.c_str());
+        return mbl::Error::Unknown;
+    }
+
+    tr_debug("%s: Notify Application (access_token: %s) that registration was successful",
+        __PRETTY_FUNCTION__,
+        out_access_token.c_str());
+
+    //app_endpoint->handle_register_cb();
+
+    if(!app_endpoint->is_registered()) {
+        tr_error("%s: Application (access_token: %s) should have been marked as registered.",
+            __PRETTY_FUNCTION__,
+            out_access_token.c_str());
+        return mbl::Error::Unknown;
+    }
+
+    return mbl::Error::None;
 }
 
 

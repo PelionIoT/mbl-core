@@ -32,8 +32,8 @@ namespace mbl {
 class ResourceBroker {
 
 friend DBusAdapter;
-friend ApplicationEndpoint;
 friend ResourceBrokerTester;
+friend ApplicationEndpoint;
 
 public:
     ResourceBroker();
@@ -383,8 +383,6 @@ private:
 
     std::function<void()> register_update_func_;
     std::function<void(const M2MObjectList& object_list)> add_objects_func_;
-    std::function<void()> regsiter_callback_handlers_func_;    
-
 };
 
 } // namespace mbl

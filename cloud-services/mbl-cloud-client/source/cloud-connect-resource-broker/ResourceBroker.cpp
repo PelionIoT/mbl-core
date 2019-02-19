@@ -128,13 +128,12 @@ MblError ResourceBroker::init()
     }
 
     // Set function pointers to point to mbed_client functions
-    // In gtest our friend test class will override these pointers to get all teh calls
+    // In gtest our friend test class will override these pointers to get all the calls
     register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
     add_objects_func_ = std::bind(static_cast<void(MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects), cloud_client_, std::placeholders::_1);
-    regsiter_callback_handlers_func_ = std::bind(&ResourceBroker::regsiter_callback_handlers, this);
 
     // Register Cloud client callback:
-    regsiter_callback_handlers_func_();
+    regsiter_callback_handlers();
 
     return status;
 }
@@ -197,15 +196,18 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callbacks functions that are being called directly from Mbed CLient CLient
-void ResourceBroker::regsiter_callback_handlers() // NOTE! do not call directly, use regsiter_callback_handlers_func_
+void ResourceBroker::regsiter_callback_handlers()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     // Resource broker will now get Mbed cloud client callbacks on the following cases:
     // 1. Registration update
     // 2. Error occurred
-    cloud_client_->on_registration_updated(this, &ResourceBroker::handle_registration_updated_cb);
-    cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
+
+    if(cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr    
+        cloud_client_->on_registration_updated(this, &ResourceBroker::handle_registration_updated_cb);
+        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
+    }
 }
 
 void ResourceBroker::handle_registration_updated_cb()
@@ -243,7 +245,7 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     }
         
     // Return registration updated callback to CCRB
-    regsiter_callback_handlers_func_();
+    regsiter_callback_handlers();
 
     // Mark that registration is finished
     registration_in_progress_.store(false);
@@ -265,7 +267,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
     SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
     
     // Send the response to adapter:
-    if(app_endpoint->is_registered()) { 
+    if(app_endpoint->is_registered()) {
         //TODO: add call to update_deregistration_status when deregister is implemented
         tr_error("%s: Application (access_token: %s) is already registered.", __PRETTY_FUNCTION__, access_token.c_str());
     } else {
@@ -326,8 +328,10 @@ MblError ResourceBroker::register_resources(
     registration_in_progress_.store(true);
 
     // Register the next cloud client callbacks to app_endpoint
-    cloud_client_->on_registration_updated(&(*app_endpoint), &ApplicationEndpoint::handle_register_cb);
-    cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
+    if(cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr
+        cloud_client_->on_registration_updated(&(*app_endpoint), &ApplicationEndpoint::handle_register_cb);
+        cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
+    }
 
     //app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
