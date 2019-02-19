@@ -114,54 +114,9 @@ class AppUpdateManager:
             )
         )
 
-        # Stop running version of application(s)
-        for app in self._installed_apps:
-            log.info(
-                "Stop running instance of '{}' if any"
-                " exist before running the new version".format(app.name)
-            )
-            try:
-                alm.terminate_app(app.name)
-            except Exception as error:
-                try:
-                    log.error(
-                        "Rollback applications as failed"
-                        " to stop '{}'".format(app.name)
-                    )
-                    self._rollback_apps()
-                    raise error
-                except Exception as error:
-                    # TODO: handle failure to rollback
-                    raise error
-
-        # Run newly installed application(s) version
-        for app in self._installed_apps:
-            log.info(
-                "Run '{}' from '{}'".format(app.name, app.new_bundle_path)
-            )
-            try:
-                alm.run_app(app.name, app.new_bundle_path)
-            except (
-                alc.ContainerCreationError,
-                alc.ContainerStartError,
-            ) as error:
-                try:
-                    log.error(
-                        "Rollback applications as failed to start"
-                        "'{}' from '{}'".format(app.name, app.new_bundle_path)
-                    )
-                    self._rollback_apps()
-                    raise error
-                except Exception as error:
-                    # TODO: handle failure to rollback
-                    raise error
-
-        # Remove previous application(s) installation
-        try:
-            self._remove_apps_bundles("cur_bundle_path")
-        except apm.AppUninstallError as error:
-            # TODO: handle failure to remove old version
-            raise error
+        self._stop_running_versions()
+        self._run_new_installed_versions()
+        self._remove_previous_versions()
 
     # --------------------------- Private Methods -----------------------------
 
@@ -346,6 +301,58 @@ class AppUpdateManager:
                 )
                 continue
             self.app_mng.remove_app(app.name, getattr(app, path_attr))
+
+    def _stop_running_versions(self):
+        """Stop running version of application(s)."""
+        for app in self._installed_apps:
+            log.info(
+                "Stop running instance of '{}' if any"
+                " exist before running the new version".format(app.name)
+            )
+            try:
+                alm.terminate_app(app.name)
+            except Exception as error:
+                try:
+                    log.error(
+                        "Rollback applications as failed"
+                        " to stop '{}'".format(app.name)
+                    )
+                    self._rollback_apps()
+                    raise error
+                except Exception as error:
+                    # TODO: handle failure to rollback
+                    raise error
+
+    def _run_new_installed_versions(self):
+        # Run newly installed application(s) version
+        for app in self._installed_apps:
+            log.info(
+                "Run '{}' from '{}'".format(app.name, app.new_bundle_path)
+            )
+            try:
+                alm.run_app(app.name, app.new_bundle_path)
+            except (
+                alc.ContainerCreationError,
+                alc.ContainerStartError,
+            ) as error:
+                try:
+                    log.error(
+                        "Rollback applications as failed to start"
+                        "'{}' from '{}'".format(app.name, app.new_bundle_path)
+                    )
+                    self._rollback_apps()
+                    raise error
+                except Exception as error:
+                    # TODO: handle failure to rollback
+                    raise error
+
+    def _remove_previous_versions(self):
+        """Remove previous application(s) installation."""
+        try:
+            self._remove_apps_bundles("cur_bundle_path")
+        except apm.AppUninstallError as error:
+            # TODO: handle failure to remove old version
+            raise error
 
 
 class IllegalPackage(Exception):
