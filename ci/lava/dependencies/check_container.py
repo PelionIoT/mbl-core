@@ -4,6 +4,12 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Check that the requested container goes through the expected states.
+
+The container is expected to be "RUNNING" and then transition to "STOPPED"
+some time later.
+
+"""
 
 import sys
 import time
@@ -17,9 +23,12 @@ def setup_parser():
     :return: parser object.
 
     """
-    parser = argparse.ArgumentParser(description="Check Contaier Status")
+    parser = argparse.ArgumentParser(description="Check Container Status")
     parser.add_argument(
-        "contanerId", type=str, default="user-sample-app-package", help="contaner name"
+        "contanerId",
+        type=str,
+        default="user-sample-app-package",
+        help="contaner name",
     )
     return parser
 
@@ -33,20 +42,30 @@ def main():
     result_str = "RESULT="
     terminator = ">"
 
+    # Create App LifeCycle Manager
     app_lifecycle_mng = alm.AppLifecycleManager()
 
+    # The application is expected to be already running.
+    # Set the timeout to 10 seconds
     endtime = time.monotonic() + 10
 
+    # Find out state.
     state = app_lifecycle_mng.get_container_state(options.contanerId)
     print("{}: {}".format("Current state is", state))
 
+    # Loop until it is in the RUNNING state, or the timeout fires
     while state != alm.ContainerState.RUNNING and endtime > time.monotonic():
-        print("{}: {}".format("Waiting for state of Running. Current state is", state))
+        print(
+            "{}: {}".format(
+                "Waiting for state of Running. Current state is", state
+            )
+        )
 
         time.sleep(1)
         state = app_lifecycle_mng.get_container_state(options.contanerId)
         print("{}: {}".format("New state is", state))
 
+    # Did we timeout? Display appropriate result messages
     if endtime < time.monotonic():
         print("Timeout waiting for application to run!!")
         print(
@@ -82,17 +101,25 @@ def main():
             )
         )
 
+        # The application is running and is expected to run for 20 seconds
+        # Set the timeout to 30 seconds to allow a healthy margin
         endtime = time.monotonic() + 30
 
-        while state != alm.ContainerState.STOPPED and endtime > time.monotonic():
+        # Loop until it is in the STOPPED state, or the timeout fires
+        while (
+            state != alm.ContainerState.STOPPED and endtime > time.monotonic()
+        ):
             print(
-                "{}: {}".format("Waiting for state of Stopped. Current state is", state)
+                "{}: {}".format(
+                    "Waiting for state of Stopped. Current state is", state
+                )
             )
 
             time.sleep(1)
             state = app_lifecycle_mng.get_container_state(options.contanerId)
             print("{}: {}".format("New state is", state))
 
+        # Did we timeout? Display appropriate result messages
         if endtime < time.monotonic():
             print("Timeout waiting for application to stop!!")
             print(

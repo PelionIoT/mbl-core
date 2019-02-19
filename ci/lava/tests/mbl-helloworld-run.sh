@@ -25,16 +25,19 @@ else
     # Initially attempt to cleanup any previous runs
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
-    # Now install the package - this should cause it to run
+    # Now copy the package and ptyhon checker script to the DUT
     $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/app
-    $mbl_command shell "mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
-
-    # Check it is executing correctly
     $mbl_command put ./ci/lava/dependencies/check_container.py /home/app
 
+    # Now install the package - this should cause it to run
+    $mbl_command shell "mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+
+    # Check it is executing as expected
     $mbl_command shell "python3 /home/app/check_container.py user-sample-app-package"
 
-    # Extract the log file from the device
+    # Extract the log file from the device. Nothe that the parsing of the log 
+    # file could be done on the DUT but doing it this way tests the mbl-cli get
+    # functionality.
     $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
 
     # Echo it to the test run
