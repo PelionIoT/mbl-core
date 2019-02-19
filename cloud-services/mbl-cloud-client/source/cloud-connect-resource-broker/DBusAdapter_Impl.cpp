@@ -556,23 +556,13 @@ int DBusAdapterImpl::reply_error_on_message(
     UNUSED(sender_name);
     UNUSED(method_name);
 
-    sd_bus_message *reply = nullptr;
-    sd_objects_cleaner<sd_bus_message> ref_cleaner (&reply, sd_bus_message_unrefp);
- 
-    sd_bus_error dbus_error = SD_BUS_ERROR_MAKE_CONST(
-            CloudConnectStatus_error_to_DBus_format_string(error), 
-            mbl::CloudConnectStatus_to_readable_string(error)); 
-    int r = sd_bus_message_new_method_error(
-        message_to_reply_on, &reply, &dbus_error);
+    int r = sd_bus_reply_method_errorf(
+        message_to_reply_on, 
+        CloudConnectStatus_error_to_DBus_format_string(error),
+        "%s", CloudConnectStatus_to_readable_string(error));
     if (r < 0){
-        tr_error("sd_bus_message_new_method_errnof failed(err=%d) in reply error to %s",
+        tr_error("sd_bus_reply_method_errorf failed(err=%d) in reply error to %s",
                 r, sender_name);
-        return (-EINVAL);
-    }
-
-    r = sd_bus_send(connection_handle_, reply, nullptr);
-    if (r < 0){
-        tr_error("sd_bus_send failed(err=%d) in reply error to %s", r, sender_name);  
         return (-EINVAL);
     }
 
@@ -613,7 +603,7 @@ int DBusAdapterImpl::process_message_RegisterResources(
         tr_error("sd_bus_message_read_basic returned a nullptr or an empty string!");
         return (-EINVAL);
     }
-     
+
     // TODO:
     // validate app registered expected interface on bus? (use sd-bus track)
 
@@ -662,6 +652,13 @@ int DBusAdapterImpl::process_message_RegisterResources(
 
     sd_bus_message_ref(m);
 
+/*
+    // FOR SIGNAL TESTS PURPOSES ONLY
+    handle_ccrb_async_process_status_update(
+        (uintptr_t)m, 
+        DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, 
+        STATUS_SUCCESS);
+*/
     return 0;
 }
 
