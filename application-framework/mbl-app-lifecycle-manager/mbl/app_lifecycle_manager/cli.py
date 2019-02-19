@@ -1,131 +1,163 @@
-#!/usr/bin/env python3
 # Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Simple command line interface for mbl app lifecycle manager."""
+"""Command line interface for mbl-app-lifecycle-manager."""
 
 import argparse
 import logging
 import sys
+from enum import Enum
 
-import mbl.app_lifecycle_manager.app_lifecycle_manager as alm
+from .manager import (
+    run_app,
+    terminate_app,
+    kill_app,
+    DEFAULT_TIMEOUT_AFTER_SIGTERM,
+    DEFAULT_TIMEOUT_AFTER_SIGKILL,
+)
+from .utils import log, set_log_verbosity
 
 
-def get_argument_parser():
-    """
-    Return argument parser.
+class ReturnCode(Enum):
+    """Application return codes."""
 
-    :return: parser
-    """
-    parser = argparse.ArgumentParser(
+    SUCCESS = 0
+    ERROR = 1
+    INVALID_OPTIONS = 2
+
+
+def run_action(args):
+    """Entry point for the 'run' cli command."""
+    run_app(args.app_name, args.app_path)
+
+
+def terminate_action(args):
+    """Entry point for the 'terminate' cli command."""
+    terminate_app(args.app_name, args.sigterm_timeout, args.sigkill_timeout)
+
+
+def kill_action(args):
+    """Entry point for the 'kill' cli command."""
+    kill_app(args.app_name, args.sigkill_timeout)
+
+
+def parse_args():
+    """Parse the command line args."""
+    parser = ArgumentParserWithDefaultHelp(
+        description="MBL application lifecycle manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="App lifecycle manager",
     )
 
-    group = parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "-r",
-        "--run-container",
-        metavar="CONTAINER_ID",
-        help="Run container, assigning the given container ID",
+    command_group = parser.add_subparsers(
+        description="The commands to control the application statuses."
     )
 
-    group.add_argument(
-        "-s",
-        "--stop-container",
-        metavar="CONTAINER_ID",
-        help="Stop container with the given container ID",
+    run = command_group.add_parser("run", help="run a user application.")
+    run.add_argument(
+        "app_name",
+        type=str,
+        help="name the application will be referred as"
+        " once it has been started.",
+    )
+    run.add_argument(
+        "app_path", type=str, help="path of the application to start."
     )
 
-    group.add_argument(
-        "-k",
-        "--kill-container",
-        metavar="CONTAINER_ID",
-        help="Kill container with the container ID",
+    run.set_defaults(func=run_action)
+
+    terminate = command_group.add_parser(
+        "terminate",
+        help=(
+            "kill a user application process with SIGTERM then delete its"
+            " associated resources. Note: A SIGKILL is sent if the application"
+            " does not stop after a SIGTERM."
+        ),
     )
-
-    parser.add_argument("-a", "--application-id", help="Application ID")
-
-    parser.add_argument(
+    terminate.add_argument(
+        "app_name", type=str, help="name of the application to terminate."
+    )
+    terminate.add_argument(
         "-t",
         "--sigterm-timeout",
         type=int,
-        help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGTERM. Default is {}".format(
-            alm.DEFAULT_SIGTERM_TIMEOUT
-        ),
+        default=DEFAULT_TIMEOUT_AFTER_SIGTERM,
+        help="timeout to wait for an application to stop after SIGTERM.",
     )
-
-    parser.add_argument(
-        "-j",
+    terminate.add_argument(
+        "-k",
         "--sigkill-timeout",
         type=int,
-        help="Maximum time (seconds) to wait for application container to exit"
-        " after sending a SIGKILL. Default is {}".format(
-            alm.DEFAULT_SIGKILL_TIMEOUT
+        default=DEFAULT_TIMEOUT_AFTER_SIGKILL,
+        help="timeout to wait for an application to stop after SIGKILL.",
+    )
+    terminate.set_defaults(func=terminate_action)
+
+    kill = command_group.add_parser(
+        "kill",
+        help=(
+            "kill a user application process with SIGKILL then delete its"
+            " associated resources."
         ),
     )
+    kill.add_argument(
+        "app_name", type=str, help="name of the application to kill."
+    )
+    kill.add_argument(
+        "-t",
+        "--sigkill-timeout",
+        type=int,
+        default=DEFAULT_TIMEOUT_AFTER_SIGKILL,
+        help="timeout to wait for an application to stop after SIGKILL.",
+    )
+    kill.set_defaults(func=kill_action)
 
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Increase output verbosity",
         action="store_true",
+        help="increase verbosity of status information",
     )
 
-    return parser
+    args_namespace = parser.parse_args()
+
+    # We want to fail gracefully, with a consistent
+    # help message, in the no argument case.
+    # So here's an obligatory hasattr hack.
+    if not hasattr(args_namespace, "func"):
+        parser.error("No arguments given!")
+    else:
+        return args_namespace
+
+
+def run_mbl_app_lifecycle_manager():
+    """Application main algorithm."""
+    args = parse_args()
+
+    set_log_verbosity(args.verbose)
+
+    log.info("Starting mbl-app-lifecycle-manager")
+    log.debug("Command line arguments:{}".format(args))
+
+    args.func(args)
 
 
 def _main():
-    parser = get_argument_parser()
-    args = parser.parse_args()
-    info_level = logging.DEBUG if args.verbose else logging.INFO
-
-    logging.basicConfig(
-        level=info_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logger = logging.getLogger("mbl-app-lifecycle-manager")
-    logger.debug("Command line arguments:{}".format(args))
-
-    ret = alm.Error.ERR_INVALID_ARGS
+    """Run mbl-app-lifecycle-manager."""
     try:
-        app_manager_lifecycle_mng = alm.AppLifecycleManager()
-        if args.run_container:
-            if args.application_id is None:
-                logger.info("Missing application-id argument")
-                ret = alm.Error.ERR_INVALID_ARGS
-            else:
-                ret = app_manager_lifecycle_mng.run_container(
-                    args.run_container, args.application_id
-                )
-        elif args.stop_container:
-            sigterm_timeout = (
-                args.sigterm_timeout or alm.DEFAULT_SIGTERM_TIMEOUT
-            )
-            sigkill_timeout = (
-                args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
-            )
-            ret = app_manager_lifecycle_mng.stop_container(
-                args.stop_container, sigterm_timeout, sigkill_timeout
-            )
-        elif args.kill_container:
-            sigkill_timeout = (
-                args.sigkill_timeout or alm.DEFAULT_SIGKILL_TIMEOUT
-            )
-            ret = app_manager_lifecycle_mng.kill_container(
-                args.kill_container, sigkill_timeout
-            )
-    except OSError:
-        logger.exception("Operation failed with OSError")
-        return alm.Error.ERR_OPERATION_FAILED.value
-    except Exception:
-        logger.exception("Operation failed exception")
-        return alm.Error.ERR_OPERATION_FAILED.value
-    if ret == alm.Error.SUCCESS:
-        logger.info("Operation successful")
+        run_mbl_app_lifecycle_manager()
+    except Exception as error:
+        print(error)
+        return ReturnCode.ERROR.value
     else:
-        logger.error("Operation failed: {}".format(ret))
-    return ret.value
+        return ReturnCode.SUCCESS.value
+
+
+class ArgumentParserWithDefaultHelp(argparse.ArgumentParser):
+    """Subclass that always shows the help message on invalid arguments."""
+
+    def error(self, message):
+        """Error handler."""
+        sys.stderr.write("error: {}".format(message))
+        self.print_help()
+        raise SystemExit(ReturnCode.INVALID_OPTIONS.value)
