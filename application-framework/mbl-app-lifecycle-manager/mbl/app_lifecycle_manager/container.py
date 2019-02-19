@@ -50,7 +50,7 @@ def get_state(container_id):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode("utf-8")
+        err_output = error.stdout.decode()
         if ContainerState.DOES_NOT_EXIST.value in err_output:
             return ContainerState.DOES_NOT_EXIST
 
@@ -59,7 +59,7 @@ def get_state(container_id):
         )
         raise ContainerStateError(msg)
 
-    decoded_proc_output = process.stdout.decode("utf-8")
+    decoded_proc_output = process.stdout.decode()
     try:
         state_info_json_doc = json.loads(decoded_proc_output)
     except json.JSONDecodeError as error:
@@ -151,7 +151,7 @@ def create(container_id, bundle_path):
                 stderr=container_log,
             )
         except subprocess.CalledProcessError as error:
-            err_output = error.stdout.decode("utf-8")
+            err_output = error.stdout.decode()
             msg = "Creating container '{}' failed, error: {}".format(
                 container_id, bundle_path, err_output
             )
@@ -180,7 +180,7 @@ def start(container_id):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode("utf-8")
+        err_output = error.stdout.decode()
         msg = "Starting container '{}' failed, error: '{}'".format(
             container_id, err_output
         )
@@ -207,7 +207,7 @@ def kill(container_id, signal="SIGTERM"):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode("utf-8")
+        err_output = error.stdout.decode()
         msg = "Killing container '{}' failed, error: '{}'".format(
             container_id, err_output
         )
@@ -236,7 +236,7 @@ def delete(container_id):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode("utf-8")
+        err_output = error.stdout.decode()
         msg = "Deleting container '{}' failed, error: '{}'".format(
             container_id, err_output
         )
