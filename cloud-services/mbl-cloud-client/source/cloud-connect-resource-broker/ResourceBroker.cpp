@@ -325,7 +325,11 @@ MblError ResourceBroker::register_resources(
     // Set atomic flag for registration in progress
     registration_in_progress_.store(true);
 
-    app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
+    // Register the next cloud client callbacks to app_endpoint
+    cloud_client_->on_registration_updated(&(*app_endpoint), &ApplicationEndpoint::handle_register_cb);
+    cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
+
+    //app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to this app end point
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call cloud client to start registration

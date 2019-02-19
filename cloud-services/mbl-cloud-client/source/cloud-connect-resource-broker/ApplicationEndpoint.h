@@ -29,6 +29,7 @@ namespace mbl {
 class ResourceBroker;
 
 class ApplicationEndpoint {
+friend ResourceBroker;
 public:
 
     ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb);
@@ -42,7 +43,7 @@ public:
 
     std::string get_access_token() const;
 
-    void regsiter_callback_handlers();
+    //void regsiter_callback_handlers();
 
     M2MObjectList m2m_object_list_;
     RBM2MObjectList rbm2m_object_list_;
