@@ -108,14 +108,18 @@ def _wait_for_app_stop(app_name, timeout):
     log.debug("Wait {} seconds for '{}' to stop".format(timeout, app_name))
     endtime = time.monotonic() + timeout
     while endtime > time.monotonic():
-        if container.get_state(app_name) == container.ContainerState.STOPPED:
+        app_state = container.get_state(app_name)
+        log.debug("'{}' state is '{}'".format(app_name, app_state))
+        if app_state == container.ContainerState.STOPPED:
             return
         time.sleep(WAIT_SLEEP_INTERVAL)
 
     # check for state again as sleep() time is not guaranteed to be accurate
     # and it is possible to oversleep and miss the fact that the app has
     # already been stopped.
-    if container.get_state(app_name) == container.ContainerState.STOPPED:
+    app_state = container.get_state(app_name)
+    log.debug("'{}' state is '{}'".format(app_name, app_state))
+    if app_state == container.ContainerState.STOPPED:
         return
 
     raise AppStopTimeoutError(

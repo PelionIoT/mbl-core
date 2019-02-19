@@ -8,6 +8,11 @@ import os
 import shutil
 import subprocess
 
+from mbl.app_lifecycle_manager.container import (
+    OCI_BUNDLE_CONFIGURATION,
+    OCI_BUNDLE_FILESYSTEM,
+)
+
 from .parser import parse_app_info, AppInfoParserError
 from .utils import log
 
@@ -94,10 +99,13 @@ class AppManager(object):
             )
             raise AppUninstallError(msg)
         else:
+            shutil.rmtree(app_path)
+            app_parent_dir = os.path.dirname(app_path)
+            if not os.listdir(app_parent_dir):
+                shutil.rmtree(app_parent_dir)
             log.info(
                 "'{}' removal from '{}' successful".format(app_name, app_path)
             )
-            shutil.rmtree(app_path)
 
     def force_install_app(self, app_pkg, app_path):
         """
@@ -117,28 +125,28 @@ class AppManager(object):
         Each application directory is named after the installed application.
         """
         log.debug("List of installed applications:\n")
-        subdirs = [
-            name
-            for name in os.listdir(apps_path)
-            if os.path.isdir(os.path.join(apps_path, name))
-        ]
-        for subdir in subdirs:
-            # Command syntax:
-            # opkg --add-dest <app_name>:<apps_path>/<app_name> list-installed
-            app_name = subdir
-            dest = "{}:{}".format(app_name, os.path.join(apps_path, app_name))
-            cmd = ["opkg", "--add-dest", dest, "list-installed"]
-            try:
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError as error:
-                err_output = error.stdout.decode("utf-8")
-                msg = (
-                    "Listing installed apps at '{}' failed,"
-                    " error: '{}'".format(
-                        os.path.join(apps_path, app_name), err_output
+        for dirpath, dirnames, filenames in os.walk(apps_path):
+            # an application version directory must have both components
+            if (
+                OCI_BUNDLE_FILESYSTEM in dirnames
+                and OCI_BUNDLE_CONFIGURATION in filenames
+            ):
+                app_name = os.path.basename(os.path.dirname(dirpath))
+                # Command syntax:
+                # opkg --add-dest <app_name>:<dirpath> list-installed
+                dest = "{}:{}".format(app_name, dirpath)
+                cmd = ["opkg", "--add-dest", dest, "list-installed"]
+                try:
+                    subprocess.check_call(cmd)
+                except subprocess.CalledProcessError as error:
+                    err_output = error.stdout.decode("utf-8")
+                    msg = (
+                        "Listing installed apps at '{}' failed,"
+                        " error: '{}'".format(
+                            os.path.join(apps_path, app_name), err_output
+                        )
                     )
-                )
-                raise AppListingError(msg)
+                    raise AppListingError(msg)
 
 
 class AppIdError(Exception):

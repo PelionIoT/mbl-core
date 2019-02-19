@@ -14,6 +14,9 @@ from .utils import log
 
 DEFAULT_CONTAINER_LOG_DIR = os.path.join(os.sep, "var", "log", "app")
 
+OCI_BUNDLE_FILESYSTEM = "rootfs"
+OCI_BUNDLE_CONFIGURATION = "config.json"
+
 
 class ContainerState(Enum):
     """Existing OCI container status."""
@@ -108,7 +111,7 @@ def create(container_id, bundle_path):
         )
     )
     container_state = get_state(container_id)
-
+    log.debug("'{}' state is '{}'".format(container_id, container_state))
     if container_state != ContainerState.DOES_NOT_EXIST:
         # a container with the specified id already exists, do not
         # attempt to create another one
