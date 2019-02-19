@@ -39,7 +39,7 @@ def main():
 
     print(state)
 
-    while ( state != alm.ContainerState.STOPPED and endtime > time.monotonic()):
+    while ( state != alm.ContainerState.RUNNING and endtime > time.monotonic()):
         print("Waiting for Running")
 
         time.sleep(1)
