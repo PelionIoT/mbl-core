@@ -26,11 +26,13 @@
 
 namespace mbl {
 
-class ResourceBroker;
+class ResourceBrokerTester;
+//class ResourceBroker;
 
 class ApplicationEndpoint {
 
-friend ResourceBroker;
+friend ResourceBrokerTester;
+//friend ResourceBroker;
 
 public:
 
@@ -45,13 +47,6 @@ public:
 
     std::string get_access_token() const;
 
-    M2MObjectList m2m_object_list_;
-    RBM2MObjectList rbm2m_object_list_;
-
-    bool is_registered();
-
-private:
-
     /**
      * @brief Resitration callback
      * When registration flow is finished - Mbed cloud client will call this callback.
@@ -65,6 +60,13 @@ private:
      * This function will notify the Resource broker that error occurred.
      */
     void handle_error_cb(const int cloud_client_code);
+
+    M2MObjectList m2m_object_list_;
+    RBM2MObjectList rbm2m_object_list_;
+
+    bool is_registered();
+
+private:
 
     uintptr_t ipc_conn_handle_;
     std::string access_token_;

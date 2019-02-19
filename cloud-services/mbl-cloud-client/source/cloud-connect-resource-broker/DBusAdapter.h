@@ -76,7 +76,7 @@ public:
  * @return MblError returns Error::None if the message was successfully 
  *         delivered, or error code otherwise. 
  */
-    MblError update_registration_status(
+    virtual MblError update_registration_status(
         const uintptr_t ipc_conn_handle, 
         const CloudConnectStatus reg_status);
 

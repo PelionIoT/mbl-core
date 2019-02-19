@@ -107,6 +107,7 @@ mbl::MblError ResourceBrokerTester::register_resources(
     std::string &out_access_token)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
+
     mbl::MblError status = cloud_connect_resource_broker_.register_resources(
     ipc_conn_handle, 
     appl_resource_definition_json,
@@ -136,7 +137,7 @@ mbl::MblError ResourceBrokerTester::register_resources(
         __PRETTY_FUNCTION__,
         out_access_token.c_str());
 
-    //app_endpoint->handle_register_cb();
+    app_endpoint->handle_register_cb();
 
     if(!app_endpoint->is_registered()) {
         tr_error("%s: Application (access_token: %s) should have been marked as registered.",
