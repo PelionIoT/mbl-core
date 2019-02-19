@@ -29,11 +29,10 @@ else
     $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/app
     $mbl_command shell "mbl-app-update-manager -i /home/app/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
 
-    # Check it is there
-    $mbl_command shell "mbl-app-manager -l"
+    # Check it is executing correctly
+    $mbl_command put ./ci/lava/dependencies/check_container.py /home/app
 
-    # The app takes 20 seconds to run, so wait for 30
-    sleep 30
+    $mbl_command shell "python3 /home/app/check_container.py user-sample-app-package"
 
     # Extract the log file from the device
     $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
