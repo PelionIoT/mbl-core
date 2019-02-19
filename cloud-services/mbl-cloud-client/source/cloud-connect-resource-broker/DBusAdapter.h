@@ -27,7 +27,7 @@ class DBusAdapter {
 public:
 
     DBusAdapter(ResourceBroker &ccrb);
-    ~DBusAdapter();
+    virtual ~DBusAdapter();
 
 /**
  * @brief Initializes IPC mechanism.

@@ -18,16 +18,47 @@
 #include <gtest/gtest.h>
 
 #include "cloud-connect-resource-broker/ResourceBroker.h"
-//#include "cloud-connect-resource-broker/DBusAdapter.h"
+#include "cloud-connect-resource-broker/DBusAdapter.h"
 #include "MblError.h"
 #include "log.h"
 #include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb-resource-broker-test"
 
-////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class DBusAdapterTester  : public mbl::DBusAdapter {
 
-class ResourceBrokerTester /* : public DBusAdapter */{
+public:
+
+    DBusAdapterTester(mbl::ResourceBroker &ccrb);
+    ~DBusAdapterTester();
+
+    virtual mbl::MblError update_registration_status(
+        const uintptr_t ipc_conn_handle, 
+        const CloudConnectStatus reg_status) override;
+
+};
+
+DBusAdapterTester::DBusAdapterTester(mbl::ResourceBroker &ccrb)
+: DBusAdapter(ccrb)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+}
+DBusAdapterTester::~DBusAdapterTester()
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+}
+
+mbl::MblError DBusAdapterTester::update_registration_status(
+    const uintptr_t /*ipc_conn_handle*/, 
+    const CloudConnectStatus /*reg_status*/)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+    return mbl::Error::None;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+class ResourceBrokerTester {
 
 public:
     
@@ -45,17 +76,14 @@ public:
         CloudConnectStatus &out_status,
         std::string &out_access_token);
 
-    // virtual mbl::MblError update_registration_status(
-    //     const uintptr_t ipc_conn_handle, 
-    //     const CloudConnectStatus reg_status);
-
-
 private:
 
     mbl::ResourceBroker cloud_connect_resource_broker_;
+    DBusAdapterTester dbus_adapter_tester_;
 };
 
 ResourceBrokerTester::ResourceBrokerTester()
+: dbus_adapter_tester_(cloud_connect_resource_broker_)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -68,10 +96,13 @@ ResourceBrokerTester::~ResourceBrokerTester()
 mbl::MblError ResourceBrokerTester::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    // Set REsource Broker function pointers to point to this class instead of Mbed Client
-    // This replaces what cloud_connect_resource_broker_.init() does so dont call it...
+
+    // Set Resource Broker function pointers to point to this class instead of to Mbed Client
+    // This replaces what cloud_connect_resource_broker_.init() usually does so dont call it...
     cloud_connect_resource_broker_.register_update_func_ = std::bind(&ResourceBrokerTester::register_update, this);
     cloud_connect_resource_broker_.add_objects_func_ = std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::add_objects), this, std::placeholders::_1);
+
+    cloud_connect_resource_broker_.ipc_ = std::make_unique<DBusAdapterTester>(cloud_connect_resource_broker_);
 
     return mbl::Error::None;
 }
@@ -92,13 +123,6 @@ void ResourceBrokerTester::register_update()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
-
-// mbl::MblError ResourceBrokerTester::update_registration_status(
-//     const uintptr_t ipc_conn_handle, 
-//     const CloudConnectStatus reg_status)
-// {
-    
-// }
 
 mbl::MblError ResourceBrokerTester::register_resources(
     const uintptr_t ipc_conn_handle, 
@@ -149,9 +173,7 @@ mbl::MblError ResourceBrokerTester::register_resources(
     return mbl::Error::None;
 }
 
-
-////////////////////////////////////////////////////////////////////////////////
-
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 TEST(Resource_Broker_Positive, test1) {
 
