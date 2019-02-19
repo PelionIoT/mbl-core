@@ -50,7 +50,7 @@ def main():
     if endtime < time.monotonic():
         print("Timeout waiting for application to run!!")
         print(
-            "{}{}{} {}{}".format(
+            "{}{}{} {}{}{}".format(
                 lava_signal,
                 options.contanerId,
                 "_Running",
@@ -60,7 +60,7 @@ def main():
             )
         )
         print(
-            "{}{}{} {}{}".format(
+            "{}{}{} {}{}{}".format(
                 lava_signal,
                 options.contanerId,
                 "_Stopped",
@@ -72,7 +72,7 @@ def main():
     else:
         print("Application detected as Running")
         print(
-            "{}{}{} {}{}".format(
+            "{}{}{} {}{}{}".format(
                 lava_signal,
                 options.contanerId,
                 "_Running",
@@ -96,7 +96,7 @@ def main():
         if endtime < time.monotonic():
             print("Timeout waiting for application to stop!!")
             print(
-                "{}{}{} {}{}".format(
+                "{}{}{} {}{}{}".format(
                     lava_signal,
                     options.contanerId,
                     "_Stopped",
@@ -108,7 +108,7 @@ def main():
         else:
             print("Application detected as Stopped")
             print(
-                "{}{}{} {}{}".format(
+                "{}{}{} {}{}{}".format(
                     lava_signal,
                     options.contanerId,
                     "_Stopped",
