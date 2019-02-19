@@ -6,8 +6,8 @@
 
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
-#include "UniqueTokenGenerator.h"
 #include "MblCloudClient.h"
+#include "UniqueTokenGenerator.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
 #include <cassert>
@@ -56,14 +56,14 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
 MblError ResourceBroker::stop()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
-    // FIXME: handle properly all errors in this function. 
+
+    // FIXME: handle properly all errors in this function.
 
     assert(ipc_);
-    
+
     // try sending stop signal to ipc
     const MblError ipc_stop_err = ipc_->stop();
-    if(Error::None != ipc_stop_err) {
+    if (Error::None != ipc_stop_err) {
         tr_err("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
 
         // FIXME: Currently, if ipc was not successfully signalled, we return error.
@@ -71,37 +71,37 @@ MblError ResourceBroker::stop()
         return Error::CCRBStopFailed;
     }
 
-    // about thread_status: thread_status is the variable that will contain ccrb_main status. 
-    // ccrb_main returns MblError type. pthread_join will assign the value returned via 
-    // pthread_exit to the value of pointer thread_status. For example, if ccrb_main 
+    // about thread_status: thread_status is the variable that will contain ccrb_main status.
+    // ccrb_main returns MblError type. pthread_join will assign the value returned via
+    // pthread_exit to the value of pointer thread_status. For example, if ccrb_main
     // will return N via pthread_exit(N), value of pointer thread_status will be equal N.
-    void *thread_status = nullptr;     // do not dereference the pointer!
+    void* thread_status = nullptr; // do not dereference the pointer!
 
     // ipc was succesfully signalled to stop, join with thread.
     const int thread_join_err = pthread_join(ipc_thread_id_, &thread_status);
-    // FIXME: Currently, we use pthread_join without timeout. 
+    // FIXME: Currently, we use pthread_join without timeout.
     //        Required to use pthread_join with timeout.
-    if(0 != thread_join_err) {
+    if (0 != thread_join_err) {
         // thread joining failed, print errno value
         const int thread_join_errno = errno;
         tr_err("Thread joining failed (%s)", strerror(thread_join_errno));
-        
+
         // FIXME: Currently, if pthread_join fails, we return error.
         //        Required to add "release resources best effort" functionality.
         return Error::CCRBStopFailed;
     }
 
-    // thread was succesfully joined, handle thread_status. Thread_status will contain 
+    // thread was succesfully joined, handle thread_status. Thread_status will contain
     // value that was returned via pthread_Exit(MblError) from ccrb main function.
     MblError ret_value = (MblError)(uintptr_t)(thread_status);
-    if(Error::None != ret_value) {
+    if (Error::None != ret_value) {
         tr_err("ccrb_main() failed! (%s)", MblError_to_str(ret_value));
-    }       
+    }
 
     tr_info("ccrb_main() exit status = (%s)", MblError_to_str(ret_value));
 
     const MblError de_init_err = de_init();
-    if(Error::None != de_init_err) {
+    if (Error::None != de_init_err) {
         tr_err("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
 
         ret_value = (ret_value == Error::None)? 
@@ -115,7 +115,7 @@ MblError ResourceBroker::stop()
 MblError ResourceBroker::init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+
     // verify that ipc_ member was not created yet
     assert(nullptr == ipc_);
 
@@ -123,14 +123,16 @@ MblError ResourceBroker::init()
     ipc_ = std::make_unique<DBusAdapter>(*this);
 
     MblError status = ipc_->init();
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("ipc::init failed with error %s", MblError_to_str(status));
     }
 
     // Set function pointers to point to mbed_client functions
     // In gtest our friend test class will override these pointers to get all the calls
     register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
-    add_objects_func_ = std::bind(static_cast<void(MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects), cloud_client_, std::placeholders::_1);
+    add_objects_func_ = std::bind(
+        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
+        cloud_client_, std::placeholders::_1);
 
     // Register Cloud client callback:
     regsiter_callback_handlers();
@@ -141,14 +143,14 @@ MblError ResourceBroker::init()
 MblError ResourceBroker::de_init()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+
     assert(ipc_);
-   
-    // FIXME: Currently we call ipc_->de_init unconditionally. 
+
+    // FIXME: Currently we call ipc_->de_init unconditionally.
     //        ipc_->de_init can't be called if ccrb thread was not finished.
-    //        Required to call ipc_->de_init only if ccrb thread was finished.  
+    //        Required to call ipc_->de_init only if ccrb thread was finished.
     MblError status = ipc_->de_init();
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("ipc::de_init failed with error %s", MblError_to_str(status));
     }
 
@@ -158,11 +160,11 @@ MblError ResourceBroker::de_init()
 MblError ResourceBroker::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+
     assert(ipc_);
 
     MblError status = ipc_->run();
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("ipc::run failed with error %s", MblError_to_str(status));
     }
 
@@ -172,26 +174,25 @@ MblError ResourceBroker::run()
 void* ResourceBroker::ccrb_main(void* ccrb)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+
     assert(ccrb);
 
-    ResourceBroker * const this_ccrb =
-        static_cast<ResourceBroker*>(ccrb);
+    ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ccrb);
 
     MblError status = this_ccrb->init();
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit((void*)(uintptr_t)Error::CCRBStartFailed);
+        pthread_exit((void*) (uintptr_t) Error::CCRBStartFailed);
     }
 
     status = this_ccrb->run();
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("ccrb::run failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit((void*)(uintptr_t)status);
+        pthread_exit((void*) (uintptr_t) status);
     }
 
     tr_info("%s thread function finished", __PRETTY_FUNCTION__);
-    pthread_exit((void*)(uintptr_t)Error::None); // pthread_exit does "return"
+    pthread_exit((void*) (uintptr_t) Error::None); // pthread_exit does "return"
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -204,7 +205,7 @@ void ResourceBroker::regsiter_callback_handlers()
     // 1. Registration update
     // 2. Error occurred
 
-    if(cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr    
+    if(nullptr != cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr    
         cloud_client_->on_registration_updated(this, &ResourceBroker::handle_registration_updated_cb);
         cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
     }
@@ -214,7 +215,7 @@ void ResourceBroker::handle_registration_updated_cb()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // Mark that registration is finished
-    registration_in_progress_.store(false);    
+    registration_in_progress_.store(false);
 }
 
 void ResourceBroker::handle_error_cb(const int cloud_client_code)
@@ -227,7 +228,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
         MblError_to_str(mbl_code));
 
     // Mark that registration is finished
-    registration_in_progress_.store(false);    
+    registration_in_progress_.store(false);
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callbacks functions that are being called directly from Application Endpoint (e.g. during registeration)
@@ -243,7 +244,7 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     if(Error::None != status) {
         tr_error("%s: update_registration_status failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
     }
-        
+
     // Return registration updated callback to CCRB
     regsiter_callback_handlers();
 
@@ -258,14 +259,14 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
         access_token.c_str(),
         MblError_to_str(error));
 
-    if(app_endpoints_map_.end() == app_endpoints_map_.find(access_token)) {
+    if (app_endpoints_map_.end() == app_endpoints_map_.find(access_token)) {
         // Could not found application endpoint
         tr_error("%s: Application (access_token: %s) does not exist.", __PRETTY_FUNCTION__, access_token.c_str());
         return;
     }
 
     SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
-    
+
     // Send the response to adapter:
     if(app_endpoint->is_registered()) {
         //TODO: add call to update_deregistration_status when deregister is implemented
@@ -282,16 +283,15 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
                 MblError_to_str(status));
         }
         // Mark that registration is finished (even if it was failed)
-        registration_in_progress_.store(false);        
+        registration_in_progress_.store(false);
     }
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-MblError ResourceBroker::register_resources(
-    const uintptr_t ipc_conn_handle,
-    const std::string &json_string,
-    CloudConnectStatus &out_status,
-    std::string &out_access_token)
+MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
+                                            const std::string& app_resource_definition_json,
+                                            CloudConnectStatus& out_status,
+                                            std::string& out_access_token)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -305,19 +305,20 @@ MblError ResourceBroker::register_resources(
     // Generate access token
     UniqueTokenGenerator unique_token_generator;
     MblError status = unique_token_generator.generate_unique_token(out_access_token);
-    if(Error::None != status) {
+    if (Error::None != status) {
         out_status = CloudConnectStatus::ERR_FAILED;
         tr_error("%s: generate_unique_token failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         return Error::None;
     }
 
     // Create and init application endpoint
-    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
-    if(nullptr == app_endpoint) {
+    SPApplicationEndpoint app_endpoint =
+        std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
+    if (nullptr == app_endpoint) {
         tr_error("%s: Create application endpoint failed.", __PRETTY_FUNCTION__);
         return Error::CCRBRegisterFailed;
     }
-    status = app_endpoint->init(json_string);
+    status = app_endpoint->init(app_resource_definition_json);
     if(Error::None != status) {
         tr_error("%s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__, MblError_to_str(status));
         out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::ERR_INVALID_JSON : CloudConnectStatus::ERR_FAILED;
@@ -328,7 +329,7 @@ MblError ResourceBroker::register_resources(
     registration_in_progress_.store(true);
 
     // Register the next cloud client callbacks to app_endpoint
-    if(cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr
+    if(nullptr != cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr
         cloud_client_->on_registration_updated(&(*app_endpoint), &ApplicationEndpoint::handle_register_cb);
         cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
     }
@@ -345,54 +346,49 @@ MblError ResourceBroker::register_resources(
     return Error::None;
 }
 
-MblError ResourceBroker::deregister_resources(
-    const uintptr_t /*ipc_conn_handle*/, 
-    const std::string & /*access_token*/,
-    CloudConnectStatus & /*out_status*/)
+MblError ResourceBroker::deregister_resources(const uintptr_t /*ipc_conn_handle*/,
+                                              const std::string& /*access_token*/,
+                                              CloudConnectStatus& /*out_status*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::CCRBNotSupported;
 }
 
-MblError ResourceBroker::add_resource_instances(
-        const uintptr_t /*unused*/, 
-        const std::string & /*unused*/, 
-        const std::string & /*unused*/, 
-        const std::vector<uint16_t> & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+MblError ResourceBroker::add_resource_instances(const uintptr_t /*unused*/,
+                                                const std::string& /*unused*/,
+                                                const std::string& /*unused*/,
+                                                const std::vector<uint16_t>& /*unused*/,
+                                                CloudConnectStatus& /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
 
-MblError ResourceBroker::remove_resource_instances(
-    const uintptr_t /*unused*/, 
-    const std::string & /*unused*/, 
-    const std::string & /*unused*/, 
-    const std::vector<uint16_t> & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+MblError ResourceBroker::remove_resource_instances(const uintptr_t /*unused*/,
+                                                   const std::string& /*unused*/,
+                                                   const std::string& /*unused*/,
+                                                   const std::vector<uint16_t>& /*unused*/,
+                                                   CloudConnectStatus& /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
 
-MblError ResourceBroker::set_resources_values(
-        const std::string & /*unused*/, 
-        std::vector<ResourceSetOperation> & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+MblError ResourceBroker::set_resources_values(const std::string& /*unused*/,
+                                              std::vector<ResourceSetOperation>& /*unused*/,
+                                              CloudConnectStatus& /*unused*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now
     return Error::None;
 }
 
-MblError ResourceBroker::get_resources_values(
-        const std::string & /*unused*/, 
-        std::vector<ResourceGetOperation> & /*unused*/,
-        CloudConnectStatus & /*unused*/)
+MblError ResourceBroker::get_resources_values(const std::string& /*unused*/,
+                                              std::vector<ResourceGetOperation>& /*unused*/,
+                                              CloudConnectStatus& /*unused*/)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     // empty for now

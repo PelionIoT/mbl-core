@@ -21,13 +21,14 @@
 
 #define TRACE_GROUP "ccrb-UniqueToken"
 
-namespace mbl {
-
-MblError UniqueTokenGenerator::generate_unique_token(std::string &unique_token)
+namespace mbl
 {
-	sd_id128_t id128;
+
+MblError UniqueTokenGenerator::generate_unique_token(std::string& unique_token)
+{
+    sd_id128_t id128;
     int retval = sd_id128_randomize(&id128);
-    if(retval != 0) {
+    if (retval != 0) {
         tr_err("sd_id128_randomize faile dwith error: %d", retval);
         return Error::CCRBGenerateUniqueIdFailed;
     }

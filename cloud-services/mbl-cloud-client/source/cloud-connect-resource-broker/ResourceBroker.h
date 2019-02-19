@@ -106,7 +106,7 @@ private:
  * 
  * @param ipc_conn_handle handle to the IPC unique connection information 
  *        of the application that should get update_registration_status message.
- * @param appl_resource_definition_json json string that describes resources 
+ * @param app_resource_definition_json json string that describes resources 
  *        that should be registered. The structure of the JSON document 
  *        reflects the structure of the required resource tree. 
  * @param out_status cloud connect operation status for operations like 
@@ -116,7 +116,7 @@ private:
  *        was Error::None.  
  * @param out_access_token is a token that should be used by the client 
  *        application in all APIs that access (in any way) to the provided 
- *        (via appl_resource_definition_json) set of resources. 
+ *        (via app_resource_definition_json) set of resources. 
  *        Note: This parameter is valid, if MblError return error code 
  *        was Error::None.  
  * 
@@ -125,7 +125,7 @@ private:
  */
     MblError register_resources(
         const uintptr_t ipc_conn_handle, 
-        const std::string &appl_resource_definition_json,
+        const std::string &app_resource_definition_json,
         CloudConnectStatus &out_status,
         std::string &out_access_token);
 

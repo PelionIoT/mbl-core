@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-#include "ResourceBroker.h"
 #include "ApplicationEndpoint.h"
+#include "ResourceBroker.h"
 #include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
@@ -45,7 +45,7 @@ ApplicationEndpoint::~ApplicationEndpoint()
 MblError ApplicationEndpoint::init(const std::string json_string)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    
+
     // Parse JSON
     ResourceDefinitionParser resource_parser;
     const MblError status = resource_parser.build_object_list(
