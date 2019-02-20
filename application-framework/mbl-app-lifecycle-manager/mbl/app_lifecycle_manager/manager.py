@@ -52,6 +52,8 @@ def terminate_app(
             container.delete(app_name)
         elif container.ContainerState.DOES_NOT_EXIST.value in str(error):
             return
+        else:
+            raise error
     else:
         try:
             _wait_for_app_stop(app_name, sigterm_timeout)
