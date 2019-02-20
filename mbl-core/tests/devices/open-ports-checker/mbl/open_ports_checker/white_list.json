@@ -34,6 +34,12 @@
     },
     {
       "executable": "/bin/busybox.nosuid"
+    },
+    {
+      "executable": "/usr/sbin/connmand"
+    },
+    {
+      "executable": "/usr/sbin/wpa_supplicant"
     }
   ]
 }
