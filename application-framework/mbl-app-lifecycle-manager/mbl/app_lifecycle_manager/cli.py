@@ -6,8 +6,12 @@
 
 import argparse
 import logging
+import os
+import shutil
 import sys
 from enum import Enum
+
+from .container import get_oci_bundle_paths
 
 from .manager import (
     run_app,
@@ -16,7 +20,7 @@ from .manager import (
     DEFAULT_TIMEOUT_AFTER_SIGTERM,
     DEFAULT_TIMEOUT_AFTER_SIGKILL,
 )
-from .utils import log, set_log_verbosity
+from .utils import log, set_log_verbosity, human_sort
 
 
 class ReturnCode(Enum):
@@ -29,7 +33,17 @@ class ReturnCode(Enum):
 
 def run_action(args):
     """Entry point for the 'run' cli command."""
-    run_app(args.app_name, args.app_path)
+    app_version_dirs = get_oci_bundle_paths(args.app_path)
+
+    if app_version_dirs:
+        human_sort(app_version_dirs)
+        app_path = app_version_dirs.pop(0)
+        run_app(args.app_name, app_path)
+
+        # clean up other app versions if any
+        if app_version_dirs:
+            for version in app_version_dirs:
+                shutil.rmtree(version)
 
 
 def terminate_action(args):

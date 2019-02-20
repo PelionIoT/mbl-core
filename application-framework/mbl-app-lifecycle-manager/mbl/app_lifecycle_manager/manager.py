@@ -49,9 +49,11 @@ def terminate_app(
             ]
         ):
             log.debug("Application '{}' already stopped".format(app_name))
-            _delete_stopped_app(app_name)
+            container.delete(app_name)
         elif container.ContainerState.DOES_NOT_EXIST.value in str(error):
             return
+        else:
+            raise error
     else:
         try:
             _wait_for_app_stop(app_name, sigterm_timeout)
@@ -63,7 +65,8 @@ def terminate_app(
             )
             kill_app(app_name, sigkill_timeout)
         else:
-            _delete_stopped_app(app_name)
+            container.delete(app_name)
+            log.info("Application '{}' terminated".format(app_name))
 
 
 def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
@@ -85,18 +88,13 @@ def kill_app(app_name, timeout=DEFAULT_TIMEOUT_AFTER_SIGKILL):
                 container.ContainerState.NOT_RUNNING.value,
             ]
         ):
-            _delete_stopped_app(app_name)
+            container.delete(app_name)
         else:
             raise error
     else:
         _wait_for_app_stop(app_name, timeout)
-        _delete_stopped_app(app_name)
-
-
-def _delete_stopped_app(app_name):
-    """Delete a stopped application."""
-    container.delete(app_name)
-    log.info("Application '{}' deleted".format(app_name))
+        container.delete(app_name)
+        log.info("Application '{}' killed".format(app_name))
 
 
 def _wait_for_app_stop(app_name, timeout):
@@ -108,14 +106,18 @@ def _wait_for_app_stop(app_name, timeout):
     log.debug("Wait {} seconds for '{}' to stop".format(timeout, app_name))
     endtime = time.monotonic() + timeout
     while endtime > time.monotonic():
-        if container.get_state(app_name) == container.ContainerState.STOPPED:
+        app_state = container.get_state(app_name)
+        log.debug("'{}' state is '{}'".format(app_name, app_state))
+        if app_state == container.ContainerState.STOPPED:
             return
         time.sleep(WAIT_SLEEP_INTERVAL)
 
     # check for state again as sleep() time is not guaranteed to be accurate
     # and it is possible to oversleep and miss the fact that the app has
     # already been stopped.
-    if container.get_state(app_name) == container.ContainerState.STOPPED:
+    app_state = container.get_state(app_name)
+    log.debug("'{}' state is '{}'".format(app_name, app_state))
+    if app_state == container.ContainerState.STOPPED:
         return
 
     raise AppStopTimeoutError(
