@@ -11,7 +11,7 @@ import shutil
 import sys
 from enum import Enum
 
-from .container import OCI_BUNDLE_CONFIGURATION, OCI_BUNDLE_FILESYSTEM
+from .container import get_oci_bundle_paths
 
 from .manager import (
     run_app,
@@ -33,26 +33,15 @@ class ReturnCode(Enum):
 
 def run_action(args):
     """Entry point for the 'run' cli command."""
-    if all(
-        x in os.listdir(args.app_path)
-        for x in [OCI_BUNDLE_CONFIGURATION, OCI_BUNDLE_FILESYSTEM]
-    ):
-        run_app(args.app_name, args.app_path)
-    else:
-        app_version_dirs = []
-        for dirpath, dirnames, filenames in os.walk(args.app_path):
-            if (
-                OCI_BUNDLE_FILESYSTEM in dirnames
-                and OCI_BUNDLE_CONFIGURATION in filenames
-            ):
-                app_version_dirs.append(dirpath)
+    app_version_dirs = get_oci_bundle_paths(args.app_path)
 
+    if app_version_dirs:
+        human_sort(app_version_dirs)
+        app_path = app_version_dirs.pop(0)
+        run_app(args.app_name, app_path)
+
+        # clean up other app versions if any
         if app_version_dirs:
-            human_sort(app_version_dirs)
-            app_path = app_version_dirs.pop(0)
-            run_app(args.app_name, app_path)
-
-            # clean up app versions
             for version in app_version_dirs:
                 shutil.rmtree(version)
 

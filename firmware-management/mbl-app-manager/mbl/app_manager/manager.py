@@ -8,13 +8,11 @@ import os
 import shutil
 import subprocess
 
-from mbl.app_lifecycle_manager.container import (
-    OCI_BUNDLE_CONFIGURATION,
-    OCI_BUNDLE_FILESYSTEM,
-)
-
 from .parser import parse_app_info, AppInfoParserError
 from .utils import log
+from mbl.app_lifecycle_manager.container import get_oci_bundle_paths
+
+APPS_PATH = os.path.join(os.sep, "home", "app")
 
 
 class AppManager(object):
@@ -125,28 +123,24 @@ class AppManager(object):
         Each application directory is named after the installed application.
         """
         log.debug("List of installed applications:\n")
-        for dirpath, dirnames, filenames in os.walk(apps_path):
-            # an application version directory must have both components
-            if (
-                OCI_BUNDLE_FILESYSTEM in dirnames
-                and OCI_BUNDLE_CONFIGURATION in filenames
-            ):
-                app_name = os.path.basename(os.path.dirname(dirpath))
-                # Command syntax:
-                # opkg --add-dest <app_name>:<dirpath> list-installed
-                dest = "{}:{}".format(app_name, dirpath)
-                cmd = ["opkg", "--add-dest", dest, "list-installed"]
-                try:
-                    subprocess.check_call(cmd)
-                except subprocess.CalledProcessError as error:
-                    err_output = error.stdout.decode("utf-8")
-                    msg = (
-                        "Listing installed apps at '{}' failed,"
-                        " error: '{}'".format(
-                            os.path.join(apps_path, app_name), err_output
-                        )
+        app_bundles = get_oci_bundle_paths(apps_path)
+        for app_bundle in app_bundles:
+            app_name = os.path.basename(os.path.dirname(app_bundle))
+            # Command syntax:
+            # opkg --add-dest <app_name>:<app_bundle> list-installed
+            dest = "{}:{}".format(app_name, app_bundle)
+            cmd = ["opkg", "--add-dest", dest, "list-installed"]
+            try:
+                subprocess.check_call(cmd)
+            except subprocess.CalledProcessError as error:
+                err_output = error.stdout.decode("utf-8")
+                msg = (
+                    "Listing installed apps at '{}' failed,"
+                    " error: '{}'".format(
+                        os.path.join(apps_path, app_name), err_output
                     )
-                    raise AppListingError(msg)
+                )
+                raise AppListingError(msg)
 
 
 class AppIdError(Exception):

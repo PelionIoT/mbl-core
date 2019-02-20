@@ -4,6 +4,7 @@
 
 """Package unpacking and application installation."""
 
+import json
 import os
 import subprocess
 import sys
@@ -14,10 +15,6 @@ from .utils import log, human_sort
 import mbl.app_manager.manager as apm
 import mbl.app_lifecycle_manager.manager as alm
 import mbl.app_lifecycle_manager.container as alc
-from mbl.app_lifecycle_manager.container import (
-    OCI_BUNDLE_CONFIGURATION,
-    OCI_BUNDLE_FILESYSTEM,
-)
 
 
 IPKS_EXCTRACTION_PATH = os.path.join(os.sep, "mnt", "cache", "opkg", "src_ipk")
@@ -262,13 +259,7 @@ class AppUpdateManager:
         if not os.path.isdir(app_parent_dir):
             return None, os.path.join(app_parent_dir, "0")
 
-        app_version_dirs = []
-        for dirpath, dirnames, filenames in os.walk(app_parent_dir):
-            if (
-                OCI_BUNDLE_FILESYSTEM in dirnames
-                and OCI_BUNDLE_CONFIGURATION in filenames
-            ):
-                app_version_dirs.append(dirpath)
+        app_version_dirs = alc.get_oci_bundle_paths(app_parent_dir)
 
         if app_version_dirs:
             human_sort(app_version_dirs)
