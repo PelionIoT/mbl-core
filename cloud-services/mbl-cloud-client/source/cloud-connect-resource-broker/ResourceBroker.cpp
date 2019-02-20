@@ -295,17 +295,19 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
-    if(!app_endpoints_map_.empty()) {
-        //Currently support only ONE application
-        tr_error("%s: Only one registered application is allowed.", __PRETTY_FUNCTION__);
-        out_status = CloudConnectStatus::ERR_ALREADY_REGISTERED;
-        return Error::None;
-    }
-
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
         tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__);
         out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
+        return Error::None;
+    }
+
+    // Above check makes sure there is no registration in progress. Now - check if an app is already not registered.
+    //TODO: remove this check when supporting multiple applications
+    if(!app_endpoints_map_.empty()) {
+        //Currently support only ONE application
+        tr_error("%s: Only one registered application is allowed.", __PRETTY_FUNCTION__);
+        out_status = CloudConnectStatus::ERR_ALREADY_REGISTERED;
         return Error::None;
     }
 

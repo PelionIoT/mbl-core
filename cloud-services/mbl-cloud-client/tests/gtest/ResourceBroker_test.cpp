@@ -323,6 +323,7 @@ TEST(Resource_Broker_Negative, already_registered) {
     CloudConnectStatus cloud_connect_out_status_1;
     std::string out_access_token_1;
 
+    // Application 1 registering
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_1,
         json_string_1,
@@ -332,12 +333,12 @@ TEST(Resource_Broker_Negative, already_registered) {
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 
-    // Test registration callback succeeded
+    // Test registration callback succeeded for application 1
     resource_broker_tester.mbed_client_callback_test(
         out_access_token_1,
         CloudConnectStatus::STATUS_SUCCESS);
 
-    //Try another register - expect fail
+    // Application 2 try to register - expect fail as only one application is allowed to be registered
     const uintptr_t ipc_conn_handle_2 = 2;
     const std::string json_string_2 = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status_2;
@@ -351,4 +352,47 @@ TEST(Resource_Broker_Negative, already_registered) {
         mbl::MblError::None, //expected error status
         CloudConnectStatus::ERR_ALREADY_REGISTERED //expected cloud connect status
     );    
+}
+
+TEST(Resource_Broker_Negative, registration_in_progress) {
+
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    ResourceBrokerTester resource_broker_tester;
+    const uintptr_t ipc_conn_handle_1 = 1;
+    const std::string json_string_1 = VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
+    CloudConnectStatus cloud_connect_out_status_1;
+    std::string out_access_token_1;
+
+    tr_debug("%s: Application 1 - Start registration", __PRETTY_FUNCTION__);
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle_1,
+        json_string_1,
+        cloud_connect_out_status_1,
+        out_access_token_1,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Application 2 try to register while Application 1 registration is still in progress - expect fail
+    tr_debug("%s: Application 2 - Start registration", __PRETTY_FUNCTION__);
+    const uintptr_t ipc_conn_handle_2 = 2;
+    const std::string json_string_2 = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status_2;
+    std::string out_access_token_2;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle_2,
+        json_string_2,
+        cloud_connect_out_status_2,
+        out_access_token_2,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS //expected cloud connect status
+    );
+
+    // Test registration callback succeeded for application 1
+    tr_debug("%s: Application 1 - Finish registration", __PRETTY_FUNCTION__);    
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token_1,
+        CloudConnectStatus::STATUS_SUCCESS);
 }
