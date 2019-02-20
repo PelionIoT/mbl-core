@@ -23,6 +23,9 @@ from mbl.app_lifecycle_manager.container import (
 IPKS_EXCTRACTION_PATH = os.path.join(os.sep, "mnt", "cache", "opkg", "src_ipk")
 APPS_INSTALLATION_PATH = os.path.join(os.sep, "home", "app")
 
+NEW_BUNDLE_PATH = "new_bundle_path"
+CURRENT_BUNDLE_PATH = "cur_bundle_path"
+
 
 class AppUpdateManager:
     """
@@ -92,7 +95,7 @@ class AppUpdateManager:
                 try:
                     # some apps may have been successfully installed,
                     # remove them
-                    self._remove_apps_bundles("new_bundle_path")
+                    self._remove_apps_bundles(NEW_BUNDLE_PATH)
                 except apm.AppUninstallError as error:
                     # TODO: handle failure to remove new version
                     raise error
@@ -219,7 +222,7 @@ class AppUpdateManager:
 
         # Remove new app versions
         try:
-            self._remove_apps_bundles("new_bundle_path")
+            self._remove_apps_bundles(NEW_BUNDLE_PATH)
         except apm.AppUninstallError as error:
             # TODO: handle failure to remove new version
             raise error
@@ -282,7 +285,7 @@ class AppUpdateManager:
         """Remove applications current or previous bundle.
 
         The bundle to remove is indicated by `path_attr` which must be set to
-        `"cur_bundle_path"` or `"new_bundle_path"`.
+        `CURRENT_BUNDLE_PATH` or `NEW_BUNDLE_PATH`.
         """
         if not self._installed_apps:
             return
@@ -349,7 +352,7 @@ class AppUpdateManager:
     def _remove_previous_versions(self):
         """Remove previous application(s) installation."""
         try:
-            self._remove_apps_bundles("cur_bundle_path")
+            self._remove_apps_bundles(CURRENT_BUNDLE_PATH)
         except apm.AppUninstallError as error:
             # TODO: handle failure to remove old version
             raise error
@@ -361,5 +364,5 @@ class IllegalPackage(Exception):
 
 # Record of application
 AppRecord = namedtuple(
-    "AppRecord", ("name", "cur_bundle_path", "new_bundle_path", "ipk_path")
+    "AppRecord", ("name", CURRENT_BUNDLE_PATH, NEW_BUNDLE_PATH, "ipk_path")
 )
