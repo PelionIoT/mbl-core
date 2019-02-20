@@ -93,57 +93,52 @@ public:
     ResourceBrokerTester();
     ~ResourceBrokerTester();
 
-    void set_test_data(
-        mbl::MblError register_resources_expected_err,
-        CloudConnectStatus register_resources_expected_status,
+    void register_resources_test(
+        const uintptr_t ipc_conn_handle,
+        const std::string& app_resource_definition_json,
+        CloudConnectStatus& out_status,
+        std::string& out_access_token,
+        mbl::MblError expected_error_status,
+        CloudConnectStatus expected_cloud_connect_status);
+
+    void mbed_client_callback_test(
+        const std::string& out_access_token,
         CloudConnectStatus dbus_adapter_expected_status);
 
-    void add_objects(const M2MObjectList& object_list);
-    void register_update();
+/*    void two_simultaneous_register_resources_test(
+        const std::string &json_string_app_1,
+        const std::string &json_string_app_2);*/
 
-    void register_resources_test(const std::string &json_string);
+    void add_objects(const M2MObjectList& object_list); //PRIVATE?
+    void register_update(); //PRIVATE?
+
 
 private:
-
-    mbl::MblError register_resources_expected_err_;
-    CloudConnectStatus register_resources_expected_status_;
-    CloudConnectStatus dbus_adapter_expected_status_;
 
     mbl::ResourceBroker cloud_connect_resource_broker_;
 };
 
 ResourceBrokerTester::ResourceBrokerTester()
-: register_resources_expected_err_(mbl::MblError::None)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what cloud_connect_resource_broker_.init() usually does so dont call it...
-    cloud_connect_resource_broker_.register_update_func_ = std::bind(&ResourceBrokerTester::register_update, this);
+    cloud_connect_resource_broker_.register_update_func_ = 
+        std::bind(&ResourceBrokerTester::register_update, this);
     cloud_connect_resource_broker_.add_objects_func_ = 
         std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::add_objects),
             this,
             std::placeholders::_1);
 
     // Init resource broker ipc to be DBusAdapterTester:
-    cloud_connect_resource_broker_.ipc_ = std::make_unique<DBusAdapterTester>(cloud_connect_resource_broker_);
+    cloud_connect_resource_broker_.ipc_ = 
+        std::make_unique<DBusAdapterTester>(cloud_connect_resource_broker_);
 }
 
 ResourceBrokerTester::~ResourceBrokerTester()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-}
-
-void ResourceBrokerTester::set_test_data(
-    mbl::MblError register_resources_expected_err,
-    CloudConnectStatus register_resources_expected_status,
-    CloudConnectStatus dbus_adapter_expected_status)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    register_resources_expected_err_ = register_resources_expected_err;
-    register_resources_expected_status_ = register_resources_expected_status;
-    dbus_adapter_expected_status_ = dbus_adapter_expected_status;
 }
 
 void ResourceBrokerTester::add_objects(const M2MObjectList& /*object_list*/)
@@ -156,27 +151,10 @@ void ResourceBrokerTester::register_update()
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-void ResourceBrokerTester::register_resources_test(const std::string &json_string)
+void ResourceBrokerTester::mbed_client_callback_test(
+    const std::string& out_access_token,
+    CloudConnectStatus dbus_adapter_expected_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    const uintptr_t ipc_conn_handle = 0;
-    CloudConnectStatus out_status;
-    std::string out_access_token;
-
-    mbl::MblError status = cloud_connect_resource_broker_.register_resources(
-    ipc_conn_handle, 
-    json_string,
-    out_status,
-    out_access_token);
-
-    ASSERT_TRUE(register_resources_expected_err_ == status);
-    ASSERT_TRUE(register_resources_expected_status_ == out_status);
-    if(register_resources_expected_status_ != CloudConnectStatus::STATUS_SUCCESS) {
-        // If we were expected to fail in register_resource API, nothing else should be tested
-        return;
-    }
-
     //Call Application Endpoint to notify registration was successful
     ASSERT_TRUE(cloud_connect_resource_broker_.app_endpoints_map_.end() !=
         cloud_connect_resource_broker_.app_endpoints_map_.find(out_access_token));
@@ -186,7 +164,7 @@ void ResourceBrokerTester::register_resources_test(const std::string &json_strin
     // Make sure application is not yet registered
     ASSERT_FALSE(app_endpoint->is_registered());
 
-    if(dbus_adapter_expected_status_ == CloudConnectStatus::STATUS_SUCCESS) {
+    if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
         // Check registration success flow
         tr_debug("%s: Notify Application (access_token: %s) that registration was successful",
             __PRETTY_FUNCTION__,
@@ -206,16 +184,177 @@ void ResourceBrokerTester::register_resources_test(const std::string &json_strin
         ASSERT_FALSE(app_endpoint->is_registered());
     }
 
-    DBusAdapterTester& dbus_adapter_tester = *(static_cast<DBusAdapterTester*>(cloud_connect_resource_broker_.ipc_.get()));
-    // Verify that resource broker called the adapter
+    DBusAdapterTester& dbus_adapter_tester = 
+        *(static_cast<DBusAdapterTester*>(cloud_connect_resource_broker_.ipc_.get()));
+    // Verify that resource broker called the adapter (both for success and failure)
     ASSERT_TRUE(dbus_adapter_tester.is_update_registration_called());
     // Verify adapter got the right call from resource broker
-    ASSERT_TRUE(dbus_adapter_expected_status_ == dbus_adapter_tester.get_register_cloud_connect_status());
+    ASSERT_TRUE(dbus_adapter_expected_status == 
+        dbus_adapter_tester.get_register_cloud_connect_status());
 }
+
+void ResourceBrokerTester::register_resources_test(
+    const uintptr_t ipc_conn_handle,
+    const std::string& app_resource_definition_json,
+    CloudConnectStatus& out_status,
+    std::string& out_access_token,
+    mbl::MblError expected_error_status,
+    CloudConnectStatus expected_cloud_connect_status)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    mbl::MblError status = cloud_connect_resource_broker_.register_resources(
+        ipc_conn_handle, 
+        app_resource_definition_json,
+        out_status,
+        out_access_token);
+
+    ASSERT_TRUE(expected_error_status == status); // Check return code from the function
+    ASSERT_TRUE(expected_cloud_connect_status == out_status); // Check cloud connect expected status
+}
+
+/*
+void ResourceBrokerTester::two_simultaneous_register_resources_test(
+    const std::string &json_string_app_1,
+    const std::string &json_string_app_2)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    const uintptr_t ipc_conn_handle_app_1 = 0;
+    CloudConnectStatus out_status_app_1;
+    std::string out_access_token_app_1;
+
+    mbl::MblError status_app_1 = cloud_connect_resource_broker_.register_resources(
+        ipc_conn_handle_app_1, 
+        json_string_app_1,
+        out_status_app_1,
+        out_access_token_app_1);
+
+    ASSERT_TRUE(register_resources_expected_err_ == status_app_1); // Check return code from the function
+    ASSERT_TRUE(register_resources_expected_status_ == out_status_app_1); // Check cloud connect expected status
+
+    // Before simulating Mbed cloud client callback for successful registration - try to register another app
+    const uintptr_t ipc_conn_handle_app_2 = 0;
+    CloudConnectStatus out_status_app_2;
+    std::string out_access_token_app_2;
+
+    mbl::MblError status_app_2 = cloud_connect_resource_broker_.register_resources(
+        ipc_conn_handle_app_2, 
+        json_string_app_2,
+        out_status_app_2,
+        out_access_token_app_2);
+
+    ASSERT_TRUE(mbl::MblError::None == status_app_2); // Check return code from the function
+    ASSERT_TRUE(CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS == out_status_app_2); // Verify Check cloud connect error
+
+    mbed_client_callback_test(out_status_app_1, out_access_token_app_1);
+} */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * @brief This test successful registration
+ * 
+ * The tested scenario is:
+ * 1. Resource Broker is called for register_resources() API
+ * 2. JSON is parsed by ApplicationEndpoint class
+ * 3. Resource Broker registers ApplicationEndpoint's callbacks so MBed client will call them
+ * 4. Resource Broker calls Mbed cloud client to register the resources
+ * 5. Mbed cloud client calls ApplicationEndpoint's REGISTER callback upon SUCCESSFUL registration
+ * 6. ApplicationEndpoint notify the Resource Broker that registration was SUCCESSFUL
+ * 7. Resource Broker notifys DbusAdapter that registration was SUCCESSFUL
+ */
 TEST(Resource_Broker_Positive, registration_success) {
+
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    ResourceBrokerTester resource_broker_tester;
+    const uintptr_t ipc_conn_handle = 0;
+    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle,
+        json_string,
+        cloud_connect_out_status,
+        out_access_token,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token,
+        CloudConnectStatus::STATUS_SUCCESS);
+}
+
+/**
+ * @brief This test failed registration
+ * 
+ * The tested scenario is:
+ * 1. Resource Broker is called for register_resources() API
+ * 2. JSON is parsed by ApplicationEndpoint class
+ * 3. Resource Broker registers ApplicationEndpoint's callbacks so MBed client will call them
+ * 4. Resource Broker calls Mbed cloud client to register the resources
+ * 5. Mbed cloud client calls ApplicationEndpoint's ERROR callbacks upon FAILED registration
+ * 6. ApplicationEndpoint notify the Resource Broker that registration FAILED
+ * 7. Resource Broker notifys DbusAdapter that registration was FAILED
+ */
+TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
+
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    ResourceBrokerTester resource_broker_tester;
+    const uintptr_t ipc_conn_handle = 0;
+    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle,
+        json_string,
+        cloud_connect_out_status,
+        out_access_token,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Test registration callback failure
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token,
+        CloudConnectStatus::ERR_FAILED);
+}
+
+/**
+ * @brief This test failed registration
+ * 
+ * The tested scenario is:
+ * 1. Resource Broker is called for register_resources() API
+ * 2. JSON is parsed by ApplicationEndpoint class but FAIL due to invalid JSON
+ * 3. Resource Broker return the FAILED registration cloud client status to the adapter
+ */
+TEST(Resource_Broker_Negative, invalid_json_1) {
+
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    ResourceBrokerTester resource_broker_tester;
+    const uintptr_t ipc_conn_handle = 0;
+    const std::string json_string = INVALID_JSON_NOT_3_LEVEL_1;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle,
+        json_string,
+        cloud_connect_out_status,
+        out_access_token,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::ERR_INVALID_JSON //expected cloud connect status
+    );
+}
+
+/*TEST(Resource_Broker_Negative, already_registered) {
 
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -226,30 +365,8 @@ TEST(Resource_Broker_Positive, registration_success) {
         CloudConnectStatus::STATUS_SUCCESS,
         CloudConnectStatus::STATUS_SUCCESS);
     resource_broker_tester.register_resources_test(json_string);
+
+    // 
+
 }
-
-TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
-
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
-    ResourceBrokerTester resource_broker_tester;
-    resource_broker_tester.set_test_data(
-        mbl::MblError::None,
-        CloudConnectStatus::STATUS_SUCCESS,
-        CloudConnectStatus::ERR_FAILED);
-    resource_broker_tester.register_resources_test(json_string);
-}
-
-TEST(Resource_Broker_Negative, invalid_json_1) {
-
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    const std::string json_string = INVALID_JSON_NOT_3_LEVEL_1;
-    ResourceBrokerTester resource_broker_tester;
-    resource_broker_tester.set_test_data(
-        mbl::MblError::None,
-        CloudConnectStatus::ERR_INVALID_JSON,
-        CloudConnectStatus::ERR_INVALID_JSON);
-    resource_broker_tester.register_resources_test(json_string);
-}
+*/
