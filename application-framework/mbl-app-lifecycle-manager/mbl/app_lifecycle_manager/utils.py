@@ -4,6 +4,7 @@
 """Contains utilities."""
 
 import logging
+import re
 
 log = logging.getLogger(__name__)
 
@@ -20,3 +21,15 @@ def set_log_verbosity(increase_verbosity):
 
     log.setLevel(log_level)
     logging.basicConfig(level=log_level, format=log_format)
+
+
+def human_sort(l):
+    """Sort the given list in the way that humans expect."""
+    # key to use for the sort
+    def convert(text):
+        return int(text) if text.isdigit() else text
+
+    def alphanum_key(key):
+        return [convert(c) for c in re.split("([0-9]+)", key)]
+
+    l.sort(key=alphanum_key)

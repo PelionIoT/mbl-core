@@ -28,7 +28,13 @@ def parse_app_info(app_pkg):
         )
         raise AppInfoParserError(msg)
     else:
-        log.debug("Package info:\n{}".format(app_ctrl_data))
+        log.info(
+            "\n================ Package Control data =================\n"
+            "{}"
+            "============= End of Package Control data =============".format(
+                app_ctrl_data
+            )
+        )
         # create a list of all the fields in the application control data
         lines = app_ctrl_data.split("\n")
         for line in lines:

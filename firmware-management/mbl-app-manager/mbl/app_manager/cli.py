@@ -11,7 +11,7 @@ import os
 import sys
 from enum import Enum
 
-from .manager import AppManager
+from .manager import AppManager, APPS_PATH
 from .utils import log, set_log_verbosity
 
 
@@ -103,7 +103,11 @@ def parse_args():
         "list", help="list installed applications."
     )
     lister.add_argument(
-        "apps_path", type=str, help="path to look for installed applications."
+        "-p",
+        "--apps-path",
+        type=str,
+        default=APPS_PATH,
+        help="path to look for installed applications.",
     )
     lister.set_defaults(func=list_action)
 

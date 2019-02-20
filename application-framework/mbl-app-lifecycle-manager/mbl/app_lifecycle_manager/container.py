@@ -14,6 +14,8 @@ from .utils import log
 
 DEFAULT_CONTAINER_LOG_DIR = os.path.join(os.sep, "var", "log", "app")
 
+OCI_BUNDLE_CONFIGURATION = "config.json"
+
 
 class ContainerState(Enum):
     """Existing OCI container status."""
@@ -108,7 +110,7 @@ def create(container_id, bundle_path):
         )
     )
     container_state = get_state(container_id)
-
+    log.debug("'{}' state is '{}'".format(container_id, container_state))
     if container_state != ContainerState.DOES_NOT_EXIST:
         # a container with the specified id already exists, do not
         # attempt to create another one
@@ -243,6 +245,24 @@ def delete(container_id):
         raise ContainerDeleteError(msg)
     else:
         log.debug("Container '{}' deleted".format(container_id))
+
+
+def get_oci_bundle_paths(path):
+    """Get the directories containing OCI bundles.
+
+    The search for OCI bundle starts from `path`.
+    """
+    oci_bundles = []
+    for dirpath, dirnames, filenames in os.walk(path):
+        if OCI_BUNDLE_CONFIGURATION in filenames:
+            config_path = os.path.join(dirpath, OCI_BUNDLE_CONFIGURATION)
+            with open(config_path, "r") as filelike:
+                config = json.load(filelike)
+            if "root" in config and "path" in config["root"]:
+                if config["root"]["path"] in dirnames:
+                    oci_bundles.append(dirpath)
+
+    return oci_bundles
 
 
 class ContainerLogFile:
