@@ -105,10 +105,10 @@ public:
         const std::string& out_access_token,
         CloudConnectStatus dbus_adapter_expected_status);
 
-    void add_objects(const M2MObjectList& object_list); //PRIVATE?
-    void register_update(); //PRIVATE?
-
 private:
+
+    void add_objects(const M2MObjectList& object_list);
+    void register_update();
 
     mbl::ResourceBroker cloud_connect_resource_broker_;
 };
@@ -176,7 +176,6 @@ void ResourceBrokerTester::mbed_client_callback_test(
 
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
         app_endpoint->handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
-        ASSERT_FALSE(app_endpoint->is_registered());
     }
 
     DBusAdapterTester& dbus_adapter_tester = 
@@ -395,4 +394,46 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
     resource_broker_tester.mbed_client_callback_test(
         out_access_token_1,
         CloudConnectStatus::STATUS_SUCCESS);
+}
+
+// Test a scenario when application failed with its registration (e.g. due to communication problem)
+// and succeeds in second try
+TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
+
+     tr_debug("%s", __PRETTY_FUNCTION__);
+
+    ResourceBrokerTester resource_broker_tester;
+    const uintptr_t ipc_conn_handle = 0;
+    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle,
+        json_string,
+        cloud_connect_out_status,
+        out_access_token,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Test registration callback failure
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token,
+        CloudConnectStatus::ERR_FAILED);
+
+    // Second time - this time we simulate success
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle,
+        json_string,
+        cloud_connect_out_status,
+        out_access_token,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Test registration callback failure
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token,
+        CloudConnectStatus::STATUS_SUCCESS);    
 }

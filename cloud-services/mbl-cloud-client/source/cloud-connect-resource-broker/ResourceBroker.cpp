@@ -252,16 +252,21 @@ void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle, con
     registration_in_progress_.store(false);
 }
 
-void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error)
+void ResourceBroker::handle_app_error_cb(
+    const uintptr_t ipc_conn_handle,
+    const std::string &access_token, const MblError error)
 {
     tr_debug("%s: Application (access_token: %s) encountered an error: %s", 
         __PRETTY_FUNCTION__, 
         access_token.c_str(),
         MblError_to_str(error));
 
-    if (app_endpoints_map_.end() == app_endpoints_map_.find(access_token)) {
+    auto itr = app_endpoints_map_.find(access_token);
+    if (app_endpoints_map_.end() == itr) {
         // Could not found application endpoint
-        tr_error("%s: Application (access_token: %s) does not exist.", __PRETTY_FUNCTION__, access_token.c_str());
+        tr_error("%s: Application (access_token: %s) does not exist.",
+            __PRETTY_FUNCTION__,
+            access_token.c_str());
         return;
     }
 
@@ -270,7 +275,9 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
     // Send the response to adapter:
     if(app_endpoint->is_registered()) {
         //TODO: add call to update_deregistration_status when deregister is implemented
-        tr_error("%s: Application (access_token: %s) is already registered.", __PRETTY_FUNCTION__, access_token.c_str());
+        tr_error("%s: Application (access_token: %s) is already registered.",
+            __PRETTY_FUNCTION__,
+            access_token.c_str());
     } else {
         // App is not registered yet, which means the error is for register request
         MblError status = ipc_->update_registration_status(
@@ -282,6 +289,10 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle, const 
                 access_token.c_str(),
                 MblError_to_str(status));
         }
+        
+        tr_debug("%s: Erase Application (access_token: %s)", __PRETTY_FUNCTION__, access_token.c_str());
+        app_endpoints_map_.erase(itr); // Erase endpoint as registation failed
+
         // Mark that registration is finished (even if it was failed)
         registration_in_progress_.store(false);
     }
