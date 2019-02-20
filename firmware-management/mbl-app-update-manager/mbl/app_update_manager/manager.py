@@ -93,21 +93,21 @@ class AppUpdateManager:
             ipk_path = os.path.join(IPKS_EXCTRACTION_PATH, ipk)
             try:
                 self._manage_app_installation(ipk_path)
-            except (apm.AppIdError, apm.AppInstallError) as error:
+            except (apm.AppIdError, apm.AppInstallError) as install_error:
                 log.error(
                     "Failed to install '{}', error: '{}'".format(
-                        ipk, str(error)
+                        ipk, str(install_error)
                     )
                 )
                 try:
                     # some apps may have been successfully installed,
                     # remove them
                     self._remove_apps_bundles(NEW_BUNDLE_PATH)
-                except apm.AppUninstallError as error:
+                except apm.AppUninstallError as uninstall_error:
                     # TODO: handle failure to remove new version
-                    raise error
+                    raise uninstall_error from install_error
                 else:
-                    raise error
+                    raise install_error
 
     def start_installed_apps(self):
         """Run applications that have been successfully installed if any.
