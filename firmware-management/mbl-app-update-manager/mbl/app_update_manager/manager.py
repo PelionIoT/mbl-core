@@ -83,7 +83,7 @@ class AppUpdateManager:
             ipk_path = os.path.join(IPKS_EXCTRACTION_PATH, ipk)
             try:
                 self._manage_app_installation(ipk_path)
-            except Exception as error:
+            except (apm.AppIdError, apm.AppInstallError) as error:
                 log.error(
                     "Failed to install '{}', error: '{}'".format(
                         ipk, str(error)
@@ -200,57 +200,9 @@ class AppUpdateManager:
                 [app.name for app in self._installed_apps]
             )
         )
-
-        # Stop all apps, there might be some new apps that were started
-        for app in self._installed_apps:
-            try:
-                alm.terminate_app(app.name)
-            except alc.ContainerKillError as error:
-                if alc.ContainerState.DOES_NOT_EXIST.value in str(error):
-                    # Not all new app versions may have been started
-                    # Carry on stopping some that may have been started already
-                    pass
-                else:
-                    # TODO: handle failure to stop new version during rollback
-                    raise error
-            except alc.ContainerDeleteError as error:
-                # TODO: handle failure to delete container resources
-                raise error
-
-        # Remove new app versions
-        try:
-            self._remove_apps_bundles(NEW_BUNDLE_PATH)
-        except apm.AppUninstallError as error:
-            # TODO: handle failure to remove new version
-            raise error
-        else:
-            # Restart applications that were previously installed
-            for app in self._installed_apps:
-                if not app.cur_bundle_path:
-                    log.debug(
-                        "'{}' not previously installed,"
-                        " nothing to rollback to.".format(app.name)
-                    )
-                    continue
-                try:
-                    alm.run_app(app.name, app.cur_bundle_path)
-                except (
-                    alc.ContainerCreationError,
-                    alc.ContainerStartError,
-                ) as error:
-                    log.error(
-                        "Failed to restart '{}' from '{}'".format(
-                            app.name, app.cur_bundle_path
-                        )
-                    )
-                    # TODO: handle failure to restart old version
-                    raise error
-
-            log.info(
-                "'{}' have been rolled back".format(
-                    [x.name for x in self._installed_apps]
-                )
-            )
+        self._stop_all_newly_installed_apps()
+        self._remove_apps_bundles(NEW_BUNDLE_PATH)
+        self._run_previous_app_versions()
 
     def _get_app_bundle_paths(self, app_name):
         """Return the current and next paths for an app installation."""
@@ -305,20 +257,52 @@ class AppUpdateManager:
             )
             try:
                 alm.terminate_app(app.name)
-            except Exception as error:
+            except (
+                alc.ContainerKillError,
+                alc.ContainerDeleteError,
+                apm.AppStopTimeoutError,
+            ) as terminate_error:
+                log.error(
+                    "Rollback applications as failed"
+                    " to stop '{}'".format(app.name)
+                )
                 try:
-                    log.error(
-                        "Rollback applications as failed"
-                        " to stop '{}'".format(app.name)
-                    )
                     self._rollback_apps()
-                    raise error
-                except Exception as error:
-                    # TODO: handle failure to rollback
-                    raise error
+                except (
+                    alc.ContainerKillError,
+                    alc.ContainerDeleteError,
+                    apm.AppPathInexistent,
+                    apm.AppUninstallError,
+                    apm.AppStopTimeoutError,
+                    alc.ContainerCreationError,
+                    alc.ContainerStartError,
+                ) as rollback_error:
+                    raise rollback_error from terminate_error
+                else:
+                    raise terminate_error
+
+    def _stop_all_newly_installed_apps(self):
+        """Stop all applications installed during the update."""
+        for app in self._installed_apps:
+            try:
+                alm.terminate_app(app.name)
+            except (
+                alc.ContainerKillError,
+                alc.ContainerDeleteError,
+                apm.AppStopTimeoutError,
+            ) as terminate_error:
+                if alc.ContainerState.DOES_NOT_EXIST.value in str(
+                    terminate_error
+                ):
+                    # Not all new app versions may have been started
+                    # Carry on stopping some that may have been started already
+                    pass
+                else:
+                    # TODO: handle failure to stop new version during rollback
+                    raise terminate_error
 
     def _run_new_installed_versions(self):
-        # Run newly installed application(s) version
+        """Run newly installed application(s) version."""
         for app in self._installed_apps:
             log.info(
                 "Run '{}' from '{}'".format(app.name, app.new_bundle_path)
@@ -328,23 +312,52 @@ class AppUpdateManager:
             except (
                 alc.ContainerCreationError,
                 alc.ContainerStartError,
-            ) as error:
+            ) as run_error:
+                log.error(
+                    "Rollback applications as failed to start"
+                    "'{}' from '{}'".format(app.name, app.new_bundle_path)
+                )
                 try:
-                    log.error(
-                        "Rollback applications as failed to start"
-                        "'{}' from '{}'".format(app.name, app.new_bundle_path)
-                    )
                     self._rollback_apps()
-                    raise error
-                except Exception as error:
-                    # TODO: handle failure to rollback
-                    raise error
+                except () as rollback_error:
+                    raise rollback_error from run_error
+                else:
+                    raise run_error
+
+    def _run_previous_app_versions(self):
+        """Run previous versions of apps installed during the upgrade."""
+        for app in self._installed_apps:
+            if not app.cur_bundle_path:
+                log.debug(
+                    "'{}' not previously installed,"
+                    " nothing to rollback to.".format(app.name)
+                )
+                continue
+            try:
+                alm.run_app(app.name, app.cur_bundle_path)
+            except (
+                alc.ContainerCreationError,
+                alc.ContainerStartError,
+            ) as run_error:
+                log.error(
+                    "Failed to restart '{}' from '{}'".format(
+                        app.name, app.cur_bundle_path
+                    )
+                )
+                # TODO: handle failure to restart old version
+                raise run_error
+            else:
+                log.info(
+                    "'{}' was restarted from '{}'".format(
+                        app.name, app.cur_bundle_path
+                    )
+                )
 
     def _remove_previous_versions(self):
         """Remove previous application(s) installation."""
         try:
             self._remove_apps_bundles(CURRENT_BUNDLE_PATH)
-        except apm.AppUninstallError as error:
+        except (apm.AppPathInexistent, apm.AppUninstallError) as error:
             # TODO: handle failure to remove old version
             raise error
 
