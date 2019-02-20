@@ -23,6 +23,16 @@ APPS_INSTALLATION_PATH = os.path.join(os.sep, "home", "app")
 NEW_BUNDLE_PATH = "new_bundle_path"
 CURRENT_BUNDLE_PATH = "cur_bundle_path"
 
+ROLLBACK_EXCEPTIONS = (
+    alc.ContainerKillError,
+    alc.ContainerDeleteError,
+    apm.AppPathInexistent,
+    apm.AppUninstallError,
+    apm.AppStopTimeoutError,
+    alc.ContainerCreationError,
+    alc.ContainerStartError,
+)
+
 
 class AppUpdateManager:
     """
@@ -268,15 +278,7 @@ class AppUpdateManager:
                 )
                 try:
                     self._rollback_apps()
-                except (
-                    alc.ContainerKillError,
-                    alc.ContainerDeleteError,
-                    apm.AppPathInexistent,
-                    apm.AppUninstallError,
-                    apm.AppStopTimeoutError,
-                    alc.ContainerCreationError,
-                    alc.ContainerStartError,
-                ) as rollback_error:
+                except ROLLBACK_EXCEPTIONS as rollback_error:
                     raise rollback_error from terminate_error
                 else:
                     raise terminate_error
@@ -319,15 +321,7 @@ class AppUpdateManager:
                 )
                 try:
                     self._rollback_apps()
-                except (
-                    alc.ContainerKillError,
-                    alc.ContainerDeleteError,
-                    apm.AppPathInexistent,
-                    apm.AppUninstallError,
-                    apm.AppStopTimeoutError,
-                    alc.ContainerCreationError,
-                    alc.ContainerStartError,
-                ) as rollback_error:
+                except ROLLBACK_EXCEPTIONS as rollback_error:
                     raise rollback_error from run_error
                 else:
                     raise run_error
