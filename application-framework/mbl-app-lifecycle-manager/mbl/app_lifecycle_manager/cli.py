@@ -11,8 +11,9 @@ import shutil
 import sys
 from enum import Enum
 
-from .container import get_oci_bundle_paths
+from mbl.app_manager.manager import APPS_PATH
 
+from .container import get_oci_bundle_paths
 from .manager import (
     run_app,
     terminate_app,
@@ -31,19 +32,43 @@ class ReturnCode(Enum):
     INVALID_OPTIONS = 2
 
 
-def run_action(args):
-    """Entry point for the 'run' cli command."""
-    app_version_dirs = get_oci_bundle_paths(args.app_path)
+def run_app_from_parent_dir(name):
+    """Run an application from its parent directory.
 
-    if app_version_dirs:
-        human_sort(app_version_dirs)
-        app_path = app_version_dirs.pop(0)
-        run_app(args.app_name, app_path)
+    For an application `app_a` located at `/home/app/app_a`,
+    run the application version with the lowest number and remove
+    all other versions found if any.
+    i.e If `/home/app/app_a/9` and `/home/app/app_a/10` are found,
+    run `/home/app/app_a/9` and remove `/home/app/app_a/10`
+    """
+    app_parent_dir = os.path.join(APPS_PATH, name)
+
+    if not os.path.isdir(app_parent_dir):
+        raise Exception("'{}' is not installed".format(name))
+
+    versions = get_oci_bundle_paths(app_parent_dir)
+
+    if versions:
+        human_sort(versions)
+        valid_version = versions.pop(0)
+        run_app(name, valid_version)
 
         # clean up other app versions if any
-        if app_version_dirs:
-            for version in app_version_dirs:
-                shutil.rmtree(version)
+        if versions:
+            for invalid_version in versions:
+                shutil.rmtree(invalid_version)
+
+
+def run_action(args):
+    """Entry point for the 'run' cli command."""
+    run_app_from_parent_dir(args.app_name)
+
+
+def run_all_action(args):
+    """Entry point for the `run-all` cli command."""
+    app_names = next(os.walk(APPS_PATH))[1]
+    for app_name in app_names:
+        run_app_from_parent_dir(app_name)
 
 
 def terminate_action(args):
@@ -74,11 +99,13 @@ def parse_args():
         help="name the application will be referred as"
         " once it has been started.",
     )
-    run.add_argument(
-        "app_path", type=str, help="path of the application to start."
-    )
-
     run.set_defaults(func=run_action)
+
+    run_all = command_group.add_parser(
+        "run-all",
+        help=("run all user applications found at {}".format(APPS_PATH)),
+    )
+    run_all.set_defaults(func=run_all_action)
 
     terminate = command_group.add_parser(
         "terminate",
