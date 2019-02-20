@@ -29,6 +29,11 @@ namespace mbl {
 
 class ResourceBroker;
 
+/**
+ * @brief This class represent an Application endpoint, holds M2M resources, access token and more.
+ * This class register for Mbed cloud client callbacks, and when called - pass the relevant information
+ * to ResourceBroker.
+ */
 class ApplicationEndpoint {
 
 friend ::ResourceBrokerTester;
@@ -43,9 +48,20 @@ public:
 
     void update_ipc_conn_handle(const uintptr_t ipc_conn_handle);
 
-    uintptr_t get_ipc_conn_handle() const;
+    uintptr_t get_ipc_conn_handle() const { return ipc_conn_handle_; }
 
-    std::string get_access_token() const;
+    std::string get_access_token() const { return access_token_; }
+
+    bool is_registered();
+
+    /**
+     * @brief Return m2m object list object
+     * 
+     * @return M2MObjectList& - m2m object list object that was consructed in init() API
+     */
+    M2MObjectList& get_m2m_object_list() { return m2m_object_list_; }
+
+private:
 
     /**
      * @brief Resitration callback
@@ -60,12 +76,6 @@ public:
      * This function will notify the Resource broker that error occurred.
      */
     void handle_error_cb(const int cloud_client_code);
-
-    bool is_registered();
-
-    M2MObjectList& get_m2m_object_list();
-
-private:
 
     uintptr_t ipc_conn_handle_;
     std::string access_token_;

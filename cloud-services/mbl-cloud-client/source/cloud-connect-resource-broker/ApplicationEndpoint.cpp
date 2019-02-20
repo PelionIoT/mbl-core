@@ -23,16 +23,15 @@
 
 #define TRACE_GROUP "ccrb-app-end-point"
 
-namespace mbl {
+namespace mbl
+{
 
-ApplicationEndpoint::ApplicationEndpoint(
-    const uintptr_t ipc_conn_handle,
-    std::string access_token,
-    ResourceBroker &ccrb)
-: ipc_conn_handle_(ipc_conn_handle),
-access_token_(std::move(access_token)), 
-ccrb_(ccrb),
-registered_(false)
+ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token,
+                                         ResourceBroker& ccrb)
+    : ipc_conn_handle_(ipc_conn_handle)
+    , access_token_(std::move(access_token))
+    , ccrb_(ccrb)
+    , registered_(false)
 {
     tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
 }
@@ -48,16 +47,12 @@ MblError ApplicationEndpoint::init(const std::string json_string)
 
     // Parse JSON
     ResourceDefinitionParser resource_parser;
-    const MblError status = resource_parser.build_object_list(
-        json_string, 
-        m2m_object_list_,
-        rbm2m_object_list_);
+    const MblError status =
+        resource_parser.build_object_list(json_string, m2m_object_list_, rbm2m_object_list_);
 
-    if(Error::None != status) {
+    if (Error::None != status) {
         tr_error("%s: (access_token: %s) - build_object_list failed with error: %s",
-            __PRETTY_FUNCTION__,
-            access_token_.c_str(),
-            MblError_to_str(status));
+                 __PRETTY_FUNCTION__, access_token_.c_str(), MblError_to_str(status));
     }
     return status;
 }
@@ -70,51 +65,28 @@ void ApplicationEndpoint::update_ipc_conn_handle(const uintptr_t ipc_conn_handle
 void ApplicationEndpoint::handle_register_cb()
 {
     tr_debug("%s: (access_token: %s) - Notify CCRB that registration was successfull.",
-        __PRETTY_FUNCTION__,
-        access_token_.c_str());
+             __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = true;
     ccrb_.handle_app_register_cb(ipc_conn_handle_, access_token_);
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
 {
-    const MblError mbl_code = CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    tr_err("%s: (access_token: %s) - Error occurred: %d: %s", 
-        __PRETTY_FUNCTION__,
-        access_token_.c_str(),
-        mbl_code,
-        MblError_to_str(mbl_code));
+    const MblError mbl_code =
+        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
+    tr_err("%s: (access_token: %s) - Error occurred: %d: %s", __PRETTY_FUNCTION__,
+           access_token_.c_str(), mbl_code, MblError_to_str(mbl_code));
 
-    tr_debug("%s: (access_token: %s) - Notify CCRB that error occured.",
-        __PRETTY_FUNCTION__,
-        access_token_.c_str());
+    tr_debug("%s: (access_token: %s) - Notify CCRB that error occured.", __PRETTY_FUNCTION__,
+             access_token_.c_str());
     ccrb_.handle_app_error_cb(ipc_conn_handle_, access_token_, mbl_code);
-}
-
-uintptr_t ApplicationEndpoint::get_ipc_conn_handle() const
-{
-    tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
-    return ipc_conn_handle_;
-}
-
-std::string ApplicationEndpoint::get_access_token() const
-{
-    tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
-    return access_token_;
 }
 
 bool ApplicationEndpoint::is_registered()
 {
-    tr_debug("%s: (access_token: %s) registered = %d",
-        __PRETTY_FUNCTION__,
-        access_token_.c_str(),
-        registered_);
+    tr_debug("%s: (access_token: %s) registered = %d", __PRETTY_FUNCTION__, access_token_.c_str(),
+             registered_);
     return registered_;
-}
-
-M2MObjectList& ApplicationEndpoint::get_m2m_object_list()
-{
-    return m2m_object_list_;
 }
 
 } // namespace mbl
