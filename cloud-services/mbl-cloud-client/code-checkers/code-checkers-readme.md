@@ -10,17 +10,12 @@ clang-format enforces a set of rools on the C/C++ code style. It can help in fin
 
 # Prerequisites
 ## Toolchains installations
-`sudo apt-get install clang`
-
-`sudo apt-get install clang-tidy`
-
-`sudo apt-get install clang-format`
+`sudo apt-get install -y clang clang-tidy clang-format`
 
 ## Libraries for mbl-cloud-client on PC compilation installations
 Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
 
-`sudo apt-get install libsystemd-dev`
-`sudo apt-get install libjsoncpp-dev`
+`sudo apt-get install -y libsystemd-dev libjsoncpp-dev`
 
 libjsoncpp-dev installs the header to /usr/include/jsoncpp/json/ while bitbake expects it to be under /usr/include/json directory. In order to enable both - make a soft link:
 `sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json`
