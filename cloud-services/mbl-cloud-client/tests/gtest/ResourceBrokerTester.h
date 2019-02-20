@@ -66,7 +66,7 @@ public:
         CloudConnectStatus expected_cloud_connect_status);
 
     /**
-     * @brief Simulate MBed cloud client register update callback calls
+     * @brief Simulate Mbed cloud client register update callback calls
      * 
      * Depending on dbus_adapter_expected_status it either calls handle_register_cb or handle_error_cd 
      * of ApplicationEnpoint class to signal a success or failed registration

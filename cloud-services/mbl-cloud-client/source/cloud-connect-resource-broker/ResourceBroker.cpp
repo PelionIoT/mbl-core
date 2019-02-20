@@ -196,7 +196,9 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Callbacks functions that are being called directly from Mbed CLient CLient
+// Callback functions that are being called by Mbed client
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void ResourceBroker::regsiter_callback_handlers()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -229,10 +231,12 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
     // Mark that registration is finished
     registration_in_progress_.store(false);
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Callbacks functions that are being called directly from Application Endpoint (e.g. during
-// registeration)
-void ResourceBroker::handle_app_register_cb(const uintptr_t ipc_conn_handle,
+// Callback functions that are being called by ApplicationEndpoint Class
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ResourceBroker::handle_app_registration_updated(const uintptr_t ipc_conn_handle,
                                             const std::string& access_token)
 {
     tr_debug("%s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__,
@@ -270,7 +274,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
     SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
 
     // Send the response to adapter:
-    if (app_endpoint->is_registered()) {
+    if (app_endpoint->registered_) {
         // TODO: add call to update_deregistration_status when deregister is implemented
         tr_error("%s: Application (access_token: %s) is already registered.", __PRETTY_FUNCTION__,
                  access_token.c_str());
@@ -293,6 +297,8 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
         registration_in_progress_.store(false);
     }
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
@@ -309,8 +315,8 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
-    // Above check makes sure there is no registration in progress. Now - check if an app is already
-    // not registered.
+    // Above check makes sure there is no registration in progress. 
+    // Lets check if an app is already not registered...
     // TODO: remove this check when supporting multiple applications
     if (!app_endpoints_map_.empty()) {
         // Currently support only ONE application
@@ -329,13 +335,9 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
-    // Create and init application endpoint
+    // Create and init Application Endpoint
     SPApplicationEndpoint app_endpoint =
         std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
-    if (nullptr == app_endpoint) {
-        tr_error("%s: Create application endpoint failed.", __PRETTY_FUNCTION__);
-        return Error::CCRBRegisterFailed;
-    }
     status = app_endpoint->init(app_resource_definition_json);
     if (Error::None != status) {
         tr_error("%s: app_endpoint->init failed with error: %s", __PRETTY_FUNCTION__,
@@ -351,16 +353,14 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
     // Register the next cloud client callbacks to app_endpoint
     if (nullptr != cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr
         cloud_client_->on_registration_updated(&(*app_endpoint),
-                                               &ApplicationEndpoint::handle_register_cb);
+                                               &ApplicationEndpoint::handle_registration_updated_cb);
         cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
     }
 
-    // app_endpoint->regsiter_callback_handlers(); // Register the next cloud client callbacks to
-    // this app end point
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
-    // Call cloud client to start registration
-    add_objects_func_(app_endpoint->get_m2m_object_list());
+    // Call Mbed cloud client to start registration
+    add_objects_func_(app_endpoint->m2m_object_list_);
     register_update_func_();
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;

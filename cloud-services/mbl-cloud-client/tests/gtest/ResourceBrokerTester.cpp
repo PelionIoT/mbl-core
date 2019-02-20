@@ -88,7 +88,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         cloud_connect_resource_broker_.app_endpoints_map_[access_token];
 
     // Make sure application is not yet registered
-    ASSERT_FALSE(app_endpoint->is_registered());
+    ASSERT_FALSE(app_endpoint->registered_);
 
     if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
         // Check registration success flow
@@ -97,8 +97,8 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
             access_token.c_str());
 
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        app_endpoint->handle_register_cb();
-        ASSERT_TRUE(app_endpoint->is_registered());
+        app_endpoint->handle_registration_updated_cb();
+        ASSERT_TRUE(app_endpoint->registered_);
     } else {
         // Check registration failure flow
         tr_debug("%s: Notify Application (access_token: %s) that registration failed",

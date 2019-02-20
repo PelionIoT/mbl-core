@@ -44,49 +44,38 @@ public:
     ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb);
     ~ApplicationEndpoint();
 
-    MblError init(const std::string json_string);
-
-    void update_ipc_conn_handle(const uintptr_t ipc_conn_handle);
-
-    uintptr_t get_ipc_conn_handle() const { return ipc_conn_handle_; }
-
-    std::string get_access_token() const { return access_token_; }
-
-    bool is_registered();
-
     /**
-     * @brief Return m2m object list object
+     * @brief Initialize Application resource M2M lists using JSON string
      * 
-     * @return M2MObjectList& - m2m object list object that was consructed in init() API
+     * @param json_string - Application resource definition JSON string
+     * @return MblError -
+     *      Error::None - If function succeeded
+     *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
+     *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    M2MObjectList& get_m2m_object_list() { return m2m_object_list_; }
+    MblError init(const std::string json_string);
 
 private:
 
     /**
-     * @brief Resitration callback
+     * @brief Resitration update callback
      * When registration flow is finished - Mbed cloud client will call this callback.
      * This function will notify the Resource broker that its registration finished successfully.
      */
-    void handle_register_cb();
+    void handle_registration_updated_cb();
 
     /**
      * @brief Error callback
-     * When error occurred (e.g. during registration) - Mbed cloud client will call this callback.
-     * This function will notify the Resource broker that error occurred.
+     * Mbed cloud client will call this callback when an error occurred (e.g. during registration).
+     * This function will notify the Resource broker that an error occurred.
      */
     void handle_error_cb(const int cloud_client_code);
 
     uintptr_t ipc_conn_handle_;
     std::string access_token_;
-
-    // this class must have a reference that should be always valid to the CCRB instance. 
-    // reference class member satisfy this condition.   
-    ResourceBroker &ccrb_;
-
-    bool registered_; //TODO: use a more descriptive states (e.g. for deregister as well?)
-
-    M2MObjectList m2m_object_list_;
+    ResourceBroker &ccrb_; // Resource Broker to be updated whenever a callback is being called
+    bool registered_;
+    M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
     RBM2MObjectList rbm2m_object_list_;
 };
 

@@ -74,8 +74,7 @@ enum Type {
     CCRBInvalidJson                     = 0x0403,
     CCRBCreateM2MObjFailed              = 0x0404,
     CCRBValueTypeError                  = 0x0405,
-    CCRBRegisterFailed                  = 0x0406,
-    CCRBGenerateUniqueIdFailed          = 0x0407,
+    CCRBGenerateUniqueIdFailed          = 0x0406,
 };
 } // namespace Error
 

@@ -28,7 +28,7 @@
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
  * 2. JSON is parsed by ApplicationEndpoint class
- * 3. Resource Broker registers ApplicationEndpoint's callbacks so MBed client will call them
+ * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
  * 4. Resource Broker calls Mbed cloud client to register the resources
  * 5. Mbed cloud client calls ApplicationEndpoint's REGISTER callback upon SUCCESSFUL registration
  * 6. ApplicationEndpoint notify the Resource Broker that registration was SUCCESSFUL
@@ -65,7 +65,7 @@ TEST(Resource_Broker_Positive, registration_success) {
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
  * 2. JSON is parsed by ApplicationEndpoint class
- * 3. Resource Broker registers ApplicationEndpoint's callbacks so MBed client will call them
+ * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
  * 4. Resource Broker calls Mbed cloud client to register the resources
  * 5. Mbed cloud client calls ApplicationEndpoint's ERROR callbacks upon FAILED registration
  * 6. ApplicationEndpoint notify the Resource Broker that registration FAILED

@@ -57,17 +57,12 @@ MblError ApplicationEndpoint::init(const std::string json_string)
     return status;
 }
 
-void ApplicationEndpoint::update_ipc_conn_handle(const uintptr_t ipc_conn_handle)
-{
-    ipc_conn_handle_ = ipc_conn_handle;
-}
-
-void ApplicationEndpoint::handle_register_cb()
+void ApplicationEndpoint::handle_registration_updated_cb()
 {
     tr_debug("%s: (access_token: %s) - Notify CCRB that registration was successfull.",
              __PRETTY_FUNCTION__, access_token_.c_str());
     registered_ = true;
-    ccrb_.handle_app_register_cb(ipc_conn_handle_, access_token_);
+    ccrb_.handle_app_registration_updated(ipc_conn_handle_, access_token_);
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
@@ -80,13 +75,6 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
     tr_debug("%s: (access_token: %s) - Notify CCRB that error occured.", __PRETTY_FUNCTION__,
              access_token_.c_str());
     ccrb_.handle_app_error_cb(ipc_conn_handle_, access_token_, mbl_code);
-}
-
-bool ApplicationEndpoint::is_registered()
-{
-    tr_debug("%s: (access_token: %s) registered = %d", __PRETTY_FUNCTION__, access_token_.c_str(),
-             registered_);
-    return registered_;
 }
 
 } // namespace mbl
