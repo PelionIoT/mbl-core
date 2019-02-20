@@ -21,7 +21,8 @@ enum CloudConnectStatus {
     // Start all enums in this range with "ERR_" prefix
     ERR_FAILED                              = 0x1000,
     ERR_INVALID_JSON                        = 0x1001,
-    ERR_REGISTRATION_ALREADY_IN_PROGRESS    = 0x0002,	
+    ERR_REGISTRATION_ALREADY_IN_PROGRESS    = 0x0002,
+    ERR_ALREADY_REGISTERED                  = 0x0003, // NOTE: this error should be removed when supporting multiple applications
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;

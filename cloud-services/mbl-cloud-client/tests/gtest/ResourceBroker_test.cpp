@@ -105,13 +105,8 @@ public:
         const std::string& out_access_token,
         CloudConnectStatus dbus_adapter_expected_status);
 
-/*    void two_simultaneous_register_resources_test(
-        const std::string &json_string_app_1,
-        const std::string &json_string_app_2);*/
-
     void add_objects(const M2MObjectList& object_list); //PRIVATE?
     void register_update(); //PRIVATE?
-
 
 private:
 
@@ -212,43 +207,6 @@ void ResourceBrokerTester::register_resources_test(
     ASSERT_TRUE(expected_error_status == status); // Check return code from the function
     ASSERT_TRUE(expected_cloud_connect_status == out_status); // Check cloud connect expected status
 }
-
-/*
-void ResourceBrokerTester::two_simultaneous_register_resources_test(
-    const std::string &json_string_app_1,
-    const std::string &json_string_app_2)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    const uintptr_t ipc_conn_handle_app_1 = 0;
-    CloudConnectStatus out_status_app_1;
-    std::string out_access_token_app_1;
-
-    mbl::MblError status_app_1 = cloud_connect_resource_broker_.register_resources(
-        ipc_conn_handle_app_1, 
-        json_string_app_1,
-        out_status_app_1,
-        out_access_token_app_1);
-
-    ASSERT_TRUE(register_resources_expected_err_ == status_app_1); // Check return code from the function
-    ASSERT_TRUE(register_resources_expected_status_ == out_status_app_1); // Check cloud connect expected status
-
-    // Before simulating Mbed cloud client callback for successful registration - try to register another app
-    const uintptr_t ipc_conn_handle_app_2 = 0;
-    CloudConnectStatus out_status_app_2;
-    std::string out_access_token_app_2;
-
-    mbl::MblError status_app_2 = cloud_connect_resource_broker_.register_resources(
-        ipc_conn_handle_app_2, 
-        json_string_app_2,
-        out_status_app_2,
-        out_access_token_app_2);
-
-    ASSERT_TRUE(mbl::MblError::None == status_app_2); // Check return code from the function
-    ASSERT_TRUE(CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS == out_status_app_2); // Verify Check cloud connect error
-
-    mbed_client_callback_test(out_status_app_1, out_access_token_app_1);
-} */
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -354,19 +312,43 @@ TEST(Resource_Broker_Negative, invalid_json_1) {
     );
 }
 
-/*TEST(Resource_Broker_Negative, already_registered) {
+//NOTE: this test is valid only for Single app support
+TEST(Resource_Broker_Negative, already_registered) {
 
     tr_debug("%s", __PRETTY_FUNCTION__);
 
-    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     ResourceBrokerTester resource_broker_tester;
-    resource_broker_tester.set_test_data(
-        mbl::MblError::None,
-        CloudConnectStatus::STATUS_SUCCESS,
+    const uintptr_t ipc_conn_handle_1 = 1;
+    const std::string json_string_1 = VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
+    CloudConnectStatus cloud_connect_out_status_1;
+    std::string out_access_token_1;
+
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle_1,
+        json_string_1,
+        cloud_connect_out_status_1,
+        out_access_token_1,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.mbed_client_callback_test(
+        out_access_token_1,
         CloudConnectStatus::STATUS_SUCCESS);
-    resource_broker_tester.register_resources_test(json_string);
 
-    // 
+    //Try another register - expect fail
+    const uintptr_t ipc_conn_handle_2 = 2;
+    const std::string json_string_2 = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status_2;
+    std::string out_access_token_2;
 
+    resource_broker_tester.register_resources_test(
+        ipc_conn_handle_2,
+        json_string_2,
+        cloud_connect_out_status_2,
+        out_access_token_2,
+        mbl::MblError::None, //expected error status
+        CloudConnectStatus::ERR_ALREADY_REGISTERED //expected cloud connect status
+    );    
 }
-*/
