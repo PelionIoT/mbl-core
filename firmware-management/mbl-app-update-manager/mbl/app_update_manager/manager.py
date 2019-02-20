@@ -319,7 +319,15 @@ class AppUpdateManager:
                 )
                 try:
                     self._rollback_apps()
-                except () as rollback_error:
+                except (
+                    alc.ContainerKillError,
+                    alc.ContainerDeleteError,
+                    apm.AppPathInexistent,
+                    apm.AppUninstallError,
+                    apm.AppStopTimeoutError,
+                    alc.ContainerCreationError,
+                    alc.ContainerStartError,
+                ) as rollback_error:
                     raise rollback_error from run_error
                 else:
                     raise run_error
