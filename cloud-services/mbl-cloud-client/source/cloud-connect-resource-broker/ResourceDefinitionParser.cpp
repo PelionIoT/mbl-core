@@ -25,7 +25,7 @@
 #include <cassert>
 #include <cinttypes>
 
-#define TRACE_GROUP "ccrb-resdefparser"
+#define TRACE_GROUP "ccrb-resource-parser"
 
 #define JSON_RESOURCE_MODE                  "mode"
 #define JSON_RESOURCE_MODE_STATIC           "static"
