@@ -15,19 +15,16 @@
 
 #define TRACE_GROUP "ccrb"
 
-namespace mbl {
+namespace mbl
+{
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker()
-: cloud_client_(nullptr), registration_in_progress_(false)
+ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progress_(false)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-ResourceBroker::~ResourceBroker()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-}
+ResourceBroker::~ResourceBroker() { tr_debug("%s", __PRETTY_FUNCTION__); }
 
 MblError ResourceBroker::start(MbedCloudClient* cloud_client)
 {
@@ -36,13 +33,11 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     cloud_client_ = cloud_client;
 
     // create new thread which will run IPC event loop
-    const int thread_create_err = pthread_create(
-            &ipc_thread_id_,
-            nullptr, // thread is created with default attributes
-            ResourceBroker::ccrb_main,
-            this
-        );
-    if(0 != thread_create_err) {
+    const int thread_create_err =
+        pthread_create(&ipc_thread_id_,
+                       nullptr, // thread is created with default attributes
+                       ResourceBroker::ccrb_main, this);
+    if (0 != thread_create_err) {
         // thread creation failed, print errno value and exit
         const int thread_create_errno = errno;
         tr_err("Thread creation failed (%s)", strerror(thread_create_errno));
@@ -104,9 +99,7 @@ MblError ResourceBroker::stop()
     if (Error::None != de_init_err) {
         tr_err("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
 
-        ret_value = (ret_value == Error::None)? 
-                    de_init_err : 
-                    ret_value;
+        ret_value = (ret_value == Error::None) ? de_init_err : ret_value;
     }
 
     return ret_value;
@@ -237,7 +230,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ResourceBroker::handle_app_registration_updated(const uintptr_t ipc_conn_handle,
-                                            const std::string& access_token)
+                                                     const std::string& access_token)
 {
     tr_debug("%s: Application (access_token: %s) registered successfully.", __PRETTY_FUNCTION__,
              access_token.c_str());
@@ -315,7 +308,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
-    // Above check makes sure there is no registration in progress. 
+    // Above check makes sure there is no registration in progress.
     // Lets check if an app is already not registered...
     // TODO: remove this check when supporting multiple applications
     if (!app_endpoints_map_.empty()) {
@@ -352,8 +345,8 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     // Register the next cloud client callbacks to app_endpoint
     if (nullptr != cloud_client_) { // GTest unit test might set cloud_client_ member to nullptr
-        cloud_client_->on_registration_updated(&(*app_endpoint),
-                                               &ApplicationEndpoint::handle_registration_updated_cb);
+        cloud_client_->on_registration_updated(
+            &(*app_endpoint), &ApplicationEndpoint::handle_registration_updated_cb);
         cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
     }
 

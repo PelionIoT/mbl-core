@@ -28,7 +28,6 @@
 #include <csignal>
 #include <unistd.h>
 
-
 #include MBED_CLOUD_CLIENT_USER_CONFIG_FILE
 
 #define TRACE_GROUP "mbl"
@@ -40,10 +39,7 @@ static volatile sig_atomic_t g_shutdown_signal = 0;
 // re-registration
 static const int g_reregister_period_s = MBED_CLOUD_CLIENT_LIFETIME / 2;
 
-extern "C" void mbl_shutdown_handler(int signal)
-{
-    g_shutdown_signal = signal;
-}
+extern "C" void mbl_shutdown_handler(int signal) { g_shutdown_signal = signal; }
 
 static void* get_dummy_network_interface()
 {
@@ -51,11 +47,11 @@ static void* get_dummy_network_interface()
     return &network;
 }
 
-namespace mbl {
+namespace mbl
+{
 
 MblCloudClient* MblCloudClient::s_instance = 0;
 MblMutex MblCloudClient::s_mutex;
-
 
 MblCloudClient::InstanceScoper::InstanceScoper()
 {
@@ -69,11 +65,7 @@ MblCloudClient::InstanceScoper::~InstanceScoper()
     delete s_instance;
 }
 
-MblCloudClient::MblCloudClient()
-    : cloud_client_(new MbedCloudClient)
-    , state_(State_Unregistered)
-{
-}
+MblCloudClient::MblCloudClient() : cloud_client_(new MbedCloudClient), state_(State_Unregistered) {}
 
 MblCloudClient::~MblCloudClient()
 {
@@ -104,7 +96,7 @@ MblError MblCloudClient::run()
     assert(s_instance);
 
     s_instance->register_handlers();
-    
+
     // Add empty ObjectList which will be used to register the device for the first time
     // in cloud_client_setup()
     s_instance->add_resources();
@@ -115,8 +107,9 @@ MblError MblCloudClient::run()
     }
 
     // start running CCRB module
-    const MblError ccrb_start_err = s_instance->cloud_connect_resource_broker_.start(s_instance->cloud_client_);
-    if(Error::None != ccrb_start_err) {
+    const MblError ccrb_start_err =
+        s_instance->cloud_connect_resource_broker_.start(s_instance->cloud_client_);
+    if (Error::None != ccrb_start_err) {
         tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
         return ccrb_start_err;
     }
@@ -128,7 +121,7 @@ MblError MblCloudClient::run()
 
             // stop running CCRB module
             const MblError ccrb_stop_err = s_instance->cloud_connect_resource_broker_.stop();
-            if(Error::None != ccrb_stop_err) {
+            if (Error::None != ccrb_stop_err) {
                 tr_err("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
                 return ccrb_stop_err;
             }
@@ -209,7 +202,8 @@ void MblCloudClient::handle_client_registered()
         tr_info("Endpoint Name: %s", endpoint->endpoint_name.c_str());
         tr_info("Device Id: %s", endpoint->internal_endpoint_name.c_str());
     }
-    else {
+    else
+    {
         tr_warn("Failed to get endpoint info");
     }
 }
@@ -234,15 +228,17 @@ void MblCloudClient::handle_error(const int cloud_client_code)
     // Called by the mbed event loop - *s_instance can be destroyed whenever
     // s_mutex isn't locked.
 
-    const MblError mbl_code = CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
+    const MblError mbl_code =
+        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     tr_err("Error occurred : %s", MblError_to_str(mbl_code));
     tr_err("Error code : %d", mbl_code);
 
     MblScopedLock l(s_mutex);
     if (s_instance) {
-        tr_err("Error details : %s",s_instance->cloud_client_->error_description());
+        tr_err("Error details : %s", s_instance->cloud_client_->error_description());
     }
-    else {
+    else
+    {
         tr_err("Error details : Failed to obtain error description");
     }
 }

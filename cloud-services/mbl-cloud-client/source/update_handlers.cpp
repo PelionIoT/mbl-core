@@ -25,45 +25,49 @@
 
 #define TRACE_GROUP "mbl"
 
-namespace mbl {
-namespace update_handlers {
-
-static bool handle_download_request()
+namespace mbl
 {
-    tr_info("Firmware download requested");
-    tr_info("Authorization granted");
-    return true;
-}
-
-static bool handle_install_request()
+namespace update_handlers
 {
-    tr_info("Firmware install requested");
-    tr_info("Authorization granted");
-    return true;
-}
 
-void handle_download_progress(const uint32_t progress, const uint32_t total)
-{
-    const unsigned percent = static_cast<unsigned>(progress * 100ULL / total);
-
-    tr_info("Downloading: %u %%", percent);
-
-    if (progress == total)
+    static bool handle_download_request()
     {
-        tr_info("Download completed");
-    }
-}
-
-bool handle_authorize(const int32_t request)
-{
-    switch (request) {
-        case MbedCloudClient::UpdateRequestDownload: return handle_download_request();
-        case MbedCloudClient::UpdateRequestInstall: return handle_install_request();
+        tr_info("Firmware download requested");
+        tr_info("Authorization granted");
+        return true;
     }
 
-    tr_warn("Uknown update authorization request (%" PRId32 ")", request);
-    return false;
-}
+    static bool handle_install_request()
+    {
+        tr_info("Firmware install requested");
+        tr_info("Authorization granted");
+        return true;
+    }
 
-} //namespace update_handlers
+    void handle_download_progress(const uint32_t progress, const uint32_t total)
+    {
+        const unsigned percent = static_cast<unsigned>(progress * 100ULL / total);
+
+        tr_info("Downloading: %u %%", percent);
+
+        if (progress == total) {
+            tr_info("Download completed");
+        }
+    }
+
+    bool handle_authorize(const int32_t request)
+    {
+        switch (request)
+        {
+        case MbedCloudClient::UpdateRequestDownload:
+            return handle_download_request();
+        case MbedCloudClient::UpdateRequestInstall:
+            return handle_install_request();
+        }
+
+        tr_warn("Uknown update authorization request (%" PRId32 ")", request);
+        return false;
+    }
+
+} // namespace update_handlers
 } // namespace mbl

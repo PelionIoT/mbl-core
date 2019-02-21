@@ -17,16 +17,16 @@
 
 #include "log.h"
 
-#include "mbed-trace/mbed_trace.h"
 #include "mbed-trace-helper/mbed-trace-helper.h"
+#include "mbed-trace/mbed_trace.h"
 
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <sys/time.h>
-#include <csignal>
 
 #define TRACE_GROUP "mbl"
 
@@ -39,10 +39,7 @@ static volatile sig_atomic_t g_log_need_reopen = 0;
 static const char g_time_prefix_format[] = "%FT%T%z ";
 static const size_t g_time_prefix_buffer_size = 26;
 
-extern "C" void mbl_log_reopen_signal_handler(int)
-{
-    g_log_need_reopen = 1;
-}
+extern "C" void mbl_log_reopen_signal_handler(int) { g_log_need_reopen = 1; }
 
 static void strncpy_with_nul(char* const dest, const char* const src, const size_t n)
 {
@@ -93,10 +90,8 @@ extern "C" void mbl_trace_print_handler(const char* const str)
             // We can't use mbed-trace to log here because it doesn't expect to
             // be used from within its own print handler
             char buffer[g_time_prefix_buffer_size];
-            std::fprintf(
-                g_log_stream,
-                "%s[INFO][mbl ]: Log file reopened\n",
-                make_time_prefix(buffer, sizeof(buffer)));
+            std::fprintf(g_log_stream, "%s[INFO][mbl ]: Log file reopened\n",
+                         make_time_prefix(buffer, sizeof(buffer)));
         }
     }
 
@@ -118,7 +113,8 @@ extern "C" char* mbl_trace_prefix_handler(size_t)
     return make_time_prefix(buffer, sizeof(buffer));
 }
 
-namespace mbl {
+namespace mbl
+{
 
 MblError log_init()
 {
@@ -132,14 +128,14 @@ MblError log_init()
     mbed_trace_init();
 
     // No colors, no carriage returns, print all log levels
-    //TODO: set trace default level back to TRACE_ACTIVE_LEVEL_INFO before merging to master
+    // TODO: set trace default level back to TRACE_ACTIVE_LEVEL_INFO before merging to master
     mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
 
     mbed_trace_print_function_set(mbl_trace_print_handler);
     mbed_trace_cmdprint_function_set(mbl_trace_print_handler);
     mbed_trace_prefix_function_set(mbl_trace_prefix_handler);
 
-    if(!mbed_trace_helper_create_mutex()) {
+    if (!mbed_trace_helper_create_mutex()) {
         return Error::LogInitMutexCreate;
     }
 

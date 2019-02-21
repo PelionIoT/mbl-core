@@ -17,8 +17,8 @@
 
 #include "signals.h"
 
-#include "log.h"
 #include "MblCloudClient.h"
+#include "log.h"
 
 #include "mbed-trace/mbed_trace.h"
 
@@ -28,7 +28,8 @@
 
 #define TRACE_GROUP "mbl"
 
-namespace mbl {
+namespace mbl
+{
 
 MblError signals_init()
 {

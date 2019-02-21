@@ -19,17 +19,11 @@
 
 #include "MblMutex.h"
 
-namespace mbl {
-
-MblScopedLock::MblScopedLock(MblMutex& mutex)
-    : mutex_(mutex)
+namespace mbl
 {
-    mutex_.lock();
-}
 
-MblScopedLock::~MblScopedLock()
-{
-    mutex_.unlock();
-}
+MblScopedLock::MblScopedLock(MblMutex& mutex) : mutex_(mutex) { mutex_.lock(); }
+
+MblScopedLock::~MblScopedLock() { mutex_.unlock(); }
 
 } // namespace mbl
