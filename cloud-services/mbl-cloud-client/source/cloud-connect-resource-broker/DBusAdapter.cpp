@@ -51,25 +51,9 @@ MblError DBusAdapter::de_init()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    static bool once = true; //////////////////////////////////////////////////////////////////////////// REMOVE BELOW COMMENTED CODE BEFORE PR
     // now we use simulated event-loop that will be removed after we introduce real sd-bus event-loop.
     while(!exit_loop_) {
-
-        if(once) {
-            sleep(30); //10 is enough
-
-            CloudConnectStatus out_status;
-            std::string out_access_token;
-
-            //REGISTER! //////////////////////////////////////////////////////////////////////////// REMOVE BELOW COMMENTED CODE BEFORE PR
-            const std::string json_string1 = R"({"77777" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })";
-            uintptr_t ipc_conn_handle = 77777;
-            tr_info("%s @@@@@@ Call register_resources(%d)", __PRETTY_FUNCTION__, (int)ipc_conn_handle);
-            ccrb_.register_resources(ipc_conn_handle,json_string1, out_status, out_access_token);
-            once = false;
-        } else {
-            sleep(1); // 1 seconds
-        }
+        sleep(1); // 1 seconds
     }
 
     tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);

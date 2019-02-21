@@ -359,6 +359,13 @@ private:
      */
     void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
 
+    typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
+    typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
+
+    // Application Enpoints map that holds application that requested to register resoures
+    // Used also for other application related operation
+    ApplicationEndpointMap app_endpoints_map_;
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////    
 
     // No copying or moving (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
@@ -375,13 +382,19 @@ private:
 
     MbedCloudClient* cloud_client_;
 
-    typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
-    typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
-
+    // Atomic boolean to signal that rgistration is in progress
+    // Use to limit only one allowed registration at a time
     std::atomic_bool registration_in_progress_;
-    ApplicationEndpointMap app_endpoints_map_;
 
+
+    // register_update function pointer
+    // Mbl cloud client use it to point to Mbed cloud client register_update API
+    // Gtests will use it to point to mock function
     std::function<void()> register_update_func_;
+    
+    // add_objects function pointer
+    // Mbl cloud client use it to point to Mbed cloud client add_objects API
+    // Gtests will use it to point to mock function
     std::function<void(const M2MObjectList& object_list)> add_objects_func_;
 };
 
