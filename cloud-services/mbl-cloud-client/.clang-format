@@ -44,3 +44,9 @@ AlignTrailingComments: true
 
 SpaceAfterCStyleCast: true
 CommentPragmas: '^ NO-FORMAT:'
+BinPackArguments: false
+BinPackParameters: false
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortCaseLabelsOnASingleLine: true
+BreakConstructorInitializersBeforeComma: false
+
