@@ -59,10 +59,8 @@ namespace update_handlers
     {
         switch (request)
         {
-        case MbedCloudClient::UpdateRequestDownload:
-            return handle_download_request();
-        case MbedCloudClient::UpdateRequestInstall:
-            return handle_install_request();
+        case MbedCloudClient::UpdateRequestDownload: return handle_download_request();
+        case MbedCloudClient::UpdateRequestInstall: return handle_install_request();
         }
 
         tr_warn("Uknown update authorization request (%" PRId32 ")", request);

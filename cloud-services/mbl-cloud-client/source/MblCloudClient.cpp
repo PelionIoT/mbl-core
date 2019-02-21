@@ -39,7 +39,10 @@ static volatile sig_atomic_t g_shutdown_signal = 0;
 // re-registration
 static const int g_reregister_period_s = MBED_CLOUD_CLIENT_LIFETIME / 2;
 
-extern "C" void mbl_shutdown_handler(int signal) { g_shutdown_signal = signal; }
+extern "C" void mbl_shutdown_handler(int signal)
+{
+    g_shutdown_signal = signal;
+}
 
 static void* get_dummy_network_interface()
 {
@@ -65,7 +68,9 @@ MblCloudClient::InstanceScoper::~InstanceScoper()
     delete s_instance;
 }
 
-MblCloudClient::MblCloudClient() : cloud_client_(new MbedCloudClient), state_(State_Unregistered) {}
+MblCloudClient::MblCloudClient() : cloud_client_(new MbedCloudClient), state_(State_Unregistered)
+{
+}
 
 MblCloudClient::~MblCloudClient()
 {
@@ -97,7 +102,8 @@ MblError MblCloudClient::run()
 
     s_instance->register_handlers();
 
-    // Add empty ObjectList which will be used to register the device for the first time
+    // Add empty ObjectList which will be used to register the device for the
+    // first time
     // in cloud_client_setup()
     s_instance->add_resources();
 

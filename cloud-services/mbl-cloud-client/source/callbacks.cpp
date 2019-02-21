@@ -23,7 +23,8 @@
 
 void pal_plat_osApplicationReboot(void)
 {
-    // Hack application reboot for demo, this should ne changed later on when we have the
+    // Hack application reboot for demo, this should ne changed later on when we
+    // have the
     // information about the type of update in the manifest
     FILE* fp = fopen("/tmp/do_not_reboot", "r");
     if (fp != NULL) {

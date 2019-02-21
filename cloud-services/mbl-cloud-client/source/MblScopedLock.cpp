@@ -22,8 +22,14 @@
 namespace mbl
 {
 
-MblScopedLock::MblScopedLock(MblMutex& mutex) : mutex_(mutex) { mutex_.lock(); }
+MblScopedLock::MblScopedLock(MblMutex& mutex) : mutex_(mutex)
+{
+    mutex_.lock();
+}
 
-MblScopedLock::~MblScopedLock() { mutex_.unlock(); }
+MblScopedLock::~MblScopedLock()
+{
+    mutex_.unlock();
+}
 
 } // namespace mbl

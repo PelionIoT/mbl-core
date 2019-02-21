@@ -11,32 +11,24 @@
 
 #define TRACE_GROUP "ccrb"
 
-namespace mbl {
-
-ResourceData::ResourceData(
-    const std::string &path, 
-    const ResourceDataType type)
-: path_(path),
-  data_type_(type) 
+namespace mbl
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+
+ResourceData::ResourceData(const std::string& path, const ResourceDataType type)
+    : path_(path), data_type_(type)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
     // leave value not initialized
 }
 
-ResourceData::ResourceData(
-    const std::string &path, 
-    const std::string &initial_value)
-: path_(path),
-  string_value_(initial_value),
-  data_type_(ResourceDataType::STRING) 
+ResourceData::ResourceData(const std::string& path, const std::string& initial_value)
+    : path_(path), string_value_(initial_value), data_type_(ResourceDataType::STRING)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);    
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
-ResourceData::ResourceData(const std::string &path, int64_t initial_value)
-: path_(path),
-  integer_value_(initial_value),
-  data_type_(ResourceDataType::INTEGER)
+ResourceData::ResourceData(const std::string& path, int64_t initial_value)
+    : path_(path), integer_value_(initial_value), data_type_(ResourceDataType::INTEGER)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -44,7 +36,7 @@ ResourceData::ResourceData(const std::string &path, int64_t initial_value)
 std::string ResourceData::get_path() const
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    return path_;        
+    return path_;
 }
 
 ResourceDataType ResourceData::get_data_type() const
@@ -53,48 +45,44 @@ ResourceDataType ResourceData::get_data_type() const
     return data_type_;
 }
 
-void ResourceData::set_value(const std::string &value) 
+void ResourceData::set_value(const std::string& value)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(data_type_ == ResourceDataType::STRING);
-    string_value_ = value;        
+    string_value_ = value;
 }
 
 void ResourceData::set_value(int64_t value)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(data_type_ == ResourceDataType::INTEGER);
-    integer_value_ = value;        
+    integer_value_ = value;
 }
 
 std::string ResourceData::get_value_string() const
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(data_type_ == ResourceDataType::STRING);
-    return string_value_;        
+    return string_value_;
 }
 
 int64_t ResourceData::get_value_integer() const
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
     assert(data_type_ == ResourceDataType::INTEGER);
-    return integer_value_;        
+    return integer_value_;
 }
-
 }
 
 const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
 {
     switch (status)
     {
-        case STATUS_SUCCESS: 
-            return "STATUS SUCCESS";
+    case STATUS_SUCCESS: return "STATUS SUCCESS";
 
-        case ERR_FAILED: 
-            return "ERROR FAILED";
+    case ERR_FAILED: return "ERROR FAILED";
 
-        default:
-            return "Unknown Cloud Connect Status or Error";
+    default: return "Unknown Cloud Connect Status or Error";
     }
 }
 
@@ -102,11 +90,10 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
+        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
+        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
 
-        default:
-            return "Unknown CloudConnectStatus value";
+    default: return "Unknown CloudConnectStatus value";
     }
 }
 
@@ -114,15 +101,14 @@ const char* ResourceDataType_stringify(const ResourceDataType type)
 {
     switch (type)
     {
-        RETURN_STRINGIFIED_VALUE(STRING); 
-        RETURN_STRINGIFIED_VALUE(INTEGER); 
-        RETURN_STRINGIFIED_VALUE(FLOAT); 
-        RETURN_STRINGIFIED_VALUE(BOOLEAN); 
-        RETURN_STRINGIFIED_VALUE(OPAQUE); 
-        RETURN_STRINGIFIED_VALUE(TIME); 
-        RETURN_STRINGIFIED_VALUE(OBJLINK); 
+        RETURN_STRINGIFIED_VALUE(STRING);
+        RETURN_STRINGIFIED_VALUE(INTEGER);
+        RETURN_STRINGIFIED_VALUE(FLOAT);
+        RETURN_STRINGIFIED_VALUE(BOOLEAN);
+        RETURN_STRINGIFIED_VALUE(OPAQUE);
+        RETURN_STRINGIFIED_VALUE(TIME);
+        RETURN_STRINGIFIED_VALUE(OBJLINK);
 
-        default:
-            return "Unknown Resource Data Type";
+    default: return "Unknown Resource Data Type";
     }
 }
