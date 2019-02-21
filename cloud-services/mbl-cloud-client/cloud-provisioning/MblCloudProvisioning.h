@@ -16,13 +16,11 @@
  */
 
 
-#include "factory_configurator_client.h"
-#include "key_config_manager.h"
-#include "fcc_defs.h"
-#include "fcc_utils.h"
 #include <vector>
 #include <string>
-#include <iostream>
+#include <cstdint>
+#include "factory_configurator_client.h"
+#include "key_config_manager.h"
 
 
 struct KCMItem
@@ -30,7 +28,6 @@ struct KCMItem
     const std::string           name;
     const kcm_item_type_e       type;
     const std::vector<uint8_t>  data_blob;
-    const size_t                data_size;
 };
 
 

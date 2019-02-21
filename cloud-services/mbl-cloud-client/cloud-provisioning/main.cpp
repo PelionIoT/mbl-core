@@ -17,6 +17,7 @@
 
 
 #include "MblCloudProvisioning.h"
+#include <iostream>
 
 
 enum ExitCode
@@ -29,7 +30,7 @@ enum ExitCode
 
 void usage()
 {
-    std::cout << 
+    std::cout <<
 R"(Usage
 
   pelion-provisioning-util [option] <file-path>
