@@ -16,46 +16,46 @@
  * @brief The module context type carries the callback to be invoked when a bus message arrived
  * I use a single callback to the C++ code in order to reduce the amount of code. The C++ code will
  * multiplex the callback into message-specific processing function
- * 
+ *
  */
 typedef struct DBusServiceContext_
-{   
-    IncomingBusMessageCallback    incoming_bus_message_callback_;
-}DBusServiceContext;
+{
+    IncomingBusMessageCallback incoming_bus_message_callback_;
+} DBusServiceContext;
 
-static DBusServiceContext ctx_ = { 0 };
+static DBusServiceContext ctx_ = {0};
 
 /**
  * @brief This is the actual callback attached on the cloud_connect_service_vtable vtable
- * per each interface member. It is of type sd_bus_message_handler_t. It straight calls the 
+ * per each interface member. It is of type sd_bus_message_handler_t. It straight calls the
  * supplied DBusServiceContext::incoming_bus_message_callback_ C++ static callback
- * 
+ *
  * @param m - handle to the message received
- * @param userdata - userdata supplied while calling sd_bus_attach_event() - 
+ * @param userdata - userdata supplied while calling sd_bus_attach_event() -
  * always 'this' (DBusAdapter_Impl)
- * @param ret_error - The sd_bus_error structure carries information about a D-Bus error 
+ * @param ret_error - The sd_bus_error structure carries information about a D-Bus error
  * @return int -  0 on success, On failure, return a negative Linux errno-style error code
  */
-static int incoming_bus_message_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
-    
+static int
+incoming_bus_message_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error);
+
 /**
- * @brief This is the sd_bus_vtable which defined the interface DBUS_CLOUD_CONNECT_INTERFACE_NAME 
-  * under object DBUS_CLOUD_CONNECT_OBJECT_PATH. It is attached to the sd-bus connection object 
+ * @brief This is the sd_bus_vtable which defined the interface DBUS_CLOUD_CONNECT_INTERFACE_NAME
+  * under object DBUS_CLOUD_CONNECT_OBJECT_PATH. It is attached to the sd-bus connection object
   * (which acquires the known name DBUS_CLOUD_SERVICE_NAME)  by the DBusAdapter_Impl by calling
-  * sd_bus_add_object_vtable(). It contains all method calls, signals and properties to be 
+  * sd_bus_add_object_vtable(). It contains all method calls, signals and properties to be
   * published.
   * It may contains also hidden methods.
  */
-const sd_bus_vtable  cloud_connect_service_vtable[] = {
+const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_VTABLE_START(0),
 
-    // TODO: Consider removing Cloud Connect Status that is returned in the "method reply" 
-    //       in to the following functions: RegisterResources, DeregisterResources, 
-    //       AddResourceInstances, RemoveResourceInstances is placeholder. 
+    // TODO: Consider removing Cloud Connect Status that is returned in the "method reply"
+    //       in to the following functions: RegisterResources, DeregisterResources,
+    //       AddResourceInstances, RemoveResourceInstances is placeholder.
     //       If unneeded, JUST BEFORE publishing to a master consider to remove this status.
 
-    // TODO: Add readable explanation about each Cloud Client Status or Error that 
+    // TODO: Add readable explanation about each Cloud Client Status or Error that
     //       can be returned by any function or signal defined in this table:
     // Types:
     // CloudConnectStatus (Cloud Connect Status) :
@@ -70,7 +70,7 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // Description :
     // Asynchronous request to register LwM2M resources supplied by a JSON string.
-    // When the registration is finished, the operation status will be sent by 
+    // When the registration is finished, the operation status will be sent by
     // RegisterResourcesStatus signal.
     // ==Input==
     // Argument	    Type    Description
@@ -78,7 +78,7 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to start a registration. 
+    // 0            UINT32  Cloud Connect Status of an attempt to start a registration.
     // 1            STRING  Access token.
     //
     // ==Possible Cloud Connect Status values==
@@ -91,18 +91,13 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
-        "RegisterResources",
-        "s", 
-        "us",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+        "RegisterResources", "s", "us", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.RegisterResourcesStatus
     //
     // As a Signal :
     // RegisterResourcesStatus(UINT32 status)
-    // Emitted when the RegisterResources asynchronous request is finished in 
+    // Emitted when the RegisterResources asynchronous request is finished in
     // the Pelion.
     //
     // Argument	    Type	Description
@@ -113,11 +108,7 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL(
-        "RegisterResourcesStatus",
-        "u",
-        0
-    ),
+    SD_BUS_SIGNAL("RegisterResourcesStatus", "u", 0),
 
     // com.mbed.Cloud.Connect1.DeregisterResources
     //
@@ -125,11 +116,11 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // UINT32 DeregisterResources(STRING access_token)
     //
     // Description :
-    // Asynchronous request to deregister all previously registered LwM2M resources for supplied 
-    // access-token. When the deregistration is finished, the operation status will be sent by 
-    // DeregisterResourcesStatus signal. 
-    // If the RegisterResourcesStatus was not signalled after the RegisterResources method was 
-    // called, this method will gracefully finish registration attempt that was started. 
+    // Asynchronous request to deregister all previously registered LwM2M resources for supplied
+    // access-token. When the deregistration is finished, the operation status will be sent by
+    // DeregisterResourcesStatus signal.
+    // If the RegisterResourcesStatus was not signalled after the RegisterResources method was
+    // called, this method will gracefully finish registration attempt that was started.
     //
     // ==Input==
     // Argument	    Type	Description
@@ -137,7 +128,7 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to start deregistration. 
+    // 0            UINT32  Cloud Connect Status of an attempt to start deregistration.
     //
     // ==Possible Cloud Connect Status values==
     // TBD
@@ -149,18 +140,13 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // ==Possible Cloud Connect Error values==
     // TBD
     SD_BUS_METHOD(
-        "DeregisterResources",
-        "s", 
-        "u",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+        "DeregisterResources", "s", "u", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.DeregisterResourcesStatus
     //
     // As a Signal :
     // DeregisterResourcesStatus(UINT32 status)
-    // Emitted when the DeregisterResources asynchronous request is finished in 
+    // Emitted when the DeregisterResources asynchronous request is finished in
     // the Pelion.
     //
     // Argument	    Type	Description
@@ -171,36 +157,31 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL(
-        "DeregisterResourcesStatus",
-        "u",
-        0
-    ),
-
+    SD_BUS_SIGNAL("DeregisterResourcesStatus", "u", 0),
 
     // com.mbed.Cloud.Connect1.AddResourceInstances
     //
     // As a Method :
-    // UINT32 AddResourceInstances(STRING access_token, 
-    //                             STRING resource_path, 
+    // UINT32 AddResourceInstances(STRING access_token,
+    //                             STRING resource_path,
     //                             ARRAY_of_UINT16 instance_ids)
     //
     // Description :
     // Asynchronous request to add LwM2M resource instances to the specific resource.
-    // When the addition operation is finished, the status will be sent by 
+    // When the addition operation is finished, the status will be sent by
     // AddResourceInstancesStatus signal.
     //
     // ==Input==
     // Argument	    Type    Description
     // 0	        STRING  Access token
     // 1	        STRING  path of the resource to which instances should be added.
-    // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of 
-    //              the resource instance that should be added to the given resource.  
+    // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of
+    //              the resource instance that should be added to the given resource.
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to add resource 
-    //                      instances.       
+    // 0            UINT32  Cloud Connect Status of an attempt to add resource
+    //                      instances.
     //
     // ==Possible Cloud Connect Status values==
     // TBD
@@ -211,19 +192,17 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "AddResourceInstances",
-        "ssaq", 
-        "u",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+    SD_BUS_METHOD("AddResourceInstances",
+                  "ssaq",
+                  "u",
+                  incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.AddResourceInstancesStatus
     //
     // As a Signal :
     // AddResourceInstancesStatus(UINT32 status)
-    // Emitted when the AddResourceInstances asynchronous request is finished in 
+    // Emitted when the AddResourceInstances asynchronous request is finished in
     // the Pelion.
     //
     // Argument	    Type	Description
@@ -234,36 +213,32 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL(
-        "AddResourceInstancesStatus",
-        "u",
-        0
-    ),
+    SD_BUS_SIGNAL("AddResourceInstancesStatus", "u", 0),
 
     // com.mbed.Cloud.Connect1.RemoveResourceInstances
     //
     // As a Method :
-    // UINT32 RemoveResourceInstances(STRING access_token, 
-    //                             STRING resource_path, 
+    // UINT32 RemoveResourceInstances(STRING access_token,
+    //                             STRING resource_path,
     //                             ARRAY_of_UINT16 instance_ids)
     //
     // Description :
-    // Request  
+    // Request
     // Asynchronous request to remove resource instances from the specific resource.
-    // When the removal operation is finished, the status will be sent by 
+    // When the removal operation is finished, the status will be sent by
     // RemoveResourceInstancesStatus signal.
     //
     // ==Input==
     // Argument	    Type    Description
     // 0	        STRING  Access token
     // 1	        STRING  path of the resource from which instances should be removed.
-    // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of 
-    //              the resource instance that should be removed from the given resource.  
+    // 2	        ARRAY_of_UINT16 instance ids array. Each instance id is an id of
+    //              the resource instance that should be removed from the given resource.
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to remove resource 
-    //                      instances. 
+    // 0            UINT32  Cloud Connect Status of an attempt to remove resource
+    //                      instances.
     //
     // ==Possible Cloud Connect Status values==
     // TBD
@@ -274,19 +249,17 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "RemoveResourceInstances",
-        "ssaq", 
-        "u",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+    SD_BUS_METHOD("RemoveResourceInstances",
+                  "ssaq",
+                  "u",
+                  incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.RemoveResourceInstancesStatus
     //
     // As a Signal :
     // RemoveResourceInstancesStatus(UINT32 status)
-    // Emitted when the RemoveResourceInstances asynchronous request is finished in 
+    // Emitted when the RemoveResourceInstances asynchronous request is finished in
     // the Pelion.
     //
     // Argument	    Type	Description
@@ -297,26 +270,23 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL(
-        "RemoveResourceInstancesStatus",
-        "u",
-        0
-    ),
-
+    SD_BUS_SIGNAL("RemoveResourceInstancesStatus", "u", 0),
 
     // com.mbed.Cloud.Connect1.SetResourcesValues
     //
     // As a Method :
     // ARRAY_of_UINT32 SetResourcesValues(STRING access_token,
-    //                                    ARRAY_of_STRUCTS(STRING,UINT8,VARIANT) set_operation_input)
+    //                                    ARRAY_of_STRUCTS(STRING,UINT8,VARIANT)
+    //                                    set_operation_input)
     //
     // Description :
-    // Request to set resources values for multiple resources. 
+    // Request to set resources values for multiple resources.
     //
     // ==Input==
     // Argument	    Type                                   Description
     // 0	        STRING                                 access-token
-    // 1	        ARRAY_of_STRUCTS(STRING,UINT8,VARIANT) array of structs that contains set operation 
+    // 1	        ARRAY_of_STRUCTS(STRING,UINT8,VARIANT) array of structs that contains set
+    // operation
     //                                                     input. Each struct in the array contains:
     //                                                     - path of the resource (STRING)
     //                                                     - resource data type (UINT8)
@@ -324,8 +294,8 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     //
     // ==Output==
     // Argument	    Type            Description
-    // 0            ARRAY_of_UINT32 Cloud Connect Status array. Each entry [i] is the status of 
-    //                              the set operation parameter at index [i] in the input array. 
+    // 0            ARRAY_of_UINT32 Cloud Connect Status array. Each entry [i] is the status of
+    //                              the set operation parameter at index [i] in the input array.
     //
     // ==Error Reply==
     // Argument     Type    Description
@@ -333,40 +303,43 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "SetResourcesValues",
-        "sa(syv)", 
-        "au",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+    SD_BUS_METHOD("SetResourcesValues",
+                  "sa(syv)",
+                  "au",
+                  incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.GetResourcesValues
     //
     // As a Method :
     // ARRAY_of_STRUCTS(UINT32,UINT8,VARIANT) GetResourcesValues(STRING access_token,
-    //                                                           ARRAY_of_STRUCTS(STRING,UINT8) get_operation_input)
+    //                                                           ARRAY_of_STRUCTS(STRING,UINT8)
+    //                                                           get_operation_input)
     //
     // Description :
-    // Request to get resources values from multiple resources. 
+    // Request to get resources values from multiple resources.
     //
     // ==Input==
     // Argument	    Type                           Description
     // 0	        STRING                         access-token
-    // 1	        ARRAY_of_STRUCTS(STRING,UINT8) array of structs that contains get operation 
+    // 1	        ARRAY_of_STRUCTS(STRING,UINT8) array of structs that contains get operation
     //                                             parameters. Each struct in the array contains:
     //                                             - path of the resource (STRING)
     //                                             - type of the resource value (UINT8)
     //
     // ==Output==
     // Argument	    Type            Description
-    // 0	        ARRAY_of_STRUCTS(UINT32,UINT8,VARIANT) array of structs that contains get operation 
-    //                                              output for each entry in the input array. 
+    // 0	        ARRAY_of_STRUCTS(UINT32,UINT8,VARIANT) array of structs that contains get
+    // operation
+    //                                              output for each entry in the input array.
     //                                              Each struct contains:
-    //                                              - get operation for resource [i] value data status (UINT32)
-    //                                              - resource [i] data type (UINT8). Valid only if the status 
+    //                                              - get operation for resource [i] value data
+    //                                              status (UINT32)
+    //                                              - resource [i] data type (UINT8). Valid only if
+    //                                              the status
     //                                                of the get operation is SUCCESS.
-    //                                              - resource [i] value (VARIANT). Valid only if the status 
+    //                                              - resource [i] value (VARIANT). Valid only if
+    //                                              the status
     //                                                of the get operation is SUCCESS.
     //
     // ==Error Reply==
@@ -375,22 +348,18 @@ const sd_bus_vtable  cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "GetResourcesValues",
-        "sa(sy)", 
-        "a(uyv)",
-        incoming_bus_message_callback,
-        SD_BUS_VTABLE_UNPRIVILEGED
-    ),
+    SD_BUS_METHOD("GetResourcesValues",
+                  "sa(sy)",
+                  "a(uyv)",
+                  incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
-    SD_BUS_VTABLE_END
-};
+    SD_BUS_VTABLE_END};
 
-static int incoming_bus_message_callback(
-    sd_bus_message *m, void *userdata, sd_bus_error *ret_error)
+static int incoming_bus_message_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error)
 {
     assert(m);
-    assert(ret_error);    
+    assert(ret_error);
     return ctx_.incoming_bus_message_callback_(m, userdata, ret_error);
 }
 
@@ -411,7 +380,7 @@ void DBusService_init(IncomingBusMessageCallback callback)
 }
 
 void DBusService_deinit()
-{   
+{
     memset(&ctx_, 0, sizeof(ctx_));
 }
 

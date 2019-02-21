@@ -59,7 +59,7 @@ void *AppThread::thread_main(void *app_thread)
     pthread_exit((void *)(uintptr_t)app_thread_->start());
 }
 
-int AppThread::bus_equest_name(const char* name)
+int AppThread::bus_request_name(const char* name)
 {
     return sd_bus_request_name(connection_handle_, name, 0);
 }

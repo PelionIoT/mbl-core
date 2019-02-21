@@ -10,7 +10,7 @@
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
 
-#include <cstdint>
+#include <inttypes.h>
 #include <vector>
 #include <string>
 
@@ -190,7 +190,7 @@ public:
      * 
      * @param new_val 
      */
-    void set(MblError new_val);
+    void set(const MblError new_val);
 
     /**
      * @brief return the current status

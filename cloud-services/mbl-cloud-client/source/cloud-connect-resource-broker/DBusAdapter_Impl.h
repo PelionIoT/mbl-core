@@ -18,13 +18,13 @@
 #include <inttypes.h>
 #include <pthread.h>
 #include <set>
+#include <string>
 
 // sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
 // Keep those definitions here for testing
 #define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
 #define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
 #define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
-
 
 namespace mbl {
 
@@ -122,12 +122,17 @@ private:
     /**
      * @brief - TODO
      * see parameter description above ("Callback and handler functions")
+     * For more information see :
+     * https://www.freedesktop.org/software/systemd/man/sd_bus_add_match.html#
+     * 
      */
     static int name_changed_match_callback(
         sd_bus_message *m, void *userdata, sd_bus_error *ret_error);
     /**
      * @brief - TODO
      * see parameter description above ("Callback and handler functions")
+     * for more information see 
+     * https://www.freedesktop.org/software/systemd/man/sd_bus_add_match.html#
      */
     int name_changed_match_callback_impl(
         sd_bus_message *m, sd_bus_error *ret_error);
@@ -138,6 +143,9 @@ private:
      * @param s - the sd-event IO event source
      * @param fd - the Linux anonymous pipe file descriptor used to poll&read from the mailbox 
      * pipe
+     * For more information see :
+     * https://www.freedesktop.org/software/systemd/man/sd_event_add_io.html#
+     * 
      * @param revents - received events 
      * @param userdata - userdata supplied while calling sd_bus_attach_event() - always 'this'
      * @return int - 0 on success, On failure, return a negative Linux errno-style error code.
@@ -149,6 +157,9 @@ private:
         void *userdata);
     /**
      * @brief handles incoming mailbox message sent by an external thread
+     * 
+     * For more information see :
+     * https://www.freedesktop.org/software/systemd/man/sd_event_add_io.html#
      * 
      * @param s - the sd-event IO event source
      * @param fd - the Linux anonymous pipe file descriptor used to poll&read from the mailbox 
@@ -213,7 +224,7 @@ private:
     /**
      * @brief start running by entering the event loop
      * invokes sd_event_run() in a loop, thus implementing the actual event loop. The call returns 
-     * as soon as exiting was requested using sd_event_exit(3). For more info see:
+     * as soon as exiting was requested using sd_event_exit(3). For more information see:
      * https://www.freedesktop.org/software/systemd/man/sd_event_run.html#
      * Can be called only when the object is in DBusAdapterState::INITALIZED state
      * 
@@ -229,6 +240,9 @@ private:
      * 1) called by CCRB thread - self stop) only due to fatal errors.
      * 2) called by external thread - EXIT message is sent via mailbox. 
      * Can be called only when the object is in DBusAdapterState::RUNNING  state
+     * 
+     * For more information see:
+     * https://www.freedesktop.org/software/systemd/man/sd_event_add_exit.html#
      * 
      * @param stop_status - sent MblError status which should state the reason for stopping the 
      * event loop (the exit code specified when invoking sd_event_exit()). If the status is 
@@ -280,8 +294,7 @@ private:
     The input (READ) edge of the mailbox is attached to the event loop as an IO event source 
     (sd_event_add_io). The event loop fires and event immediately after the message pointer is 
     written to the pipe.  
-    */
-    // TODO - IMPORTANT - deallocate mailbox_in_ on deinit
+    */    
     Mailbox     mailbox_in_;   
 
     // An event manager to allow sending self defer events / self timer events
@@ -290,6 +303,23 @@ private:
 
     // The pthread_t thread ID of the initializing thread (CCRB thread) 
     pthread_t   initializer_thread_id_;
+
+    /**
+     * @brief This vector holds all pairs of match rules to add to bus connection
+     * using sd_bus_add_match().
+     * The 1st string is a short description
+     * The 2nd string is the match rule
+     */
+    static const std::vector< std::pair<std::string, std::string> > match_rules;
+
+    /**
+     * @brief Add all match rules in match_rules vector. 
+     * For now, I assume a slot for the source is unneeded. The callback is the same common 
+     * callback for all arriving messages - incoming_bus_message_callback
+    * 
+    * @return MblError - DBA_SdBusRequestAddMatchFailed if failure , None for success.
+    */
+    MblError add_match_rules();
 
 public:
     /*
@@ -401,12 +431,12 @@ public:
  * @return MblError - return MblError - Error::None for success, therwise the failure reason
  */
     MblError send_event_immediate(
-        SelfEvent::EventDataType data,
+        SelfEvent::EventData data,
         unsigned long data_length,
-        SelfEvent::EventType data_type,        
+        SelfEvent::EventDataType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
-        const char *description="");
+        const std::string description="");
 
     using DBusAdapterState = State::eState;
 };

@@ -13,6 +13,7 @@
 
 #include <inttypes.h>
 #include <memory>
+#include <string>
 
 // to be used by Google Test testing
 class TestInfra_DBusAdapterTester;
@@ -78,7 +79,7 @@ public:
  * client application. 
  * This function sends a final status of the registration request, 
  * that was initiated by a client application via calling 
- * register_resources_async API. 
+ * register_resources API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param reg_status status of registration of all resources. 
@@ -96,7 +97,7 @@ public:
  * @brief Sends deregistration request final status to the destination client 
  * application. This function sends a final status of the deregistration 
  * request, that was initiated by a client application via calling 
- * deregister_resources_async API. 
+ * deregister_resources API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information
  *        of the application that should be notified.
  * @param dereg_status status of deregistration of all resources. 
@@ -113,7 +114,7 @@ public:
  * @brief Sends resource instances addition request final status to the destination
  * client application. This function sends a final status of the resource instances
  * addition request, that was initiated by a client application via calling 
- * add_resource_instances_async API. 
+ * add_resource_instances API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information of 
  *        the application that should be notified.
  * @param add_status status of resource instances addition. 
@@ -130,7 +131,7 @@ public:
  * @brief Sends resource instances removal request final status to the destination
  * client application. This function sends a final status of the resource instances
  * removal request, that was initiated by a client application via calling 
- * remove_resource_instances_async API. 
+ * remove_resource_instances API. 
  * @param ipc_request_handle is a handle to the IPC unique connection information 
  *        of the application that should be notified.
  * @param remove_status status of resource instances removal. 
@@ -158,12 +159,12 @@ public:
  * @return MblError - return MblError - Error::None for success, therwise the failure reason
  */
     MblError send_event_immediate(
-        SelfEvent::EventDataType data,
+        SelfEvent::EventData data,
         unsigned long data_length,
-        SelfEvent::EventType data_type,        
+        SelfEvent::EventDataType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
-        const char *description="");
+        const std::string description);
 
 private:
     // forward declaration - PIMPL implementation class - defined in cpp source file

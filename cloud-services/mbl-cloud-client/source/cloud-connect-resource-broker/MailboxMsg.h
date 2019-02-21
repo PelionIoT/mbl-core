@@ -33,7 +33,7 @@ public:
                             // from event loop
     };
 
-    // TODO - consider improving using template / polymorphic style
+    // TODO - IOTMBL 1684 - consider improving using template / polymorphic style
     /**
      * @brief - Holds all possible messages as a union, and the length. The actual message type is 
      * given by 'Mailbox::type_'. Each message is limited by size - developer should extend message 

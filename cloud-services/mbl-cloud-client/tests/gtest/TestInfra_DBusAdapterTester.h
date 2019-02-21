@@ -75,9 +75,9 @@ class TestInfra_DBusAdapterTester
      * @brief Invokes EventManager::send_event_immediate
      */
     mbl::MblError send_event_immediate(
-        mbl::SelfEvent::EventDataType data,
+        mbl::SelfEvent::EventData data,
         unsigned long data_length,
-        mbl::SelfEvent::EventType data_type,        
+        mbl::SelfEvent::EventDataType data_type,        
         mbl::SelfEventCallback callback,
         uint64_t &out_event_id,
         const char* description="");

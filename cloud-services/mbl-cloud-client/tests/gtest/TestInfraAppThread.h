@@ -52,7 +52,7 @@ class AppThread
      * @param name - name ot request
      * @return int - as in sd_bus_request_name()
      */
-    int bus_equest_name(const char* name);
+    int bus_request_name(const char* name);
 
   private:
     int start();   

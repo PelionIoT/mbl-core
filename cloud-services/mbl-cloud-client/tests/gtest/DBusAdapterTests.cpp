@@ -263,8 +263,8 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source *s, 
 {    
     UNUSED(s);
     TR_DEBUG("Enter");
-    const SelfEvent::EventDataType &event_data = ev->get_data();
-    OneSetMblError result;    
+    const SelfEvent::EventData &event_data = ev->get_data();
+    OneSetMblError result;
     static int iteration = 0;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
 
@@ -317,7 +317,7 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source *s, 
 TEST_F(EventManagerTestFixture, basic_no_adapter)
 {
     GTEST_LOG_START_TEST;
-    SelfEvent::EventDataType event_data = { 0 };
+    SelfEvent::EventData event_data = { 0 };
     uint64_t out_event_id = 0;
     EventManager event_manager_;
     
@@ -339,7 +339,7 @@ TEST_F(EventManagerTestFixture, basic_no_adapter)
             event_manager_.send_event_immediate(
                 event_data, 
                 sizeof(event_data.raw),
-                SelfEvent::EventType::RAW,            
+                SelfEvent::EventDataType::RAW,            
                 EventManagerTestFixture::basic_no_adapter_callback,
                 out_event_id), 
             MblError::None);
@@ -511,7 +511,7 @@ int DBusAdapeterTestFixture::validate_service_exist(AppThread *app_thread, void 
     UNUSED(user_data);
     assert(app_thread);
     AppThread *app_thread_ = static_cast<AppThread *>(app_thread);
-    return app_thread_->bus_equest_name(DBUS_CLOUD_SERVICE_NAME);
+    return app_thread_->bus_request_name(DBUS_CLOUD_SERVICE_NAME);
 }
 
 /**
@@ -565,7 +565,7 @@ MblError  DBusAdapterWithSelfEventTestFixture::adapter_self_event_callback(
     sd_event_source *s, const SelfEvent *ev)
 {    
     TR_DEBUG("Enter");
-    const SelfEvent::EventDataType &event_data = ev->get_data();
+    const SelfEvent::EventData &event_data = ev->get_data();
     MblError result = MblError::None;       
     int n;
 
@@ -611,7 +611,7 @@ MblError  DBusAdapterWithSelfEventTestFixture::adapter_self_event_callback(
 TEST_F(DBusAdapterWithSelfEventTestFixture, adapter_self_event_callback)
 {
     GTEST_LOG_START_TEST;
-    SelfEvent::EventDataType event_data = { 0 };
+    SelfEvent::EventData event_data = { 0 };
     uint64_t out_event_id = 0;
     MblError stop_status;
     ResourceBroker ccrb;
@@ -628,7 +628,7 @@ TEST_F(DBusAdapterWithSelfEventTestFixture, adapter_self_event_callback)
         tester.send_event_immediate(
             event_data,
             sizeof(n),
-            SelfEvent::EventType::RAW,            
+            SelfEvent::EventDataType::RAW,            
             DBusAdapterWithSelfEventTestFixture::adapter_self_event_callback,
             out_event_id); 
     }

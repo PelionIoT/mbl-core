@@ -36,7 +36,7 @@ typedef int (*IncomingBusMessageCallback)(sd_bus_message*, void*, sd_bus_error*)
  * 
  * @param incoming_data_callback 
  */
-void                    DBusService_init(IncomingBusMessageCallback incoming_data_callback);
+void                    DBusService_init(IncomingBusMessageCallback callback);
 
 /**
  * @brief reset the callback (can be removed but I used it for now as a place holder in case we 

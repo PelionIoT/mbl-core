@@ -80,7 +80,7 @@ public:
      * recommended to be set to MAILBOX_MAX_POLLING_TIME_MILLISECONDS.
      * @return MblError - return MblError - Error::None for success, therwise the failure reason
      */
-    MblError  send_msg( MailboxMsg &msg,
+    MblError  send_msg( MailboxMsg &msg_to_send,
                         int timeout_milliseconds = Mailbox::MAILBOX_MAX_POLLING_TIME_MILLISECONDS);
 
     /**

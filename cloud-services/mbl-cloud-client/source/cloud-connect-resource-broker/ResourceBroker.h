@@ -10,7 +10,7 @@
 #include "DBusAdapter.h"
 #include "CloudConnectTypes.h"
 
-#include <cstdint>
+#include <inttypes.h>
 #include <memory>
 #include <pthread.h>
 

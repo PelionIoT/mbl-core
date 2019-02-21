@@ -57,9 +57,9 @@ public:
      * @return MblError - return MblError - Error::None for success, therwise the failure reason
      */
     MblError send_event_immediate(
-        SelfEvent::EventDataType data,
+        SelfEvent::EventData data,
         unsigned long data_length,
-        SelfEvent::EventType data_type,        
+        SelfEvent::EventDataType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
         const std::string& description);
@@ -70,9 +70,9 @@ public:
      * @param description - optional - description for the event cause, can leave empty string
      */
     MblError send_event_immediate(
-        SelfEvent::EventDataType data,
+        SelfEvent::EventData data,
         unsigned long data_length,
-        SelfEvent::EventType data_type,        
+        SelfEvent::EventDataType data_type,        
         SelfEventCallback callback,
         uint64_t &out_event_id,
         const char *description="");
@@ -100,7 +100,7 @@ private:
     
     // This map holds all events sent, it holds a pair of (event id, unique_ptr to event)
     // TODO - make sure it is cleaned when manager is destroyed
-    std::map< uint64_t , std::unique_ptr<SelfEvent> >  events_;
+    std::map< uint64_t, std::unique_ptr<SelfEvent> >  events_;
 
     // event id to be assigned to the next event created
     uint64_t next_event_id_;
