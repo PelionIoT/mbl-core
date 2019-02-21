@@ -48,53 +48,52 @@ Options
 
 ExitCode handle_store_command()
 {
-    PelionProvisioner provisioner;
+    mbl::provisioning::PelionProvisioner provisioner;
+    const auto init_status = provisioner.init();
+    
+    if (init_status != mbl::provisioning::SUCCESS)
+        return FAILURE;
+
     std::cout << "Provisioning device." << "\n";
     
-    auto dev_cert_table = load_developer_cloud_credentials();
+    auto dev_cert_table = mbl::provisioning::load_developer_cloud_credentials();
+    auto update_cert_table = mbl::provisioning::load_developer_update_certificate();
+
     auto dev_ret_val = provisioner.store(dev_cert_table);
-    auto update_cert_table = load_developer_update_certificate();
     auto uc_ret_val = provisioner.store(update_cert_table);
 
-    if (dev_ret_val != FCC_STATUS_SUCCESS)
-    {
-        std::cout << "Developer Certificate Provisioning failed. Error: " 
-                  << fcc_get_fcc_error_string(dev_ret_val)
-                  << "\n";
-    }
-    else
+
+    if (dev_ret_val == mbl::provisioning::SUCCESS)
     {
         std::cout << "Developer Certificate Provisioning complete without error."
                   << "\n";
+        return FAILURE;
     }
 
-    if (uc_ret_val != FCC_STATUS_SUCCESS)
-    {
-        std::cout << "Update Certificate Provisioning failed. Error: " 
-                  << fcc_get_fcc_error_string(uc_ret_val)
-                  << "\n";
-    }
-    else
+    if (uc_ret_val == mbl::provisioning::SUCCESS)
     {
         std::cout << "Update Certificate Provisioning complete without error."
                   << "\n";
+        return FAILURE;
     }
 
-    if (dev_ret_val != FCC_STATUS_SUCCESS || uc_ret_val != FCC_STATUS_SUCCESS)
-        return FAILURE;
     return SUCCESS;
 }
 
 
 ExitCode handle_status_command()
 {
-    PelionProvisioner provisioner;
+    mbl::provisioning::PelionProvisioner provisioner;
+    const auto init_status = provisioner.init();
+    
+    if (init_status != mbl::provisioning::SUCCESS)
+        return FAILURE;
+    
     std::cout << "Querying device status.. " << "\n";
     auto ret = provisioner.get_provisioned_status();
 
-    if (ret != FCC_STATUS_SUCCESS)
+    if (ret != mbl::provisioning::SUCCESS)
     {
-        std::cout << "Device is not configured correctly for Pelion Cloud!";
         return FAILURE;
     }
     else

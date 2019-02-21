@@ -22,35 +22,47 @@
 #include "factory_configurator_client.h"
 #include "key_config_manager.h"
 
+namespace mbl{
+    namespace provisioning{
+        enum ProvisionedStatusCode
+        {
+            SUCCESS,
+            FAILURE
+        };
 
-struct KCMItem
-{
-    const std::string           name;
-    const kcm_item_type_e       type;
-    const std::vector<uint8_t>  data_blob;
-};
+        // KCM storage item.
+        struct KCMItem
+        {
+            const std::string           name;
+            const kcm_item_type_e       type;
+            const std::vector<uint8_t>  data_blob;
+        };
 
+        // Print an error message and fcc_status_e error string.
+        void print_fcc_error_status(std::ostream &out_stream,
+                                    const std::string &error_msg,
+                                    const fcc_status_e status);
 
-//  Loads a binary file containing mcc data into a byte array.
-std::vector<uint8_t>    provisioning_file_to_array(const std::string &file_name);
-std::string             provisioning_file_to_string(const std::string &file_name);
+        // Print an error message and kcm_status_e error string.
+        void print_kcm_error_status(std::ostream &out_stream,
+                                    const std::string &error_msg,
+                                    const kcm_status_e status);
 
-std::vector<KCMItem>    load_developer_cloud_credentials();
-std::vector<KCMItem>    load_developer_update_certificate();
-
-
-class PelionProvisioner
-{
-public:
-    PelionProvisioner();
-    ~PelionProvisioner();
-
-    fcc_status_e get_stored_data(const std::vector<KCMItem> &certificate);
-    fcc_status_e store(const std::vector<KCMItem> &certificate);
-    fcc_status_e get_provisioned_status();
-
-private:
-    // bootstrap mode flag for KCM. 
-    // We're always using bootstrap mode, so this is const.
-    const uint32_t is_bootstrap_mode{1};
+        // Load developer credentials certificate.
+        std::vector<KCMItem>    load_developer_cloud_credentials();
+        // Load developer mode update authenticity certificate.
+        std::vector<KCMItem>    load_developer_update_certificate();
+        
+        // Provisions devices with certificates using KCM storage. 
+        struct PelionProvisioner
+        {
+            PelionProvisioner() {};
+            ~PelionProvisioner();
+            // Initialise the object.
+            // This is here so we can handle errors on FCC/KCM init failure.
+            ProvisionedStatusCode init();
+            ProvisionedStatusCode store(const std::vector<KCMItem> &certificate);
+            ProvisionedStatusCode get_provisioned_status();
+        };
+    };
 };
