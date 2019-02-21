@@ -113,6 +113,28 @@
 
 /*
 {
+  "8888": {
+    "11": {
+      "111": {
+        "mode": "dynamic",
+        "type": "string",
+        "operations": [
+          "get",
+          "put",
+          "delete"
+        ],
+        "observable": true,
+        "multiple_instance": true
+      }
+    }
+  }
+}
+*/
+#define VALID_JSON_ONE_DYMANIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE  R"({"8888" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } } })"
+
+
+/*
+{
   "Obj1": {},
   "Obj2": {
     "1": {},

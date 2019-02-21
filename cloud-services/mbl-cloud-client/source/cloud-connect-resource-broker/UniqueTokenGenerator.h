@@ -24,9 +24,21 @@
 
 namespace mbl {
 
+/**
+ * @brief This class generate unique access token
+ * 
+ */
 class UniqueTokenGenerator {
 public:
 
+    /**
+     * @brief Generate unique token using sd_id128_randomize
+     * 
+     * @param unique_token - Out generated unique token
+     * @return MblError -
+     *          Error::None - in case of success
+     *          Error::CCRBGenerateUniqueIdFailed in case of failure
+     */
     MblError generate_unique_token(std::string &unique_token);
 };
 

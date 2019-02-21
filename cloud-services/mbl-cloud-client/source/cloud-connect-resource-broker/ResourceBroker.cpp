@@ -261,6 +261,8 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
         // Could not found application endpoint
         tr_error("%s: Application (access_token: %s) does not exist.", __PRETTY_FUNCTION__,
                  access_token.c_str());
+        // Mark that registration is finished (even if it was failed)
+        registration_in_progress_.store(false);                 
         return;
     }
 
@@ -352,7 +354,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
-    // Call Mbed cloud client to start registration
+    // Call Mbed cloud client to start registration update
     add_objects_func_(app_endpoint->m2m_object_list_);
     register_update_func_();
 

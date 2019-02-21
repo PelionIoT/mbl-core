@@ -59,27 +59,27 @@ namespace mbl
  * map the right M2MBase::Operation is returned. *
  */
 static std::map<uint8_t, M2MBase::Operation> operation_map = {
-    {OP_MASK_NONE_ALLOWED, M2MBase::NOT_ALLOWED},                            // 0
-    {OP_MASK_GET_ALLOWED, M2MBase::GET_ALLOWED},                             // 1
-    {OP_MASK_PUT_ALLOWED, M2MBase::PUT_ALLOWED},                             // 2
-    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED, M2MBase::GET_PUT_ALLOWED},   // 3
-    {OP_MASK_POST_ALLOWED, M2MBase::POST_ALLOWED},                           // 4
-    {OP_MASK_GET_ALLOWED | OP_MASK_POST_ALLOWED, M2MBase::GET_POST_ALLOWED}, // 5
-    {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED, M2MBase::PUT_POST_ALLOWED}, // 6
+    {OP_MASK_NONE_ALLOWED, M2MBase::NOT_ALLOWED},                                   // 0
+    {OP_MASK_GET_ALLOWED, M2MBase::GET_ALLOWED},                                    // 1
+    {OP_MASK_PUT_ALLOWED, M2MBase::PUT_ALLOWED},                                    // 2
+    {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED, M2MBase::GET_PUT_ALLOWED},          // 3
+    {OP_MASK_POST_ALLOWED, M2MBase::POST_ALLOWED},                                  // 4
+    {OP_MASK_GET_ALLOWED | OP_MASK_POST_ALLOWED, M2MBase::GET_POST_ALLOWED},        // 5
+    {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED, M2MBase::PUT_POST_ALLOWED},        // 6
     {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED,
-     M2MBase::GET_PUT_POST_ALLOWED},                                             // 7
-    {OP_MASK_DELETE_ALLOWED, M2MBase::DELETE_ALLOWED},                           // 8
-    {OP_MASK_GET_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::GET_DELETE_ALLOWED}, // 9
-    {OP_MASK_PUT_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::PUT_DELETE_ALLOWED}, // 10
+     M2MBase::GET_PUT_POST_ALLOWED},                                                // 7
+    {OP_MASK_DELETE_ALLOWED, M2MBase::DELETE_ALLOWED},                              // 8
+    {OP_MASK_GET_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::GET_DELETE_ALLOWED},    // 9
+    {OP_MASK_PUT_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::PUT_DELETE_ALLOWED},    // 10
     {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_DELETE_ALLOWED,
-     M2MBase::GET_PUT_DELETE_ALLOWED},                                             // 11
-    {OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::POST_DELETE_ALLOWED}, // 12
+     M2MBase::GET_PUT_DELETE_ALLOWED},                                              // 11
+    {OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED, M2MBase::POST_DELETE_ALLOWED},  // 12
     {OP_MASK_GET_ALLOWED | OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
-     M2MBase::GET_POST_DELETE_ALLOWED}, // 13
+     M2MBase::GET_POST_DELETE_ALLOWED},                                             // 13
     {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
-     M2MBase::PUT_POST_DELETE_ALLOWED}, // 14
+     M2MBase::PUT_POST_DELETE_ALLOWED},                                             // 14
     {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
-     M2MBase::GET_PUT_POST_DELETE_ALLOWED}, // 15
+     M2MBase::GET_PUT_POST_DELETE_ALLOWED},                                         // 15
 };
 
 // Helper functions:
