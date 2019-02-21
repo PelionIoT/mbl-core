@@ -28,7 +28,7 @@ ROLLBACK_EXCEPTIONS = (
     alc.ContainerDeleteError,
     apm.AppPathInexistent,
     apm.AppUninstallError,
-    apm.AppStopTimeoutError,
+    alc.AppStopTimeoutError,
     alc.ContainerCreationError,
     alc.ContainerStartError,
 )
@@ -270,7 +270,7 @@ class AppUpdateManager:
             except (
                 alc.ContainerKillError,
                 alc.ContainerDeleteError,
-                apm.AppStopTimeoutError,
+                alc.AppStopTimeoutError,
             ) as terminate_error:
                 log.error(
                     "Rollback applications as failed"
@@ -291,7 +291,7 @@ class AppUpdateManager:
             except (
                 alc.ContainerKillError,
                 alc.ContainerDeleteError,
-                apm.AppStopTimeoutError,
+                alc.AppStopTimeoutError,
             ) as terminate_error:
                 if alc.ContainerState.DOES_NOT_EXIST.value in str(
                     terminate_error
