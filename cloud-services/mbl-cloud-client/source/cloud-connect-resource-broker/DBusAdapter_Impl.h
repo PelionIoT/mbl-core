@@ -247,9 +247,9 @@ private:
      * @param stop_status - sent MblError status which should state the reason for stopping the 
      * event loop (the exit code specified when invoking sd_event_exit()). If the status is 
       * MblError::None then the exit is done gracefully.
-     * @return MblError - Error::None for success , otherwise the failure reason
+     * @return int - the returned value of sd_event_exit()
      */
-    MblError event_loop_request_stop(MblError stop_status);
+    int event_loop_request_stop(MblError stop_status);
 
     
     // sd-event event loop handle

@@ -150,7 +150,7 @@ MblError DBusAdapterImpl::bus_init()
     service_name_ = DBUS_CLOUD_SERVICE_NAME;
     TR_INFO("Aquired D-Bus known name service_name_=%s", DBUS_CLOUD_SERVICE_NAME);
 
-    // TODO - IOTMBL 1606 - Add match rules -this part is commented since messages are not yet
+    // TODO - IOTMBL-1606 - Add match rules -this part is commented since messages are not yet
     // handled on callback
     // MblError status = add_match_rules();
     // if (status != MblError::None){
@@ -230,10 +230,9 @@ MblError DBusAdapterImpl::event_loop_deinit()
     return MblError::None;
 }
 
-MblError DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
+int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
 {
     TR_DEBUG("Enter");
-    OneSetMblError status;
 
     // Must be first! only CCRB initializer thread should call this function.
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
@@ -241,7 +240,6 @@ MblError DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     // Send myself an exit request
     int r = sd_event_exit(event_loop_handle_, (int) stop_status);
     if (r < 0) {
-        status.set(MblError::DBA_SdEventExitRequestFailure);
         TR_ERR("sd_event_exit failed with error r=%d (%s) - returning %s",
                r,
                strerror(r),
@@ -251,7 +249,7 @@ MblError DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     {
         TR_INFO("sd_event_exit called with stop_status=%d", (int) stop_status);
     }
-    return status.get();
+    return r;
 }
 
 int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
@@ -261,7 +259,6 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     assert(s);
     TR_DEBUG("Enter");
     UNUSED(s);
-    MblError status = MblError::Unknown;
 
     // Validate that revents contains epoll read event flag
     if ((revents & EPOLLIN) == 0) {
@@ -303,18 +300,17 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
                    msg.get_payload_len(),
                    sizeof(mbl::MailboxMsg::MsgType::EXIT),
                    MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
-            return MblError::DBA_MailBoxInvalidMsg;
+            return (-EBADMSG);
         }
 
         // External thread request to stop event loop
         auto& payload = msg.get_payload();
         TR_INFO("receive message EXIT : sending stop request to event loop with stop status=%s",
                 MblError_to_str(payload.exit_.stop_status));
-        status = event_loop_request_stop(payload.exit_.stop_status);
-        if (status != MblError::None) {
-            TR_ERR("event_loop_request_stop failed with status=%s, disable event source!",
-                   MblError_to_str(status));
-            return (-1);
+        int r = event_loop_request_stop(payload.exit_.stop_status);
+        if (r < 0) {
+            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)")
+            return r;
         }
         break;
     }
@@ -469,7 +465,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
         return (-EINVAL);
     }
 
-    // TODO - IOTMBL 1527
+    // TODO - IOTMBL-1527
     // validate app registered expected interface on bus? (use sd-bus track)
 
     // TODO - call CCRB
@@ -690,10 +686,13 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
     if (pthread_equal(pthread_self(), initializer_thread_id_) != 0) {
         // This section is for self exit request, use event_loop_request_stop
         // current thread id ==  initializer_thread_id_
-        status = event_loop_request_stop(stop_status);
-        if (status != MblError::None) {
-            TR_ERR("event_loop_request_stop() failed with error %s",
-                   MblError_to_str(MblError::DBA_SdEventCallFailure));
+        int r = event_loop_request_stop(stop_status);
+        if (r < 0) {
+            status = MblError::DBA_SdEventExitRequestFailure;
+            TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
+                   strerror(r),
+                   r,
+                   MblError_to_str(DBA_SdEventExitRequestFailure));
             // continue
         }
         else
@@ -750,7 +749,7 @@ DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(const uintptr_t ipc
     //     return MblError::DBA_IllegalState;
     // }
 
-    //return MblError::None;
+    // return MblError::None;
 }
 
 MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
@@ -777,7 +776,7 @@ MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
     //     return MblError::DBA_IllegalState;
     // }
 
-    //return MblError::None;
+    // return MblError::None;
 }
 
 MblError
@@ -804,7 +803,7 @@ DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(const uintptr_t 
     //            MblError_to_str(MblError::DBA_IllegalState));
     //     return MblError::DBA_IllegalState;
     // }
-    //return MblError::None;
+    // return MblError::None;
 }
 
 MblError DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
@@ -830,7 +829,7 @@ MblError DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
     //            MblError_to_str(MblError::DBA_IllegalState));
     //     return MblError::DBA_IllegalState;
     // }
-    //return MblError::None;
+    // return MblError::None;
 }
 
 bool DBusAdapterImpl::is_valid_message_type(uint8_t message_type)

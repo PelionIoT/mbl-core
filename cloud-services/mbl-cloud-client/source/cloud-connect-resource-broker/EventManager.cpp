@@ -90,7 +90,7 @@ int EventManager::self_event_handler_impl(sd_event_source* s, SelfEvent* ev)
     // callback is done - remove the event  from map
     // TODO - this is done only for immidiate/delayed events. Later on need to implement different
     // behavior for periodic events
-    // TODO -iotmbl 1686 consider adding a "free pool" to avoid dynamic allocations and
+    // TODO -IOTMBL-1686 consider adding a "free pool" to avoid dynamic allocations and
     // deallocations, this will be a vector or queue of pre allocated elements, with a bitmap
     // pointing. on free elements. if no empty left - double the size. need 2 functions with lock
     // guard at the entrance - something like get_free_element and return_element

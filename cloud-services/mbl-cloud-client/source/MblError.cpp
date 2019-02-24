@@ -81,7 +81,6 @@ const char* MblError_to_str(const MblError error)
     case Error::DBA_SdBusRequestNameFailed: return "DBA_SdBusRequestNameFailed";
     case Error::DBA_SdBusRequestAddMatchFailed: return "DBA_SdBusRequestAddMatchFailed";
     case Error::DBA_SdEventCallFailure: return "DBA_SdEventCallFailure";
-    case Error::DBA_SdEventExitRequestFailure: return "DBA_SdEventExitRequestFailure";
     case Error::DBA_MailBoxInvalidMsg: return "DBA_MailBoxInvalidMsg";
     case Error::DBA_MailBoxSystemCallFailure: return "DBA_MailBoxSystemCallFailure";
     case Error::DBA_MailBoxPollTimeout: return "DBA_MailBoxPollTimeout";
