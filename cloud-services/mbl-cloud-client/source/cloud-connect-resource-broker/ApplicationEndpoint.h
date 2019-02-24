@@ -22,12 +22,16 @@
 #include "M2MResourceObjects.h"
 #include <string>
 #include <memory>
+#include <functional>
 
 class ResourceBrokerTester;
 
 namespace mbl {
 
 class ResourceBroker;
+
+typedef std::function<void(const uintptr_t, const std::string&)> app_registration_updated_func;
+
 
 /**
  * @brief This class represent an Application endpoint, holds M2M resources, access token and more.
@@ -37,12 +41,19 @@ class ResourceBroker;
 class ApplicationEndpoint {
 
 friend ::ResourceBrokerTester;
-friend ResourceBroker;
 
 public:
 
     ApplicationEndpoint(const uintptr_t ipc_conn_handle, ResourceBroker &ccrb);
     ~ApplicationEndpoint();
+
+    //void register_callback_functions(std::function<void(const uintptr_t, const std::string&)>app_registration_updated_func);
+    void register_callback_functions(
+        app_registration_updated_func registration_updated_func
+        ) 
+        {
+            resource_broker_registration_updated_func_ = registration_updated_func;//std::bind(registration_updated_func, std::placeholders::_1, std::placeholders::_2);
+        }
 
     /**
      * @brief Initialize Application resource M2M lists using JSON string
@@ -63,7 +74,20 @@ public:
      */
     const std::string& get_access_token() const {return access_token_;}
 
-private:
+    /**
+     * @brief Return registered status
+     * 
+     * @return true if registerd
+     * @return false if not registerd
+     */
+    bool is_registered() const {return registered_;}
+
+    /**
+     * @brief Return m2m object list object
+     * 
+     * @return m2m object list object
+     */
+    M2MObjectList& get_m2m_object_list() {return m2m_object_list_;}
 
     /**
      * @brief Resitration update callback
@@ -79,6 +103,8 @@ private:
      */
     void handle_error_cb(const int cloud_client_code);
 
+private:
+
     /**
      * @brief Generate unique access token using sd_id128_randomize
      * Unique access token is saved in access_token_ private member
@@ -87,6 +113,8 @@ private:
      *          Error::CCRBGenerateUniqueIdFailed in case of failure
      */
     MblError generate_access_token();
+
+    app_registration_updated_func resource_broker_registration_updated_func_;
 
     uintptr_t ipc_conn_handle_;
     std::string access_token_;

@@ -92,7 +92,10 @@ void ApplicationEndpoint::handle_registration_updated_cb()
              __PRETTY_FUNCTION__,
              access_token_.c_str());
     registered_ = true;
-    ccrb_.handle_app_registration_updated(ipc_conn_handle_, access_token_);
+    //ccrb_.handle_app_registration_updated(ipc_conn_handle_, access_token_);
+    tr_debug("AAAA");
+    resource_broker_registration_updated_func_(ipc_conn_handle_, access_token_);
+    tr_debug("BBBB");
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)

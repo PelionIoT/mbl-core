@@ -284,7 +284,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
     SPApplicationEndpoint app_endpoint = itr->second;
 
     // Send the response to adapter:
-    if (app_endpoint->registered_) {
+    if (app_endpoint->is_registered()) {
         // TODO: add call to update_deregistration_status when deregister is
         // implemented
         tr_error("%s: Application (access_token: %s) is already registered.",
@@ -356,6 +356,11 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
+    app_endpoint->register_callback_functions(
+        std::bind(
+            &ResourceBroker::handle_app_registration_updated, this, std::placeholders::_1, std::placeholders::_2)
+        );
+        
     out_access_token = app_endpoint->get_access_token();
 
     // Set atomic flag for registration in progress
@@ -372,7 +377,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
     app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
 
     // Call Mbed cloud client to start registration update
-    add_objects_func_(app_endpoint->m2m_object_list_);
+    add_objects_func_(app_endpoint->get_m2m_object_list());
     register_update_func_();
 
     out_status = CloudConnectStatus::STATUS_SUCCESS;
