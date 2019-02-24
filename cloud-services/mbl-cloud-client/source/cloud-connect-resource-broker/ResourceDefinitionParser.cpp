@@ -104,7 +104,7 @@ static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Oper
         tr_error("%s - Invalid operaion mask: %" PRId8, __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
     }
-    operation = itr->second;;
+    operation = itr->second;
     return Error::None;
 }
 
@@ -466,8 +466,8 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     tr_debug("%s: object_name: %s", __PRETTY_FUNCTION__, object_name.c_str());
 
     if (json_value_object.empty()) {
-        // Error: Invalid JSON, we support only JSONs with 3 levels 
-		// (Obj/Object Instance/Resource)
+        // Error: Invalid JSON, we support only JSONs with 3 levels
+        // (Obj/Object Instance/Resource)
         tr_error("%s - Invalid JSON. ObjectID is empty.", __PRETTY_FUNCTION__);
         return Error::CCRBInvalidJson;
     }
@@ -506,9 +506,10 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     return Error::None;
 }
 
-MblError ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition,
-                                                     M2MObjectList& m2m_object_list,
-                                                     RBM2MObjectList& rbm2m_object_list)
+MblError
+ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition,
+                                            M2MObjectList& m2m_object_list,
+                                            RBM2MObjectList& rbm2m_object_list)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
@@ -529,9 +530,8 @@ MblError ResourceDefinitionParser::build_object_list(const std::string& applicat
 
         // Parse
         const char* end_string = &*application_resource_definition.cend();
-        bool parsing_successful = reader->parse(application_resource_definition.c_str(),
-                                                end_string, &root,
-                                                &errors);
+        bool parsing_successful =
+            reader->parse(application_resource_definition.c_str(), end_string, &root, &errors);
         delete reader;
         if (!parsing_successful) {
             tr_error("%s - parsing Json string failed with errors: %s.",

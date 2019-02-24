@@ -41,8 +41,7 @@ ApplicationEndpoint::~ApplicationEndpoint()
 }
 
 void ApplicationEndpoint::register_callback_functions(
-    app_register_update_finished_func register_update_finished_func,
-    app_error_func error_func)
+    app_register_update_finished_func register_update_finished_func, app_error_func error_func)
 {
     handle_app_register_update_finished_cb_ = register_update_finished_func;
     handle_app_error_cb_ = error_func;
@@ -68,12 +67,11 @@ MblError ApplicationEndpoint::init(const std::string& application_resource_defin
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 
-    RBM2MObjectList rbm2m_object_list; //TODO: should be remove in future task
+    RBM2MObjectList rbm2m_object_list; // TODO: should be remove in future task
     // Parse JSON
     ResourceDefinitionParser resource_parser;
-    const MblError build_object_list_stauts =
-        resource_parser.build_object_list(application_resource_definition,
-                                          m2m_object_list_, rbm2m_object_list);
+    const MblError build_object_list_stauts = resource_parser.build_object_list(
+        application_resource_definition, m2m_object_list_, rbm2m_object_list);
 
     if (Error::None != build_object_list_stauts) {
         tr_error("%s: build_object_list failed with error: %s",
@@ -99,13 +97,13 @@ void ApplicationEndpoint::handle_registration_updated_cb()
              __PRETTY_FUNCTION__,
              access_token_.c_str());
     registered_ = true;
-    if(nullptr != handle_app_register_update_finished_cb_) {
+    if (nullptr != handle_app_register_update_finished_cb_) {
         handle_app_register_update_finished_cb_(ipc_conn_handle_, access_token_);
-    } else {
-        tr_error("%s: handle_app_register_update_finished_cb_ was not set.",
-            __PRETTY_FUNCTION__);
     }
-    
+    else
+    {
+        tr_error("%s: handle_app_register_update_finished_cb_ was not set.", __PRETTY_FUNCTION__);
+    }
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
@@ -122,13 +120,13 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
              __PRETTY_FUNCTION__,
              access_token_.c_str());
 
-    if(nullptr != handle_app_error_cb_) {
+    if (nullptr != handle_app_error_cb_) {
         handle_app_error_cb_(ipc_conn_handle_, access_token_, mbl_code);
-    } else {
-        tr_error("%s: handle_app_error_cb_ was not set.",
-            __PRETTY_FUNCTION__);
     }
-
+    else
+    {
+        tr_error("%s: handle_app_error_cb_ was not set.", __PRETTY_FUNCTION__);
+    }
 }
 
 } // namespace mbl

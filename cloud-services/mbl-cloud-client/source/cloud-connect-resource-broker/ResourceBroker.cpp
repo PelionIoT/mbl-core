@@ -239,7 +239,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle,
-                                                     const std::string& access_token)
+                                                            const std::string& access_token)
 {
     tr_debug("%s: Application (access_token: %s) registered successfully.",
              __PRETTY_FUNCTION__,
@@ -348,28 +348,24 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         tr_error("%s: app_endpoint->init failed with error: %s",
                  __PRETTY_FUNCTION__,
                  MblError_to_str(status));
-        out_status = 
-            (Error::CCRBInvalidJson == status) ? 
-                CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
-                : CloudConnectStatus::ERR_FAILED;
+        out_status = (Error::CCRBInvalidJson == status)
+                         ? CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
+                         : CloudConnectStatus::ERR_FAILED;
         return Error::None;
     }
 
     // Register application endpoint function
     app_endpoint->register_callback_functions(
-        std::bind(
-            &ResourceBroker::handle_app_register_update_finished_cb, 
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2),
-        std::bind(
-            &ResourceBroker::handle_app_error_cb, 
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3)
-    );
-        
+        std::bind(&ResourceBroker::handle_app_register_update_finished_cb,
+                  this,
+                  std::placeholders::_1,
+                  std::placeholders::_2),
+        std::bind(&ResourceBroker::handle_app_error_cb,
+                  this,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
+
     out_access_token = app_endpoint->get_access_token();
 
     // Set atomic flag for registration in progress
@@ -377,7 +373,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     // Register the next cloud client callbacks to app_endpoint
     if (nullptr != cloud_client_) {
-		// GTest unit test might set cloud_client_ member to nullptr
+        // GTest unit test might set cloud_client_ member to nullptr
         cloud_client_->on_registration_updated(
             &(*app_endpoint), &ApplicationEndpoint::handle_registration_updated_cb);
         cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
