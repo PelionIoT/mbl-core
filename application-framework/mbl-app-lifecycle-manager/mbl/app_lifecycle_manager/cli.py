@@ -39,7 +39,8 @@ def run_app_from_parent_dir(name):
     run the application version with the lowest number and remove
     all other versions found if any.
     i.e If `/home/app/app_a/9` and `/home/app/app_a/10` are found,
-    run `/home/app/app_a/9` and remove `/home/app/app_a/10`
+    run `/home/app/app_a/9` and remove `/home/app/app_a/10` if
+    successful.
     """
     app_parent_dir = os.path.join(APPS_PATH, name)
 
@@ -93,8 +94,7 @@ def parse_args():
     )
 
     run = command_group.add_parser(
-        "run",
-        help=("run a user application found at {}.".format(APPS_PATH)),
+        "run", help=("run a user application found at {}.".format(APPS_PATH))
     )
     run.add_argument(
         "app_name",
