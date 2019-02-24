@@ -28,10 +28,8 @@ class ResourceBrokerTester;
 
 namespace mbl {
 
-class ResourceBroker;
-
-typedef std::function<void(const uintptr_t, const std::string&)> app_registration_updated_func;
-
+typedef std::function<void(const uintptr_t, const std::string&)> app_register_update_finished_func;
+typedef std::function<void(const uintptr_t, const std::string&, const MblError)> app_error_func;
 
 /**
  * @brief This class represent an Application endpoint, holds M2M resources, access token and more.
@@ -44,16 +42,17 @@ friend ::ResourceBrokerTester;
 
 public:
 
-    ApplicationEndpoint(const uintptr_t ipc_conn_handle, ResourceBroker &ccrb);
+    ApplicationEndpoint(const uintptr_t ipc_conn_handle);
     ~ApplicationEndpoint();
 
-    //void register_callback_functions(std::function<void(const uintptr_t, const std::string&)>app_registration_updated_func);
-    void register_callback_functions(
-        app_registration_updated_func registration_updated_func
-        ) 
-        {
-            resource_broker_registration_updated_func_ = registration_updated_func;//std::bind(registration_updated_func, std::placeholders::_1, std::placeholders::_2);
-        }
+    /**
+     * @brief Register resource broker callback functions
+     * 
+     * @param register_update_finished_func - Callback function for handling registration update finished
+     * @param error_func - Callback function for handling error
+     */
+    void register_callback_functions(app_register_update_finished_func register_update_finished_func,
+                                     app_error_func error_func);
 
     /**
      * @brief Initialize Application resource M2M lists using JSON string
@@ -114,12 +113,14 @@ private:
      */
     MblError generate_access_token();
 
-    app_registration_updated_func resource_broker_registration_updated_func_;
-
     uintptr_t ipc_conn_handle_;
     std::string access_token_;
-    ResourceBroker &ccrb_; // Resource Broker to be updated whenever a callback is being called
     bool registered_;
+
+    // Function pointers to resource broker callback functions
+    app_register_update_finished_func handle_app_register_update_finished_cb_;
+    app_error_func handle_app_error_cb_;
+
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
 };
 

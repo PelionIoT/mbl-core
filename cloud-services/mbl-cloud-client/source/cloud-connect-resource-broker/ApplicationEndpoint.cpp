@@ -16,7 +16,6 @@
  */
 
 #include "ApplicationEndpoint.h"
-#include "ResourceBroker.h"
 #include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
@@ -27,11 +26,11 @@
 namespace mbl
 {
 
-ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle,
-                                         ResourceBroker& ccrb)
+ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle)
     : ipc_conn_handle_(ipc_conn_handle),
-      ccrb_(ccrb),
-      registered_(false)
+      registered_(false),
+      handle_app_register_update_finished_cb_(nullptr),
+      handle_app_error_cb_(nullptr)
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
 }
@@ -39,6 +38,14 @@ ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle,
 ApplicationEndpoint::~ApplicationEndpoint()
 {
     tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+}
+
+void ApplicationEndpoint::register_callback_functions(
+    app_register_update_finished_func register_update_finished_func,
+    app_error_func error_func)
+{
+    handle_app_register_update_finished_cb_ = register_update_finished_func;
+    handle_app_error_cb_ = error_func;
 }
 
 MblError ApplicationEndpoint::generate_access_token()
@@ -92,10 +99,13 @@ void ApplicationEndpoint::handle_registration_updated_cb()
              __PRETTY_FUNCTION__,
              access_token_.c_str());
     registered_ = true;
-    //ccrb_.handle_app_registration_updated(ipc_conn_handle_, access_token_);
-    tr_debug("AAAA");
-    resource_broker_registration_updated_func_(ipc_conn_handle_, access_token_);
-    tr_debug("BBBB");
+    if(nullptr != handle_app_register_update_finished_cb_) {
+        handle_app_register_update_finished_cb_(ipc_conn_handle_, access_token_);
+    } else {
+        tr_error("%s: handle_app_register_update_finished_cb_ was not set.",
+            __PRETTY_FUNCTION__);
+    }
+    
 }
 
 void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
@@ -111,7 +121,14 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
     tr_debug("%s: (access_token: %s) - Notify CCRB that error occured.",
              __PRETTY_FUNCTION__,
              access_token_.c_str());
-    ccrb_.handle_app_error_cb(ipc_conn_handle_, access_token_, mbl_code);
+
+    if(nullptr != handle_app_error_cb_) {
+        handle_app_error_cb_(ipc_conn_handle_, access_token_, mbl_code);
+    } else {
+        tr_error("%s: handle_app_error_cb_ was not set.",
+            __PRETTY_FUNCTION__);
+    }
+
 }
 
 } // namespace mbl

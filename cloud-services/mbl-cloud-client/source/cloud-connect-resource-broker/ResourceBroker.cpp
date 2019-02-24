@@ -238,7 +238,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 // Callback functions that are being called by ApplicationEndpoint Class
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void ResourceBroker::handle_app_registration_updated(const uintptr_t ipc_conn_handle,
+void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle,
                                                      const std::string& access_token)
 {
     tr_debug("%s: Application (access_token: %s) registered successfully.",
@@ -342,8 +342,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     // Create and init Application Endpoint:
     // parse app_resource_definition_json and create unique access token
-    SPApplicationEndpoint app_endpoint =
-        std::make_shared<ApplicationEndpoint>(ipc_conn_handle, *this);
+    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle);
     const MblError status = app_endpoint->init(app_resource_definition_json);
     if (Error::None != status) {
         tr_error("%s: app_endpoint->init failed with error: %s",
@@ -356,10 +355,20 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
+    // Register application endpoint function
     app_endpoint->register_callback_functions(
         std::bind(
-            &ResourceBroker::handle_app_registration_updated, this, std::placeholders::_1, std::placeholders::_2)
-        );
+            &ResourceBroker::handle_app_register_update_finished_cb, 
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2),
+        std::bind(
+            &ResourceBroker::handle_app_error_cb, 
+            this,
+            std::placeholders::_1,
+            std::placeholders::_2,
+            std::placeholders::_3)
+    );
         
     out_access_token = app_endpoint->get_access_token();
 

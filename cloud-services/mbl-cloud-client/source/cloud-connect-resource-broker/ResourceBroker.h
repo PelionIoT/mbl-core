@@ -345,7 +345,7 @@ private:
      * @param access_token - Token that should be used by the client 
      *        application.
      */
-    void handle_app_registration_updated(const uintptr_t ipc_conn_handle, const std::string &access_token);
+    void handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
 
     /**
      * @brief Application error callback function
@@ -385,6 +385,7 @@ private:
 
     // Atomic boolean to signal that rgistration is in progress
     // Use to limit only one allowed registration at a time
+    // This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
     std::atomic_bool registration_in_progress_;
 
 
