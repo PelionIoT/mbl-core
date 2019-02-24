@@ -92,7 +92,10 @@ def parse_args():
         description="The commands to control the application statuses."
     )
 
-    run = command_group.add_parser("run", help="run a user application.")
+    run = command_group.add_parser(
+        "run",
+        help=("run a user application found at {}.".format(APPS_PATH)),
+    )
     run.add_argument(
         "app_name",
         type=str,
@@ -103,7 +106,7 @@ def parse_args():
 
     run_all = command_group.add_parser(
         "run-all",
-        help=("run all user applications found at {}".format(APPS_PATH)),
+        help=("run all user applications found at {}.".format(APPS_PATH)),
     )
     run_all.set_defaults(func=run_all_action)
 
