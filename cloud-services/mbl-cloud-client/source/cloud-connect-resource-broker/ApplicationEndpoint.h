@@ -41,19 +41,27 @@ friend ResourceBroker;
 
 public:
 
-    ApplicationEndpoint(const uintptr_t ipc_conn_handle, std::string access_token, ResourceBroker &ccrb);
+    ApplicationEndpoint(const uintptr_t ipc_conn_handle, ResourceBroker &ccrb);
     ~ApplicationEndpoint();
 
     /**
      * @brief Initialize Application resource M2M lists using JSON string
      * 
-     * @param json_string - Application resource definition JSON string
+     * @param application_resource_definition - Application resource definition JSON string
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
+     *      Error::CCRBGenerateUniqueIdFailed - In case unique access token creation failed
      */
-    MblError init(const std::string json_string);
+    MblError init(const std::string& application_resource_definition);
+
+    /**
+     * @brief Return application endpoint unique access token
+     * 
+     * @return Unique access token
+     */
+    const std::string& get_access_token() const {return access_token_;}
 
 private:
 
@@ -71,12 +79,20 @@ private:
      */
     void handle_error_cb(const int cloud_client_code);
 
+    /**
+     * @brief Generate unique access token using sd_id128_randomize
+     * Unique access token is saved in access_token_ private member
+     * @return MblError -
+     *          Error::None - in case of success
+     *          Error::CCRBGenerateUniqueIdFailed in case of failure
+     */
+    MblError generate_access_token();
+
     uintptr_t ipc_conn_handle_;
     std::string access_token_;
     ResourceBroker &ccrb_; // Resource Broker to be updated whenever a callback is being called
     bool registered_;
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
-    RBM2MObjectList rbm2m_object_list_;
 };
 
 } // namespace mbl

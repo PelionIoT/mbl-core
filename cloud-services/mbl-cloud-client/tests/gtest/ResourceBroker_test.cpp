@@ -27,7 +27,7 @@
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. JSON is parsed by ApplicationEndpoint class
+ * 2. Application resource definition is parsed by ApplicationEndpoint class
  * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
  * 4. Resource Broker calls Mbed cloud client to register the resources
  * 5. Mbed cloud client calls ApplicationEndpoint's REGISTER callback upon SUCCESSFUL registration
@@ -40,13 +40,14 @@ TEST(Resource_Broker_Positive, registration_success) {
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
-    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string application_resource_definition = 
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle,
-        json_string,
+        application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, // expected error status
@@ -64,7 +65,7 @@ TEST(Resource_Broker_Positive, registration_success) {
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. JSON is parsed by ApplicationEndpoint class
+ * 2. Application resource definition is parsed by ApplicationEndpoint class
  * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
  * 4. Resource Broker calls Mbed cloud client to register the resources
  * 5. Mbed cloud client calls ApplicationEndpoint's ERROR callbacks upon FAILED registration
@@ -77,13 +78,14 @@ TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
-    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string application_resource_definition =
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle,
-        json_string,
+        application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, //expected error status
@@ -101,26 +103,26 @@ TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. JSON is parsed by ApplicationEndpoint class but FAIL due to invalid JSON
+ * 2. Application resource definition is parsed by ApplicationEndpoint class but FAIL due to invalid JSON
  * 3. Resource Broker return the FAILED registration cloud client status to the adapter
  */
-TEST(Resource_Broker_Negative, invalid_json_1) {
+TEST(Resource_Broker_Negative, invalid_app_resource_definition_1) {
 
     tr_debug("%s", __PRETTY_FUNCTION__);
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
-    const std::string json_string = INVALID_JSON_NOT_3_LEVEL_1;
+    const std::string application_resource_definition = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_1;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle,
-        json_string,
+        application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, //expected error status
-        CloudConnectStatus::ERR_INVALID_JSON //expected cloud connect status
+        CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION //expected cloud connect status
     );
 }
 
@@ -131,14 +133,15 @@ TEST(Resource_Broker_Negative, already_registered) {
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle_1 = 1;
-    const std::string json_string_1 = VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
+    const std::string application_resource_definition_1 =
+        VALID_APP_RESOURCE_DEFINITION_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
     CloudConnectStatus cloud_connect_out_status_1;
     std::string out_access_token_1;
 
     // Application 1 registering
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_1,
-        json_string_1,
+        application_resource_definition_1,
         cloud_connect_out_status_1,
         out_access_token_1,
         mbl::MblError::None, //expected error status
@@ -152,13 +155,14 @@ TEST(Resource_Broker_Negative, already_registered) {
 
     // Application 2 try to register - expect fail as only one application is allowed to be registered
     const uintptr_t ipc_conn_handle_2 = 2;
-    const std::string json_string_2 = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string application_resource_definition_2 =
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status_2;
     std::string out_access_token_2;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_2,
-        json_string_2,
+        application_resource_definition_2,
         cloud_connect_out_status_2,
         out_access_token_2,
         mbl::MblError::None, //expected error status
@@ -172,14 +176,15 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle_1 = 1;
-    const std::string json_string_1 = VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
+    const std::string application_resource_definition_1 =
+        VALID_APP_RESOURCE_DEFINITION_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
     CloudConnectStatus cloud_connect_out_status_1;
     std::string out_access_token_1;
 
     tr_debug("%s: Application 1 - Start registration", __PRETTY_FUNCTION__);
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_1,
-        json_string_1,
+        application_resource_definition_1,
         cloud_connect_out_status_1,
         out_access_token_1,
         mbl::MblError::None, //expected error status
@@ -189,13 +194,14 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
     // Application 2 try to register while Application 1 registration is still in progress - expect fail
     tr_debug("%s: Application 2 - Start registration", __PRETTY_FUNCTION__);
     const uintptr_t ipc_conn_handle_2 = 2;
-    const std::string json_string_2 = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string application_resource_definition_2 =
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status_2;
     std::string out_access_token_2;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_2,
-        json_string_2,
+        application_resource_definition_2,
         cloud_connect_out_status_2,
         out_access_token_2,
         mbl::MblError::None, //expected error status
@@ -217,13 +223,14 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
-    const std::string json_string = VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    const std::string application_resource_definition =
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
         ipc_conn_handle,
-        json_string,
+        application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, //expected error status
@@ -238,7 +245,7 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
     // Second time - this time we simulate success
     resource_broker_tester.register_resources_test(
         ipc_conn_handle,
-        json_string,
+        application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, //expected error status

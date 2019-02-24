@@ -104,7 +104,7 @@ static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Oper
         tr_error("%s - Invalid operaion mask: %" PRId8, __PRETTY_FUNCTION__, operation_mask);
         return Error::CCRBInvalidJson;
     }
-    operation = operation_map[operation_mask];
+    operation = itr->second;;
     return Error::None;
 }
 
@@ -506,7 +506,7 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     return Error::None;
 }
 
-MblError ResourceDefinitionParser::build_object_list(const std::string& json_string,
+MblError ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition,
                                                      M2MObjectList& m2m_object_list,
                                                      RBM2MObjectList& rbm2m_object_list)
 {
@@ -528,8 +528,10 @@ MblError ResourceDefinitionParser::build_object_list(const std::string& json_str
         std::string errors;
 
         // Parse
-        const char* end_string = &*json_string.cend();
-        bool parsing_successful = reader->parse(json_string.c_str(), end_string, &root, &errors);
+        const char* end_string = &*application_resource_definition.cend();
+        bool parsing_successful = reader->parse(application_resource_definition.c_str(),
+                                                end_string, &root,
+                                                &errors);
         delete reader;
         if (!parsing_successful) {
             tr_error("%s - parsing Json string failed with errors: %s.",

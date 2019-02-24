@@ -76,7 +76,8 @@
   }
 }
 */
-#define VALID_JSON_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "112" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } }, "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 999 , "operations" : ["get"], "multiple_instance" : true} }, "22" : { "221" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post","put"], "multiple_instance" : true, "observable" : true } } } })"
+#define VALID_APP_RESOURCE_DEFINITION_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "112" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } }, "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 999 , "operations" : ["get"], "multiple_instance" : true} }, "22" : { "221" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post","put"], "multiple_instance" : true, "observable" : true } } } })"
 
 /*
 {
@@ -109,7 +110,8 @@
   }
 }
 */
-#define VALID_JSON_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } , "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 123456 , "operations" : ["get"], "multiple_instance" : true} } } })"
+#define VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } , "2" : { "21" : { "211" : { "mode" : "static", "type" : "integer", "value" : 123456 , "operations" : ["get"], "multiple_instance" : true} } } })"
 
 /*
 {
@@ -130,7 +132,8 @@
   }
 }
 */
-#define VALID_JSON_ONE_DYMANIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE  R"({"8888" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } } })"
+#define VALID_APP_RESOURCE_DEFINITION_ONE_DYMANIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE \
+  R"({"8888" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } } })"
 
 
 /*
@@ -175,14 +178,16 @@
   }
 }
 */
-#define INVALID_JSON_NOT_3_LEVEL_1              R"({"Obj1" : {}, "Obj2" : { "1" : {}, "2" : {}, "3" : {} }, "Obj3" : { "1" : { "0" : { "mode" : "static", "type" : "integer", "operations" : ["get"], "value" : 7 }, "1" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put"], "observable" : true } }, "2" : { "101" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post"], "multiple_instance" : true } } } })"
+#define INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_1 \
+  R"({"Obj1" : {}, "Obj2" : { "1" : {}, "2" : {}, "3" : {} }, "Obj3" : { "1" : { "0" : { "mode" : "static", "type" : "integer", "operations" : ["get"], "value" : 7 }, "1" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put"], "observable" : true } }, "2" : { "101" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","post"], "multiple_instance" : true } } } })"
 
 /*
 {
   "32811": {}
 }
 */
-#define INVALID_JSON_NOT_3_LEVEL_2              R"({"32811" : {}})"
+#define INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_2 \
+  R"({"32811" : {}})"
 
 /*
 {
@@ -202,7 +207,8 @@
   }
 }
 */
-#define INVALID_JSON_MISSING_OBSERVABLE_ENTRY   R"({"1" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "multiple_instance" : true } } } })"
+#define INVALID_APP_RESOURCE_DEFINITION_MISSING_OBSERVABLE_ENTRY \
+  R"({"1" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "multiple_instance" : true } } } })"
 
 /*
 {
@@ -221,7 +227,8 @@
     }
   }
 }*/
-#define INVALID_JSON_ILLEGAL_RESOURCE_MODE      R"({"1" : { "11" : { "111" : { "mode" : "invalid_mode", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
+#define INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_MODE \
+  R"({"1" : { "11" : { "111" : { "mode" : "invalid_mode", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
 
 /*
 {
@@ -240,7 +247,8 @@
     }
   }
 }*/
-#define INVALID_JSON_ILLEGAL_RESOURCE_OPERATION R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["invalid_operation"], "multiple_instance" : false} } } })"; 
+#define INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_OPERATION \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["invalid_operation"], "multiple_instance" : false} } } })"; 
 
 /*
 {
@@ -259,7 +267,8 @@
     }
   }
 }*/
-#define INVALID_JSON_UNSUPPORTED_RESOURCE_TYPE  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "bla_bla_type", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"
+#define INVALID_APP_RESOURCE_DEFINITION_UNSUPPORTED_RESOURCE_TYPE \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "bla_bla_type", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"
 
 /*
 {
@@ -289,7 +298,8 @@
   }
 }
 */
-#define INVALID_JSON_TWO_SAME_RESOURCE_NAMES    R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
+#define INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_RESOURCE_NAMES \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false}, "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
 
 /*
 {
@@ -320,7 +330,8 @@
     }
   }
 }*/
-#define INVALID_JSON_TWO_SAME_OBJECT_INSTANCES  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } , "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
+#define INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT_INSTANCES \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } , "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"   
 
 /*
 {
@@ -353,7 +364,8 @@
     }
   }  
 }*/
-#define INVALID_JSON_TWO_SAME_OBJECT            R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } }, "1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"
+#define INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT \
+  R"({"1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } }, "1" : { "11" : { "111" : { "mode" : "static", "resource_type" : "reset_button", "type" : "string", "value": "string_val", "operations" : ["get"], "multiple_instance" : false} } } })"
 
 
 

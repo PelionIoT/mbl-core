@@ -116,7 +116,7 @@ public:
      * @brief Build m2m2 objects / object instances and resources based on input JSON string. 
      * In case of an error - delete already created rmm2m and m2m objects / object instances and resources
      * (m2m_object_list and rbm2m_object_list will be empty).
-     * @param json_string  - Input JSON string
+     * @param application_resource_definition  - Input application resource definition JSON string
      * @param m2m_object_list - Output M2M object list.
      * @param rbm2m_object_list - Output Resource Builder m2m object list.
      * @return MblError -
@@ -125,7 +125,7 @@ public:
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
     MblError build_object_list(
-        const std::string &json_string,
+        const std::string &application_resource_definition,
         M2MObjectList &m2m_object_list,
         RBM2MObjectList &rbm2m_object_list);
 

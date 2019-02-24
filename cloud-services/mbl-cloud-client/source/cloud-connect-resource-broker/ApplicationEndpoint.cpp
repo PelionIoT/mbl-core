@@ -20,6 +20,7 @@
 #include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
+#include <systemd/sd-id128.h>
 
 #define TRACE_GROUP "ccrb-app-end-point"
 
@@ -27,14 +28,12 @@ namespace mbl
 {
 
 ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle,
-                                         std::string access_token,
                                          ResourceBroker& ccrb)
     : ipc_conn_handle_(ipc_conn_handle),
-      access_token_(std::move(access_token)),
       ccrb_(ccrb),
       registered_(false)
 {
-    tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s", __PRETTY_FUNCTION__);
 }
 
 ApplicationEndpoint::~ApplicationEndpoint()
@@ -42,22 +41,49 @@ ApplicationEndpoint::~ApplicationEndpoint()
     tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
 }
 
-MblError ApplicationEndpoint::init(const std::string json_string)
+MblError ApplicationEndpoint::generate_access_token()
 {
-    tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    tr_debug("%s", __PRETTY_FUNCTION__);
 
+    sd_id128_t id128 = SD_ID128_NULL;
+    int retval = sd_id128_randomize(&id128);
+    if (retval != 0) {
+        tr_err("sd_id128_randomize failed with error: %d", retval);
+        return Error::CCRBGenerateUniqueIdFailed;
+    }
+
+    char buffer[33] = {0};
+    access_token_ = sd_id128_to_string(id128, buffer);
+    return Error::None;
+}
+
+MblError ApplicationEndpoint::init(const std::string& application_resource_definition)
+{
+    tr_debug("%s", __PRETTY_FUNCTION__);
+
+    RBM2MObjectList rbm2m_object_list; //TODO: should be remove in future task
     // Parse JSON
     ResourceDefinitionParser resource_parser;
-    const MblError status =
-        resource_parser.build_object_list(json_string, m2m_object_list_, rbm2m_object_list_);
+    const MblError build_object_list_stauts =
+        resource_parser.build_object_list(application_resource_definition,
+                                          m2m_object_list_, rbm2m_object_list);
 
-    if (Error::None != status) {
-        tr_error("%s: (access_token: %s) - build_object_list failed with error: %s",
+    if (Error::None != build_object_list_stauts) {
+        tr_error("%s: build_object_list failed with error: %s",
                  __PRETTY_FUNCTION__,
-                 access_token_.c_str(),
-                 MblError_to_str(status));
+                 MblError_to_str(build_object_list_stauts));
+        return build_object_list_stauts;
     }
-    return status;
+
+    const MblError generate_access_token_status = generate_access_token();
+    if (Error::None != generate_access_token_status) {
+        tr_error("%s: generate_access_token failed with error: %s",
+                 __PRETTY_FUNCTION__,
+                 MblError_to_str(generate_access_token_status));
+        return generate_access_token_status;
+    }
+    tr_debug("%s: (access_token: %s) succeeded.", __PRETTY_FUNCTION__, access_token_.c_str());
+    return Error::None;
 }
 
 void ApplicationEndpoint::handle_registration_updated_cb()

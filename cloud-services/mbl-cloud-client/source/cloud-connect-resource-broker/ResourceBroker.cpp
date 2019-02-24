@@ -7,7 +7,6 @@
 #include "ResourceBroker.h"
 #include "DBusAdapter.h"
 #include "MblCloudClient.h"
-#include "UniqueTokenGenerator.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed-trace/mbed_trace.h"
 #include <cassert>
@@ -220,7 +219,7 @@ void ResourceBroker::regsiter_callback_handlers()
 void ResourceBroker::handle_registration_updated_cb()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    // Mark that registration is finished
+    // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
 }
 
@@ -231,7 +230,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
         CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     tr_err("%s: Error occurred: %d: %s", __PRETTY_FUNCTION__, mbl_code, MblError_to_str(mbl_code));
 
-    // Mark that registration is finished
+    // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
 }
 
@@ -258,7 +257,7 @@ void ResourceBroker::handle_app_registration_updated(const uintptr_t ipc_conn_ha
     // Return registration updated callback to CCRB
     regsiter_callback_handlers();
 
-    // Mark that registration is finished
+    // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
 }
 
@@ -277,12 +276,12 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
         tr_error("%s: Application (access_token: %s) does not exist.",
                  __PRETTY_FUNCTION__,
                  access_token.c_str());
-        // Mark that registration is finished (even if it was failed)
+        // Mark that registration is finished (using atomic flag), even if it was failed
         registration_in_progress_.store(false);
         return;
     }
 
-    SPApplicationEndpoint app_endpoint = app_endpoints_map_[access_token];
+    SPApplicationEndpoint app_endpoint = itr->second;
 
     // Send the response to adapter:
     if (app_endpoint->registered_) {
@@ -309,7 +308,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
             "%s: Erase Application (access_token: %s)", __PRETTY_FUNCTION__, access_token.c_str());
         app_endpoints_map_.erase(itr); // Erase endpoint as registation failed
 
-        // Mark that registration is finished (even if it was failed)
+        // Mark that registration is finished (using atomic flag) (even if it was failed)
         registration_in_progress_.store(false);
     }
 }
@@ -341,29 +340,23 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         return Error::None;
     }
 
-    // Generate access token
-    UniqueTokenGenerator unique_token_generator;
-    MblError status = unique_token_generator.generate_unique_token(out_access_token);
-    if (Error::None != status) {
-        out_status = CloudConnectStatus::ERR_FAILED;
-        tr_error("%s: generate_unique_token failed with error: %s",
-                 __PRETTY_FUNCTION__,
-                 MblError_to_str(status));
-        return Error::None;
-    }
-
-    // Create and init Application Endpoint
+    // Create and init Application Endpoint:
+    // parse app_resource_definition_json and create unique access token
     SPApplicationEndpoint app_endpoint =
-        std::make_shared<ApplicationEndpoint>(ipc_conn_handle, out_access_token, *this);
-    status = app_endpoint->init(app_resource_definition_json);
+        std::make_shared<ApplicationEndpoint>(ipc_conn_handle, *this);
+    const MblError status = app_endpoint->init(app_resource_definition_json);
     if (Error::None != status) {
         tr_error("%s: app_endpoint->init failed with error: %s",
                  __PRETTY_FUNCTION__,
                  MblError_to_str(status));
-        out_status = (Error::CCRBInvalidJson == status) ? CloudConnectStatus::ERR_INVALID_JSON
-                                                        : CloudConnectStatus::ERR_FAILED;
+        out_status = 
+            (Error::CCRBInvalidJson == status) ? 
+                CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
+                : CloudConnectStatus::ERR_FAILED;
         return Error::None;
     }
+
+    out_access_token = app_endpoint->get_access_token();
 
     // Set atomic flag for registration in progress
     registration_in_progress_.store(true);

@@ -59,7 +59,7 @@ void ResourceBrokerTester::register_update()
 
 void ResourceBrokerTester::register_resources_test(
     const uintptr_t ipc_conn_handle,
-    const std::string& app_resource_definition_json,
+    const std::string& app_resource_definition,
     CloudConnectStatus& out_status,
     std::string& out_access_token,
     mbl::MblError expected_error_status,
@@ -69,7 +69,7 @@ void ResourceBrokerTester::register_resources_test(
 
     mbl::MblError status = cloud_connect_resource_broker_.register_resources(
         ipc_conn_handle, 
-        app_resource_definition_json,
+        app_resource_definition,
         out_status,
         out_access_token);
 
@@ -82,10 +82,10 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     CloudConnectStatus dbus_adapter_expected_status)
 {
     // Call Application Endpoint to notify registration was successful
+    auto itr = cloud_connect_resource_broker_.app_endpoints_map_.find(access_token);
     ASSERT_TRUE(cloud_connect_resource_broker_.app_endpoints_map_.end() !=
-        cloud_connect_resource_broker_.app_endpoints_map_.find(access_token));
-    mbl::ResourceBroker::SPApplicationEndpoint app_endpoint = 
-        cloud_connect_resource_broker_.app_endpoints_map_[access_token];
+        itr);
+    mbl::ResourceBroker::SPApplicationEndpoint app_endpoint = itr->second;
 
     // Make sure application is not yet registered
     ASSERT_FALSE(app_endpoint->registered_);

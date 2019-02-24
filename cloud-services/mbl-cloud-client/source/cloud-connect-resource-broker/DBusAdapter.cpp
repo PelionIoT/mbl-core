@@ -4,14 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "DBusAdapter.h"
+#include "ResourceBroker.h"
+#include "mbed-trace/mbed_trace.h"
 #include <cassert>
 #include <pthread.h>
 #include <systemd/sd-bus.h>
 #include <unistd.h>
-
-#include "DBusAdapter.h"
-#include "ResourceBroker.h"
-#include "mbed-trace/mbed_trace.h"
 
 #define TRACE_GROUP "ccrb-dbus"
 
@@ -52,7 +51,7 @@ MblError DBusAdapter::de_init()
 MblError DBusAdapter::run()
 {
     tr_debug("%s", __PRETTY_FUNCTION__);
-    // now we use simulated event-loop that will be removed after we introduce
+    //TODO: now we use simulated event-loop that will be removed after we introduce
     // real sd-bus event-loop.
     while (!exit_loop_) {
         sleep(1); // 1 seconds
