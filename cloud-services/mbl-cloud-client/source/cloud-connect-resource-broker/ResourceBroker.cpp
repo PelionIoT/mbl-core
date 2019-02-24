@@ -17,15 +17,9 @@ namespace mbl
 {
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker()
-{
-    TR_DEBUG("Enter");
-}
+ResourceBroker::ResourceBroker() { TR_DEBUG("Enter"); }
 
-ResourceBroker::~ResourceBroker()
-{
-    TR_DEBUG("Enter");
-}
+ResourceBroker::~ResourceBroker() { TR_DEBUG("Enter"); }
 
 MblError ResourceBroker::start()
 {
@@ -35,8 +29,7 @@ MblError ResourceBroker::start()
     const int thread_create_err =
         pthread_create(&ipc_thread_id_,
                        nullptr, // thread is created with default attributes
-                       ResourceBroker::ccrb_main,
-                       this);
+                       ResourceBroker::ccrb_main, this);
     if (0 != thread_create_err) {
         // thread creation failed, print errno value and exit
         TR_ERR("Thread creation failed (%s)", strerror(errno));
@@ -187,8 +180,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
 MblError ResourceBroker::register_resources(const uintptr_t /*unused*/,
                                             const std::string& /*unused*/,
-                                            CloudConnectStatus& /*unused*/,
-                                            std::string& /*unused*/)
+                                            CloudConnectStatus& /*unused*/, std::string& /*unused*/)
 {
     TR_DEBUG("Enter");
     // empty for now

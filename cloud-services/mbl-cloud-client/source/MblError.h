@@ -68,8 +68,8 @@ enum Type {
     EnrollmentErrorEnd                  = 0x0301,
 
     // CCRB errors
-    CCRBStartFailed                     = 0x0400,       //TODO - this error should be remove. it shadows the real error
-    CCRBStopFailed                      = 0x0401,       //TODO - this error should be remove. it shadows the real error
+    CCRBStartFailed                     = 0x0400,       //TODO - IOTMBL-1669 - this error should be remove. it shadows the real error
+    CCRBStopFailed                      = 0x0401,       //TODO - IOTMBL-1669 - this error should be remove. it shadows the real error
     CCRBInvalidJson                     = 0x0402,
     CCRBCreateM2MObjFailed              = 0x0403,
     CCRBValueTypeError                  = 0x0404,
@@ -85,7 +85,8 @@ enum Type {
     DBA_SdBusRequestAddMatchFailed      = 0x0522,
 
     DBA_SdEventCallFailure              = 0x0540,
-
+    DBA_SdEventExitRequestFailure       = 0x0541,
+    
     DBA_MailBoxInvalidMsg               = 0x0550,
     DBA_MailBoxSystemCallFailure        = 0x0551,
     DBA_MailBoxPollTimeout              = 0x0552,

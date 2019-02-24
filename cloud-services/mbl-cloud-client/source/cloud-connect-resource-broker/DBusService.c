@@ -36,8 +36,8 @@ static DBusServiceContext ctx_ = {0};
  * @param ret_error - The sd_bus_error structure carries information about a D-Bus error
  * @return int -  0 on success, On failure, return a negative Linux errno-style error code
  */
-static int
-incoming_bus_message_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error);
+static int incoming_bus_message_callback(sd_bus_message* m, void* userdata,
+                                         sd_bus_error* ret_error);
 
 /**
  * @brief This is the sd_bus_vtable which defined the interface DBUS_CLOUD_CONNECT_INTERFACE_NAME
@@ -90,8 +90,8 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "RegisterResources", "s", "us", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
+    SD_BUS_METHOD("RegisterResources", "s", "us", incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.RegisterResourcesStatus
     //
@@ -139,8 +139,8 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "DeregisterResources", "s", "u", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
+    SD_BUS_METHOD("DeregisterResources", "s", "u", incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.DeregisterResourcesStatus
     //
@@ -192,10 +192,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("AddResourceInstances",
-                  "ssaq",
-                  "u",
-                  incoming_bus_message_callback,
+    SD_BUS_METHOD("AddResourceInstances", "ssaq", "u", incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.AddResourceInstancesStatus
@@ -249,10 +246,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("RemoveResourceInstances",
-                  "ssaq",
-                  "u",
-                  incoming_bus_message_callback,
+    SD_BUS_METHOD("RemoveResourceInstances", "ssaq", "u", incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.RemoveResourceInstancesStatus
@@ -303,10 +297,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("SetResourcesValues",
-                  "sa(syv)",
-                  "au",
-                  incoming_bus_message_callback,
+    SD_BUS_METHOD("SetResourcesValues", "sa(syv)", "au", incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
     // com.mbed.Cloud.Connect1.GetResourcesValues
@@ -348,10 +339,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("GetResourcesValues",
-                  "sa(sy)",
-                  "a(uyv)",
-                  incoming_bus_message_callback,
+    SD_BUS_METHOD("GetResourcesValues", "sa(sy)", "a(uyv)", incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
     SD_BUS_VTABLE_END};
@@ -379,12 +367,6 @@ void DBusService_init(IncomingBusMessageCallback callback)
     ctx_.incoming_bus_message_callback_ = callback;
 }
 
-void DBusService_deinit()
-{
-    memset(&ctx_, 0, sizeof(ctx_));
-}
+void DBusService_deinit() { memset(&ctx_, 0, sizeof(ctx_)); }
 
-const sd_bus_vtable* DBusService_get_service_vtable()
-{
-    return cloud_connect_service_vtable;
-}
+const sd_bus_vtable* DBusService_get_service_vtable() { return cloud_connect_service_vtable; }

@@ -24,13 +24,13 @@ namespace mbl
 {
 
 DBusAdapterImpl::DBusAdapterImpl(ResourceBroker& ccrb)
-    : ccrb_(ccrb),
-      connection_handle_(nullptr),
-      unique_name_(nullptr),
-      service_name_(nullptr),
-      event_loop_handle_(nullptr),
-      mailbox_in_("incoming messages mailbox"),
-      initializer_thread_id_(0)
+    : ccrb_(ccrb)
+    , connection_handle_(nullptr)
+    , unique_name_(nullptr)
+    , service_name_(nullptr)
+    , event_loop_handle_(nullptr)
+    , mailbox_in_("incoming messages mailbox")
+    , initializer_thread_id_(0)
 {
     TR_DEBUG("Enter");
     state_.set(DBusAdapterState::UNINITALIZED);
@@ -51,13 +51,10 @@ MblError DBusAdapterImpl::add_match_rules()
         int r = sd_bus_add_match(connection_handle_,
                                  nullptr, // floating source , I see for now no reason to get a slot
                                  elem.second.c_str(),
-                                 DBusAdapterImpl::incoming_bus_message_callback,
-                                 this);
+                                 DBusAdapterImpl::incoming_bus_message_callback, this);
         if (r < 0) {
             TR_ERR("sd_bus_add_match failed adding rull [%s] , with error r=%d (%s) - returning %s",
-                   elem.second.c_str(),
-                   r,
-                   strerror(r),
+                   elem.second.c_str(), r, strerror(r),
                    MblError_to_str(MblError::DBA_SdBusRequestAddMatchFailed));
             return MblError::DBA_SdBusRequestAddMatchFailed;
         }
@@ -81,9 +78,7 @@ MblError DBusAdapterImpl::bus_init()
     // process environment
     int r = sd_bus_open_user(&connection_handle_);
     if (r < 0) {
-        TR_ERR("sd_bus_open_user failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_bus_open_user failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -94,9 +89,7 @@ MblError DBusAdapterImpl::bus_init()
     // Attach bus connection object to event loop
     r = sd_bus_attach_event(connection_handle_, event_loop_handle_, SD_EVENT_PRIORITY_NORMAL);
     if (r < 0) {
-        TR_ERR("sd_bus_attach_event failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_bus_attach_event failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -108,29 +101,20 @@ MblError DBusAdapterImpl::bus_init()
     // userdata for all callbacks - 'this'
     const sd_bus_vtable* service_vtable = DBusService_get_service_vtable();
     assert(service_vtable);
-    r = sd_bus_add_object_vtable(connection_handle_,
-                                 nullptr,
-                                 DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                                 DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                                 service_vtable,
-                                 this);
+    r = sd_bus_add_object_vtable(connection_handle_, nullptr, DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                                 DBUS_CLOUD_CONNECT_INTERFACE_NAME, service_vtable, this);
     if (r < 0) {
-        TR_ERR("sd_bus_add_object_vtable failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
-               MblError_to_str(MblError::DBA_SdBusCallFailure));
+        TR_ERR("sd_bus_add_object_vtable failed with error r=%d (%s) - returning %s", r,
+               strerror(r), MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
     TR_INFO("Added new interface %s using service_vtable to object %s",
-            DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-            DBUS_CLOUD_CONNECT_OBJECT_PATH);
+            DBUS_CLOUD_CONNECT_INTERFACE_NAME, DBUS_CLOUD_CONNECT_OBJECT_PATH);
 
     // Get my unique name on the bus
     r = sd_bus_get_unique_name(connection_handle_, &unique_name_);
     if (r < 0) {
-        TR_ERR("sd_bus_get_unique_name failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_bus_get_unique_name failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -141,9 +125,7 @@ MblError DBusAdapterImpl::bus_init()
     // We do not expect anyone else to already own that name
     r = sd_bus_request_name(connection_handle_, DBUS_CLOUD_SERVICE_NAME, 0);
     if (r < 0) {
-        TR_ERR("sd_bus_request_name failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_bus_request_name failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdBusRequestNameFailed));
         return MblError::DBA_SdBusRequestNameFailed;
     }
@@ -180,9 +162,7 @@ MblError DBusAdapterImpl::event_loop_init()
     // Create the sd-event loop object (thread loop)
     int r = sd_event_default(&event_loop_handle_);
     if (r < 0) {
-        TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -196,16 +176,10 @@ MblError DBusAdapterImpl::event_loop_init()
     // Event source will be destroyed with the event loop ("floating")
     // Wait for event flag EPOLLIN (The associated file is available for read(2) operations)
     // The callback to invoke when the event is fired is incoming_mailbox_message_callback()
-    r = sd_event_add_io(event_loop_handle_,
-                        nullptr,
-                        mailbox_in_.get_pipefd_read(),
-                        EPOLLIN,
-                        DBusAdapterImpl::incoming_mailbox_message_callback,
-                        this);
+    r = sd_event_add_io(event_loop_handle_, nullptr, mailbox_in_.get_pipefd_read(), EPOLLIN,
+                        DBusAdapterImpl::incoming_mailbox_message_callback, this);
     if (r < 0) {
-        TR_ERR("sd_event_add_io failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("sd_event_add_io failed with error r=%d (%s) - returning %s", r, strerror(r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -240,10 +214,7 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     // Send myself an exit request
     int r = sd_event_exit(event_loop_handle_, (int) stop_status);
     if (r < 0) {
-        TR_ERR("sd_event_exit failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
-               status.get_status_str());
+        TR_ERR("sd_event_exit failed with error r=%d (%s)", r, strerror(r));
     }
     else
     {
@@ -252,8 +223,7 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     return r;
 }
 
-int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
-                                                            int fd,
+int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s, int fd,
                                                             uint32_t revents)
 {
     assert(s);
@@ -281,8 +251,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     // Read the incoming message pointer. BLock for up to 1sec (we should block at all in practice)
     auto ret_pair = mailbox_in_.receive_msg();
     if (ret_pair.first != MblError::None) {
-        TR_ERR("mailbox_in_.receive_msg failed with status=%s, disable event source!",
-               MblError_to_str(status));
+        TR_ERR("mailbox_in_.receive_msg failed s, disable event source! returning error -EINVAL");
         return (-EINVAL);
     }
 
@@ -297,8 +266,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
         // validate length (sanity check)
         if (msg.get_payload_len() != sizeof(mbl::MailboxMsg::MsgPayload::MsgExit)) {
             TR_ERR("Unexpected EXIT message length %zu (expected %zu), returning error=%s",
-                   msg.get_payload_len(),
-                   sizeof(mbl::MailboxMsg::MsgType::EXIT),
+                   msg.get_payload_len(), sizeof(mbl::MailboxMsg::MsgType::EXIT),
                    MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
             return (-EBADMSG);
         }
@@ -309,7 +277,8 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
                 MblError_to_str(payload.exit_.stop_status));
         int r = event_loop_request_stop(payload.exit_.stop_status);
         if (r < 0) {
-            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)")
+            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)",
+                strerror(r), r);
             return r;
         }
         break;
@@ -327,9 +296,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     return 0; // success
 }
 
-int DBusAdapterImpl::incoming_mailbox_message_callback(sd_event_source* s,
-                                                       int fd,
-                                                       uint32_t revents,
+int DBusAdapterImpl::incoming_mailbox_message_callback(sd_event_source* s, int fd, uint32_t revents,
                                                        void* userdata)
 {
     assert(s);
@@ -339,8 +306,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback(sd_event_source* s,
     return adapter_impl->incoming_mailbox_message_callback_impl(s, fd, revents);
 }
 
-int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
-                                                   void* userdata,
+int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m, void* userdata,
                                                    sd_bus_error* ret_error)
 {
     TR_DEBUG("Enter");
@@ -360,8 +326,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     // Expect message with our known name, directly sent to us (unicast)
-    if (0 != strncmp(sd_bus_message_get_destination(m),
-                     DBUS_CLOUD_SERVICE_NAME,
+    if (0 != strncmp(sd_bus_message_get_destination(m), DBUS_CLOUD_SERVICE_NAME,
                      strlen(DBUS_CLOUD_SERVICE_NAME)))
     {
         TR_ERR("Received message to wrong destination (%s)!", sd_bus_message_get_destination(m));
@@ -369,8 +334,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     // Expect message to a single object patch DBUS_CLOUD_CONNECT_OBJECT_PATH
-    if (0 != strncmp(sd_bus_message_get_path(m),
-                     DBUS_CLOUD_CONNECT_OBJECT_PATH,
+    if (0 != strncmp(sd_bus_message_get_path(m), DBUS_CLOUD_CONNECT_OBJECT_PATH,
                      strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
     {
         TR_ERR("Unexisting object path (%s)!", sd_bus_message_get_path(m));
@@ -378,8 +342,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     // Expect message to a single interface DBUS_CLOUD_CONNECT_INTERFACE_NAME
-    if (0 != strncmp(sd_bus_message_get_interface(m),
-                     DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+    if (0 != strncmp(sd_bus_message_get_interface(m), DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                      strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
     {
         TR_ERR("Unexisting interface (%s)!", sd_bus_message_get_interface(m));
@@ -402,8 +365,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return (-EINVAL);
     }
 
-    TR_INFO("Received message of type %s from sender %s",
-            message_type_to_str(type),
+    TR_INFO("Received message of type %s from sender %s", message_type_to_str(type),
             sd_bus_message_get_sender(m));
 
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
@@ -438,7 +400,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
     assert(m);
     UNUSED(ret_error);
     TR_DEBUG("Enter");
-    const char* json_file_data = nullptr;
+    const char* app_resource_definition = nullptr;
 
     TR_INFO("Starting to process RegisterResources method call from sender %s",
             sd_bus_message_get_sender(m));
@@ -447,12 +409,12 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
         TR_ERR("Unexpected signature %s", sd_bus_message_get_signature(m, 1));
         return (-EINVAL);
     }
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &json_file_data);
+    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &app_resource_definition);
     if (r < 0) {
         TR_ERR("sd_bus_message_read_basic failed with error r=%d (%s)", r, strerror(r));
         return r;
     }
-    if ((nullptr == json_file_data) || (strlen(json_file_data) == 0)) {
+    if ((nullptr == app_resource_definition) || (strlen(app_resource_definition) == 0)) {
         TR_ERR("sd_bus_message_read_basic returned a nullptr or an empty string!");
         return (-EINVAL);
     }
@@ -524,8 +486,7 @@ MblError DBusAdapterImpl::init()
     MblError status = MblError::Unknown;
 
     if (state_.is_not_equal(DBusAdapterState::UNINITALIZED)) {
-        TR_ERR("Unexpected state (expected %s), returning error %s",
-               state_.to_string(),
+        TR_ERR("Unexpected state (expected %s), returning error %s", state_.to_string(),
                MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
@@ -582,8 +543,7 @@ MblError DBusAdapterImpl::deinit()
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
     if (state_.is_not_equal(DBusAdapterState::INITALIZED)) {
-        TR_ERR("Unexpected state (expected %s), returning error %s",
-               state_.to_string(),
+        TR_ERR("Unexpected state (expected %s), returning error %s", state_.to_string(),
                MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
@@ -616,8 +576,6 @@ MblError DBusAdapterImpl::deinit()
         TR_ERR("event_manager_.deinit() failed with error %s", MblError_to_str(status));
         // continue
     }
-
-    // TODO - make sure we clean all references to messages, timers etc. and unref all sources
 
     DBusService_deinit();
 
@@ -655,8 +613,7 @@ MblError DBusAdapterImpl::run(MblError& stop_status)
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
     if (state_.is_not_equal(DBusAdapterState::INITALIZED)) {
-        TR_ERR("Unexpected state (expected %s), returning error %s",
-               state_.to_string(),
+        TR_ERR("Unexpected state (expected %s), returning error %s", state_.to_string(),
                MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
@@ -677,8 +634,7 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
     MblError status = MblError::Unknown;
 
     if (state_.is_equal(DBusAdapterState::UNINITALIZED)) {
-        TR_ERR("Unexpected state (expected %s), returning error %s",
-               state_.to_string(),
+        TR_ERR("Unexpected state (expected %s), returning error %s", state_.to_string(),
                MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
@@ -690,9 +646,7 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
         if (r < 0) {
             status = MblError::DBA_SdEventExitRequestFailure;
             TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
-                   strerror(r),
-                   r,
-                   MblError_to_str(DBA_SdEventExitRequestFailure));
+                   strerror(r), r, MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
             // continue
         }
         else
@@ -836,11 +790,16 @@ bool DBusAdapterImpl::is_valid_message_type(uint8_t message_type)
 {
     switch (message_type)
     {
-    case SD_BUS_MESSAGE_METHOD_CALL: return true;
-    case SD_BUS_MESSAGE_METHOD_RETURN: return true;
-    case SD_BUS_MESSAGE_METHOD_ERROR: return true;
-    case SD_BUS_MESSAGE_SIGNAL: return true;
-    default: return false;
+    case SD_BUS_MESSAGE_METHOD_CALL:
+        return true;
+    case SD_BUS_MESSAGE_METHOD_RETURN:
+        return true;
+    case SD_BUS_MESSAGE_METHOD_ERROR:
+        return true;
+    case SD_BUS_MESSAGE_SIGNAL:
+        return true;
+    default:
+        return false;
     }
 }
 
@@ -849,11 +808,16 @@ const char* DBusAdapterImpl::message_type_to_str(uint8_t message_type)
 {
     switch (message_type)
     {
-    case SD_BUS_MESSAGE_METHOD_CALL: return stringify(SD_BUS_MESSAGE_METHOD_CALL);
-    case SD_BUS_MESSAGE_METHOD_RETURN: return stringify(SD_BUS_MESSAGE_METHOD_RETURN);
-    case SD_BUS_MESSAGE_METHOD_ERROR: return stringify(SD_BUS_MESSAGE_METHOD_ERROR);
-    case SD_BUS_MESSAGE_SIGNAL: return stringify(SD_BUS_MESSAGE_SIGNAL);
-    default: return "UNKNOWN SD_BUS MESSAGE TYPE!";
+    case SD_BUS_MESSAGE_METHOD_CALL:
+        return stringify(SD_BUS_MESSAGE_METHOD_CALL);
+    case SD_BUS_MESSAGE_METHOD_RETURN:
+        return stringify(SD_BUS_MESSAGE_METHOD_RETURN);
+    case SD_BUS_MESSAGE_METHOD_ERROR:
+        return stringify(SD_BUS_MESSAGE_METHOD_ERROR);
+    case SD_BUS_MESSAGE_SIGNAL:
+        return stringify(SD_BUS_MESSAGE_SIGNAL);
+    default:
+        return "UNKNOWN SD_BUS MESSAGE TYPE!";
     }
 }
 
@@ -861,9 +825,12 @@ const char* DBusAdapterImpl::State::to_string()
 {
     switch (current_)
     {
-    case eState::UNINITALIZED: return "UNINITALIZED";
-    case eState::INITALIZED: return "INITALIZED";
-    case eState::RUNNING: return "RUNNING";
+    case eState::UNINITALIZED:
+        return "UNINITALIZED";
+    case eState::INITALIZED:
+        return "INITALIZED";
+    case eState::RUNNING:
+        return "RUNNING";
     default:
         assert(0); // should never happen!
         return "UNKNOWN STATE";
@@ -878,26 +845,15 @@ void DBusAdapterImpl::State::set(eState new_state)
     }
 }
 
-DBusAdapterImpl::DBusAdapterState DBusAdapterImpl::State::get()
-{
-    return current_;
-}
+DBusAdapterImpl::DBusAdapterState DBusAdapterImpl::State::get() { return current_; }
 
-bool DBusAdapterImpl::State::is_equal(eState state)
-{
-    return (current_ == state);
-}
+bool DBusAdapterImpl::State::is_equal(eState state) { return (current_ == state); }
 
-bool DBusAdapterImpl::State::is_not_equal(eState state)
-{
-    return (current_ != state);
-}
+bool DBusAdapterImpl::State::is_not_equal(eState state) { return (current_ != state); }
 
-MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
-                                               unsigned long data_length,
+MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
                                                SelfEvent::EventDataType data_type,
-                                               SelfEventCallback callback,
-                                               uint64_t& out_event_id,
+                                               SelfEventCallback callback, uint64_t& out_event_id,
                                                const std::string description)
 {
     TR_DEBUG("Enter");
@@ -906,8 +862,8 @@ MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
     // Must be first! only CCRB initializer thread should call this function.
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
-    return event_manager_.send_event_immediate(
-        data, data_length, data_type, callback, out_event_id, description);
+    return event_manager_.send_event_immediate(data, data_length, data_type, callback, out_event_id,
+                                               description);
 }
 
 } // namespace mbl {
