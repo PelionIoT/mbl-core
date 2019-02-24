@@ -65,6 +65,7 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.c"
 )
 
 option(CODE_CHECK_MODE "Code check cmake mode" OFF)

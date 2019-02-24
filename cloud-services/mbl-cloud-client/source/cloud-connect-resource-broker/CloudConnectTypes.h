@@ -7,13 +7,24 @@
 #ifndef CloudConnectTypes_h_
 #define CloudConnectTypes_h_
 
-#include <cstdint>
-#include <vector>
-
 #include "MblError.h"
 #include "CloudConnectExternalTypes.h"
 
+#include <inttypes.h>
+#include <vector>
+#include <string>
+
 #define RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return #ENUM
+
+// Simple stringify
+#define stringify(s) #s
+
+// If you want to stringify the result of expansion of a macro argument, you have to use two 
+// levels of macros. (use xstringify())
+#define xstringify(s) stringify(s)
+
+// to mark unused variable for the preprocessor
+#define UNUSED(x) (void)(x)
 
 namespace mbl {
 
@@ -101,7 +112,7 @@ private:
     int64_t integer_value_ = 0xBADBEEF;
 
     // stores type of stored data
-    ResourceDataType data_type_;
+    ResourceDataType event_type_;
 
     // currently we don't have pointers in class members, so we can allow default ctor's 
     // and assign operators without worry.
@@ -162,6 +173,42 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
  * @return const char* stringified value of ResourceDataType. 
  */
 const char* ResourceDataType_stringify(const ResourceDataType type);
+
+/**
+ * @brief This helper new type class defines an "smart" MblError status - it initializes to 
+ * MblError::None to mark success. Afterwards, it can be set only one more time to its final value. 
+ * Multiple sets afterwards will not influence the 1st set.
+ * 
+ */
+class OneSetMblError
+{
+public:
+    OneSetMblError();
+
+    /**
+     * @brief set the value to a new value if it has never been set yet
+     * 
+     * @param new_val 
+     */
+    void set(const MblError new_val);
+
+    /**
+     * @brief return the current status
+     * 
+     * @return MblError 
+     */
+    MblError get();
+    
+    /**
+     * @brief stringify status by calling to MblError_to_str
+     * 
+     * @return const char* 
+     */
+    const char* get_status_str();
+private:
+    MblError err_;
+    bool one_time_set_flag_;
+};
 
 } //namespace mbl
 
