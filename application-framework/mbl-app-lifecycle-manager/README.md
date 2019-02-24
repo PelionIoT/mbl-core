@@ -38,8 +38,8 @@ subcommands:
   The commands to control the application statuses.
 
   {run,run-all,terminate,kill}
-    run                 run a user application.
-    run-all             run all user applications found at /home/app
+    run                 run a user application found at /home/app.
+    run-all             run all user applications found at /home/app.
     terminate           kill a user application process with SIGTERM then
                         delete its associated resources. Note: A SIGKILL is
                         sent if the application does not stop after a SIGTERM.
