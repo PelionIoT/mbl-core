@@ -33,7 +33,6 @@ class ResourceBroker {
 
 friend ::ResourceBrokerTester;
 friend DBusAdapter;
-friend ApplicationEndpoint;
 
 public:
     ResourceBroker();
@@ -359,8 +358,8 @@ private:
      */
     void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
 
-    typedef std::shared_ptr<ApplicationEndpoint> SPApplicationEndpoint;
-    typedef std::map<std::string, SPApplicationEndpoint> ApplicationEndpointMap;
+    typedef std::shared_ptr<ApplicationEndpoint> ApplicationEndpoint_ptr;
+    typedef std::map<std::string, ApplicationEndpoint_ptr> ApplicationEndpointMap;
 
     // Application Enpoints map that holds application that requested to register resoures
     // Used also for other application related operation

@@ -281,7 +281,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
         return;
     }
 
-    SPApplicationEndpoint app_endpoint = itr->second;
+    ApplicationEndpoint_ptr app_endpoint = itr->second;
 
     // Send the response to adapter:
     if (app_endpoint->is_registered()) {
@@ -342,7 +342,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     // Create and init Application Endpoint:
     // parse app_resource_definition_json and create unique access token
-    SPApplicationEndpoint app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle);
+    ApplicationEndpoint_ptr app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle);
     const MblError status = app_endpoint->init(app_resource_definition_json);
     if (Error::None != status) {
         tr_error("%s: app_endpoint->init failed with error: %s",

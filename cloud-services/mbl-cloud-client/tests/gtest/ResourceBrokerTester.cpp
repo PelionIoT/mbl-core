@@ -85,7 +85,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     auto itr = cloud_connect_resource_broker_.app_endpoints_map_.find(access_token);
     ASSERT_TRUE(cloud_connect_resource_broker_.app_endpoints_map_.end() !=
         itr);
-    mbl::ResourceBroker::SPApplicationEndpoint app_endpoint = itr->second;
+    mbl::ResourceBroker::ApplicationEndpoint_ptr app_endpoint = itr->second;
 
     // Make sure application is not yet registered
     ASSERT_FALSE(app_endpoint->registered_);
