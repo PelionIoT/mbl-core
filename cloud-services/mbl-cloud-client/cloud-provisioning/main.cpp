@@ -36,7 +36,7 @@ R"(Usage:
 
 
 Options:
-  --kcm-item-store               Store KCM items from a binary file.
+  --provision                    Provision device, with developer and update credentials, from a set of binary files located at /scratch/provisioning-certs.
   --get-pelion-status            Get the Pelion status of the device.
   --help                         Show this message and exit.
     )";
@@ -109,7 +109,7 @@ ExitCode handle_status_command()
 
 int main(int argc, char **argv)
 {
-    static const std::string store_cmd = "--kcm-item-store";
+    static const std::string store_cmd = "--provision";
     static const std::string pelion_status_cmd = "--get-pelion-status";
     static const std::string help = "--help";
 
