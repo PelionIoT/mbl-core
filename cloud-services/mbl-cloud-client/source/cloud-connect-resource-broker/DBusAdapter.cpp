@@ -74,7 +74,8 @@ MblError DBusAdapter::update_registration_status(const uintptr_t ipc_request_han
     assert(impl_);
     assert(ipc_request_handle);
     return impl_->handle_resource_broker_async_process_status_update(
-        ipc_request_handle, DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status);
+        ipc_request_handle, 
+        DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status); 
 }
 
 MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_handle,
@@ -84,7 +85,8 @@ MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_h
     assert(impl_);
     assert(ipc_request_handle);
     return impl_->handle_resource_broker_async_process_status_update(
-        ipc_request_handle, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
+        ipc_request_handle, 
+        DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status); 
 }
 
 MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,

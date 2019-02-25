@@ -18,8 +18,11 @@ enum CloudConnectStatus {
     // Error range
     // Start all enums in this range with "ERR_" prefix
     FIRST_ERROR = 0x1000,
-    ERR_FAILED  = FIRST_ERROR,
-    ERR_INTERNAL_ERROR = 0x1001,
+    ERR_FAILED                                      = FIRST_ERROR,
+    ERR_INTERNAL_ERROR                              = 0x1001,	
+    ERR_INVALID_APPLICATION_RESOURCES_DEFINITION    = 0x1001,
+    ERR_REGISTRATION_ALREADY_IN_PROGRESS            = 0x1002,
+    ERR_ALREADY_REGISTERED                          = 0x1003,
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
@@ -35,6 +38,9 @@ static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
 // mbed.Cloud.Connect DBus errors definitions
 #define CLOUD_CONNECT_ERR_FAILED "mbed.Cloud.Connect.Failed"
 #define CLOUD_CONNECT_ERR_INTERNAL_ERROR "mbed.Cloud.Connect.InternalError"
+#define CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION "mbed.Cloud.Connect.InvalidApplicationresourceDefinition"
+#define CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS "mbed.Cloud.Connect.RegistrationAlreadyInProgress"
+#define CLOUD_CONNECT_ERR_ALREADY_REGISTERED "mbed.Cloud.Connect.AlreadyRegistered"
 
 /** 
  * @brief Returns corresponding D-Bus format error. 
