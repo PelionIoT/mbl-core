@@ -87,17 +87,26 @@ MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_h
         ipc_request_handle, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
 }
 
-MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data,
-                                           unsigned long data_length,
-                                           SelfEvent::EventDataType data_type,
-                                           SelfEventCallback callback,
-                                           uint64_t& out_event_id,
-                                           const std::string description)
+std::pair<MblError, uint64_t> DBusAdapter::send_event_immediate(Event::EventData data,
+                                                                unsigned long data_length,
+                                                                Event::EventDataType data_type,
+                                                                Event::UserCallback callback,
+                                                                const std::string& description)
 {
-    assert(callback);
     TR_DEBUG("Enter");
-    return impl_->send_event_immediate(
-        data, data_length, data_type, callback, out_event_id, description);
+    return impl_->send_event_immediate(data, data_length, data_type, callback, description);
+}
+
+std::pair<MblError, uint64_t> DBusAdapter::send_event_periodic(Event::EventData data,
+                                                               unsigned long data_length,
+                                                               Event::EventDataType data_type,
+                                                               Event::UserCallback callback,
+                                                               uint64_t period_millisec,
+                                                               const std::string& description)
+{
+    TR_DEBUG("Enter");
+    return impl_->send_event_periodic(
+        data, data_length, data_type, callback, period_millisec, description);
 }
 
 } // namespace mbl {

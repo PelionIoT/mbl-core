@@ -91,7 +91,6 @@ enum Type {
 
     DBA_SdEventCallFailure              = 0x0540,
     DBA_SdEventExitRequestFailure       = 0x0541,
-	DBA_SdPeriodicEventCallFailure      = 0x0542,
     
     DBA_MailBoxInvalidMsg               = 0x0550,
     DBA_MailBoxSystemCallFailure        = 0x0551,

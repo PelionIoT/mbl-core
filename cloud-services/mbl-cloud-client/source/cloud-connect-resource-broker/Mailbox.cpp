@@ -34,7 +34,6 @@ MblError Mailbox::init()
     TR_DEBUG("Enter");
     // call do_init in order to deinit on failure
     MblError status = do_init();
-    
     if (status != MblError::None) {
 	    TR_ERR("do_init failed, call deinit");
         deinit();

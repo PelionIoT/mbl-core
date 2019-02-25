@@ -11,10 +11,9 @@
 #include "DBusService.h"
 #include "Mailbox.h"
 #include "MailboxMsg.h"
-#include "DBusService.h"
-#include "DBusAdapter_Impl.h"
 #include "ResourceBroker.h"
-#include "CloudConnectTypes.h"
+
+#include <systemd/sd-event.h>
 
 #include <cassert>
 #include <sstream>
@@ -361,7 +360,6 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     assert(s);
     TR_DEBUG("Enter");
     UNUSED(s);
-    MblError status = MblError::Unknown;
 
     // Validate that revents contains epoll read event flag
     if ((revents & EPOLLIN) == 0) {
@@ -853,7 +851,6 @@ MblError DBusAdapterImpl::init()
         return status;
     }
 
-    initializer_thread_id_ = pthread_self();
     state_.set(DBusAdapterState::INITALIZED);
     TR_INFO("init finished with SUCCESS!");
     return Error::None;
@@ -903,8 +900,6 @@ MblError DBusAdapterImpl::deinit()
         TR_ERR("event_manager_.deinit() failed with error %s", MblError_to_str(status));
         // continue
     }
-
-    // TODO - make sure we clean all references to messages, timers etc. and unref all all sources
 
     DBusService_deinit();
 
@@ -1149,12 +1144,11 @@ bool DBusAdapterImpl::State::is_not_equal(eState state)
     return (current_ != state);
 }
 
-MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
-                                               unsigned long data_length,
-                                               SelfEvent::EventDataType data_type,
-                                               SelfEventCallback callback,
-                                               uint64_t& out_event_id,
-                                               const std::string description)
+std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_immediate(Event::EventData data,
+                                                                    unsigned long data_length,
+                                                                    Event::EventDataType data_type,
+                                                                    Event::UserCallback callback,
+                                                                    const std::string& description)
 {
     TR_DEBUG("Enter");
     assert(callback);
@@ -1162,8 +1156,24 @@ MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
     // Must be first! only CCRB initializer thread should call this function.
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
-    return event_manager_.send_event_immediate(
-        data, data_length, data_type, callback, out_event_id, description);
+    return event_manager_.send_event_immediate(data, data_length, data_type, callback, description);
+}
+
+std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_periodic(Event::EventData data,
+                                                                   unsigned long data_length,
+                                                                   Event::EventDataType data_type,
+                                                                   Event::UserCallback callback,
+                                                                   uint64_t period_millisec,
+                                                                   const std::string& description)
+{
+    TR_DEBUG("Enter");
+    assert(callback);
+
+    // Must be first! only CCRB initializer thread should call this function.
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+    return event_manager_.send_event_periodic(
+        data, data_length, data_type, callback, period_millisec, description);
 }
 
 } // namespace mbl {
