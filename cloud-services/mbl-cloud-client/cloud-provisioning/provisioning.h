@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#ifndef PROVISIONING_H
+#define PROVISIONING_H
 
 #include <vector>
 #include <string>
@@ -22,12 +24,13 @@
 #include "factory_configurator_client.h"
 #include "key_config_manager.h"
 
+
 namespace mbl{
     namespace provisioning{
-        enum ProvisionedStatusCode
+        enum class ProvisionedStatusCode
         {
-            SUCCESS,
-            FAILURE
+            success = 0,
+            failure = 1
         };
 
         // KCM storage item.
@@ -38,20 +41,10 @@ namespace mbl{
             const std::vector<uint8_t>  data_blob;
         };
 
-        // Print an error message and fcc_status_e error string.
-        void print_fcc_error_status(std::ostream &out_stream,
-                                    const std::string &error_msg,
-                                    const fcc_status_e status);
-
-        // Print an error message and kcm_status_e error string.
-        void print_kcm_error_status(std::ostream &out_stream,
-                                    const std::string &error_msg,
-                                    const kcm_status_e status);
-
         // Load developer credentials certificate.
-        std::vector<KCMItem>    load_developer_cloud_credentials();
+        std::pair<std::vector<KCMItem>, ProvisionedStatusCode> load_developer_cloud_credentials();
         // Load developer mode update authenticity certificate.
-        std::vector<KCMItem>    load_developer_update_certificate();
+        std::pair<std::vector<KCMItem>, ProvisionedStatusCode> load_developer_update_certificate();
         
         // Provisions devices with certificates using KCM storage. 
         struct PelionProvisioner
@@ -66,3 +59,5 @@ namespace mbl{
         };
     };
 };
+
+#endif // PROVISIONING_H

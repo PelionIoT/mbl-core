@@ -20,28 +20,25 @@
 #include <iostream>
 
 
-enum ExitCode
+enum class ExitCode
 {
-    SUCCESS = 0,
-    FAILURE,
-    INCORRECT_ARGS
+    success = 0,
+    failure = 1,
+    incorrect_args = 2
 };
 
 
 void usage()
 {
     std::cout <<
-R"(Usage
-
-  pelion-provisioning-util [option] <file-path>
+R"(Usage:
   pelion-provisioning-util [option]
 
-The options here are mutually exclusive. 
-If both options are given, the first valid one is used.
 
-Options
-  --kcm-item-store             = Store KCM items from a binary file.
-  --get-pelion-status          = Get the Pelion status of the device.
+Options:
+  --kcm-item-store               Store KCM items from a binary file.
+  --get-pelion-status            Get the Pelion status of the device.
+  --help                         Show this message and exit.
     )";
 }
 
@@ -51,33 +48,37 @@ ExitCode handle_store_command()
     mbl::provisioning::PelionProvisioner provisioner;
     const auto init_status = provisioner.init();
     
-    if (init_status != mbl::provisioning::SUCCESS)
-        return FAILURE;
+    if (init_status != mbl::provisioning::ProvisionedStatusCode::success)
+        return ExitCode::failure;
 
     std::cout << "Provisioning device." << "\n";
     
-    auto dev_cert_table = mbl::provisioning::load_developer_cloud_credentials();
-    auto update_cert_table = mbl::provisioning::load_developer_update_certificate();
+    const auto dev_cert_table = mbl::provisioning::load_developer_cloud_credentials();
+    const auto update_cert_table = mbl::provisioning::load_developer_update_certificate();
 
-    auto dev_ret_val = provisioner.store(dev_cert_table);
-    auto uc_ret_val = provisioner.store(update_cert_table);
+    if (!(dev_cert_table.second == mbl::provisioning::ProvisionedStatusCode::success
+          && update_cert_table.second == mbl::provisioning::ProvisionedStatusCode::success))
+        return ExitCode::failure;
+    
+    const auto dev_ret_val = provisioner.store(dev_cert_table.first);
+    const auto uc_ret_val = provisioner.store(update_cert_table.first);
 
-
-    if (dev_ret_val == mbl::provisioning::SUCCESS)
+    if (dev_ret_val != mbl::provisioning::ProvisionedStatusCode::success)
     {
-        std::cout << "Developer Certificate Provisioning complete without error."
+        std::cerr << "Developer Certificate Provisioning failed."
                   << "\n";
-        return FAILURE;
+        return ExitCode::failure;
     }
 
-    if (uc_ret_val == mbl::provisioning::SUCCESS)
+    if (uc_ret_val != mbl::provisioning::ProvisionedStatusCode::success)
     {
-        std::cout << "Update Certificate Provisioning complete without error."
+        std::cerr << "Update Certificate Provisioning failed."
                   << "\n";
-        return FAILURE;
+        return ExitCode::failure;
     }
 
-    return SUCCESS;
+    std::cout << "Provisioning process completed without error." << "\n";
+    return ExitCode::success;
 }
 
 
@@ -86,51 +87,56 @@ ExitCode handle_status_command()
     mbl::provisioning::PelionProvisioner provisioner;
     const auto init_status = provisioner.init();
     
-    if (init_status != mbl::provisioning::SUCCESS)
-        return FAILURE;
+    if (init_status != mbl::provisioning::ProvisionedStatusCode::success)
+        return ExitCode::failure;
     
-    std::cout << "Querying device status.. " << "\n";
-    auto ret = provisioner.get_provisioned_status();
+    std::cout << "Querying device status... " << "\n";
+    const auto ret = provisioner.get_provisioned_status();
 
-    if (ret != mbl::provisioning::SUCCESS)
+    if (ret != mbl::provisioning::ProvisionedStatusCode::success)
     {
-        return FAILURE;
+        return ExitCode::failure;
     }
     else
     {
         std::cout << "Device is configured correctly. " 
                   << "You can connect to Pelion Cloud!"
                   << "\n";
-        return SUCCESS;
+        return ExitCode::success;
     }
 }
 
 
 int main(int argc, char **argv)
 {
-    const std::string store_cmd = "--kcm-item-store";
-    const std::string pelion_status_cmd = "--get-pelion-status";
-    const std::string help = "--help";
+    static const std::string store_cmd = "--kcm-item-store";
+    static const std::string pelion_status_cmd = "--get-pelion-status";
+    static const std::string help = "--help";
 
+    if (argc > 2)
+    {
+        usage();
+        return static_cast<int>(ExitCode::incorrect_args);
+    }
+    
     for(int i = 0; i < argc; i++)
     {
         if (argv[i] == store_cmd) 
         {
-            return handle_store_command();
+            return static_cast<int>(handle_store_command());
         }
         else if (argv[i] == pelion_status_cmd) 
         {
-            return handle_status_command();
+            return static_cast<int>(handle_status_command());
         }
         else if(argv[i] == help) 
         {
             usage();
-            return SUCCESS;
+            return static_cast<int>(ExitCode::success);
         }
     }
 
     // If we reach this point the arguments were incorrect.    
     usage();
-
-    return INCORRECT_ARGS;
+    return static_cast<int>(ExitCode::incorrect_args);
 }
