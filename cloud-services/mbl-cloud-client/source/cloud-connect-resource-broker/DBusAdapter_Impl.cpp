@@ -403,7 +403,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m, void* user
     Messages can be of type Signal / Error / Method Call.
     */
     uint8_t type = 0;
-    r = sd_bus_message_get_type(m, &type);
+    int r = sd_bus_message_get_type(m, &type);
     if (r < 0) {
        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
     } 
@@ -455,7 +455,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m, void* user
         } 
         else {
             // r is negative, that means failure
-            TR_DEBUG("Processed with failure status r=%d!" r);
+            TR_DEBUG("Processed with failure status r=%d!", r);
         }
     }
 
@@ -905,7 +905,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     size_t deleted_items_num = pending_messages_.erase(m_to_signal_on);
     if(0 == deleted_items_num){
         // handle provided was not previously stored
-        TR_ERR("provided handle (0x%x) not found in pending messages, returning error %s", 
+        TR_ERR("provided handle (0x%" PRIxPTR ") not found in pending messages, returning error %s", 
             ipc_request_handle, MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
     }
@@ -915,7 +915,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
 
     if(1 < deleted_items_num){
         // handle provided was stored somehow more than one time!
-        TR_ERR("provided handle (0x%x) found more than once in pending messages, "
+        TR_ERR("provided handle (0x%" PRIxPTR ") found more than once in pending messages, "
                  "returning error %s", 
             ipc_request_handle, MblError_to_str(MblError::DBA_IllegalState));
         return MblError::DBA_IllegalState;
