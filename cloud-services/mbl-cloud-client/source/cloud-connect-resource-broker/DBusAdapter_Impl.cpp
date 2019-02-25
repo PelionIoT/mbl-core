@@ -246,7 +246,7 @@ int print_log_set_sd_bus_error_f(
     int err_num, sd_bus_error* ret_error, const char* func, int line, const char* format, ...)
 {
 
-    if (sd_bus_error_is_set(ret_error)) {
+    if (0 < sd_bus_error_is_set(ret_error)) {
         // avoid overwrite of the error that was already set
         return sd_bus_error_get_errno(ret_error);
     }
@@ -265,7 +265,7 @@ int print_log_set_sd_bus_error(
     int err_num, sd_bus_error* ret_error, const char* func, int line, const char* method_name)
 {
 
-    if (sd_bus_error_is_set(ret_error)) {
+    if (0 < sd_bus_error_is_set(ret_error)) {
         // avoid overwrite of the error that was already set
         return sd_bus_error_get_errno(ret_error);
     }
@@ -420,7 +420,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     if (r < 0) {
         return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
     }
-    if (false == is_valid_message_type(type)) {
+    if (!(is_valid_message_type(type))) {
         return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG,
                                             ret_error,
                                             "Received message from a wrong type (%s)!",
@@ -434,14 +434,14 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     r = -EBADRQC;
     const char* member_name = nullptr;
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
-    if (sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
+    if (0 <= sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
         member_name = DBUS_CC_REGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_RegisterResources(m, ret_error);
         if (r < 0) {
             TR_ERR("process_message_RegisterResources failed!");
         }
     }
-    else if (sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))
+    else if (0 <= sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))
     {
         member_name = DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_DeregisterResources(m, ret_error);
@@ -498,7 +498,7 @@ int DBusAdapterImpl::handle_resource_broker_async_method_success(sd_bus_message*
 
     // An asynchronous process towards the cloud was finished successfully,
     // so we need to store handle.
-    if (pending_messages_.insert(m_to_reply_on).second == false) {
+    if (!(pending_messages_.insert(m_to_reply_on).second)) {
         TR_ERR("pending_messages_.insert failed!");
         return sd_bus_error_set_const(ret_error,
                                       CloudConnectStatus_error_to_DBus_str(ERR_INTERNAL_ERROR),
@@ -628,7 +628,7 @@ int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
             ENOMSG, ret_error, "Unexpected message type: no reply expected!");
     }
 
-    if (sd_bus_message_has_signature(m, "s") == false) {
+    if (!(sd_bus_message_has_signature(m, "s"))) {
         return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, "Unexpected message signature!");
     }
 
@@ -667,7 +667,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
     CloudConnectStatus out_cc_reg_status = ERR_FAILED;
     std::string out_access_token;
     MblError mbl_reg_err = ccrb_.register_resources(
-        (uintptr_t) m, app_resource_definition, out_cc_reg_status, out_access_token);
+        reinterpret_cast<uintptr_t>(m), app_resource_definition, out_cc_reg_status, out_access_token);
 
     if (MblError::None != mbl_reg_err || is_CloudConnectStatus_error(out_cc_reg_status)) {
         return handle_resource_broker_method_failure(
@@ -697,8 +697,8 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
 
     // call deregister_resources resource broker APi and handle output
     CloudConnectStatus out_cc_dereg_status = ERR_FAILED;
-    MblError mbl_dereg_err =
-        ccrb_.deregister_resources((uintptr_t) m, access_token, out_cc_dereg_status);
+    MblError mbl_dereg_err = ccrb_.deregister_resources(
+        reinterpret_cast<uintptr_t>(m), access_token, out_cc_dereg_status);
 
     if (MblError::None != mbl_dereg_err || is_CloudConnectStatus_error(out_cc_dereg_status)) {
         return handle_resource_broker_method_failure(
@@ -948,7 +948,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         return MblError::DBA_IllegalState;
     }
 
-    sd_bus_message* signal = NULL;
+    sd_bus_message* signal = nullptr;
     sd_objects_cleaner<sd_bus_message> signal_cleaner(signal, sd_bus_message_unref);
 
     int r = sd_bus_message_new_signal(connection_handle_,
@@ -976,7 +976,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         return MblError::DBA_SdBusCallFailure;
     }
 
-    r = sd_bus_send(connection_handle_, signal, NULL);
+    r = sd_bus_send(connection_handle_, signal, nullptr);
     if (r < 0) {
         TR_ERR("sd_bus_send dest=%s failed(err=%d)", signal_dest, r);
         return MblError::DBA_SdBusCallFailure;
