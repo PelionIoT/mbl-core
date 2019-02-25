@@ -19,7 +19,8 @@
 #ifndef ApplicationEndpoint_h_
 #define ApplicationEndpoint_h_
 
-#include "M2MResourceObjects.h"
+#include "MblError.h"
+#include <map>
 #include <string>
 #include <memory>
 #include <functional>

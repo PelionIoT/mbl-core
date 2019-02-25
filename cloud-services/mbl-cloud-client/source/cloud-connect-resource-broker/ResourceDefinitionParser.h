@@ -19,7 +19,6 @@
 #ifndef ResourceDefinitionParser_h_
 #define ResourceDefinitionParser_h_
 
-#include "M2MResourceObjects.h"
 #include "MblError.h"
 #include "mbed-client/m2minterface.h"
 #include <string>
@@ -114,11 +113,10 @@ public:
 
     /**
      * @brief Build m2m2 objects / object instances and resources based on input JSON string. 
-     * In case of an error - delete already created rmm2m and m2m objects / object instances and resources
-     * (m2m_object_list and rbm2m_object_list will be empty).
+     * In case of an error - delete already created m2m objects / object instances and resources
+     * (m2m_object_list will be empty).
      * @param application_resource_definition  - Input application resource definition JSON string
      * @param m2m_object_list - Output M2M object list.
-     * @param rbm2m_object_list - Output Resource Builder m2m object list.
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
@@ -126,8 +124,7 @@ public:
      */
     MblError build_object_list(
         const std::string &application_resource_definition,
-        M2MObjectList &m2m_object_list,
-        RBM2MObjectList &rbm2m_object_list);
+        M2MObjectList &m2m_object_list);
 
 private:
 
@@ -138,7 +135,6 @@ private:
      * @param object_name - Object name
      * @param json_value_object - JSON value of an object
      * @param m2m_object_list - Hold created M2MObjects
-     * @param rbm2m_object_list - Hold created BRM2MObjects 
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
@@ -147,8 +143,7 @@ private:
     MblError parse_object(
         const std::string &object_name,
         Json::Value &json_value_object,
-        M2MObjectList &m2m_object_list,
-        RBM2MObjectList &rbm2m_object_list);
+        M2MObjectList &m2m_object_list);
 
     /**
      * @brief Parse JSON value of an object instance.
@@ -157,7 +152,6 @@ private:
      * @param object_instance_id - Object instance ID
      * @param json_value_object_instance - JSON value of an object instance
      * @param m2m_object - M2MObject used to create M2MObjectInstance
-     * @param sp_rbm2m_object - Smart pointer to RBM2MObject used to create RBM2MObjectInstance
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
@@ -166,8 +160,7 @@ private:
     MblError parse_object_instance(
         int object_instance_id,
         Json::Value &json_value_object_instance,
-        M2MObject *m2m_object,
-        SPRBM2MObject sp_rbm2m_object);
+        M2MObject *m2m_object);
 
     /**
      * @brief Parse JSON value of a resource.
@@ -175,7 +168,6 @@ private:
      * @param resource_name - Resource name
      * @param json_value_resource - JSON value of a single resource
      * @param m2m_object_instance - M2MObjectInstance used to create M2MResource
-     * @param sp_rbm2m_object_instance - Smart pointer to RBM2MObjectInstance used to create RBM2MResource
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
@@ -184,8 +176,7 @@ private:
     MblError parse_resource(
         const std::string &resource_name,
         Json::Value &json_value_resource,
-        M2MObjectInstance* m2m_object_instance,
-        SPRBM2MObjectInstance sp_rbm2m_object_instance);
+        M2MObjectInstance* m2m_object_instance);
 
     /**
      * @brief Parse resource operation from JSON value.
@@ -203,7 +194,6 @@ private:
     /**
      * @brief Create M2MResource using M2MObjectInstance
      * @param m2m_object_instance - M2MObjectInstance used to create M2MResource
-     * @param sp_rbm2m_object_instance - Smart pointer to RBM2MObjectInstance used to create RBM2MResource
      * @param resource_name - Resource name
      * @param resource_mode  - Resource mode (static / dynamic)
      * @param resource_res_type - Resource descritpion type (e.g. "button")
@@ -218,7 +208,6 @@ private:
      */
     MblError create_resources(
         M2MObjectInstance *m2m_object_instance,
-        SPRBM2MObjectInstance sp_rbm2m_object_instance,
         const std::string &resource_name,
         const std::string &resource_mode,
         const std::string &resource_res_type,

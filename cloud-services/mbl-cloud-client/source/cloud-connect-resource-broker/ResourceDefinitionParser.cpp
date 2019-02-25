@@ -121,7 +121,6 @@ ResourceDefinitionParser::~ResourceDefinitionParser()
 }
 
 MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_object_instance,
-                                                    SPRBM2MObjectInstance sp_rbm2m_object_instance,
                                                     const std::string& resource_name,
                                                     const std::string& resource_mode,
                                                     const std::string& resource_res_type,
@@ -141,10 +140,8 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
     }
 
     M2MResource* m2m_resource = nullptr;
-    M2MBase::Mode m2m_mode = M2MBase::Dynamic;
     TR_INFO("Create %s resource: %s", resource_mode.c_str(), resource_name.c_str());
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
-        m2m_mode = M2MBase::Static;
         const uint8_t value_length = static_cast<uint8_t>(
             resource_value.length()); // During the JSON parsing we verify valid
                                       // length so we are safe
@@ -172,22 +169,6 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
     }
     TR_DEBUG("Set M2MResource operation to %d", m2m_operation);
     m2m_resource->set_operation(m2m_operation); // Set allowed operations for accessing the resource
-
-    // Create rbm2m resource and add it to sp_rbm2m_object_instance's map
-    auto rbm2m_resource = sp_rbm2m_object_instance->create_resource(resource_name,
-                                                                    m2m_mode,
-                                                                    resource_multiple_instance,
-                                                                    m2m_operation,
-                                                                    resource_observable,
-                                                                    resource_res_type,
-                                                                    m2m_res_type,
-                                                                    resource_value);
-    if (nullptr == rbm2m_resource) {
-        TR_ERR("Create rbm2m_resource: %s failed", resource_name.c_str());
-        return Error::CCRBCreateM2MObjFailed;
-    }
-    rbm2m_resource->set_m2m_resource(m2m_resource);
-
     return Error::None;
 }
 
@@ -240,8 +221,7 @@ MblError ResourceDefinitionParser::parse_operation(Json::Value& resource, uint8_
 
 MblError ResourceDefinitionParser::parse_resource(const std::string& resource_name,
                                                   Json::Value& json_value_resource,
-                                                  M2MObjectInstance* m2m_object_instance,
-                                                  SPRBM2MObjectInstance sp_rbm2m_object_instance)
+                                                  M2MObjectInstance* m2m_object_instance)
 {
     TR_DEBUG("resource_name: %s", resource_name.c_str());
     // Leave the next debug line commented. Uncomment in case of heavy debuging
@@ -359,7 +339,6 @@ MblError ResourceDefinitionParser::parse_resource(const std::string& resource_na
     }
 
     return create_resources(m2m_object_instance,
-                            sp_rbm2m_object_instance,
                             resource_name,
                             resource_mode,
                             resource_res_type,
@@ -372,8 +351,7 @@ MblError ResourceDefinitionParser::parse_resource(const std::string& resource_na
 
 MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
                                                          Json::Value& json_value_object_instance,
-                                                         M2MObject* m2m_object,
-                                                         SPRBM2MObject sp_rbm2m_object)
+                                                         M2MObject* m2m_object)
 {
     TR_DEBUG("object instance id: %d", object_instance_id);
 
@@ -398,26 +376,13 @@ MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
         TR_ERR("Create m2m_object_instance id: %d failed", object_instance_id);
         return Error::CCRBCreateM2MObjFailed;
     }
-    // Create rbm2m object instance and add it to sp_rbm2m_object's map
-    auto sp_rbm2m_object_instance =
-        sp_rbm2m_object->create_object_instance(object_instance_id_uint16);
-    if (nullptr == sp_rbm2m_object_instance) {
-        TR_ERR("Create sp_rbm2m_object_instance: %d failed", object_instance_id);
-        return Error::CCRBCreateM2MObjFailed;
-    }
-    TR_DEBUG("Created sp_rbm2m_object_instance: %d", object_instance_id);
-
-    sp_rbm2m_object_instance->set_m2m_object_instance(m2m_object_instance);
 
     for (auto itr = json_value_object_instance.begin(); itr != json_value_object_instance.end();
          itr++)
     {
         Json::Value json_value_resource = *itr;
         Json::Value resource_name = itr.key();
-        if (parse_resource(resource_name.asString(),
-                           json_value_resource,
-                           m2m_object_instance,
-                           sp_rbm2m_object_instance) != Error::None)
+        if (parse_resource(resource_name.asString(), json_value_resource, m2m_object_instance) != Error::None)
         {
             TR_ERR("parse_resource failed.");
             return Error::CCRBInvalidJson;
@@ -429,8 +394,7 @@ MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
 
 MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
                                                 Json::Value& json_value_object,
-                                                M2MObjectList& m2m_object_list,
-                                                RBM2MObjectList& rbm2m_object_list)
+                                                M2MObjectList& m2m_object_list)
 {
     TR_DEBUG("object_name: %s", object_name.c_str());
 
@@ -448,23 +412,13 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     }
     TR_DEBUG("Created m2m_object: %s", m2m_object->name());
     m2m_object_list.push_back(m2m_object);
-    // Create rbm2m object and add it to rbm2m_object_list
-    auto sp_rbm2m_object = rbm2m_object_list.create_object(object_name);
-    if (nullptr == sp_rbm2m_object) {
-        TR_ERR("Create sp_rbm2m_object: %s failed", object_name.c_str());
-        return Error::CCRBCreateM2MObjFailed;
-    }
-    TR_DEBUG("Created sp_rbm2m_object: %s", m2m_object->name());
-
-    sp_rbm2m_object->set_m2m_object(m2m_object);
 
     for (auto itr = json_value_object.begin(); itr != json_value_object.end(); itr++) {
         Json::Value json_value_object_instance = *itr;
         Json::Value object_instance_id = itr.key();
         if (parse_object_instance(std::stoi(object_instance_id.asString()),
                                   json_value_object_instance,
-                                  m2m_object,
-                                  sp_rbm2m_object) != Error::None)
+                                  m2m_object) != Error::None)
         {
             TR_ERR("parse_object_instance failed.");
             return Error::CCRBInvalidJson;
@@ -476,8 +430,7 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
 
 MblError
 ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition,
-                                            M2MObjectList& m2m_object_list,
-                                            RBM2MObjectList& rbm2m_object_list)
+                                            M2MObjectList& m2m_object_list)
 {
     TR_DEBUG("Enter");
 
@@ -513,8 +466,7 @@ ResourceDefinitionParser::build_object_list(const std::string& application_resou
         for (auto itr = root.begin(); itr != root.end(); itr++) {
             Json::Value json_value_object = *itr;
             Json::Value object_name = itr.key();
-            retval = parse_object(
-                object_name.asString(), json_value_object, m2m_object_list, rbm2m_object_list);
+            retval = parse_object(object_name.asString(), json_value_object, m2m_object_list);
             if (retval != Error::None) {
                 TR_ERR("parse_object failed with error %s", MblError_to_str(retval));
                 break;
@@ -545,9 +497,6 @@ ResourceDefinitionParser::build_object_list(const std::string& application_resou
                                // all resources that belongs to it
         }
         m2m_object_list.clear();
-
-        // Clear m2m_object list
-        rbm2m_object_list.clear_object_map();
     }
     return retval;
 }
