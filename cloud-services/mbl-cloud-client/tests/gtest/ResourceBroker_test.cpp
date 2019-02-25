@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 
 #define TRACE_GROUP "ccrb-resource-broker-test"
 
@@ -36,7 +36,7 @@
  */
 TEST(Resource_Broker_Positive, registration_success) {
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
@@ -74,7 +74,7 @@ TEST(Resource_Broker_Positive, registration_success) {
  */
 TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
@@ -108,7 +108,7 @@ TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
  */
 TEST(Resource_Broker_Negative, invalid_app_resource_definition_1) {
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
@@ -129,7 +129,7 @@ TEST(Resource_Broker_Negative, invalid_app_resource_definition_1) {
 //NOTE: this test is valid only for Single app support
 TEST(Resource_Broker_Negative, already_registered) {
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle_1 = 1;
@@ -172,7 +172,7 @@ TEST(Resource_Broker_Negative, already_registered) {
 
 TEST(Resource_Broker_Negative, registration_in_progress) {
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle_1 = 1;
@@ -181,7 +181,7 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
     CloudConnectStatus cloud_connect_out_status_1;
     std::string out_access_token_1;
 
-    tr_debug("%s: Application 1 - Start registration", __PRETTY_FUNCTION__);
+    TR_DEBUG("Application 1 - Start registration");
     resource_broker_tester.register_resources_test(
         ipc_conn_handle_1,
         application_resource_definition_1,
@@ -192,7 +192,7 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
     );
 
     // Application 2 try to register while Application 1 registration is still in progress - expect fail
-    tr_debug("%s: Application 2 - Start registration", __PRETTY_FUNCTION__);
+    TR_DEBUG("Application 2 - Start registration");
     const uintptr_t ipc_conn_handle_2 = 2;
     const std::string application_resource_definition_2 =
         VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
@@ -209,7 +209,7 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
     );
 
     // Test registration callback succeeded for application 1
-    tr_debug("%s: Application 1 - Finish registration", __PRETTY_FUNCTION__);    
+    TR_DEBUG("Application 1 - Finish registration");
     resource_broker_tester.mbed_client_register_update_callback_test(
         out_access_token_1,
         CloudConnectStatus::STATUS_SUCCESS);
@@ -219,7 +219,7 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
 // and succeeds in second try
 TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
 
-     tr_debug("%s", __PRETTY_FUNCTION__);
+     TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;

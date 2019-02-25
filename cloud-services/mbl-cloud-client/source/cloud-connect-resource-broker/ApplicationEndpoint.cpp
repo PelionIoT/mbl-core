@@ -18,7 +18,7 @@
 #include "ApplicationEndpoint.h"
 #include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 #include <systemd/sd-id128.h>
 
 #define TRACE_GROUP "ccrb-app-end-point"
@@ -32,12 +32,12 @@ ApplicationEndpoint::ApplicationEndpoint(const uintptr_t ipc_conn_handle)
       handle_app_register_update_finished_cb_(nullptr),
       handle_app_error_cb_(nullptr)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 ApplicationEndpoint::~ApplicationEndpoint()
 {
-    tr_debug("%s: (access_token: %s)", __PRETTY_FUNCTION__, access_token_.c_str());
+    TR_DEBUG("(access_token: %s)", access_token_.c_str());
 }
 
 void ApplicationEndpoint::register_callback_functions(
@@ -49,12 +49,12 @@ void ApplicationEndpoint::register_callback_functions(
 
 MblError ApplicationEndpoint::generate_access_token()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     sd_id128_t id128 = SD_ID128_NULL;
     int retval = sd_id128_randomize(&id128);
     if (retval != 0) {
-        tr_err("sd_id128_randomize failed with error: %d", retval);
+        TR_ERR("sd_id128_randomize failed with error: %d", retval);
         return Error::CCRBGenerateUniqueIdFailed;
     }
 
@@ -65,7 +65,7 @@ MblError ApplicationEndpoint::generate_access_token()
 
 MblError ApplicationEndpoint::init(const std::string& application_resource_definition)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     RBM2MObjectList rbm2m_object_list; // TODO: should be remove in future task
     // Parse JSON
@@ -74,27 +74,24 @@ MblError ApplicationEndpoint::init(const std::string& application_resource_defin
         application_resource_definition, m2m_object_list_, rbm2m_object_list);
 
     if (Error::None != build_object_list_stauts) {
-        tr_error("%s: build_object_list failed with error: %s",
-                 __PRETTY_FUNCTION__,
+        TR_ERR("build_object_list failed with error: %s",
                  MblError_to_str(build_object_list_stauts));
         return build_object_list_stauts;
     }
 
     const MblError generate_access_token_status = generate_access_token();
     if (Error::None != generate_access_token_status) {
-        tr_error("%s: generate_access_token failed with error: %s",
-                 __PRETTY_FUNCTION__,
+        TR_ERR("generate_access_token failed with error: %s",
                  MblError_to_str(generate_access_token_status));
         return generate_access_token_status;
     }
-    tr_debug("%s: (access_token: %s) succeeded.", __PRETTY_FUNCTION__, access_token_.c_str());
+    TR_DEBUG("(access_token: %s) succeeded.", access_token_.c_str());
     return Error::None;
 }
 
 void ApplicationEndpoint::handle_registration_updated_cb()
 {
-    tr_debug("%s: (access_token: %s) - Notify CCRB that registration was successfull.",
-             __PRETTY_FUNCTION__,
+    TR_DEBUG("(access_token: %s) - Notify CCRB that registration was successfull.",
              access_token_.c_str());
     registered_ = true;
     if (nullptr != handle_app_register_update_finished_cb_) {
@@ -102,7 +99,7 @@ void ApplicationEndpoint::handle_registration_updated_cb()
     }
     else
     {
-        tr_error("%s: handle_app_register_update_finished_cb_ was not set.", __PRETTY_FUNCTION__);
+        TR_ERR("handle_app_register_update_finished_cb_ was not set.");
     }
 }
 
@@ -110,14 +107,12 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
 {
     const MblError mbl_code =
         CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    tr_err("%s: (access_token: %s) - Error occurred: %d: %s",
-           __PRETTY_FUNCTION__,
+    TR_ERR("(access_token: %s) - Error occurred: %d: %s",
            access_token_.c_str(),
            mbl_code,
            MblError_to_str(mbl_code));
 
-    tr_debug("%s: (access_token: %s) - Notify CCRB that error occured.",
-             __PRETTY_FUNCTION__,
+    TR_DEBUG("(access_token: %s) - Notify CCRB that error occured.",
              access_token_.c_str());
 
     if (nullptr != handle_app_error_cb_) {
@@ -125,7 +120,7 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
     }
     else
     {
-        tr_error("%s: handle_app_error_cb_ was not set.", __PRETTY_FUNCTION__);
+        TR_ERR("handle_app_error_cb_ was not set.");
     }
 }
 

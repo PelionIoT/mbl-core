@@ -26,7 +26,7 @@ ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progr
 
 ResourceBroker::~ResourceBroker() 
 { 
-    TR_DEBUG("Enter"); 
+    TR_DEBUG("Enter");
 }
 
 MblError ResourceBroker::start(MbedCloudClient* cloud_client)
@@ -233,7 +233,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
     TR_DEBUG("Enter");
     const MblError mbl_code =
         CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    tr_err("%s: Error occurred: %d: %s", __PRETTY_FUNCTION__, mbl_code, MblError_to_str(mbl_code));
+    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
 
     // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
@@ -246,16 +246,14 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle,
                                                             const std::string& access_token)
 {
-    tr_debug("%s: Application (access_token: %s) registered successfully.",
-             __PRETTY_FUNCTION__,
+   TR_DEBUG("Application (access_token: %s) registered successfully.",
              access_token.c_str());
 
     // Send the response to adapter:
     CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
     MblError status = ipc_adapter_->update_registration_status(ipc_conn_handle, reg_status);
     if (Error::None != status) {
-        tr_error("%s: update_registration_status failed with error: %s",
-                 __PRETTY_FUNCTION__,
+        TR_ERR("update_registration_status failed with error: %s",
                  MblError_to_str(status));
     }
 
@@ -270,16 +268,14 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
                                          const std::string& access_token,
                                          const MblError error)
 {
-    tr_debug("%s: Application (access_token: %s) encountered an error: %s",
-             __PRETTY_FUNCTION__,
+    TR_DEBUG("Application (access_token: %s) encountered an error: %s",
              access_token.c_str(),
              MblError_to_str(error));
 
     auto itr = app_endpoints_map_.find(access_token);
     if (app_endpoints_map_.end() == itr) {
         // Could not found application endpoint
-        tr_error("%s: Application (access_token: %s) does not exist.",
-                 __PRETTY_FUNCTION__,
+        TR_ERR("Application (access_token: %s) does not exist.",
                  access_token.c_str());
         // Mark that registration is finished (using atomic flag), even if it was failed
         registration_in_progress_.store(false);
@@ -292,8 +288,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
     if (app_endpoint->is_registered()) {
         // TODO: add call to update_deregistration_status when deregister is
         // implemented
-        tr_error("%s: Application (access_token: %s) is already registered.",
-                 __PRETTY_FUNCTION__,
+        TR_ERR("Application (access_token: %s) is already registered.",
                  access_token.c_str());
     }
     else
@@ -302,15 +297,12 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
         MblError status =
             ipc_adapter_->update_registration_status(ipc_conn_handle, CloudConnectStatus::ERR_FAILED);
         if (Error::None != status) {
-            tr_error("%s: Registration for Application (access_token: %s), failed "
-                     "with error: %s",
-                     __PRETTY_FUNCTION__,
+            TR_ERR("Registration for Application (access_token: %s), failed with error: %s",
                      access_token.c_str(),
                      MblError_to_str(status));
         }
 
-        tr_debug(
-            "%s: Erase Application (access_token: %s)", __PRETTY_FUNCTION__, access_token.c_str());
+        TR_DEBUG("Erase Application (access_token: %s)", access_token.c_str());
         app_endpoints_map_.erase(itr); // Erase endpoint as registation failed
 
         // Mark that registration is finished (using atomic flag) (even if it was failed)
@@ -330,7 +322,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
 
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
-        tr_error("%s: Registration is already in progess.", __PRETTY_FUNCTION__);
+        TR_ERR("Registration is already in progess.");
         out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return Error::None;
     }
@@ -340,7 +332,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
     // TODO: remove this check when supporting multiple applications
     if (!app_endpoints_map_.empty()) {
         // Currently support only ONE application
-        tr_error("%s: Only one registered application is allowed.", __PRETTY_FUNCTION__);
+        TR_ERR("Only one registered application is allowed.");
         out_status = CloudConnectStatus::ERR_ALREADY_REGISTERED;
         return Error::None;
     }
@@ -350,9 +342,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
     ApplicationEndpoint_ptr app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle);
     const MblError status = app_endpoint->init(app_resource_definition_json);
     if (Error::None != status) {
-        tr_error("%s: app_endpoint->init failed with error: %s",
-                 __PRETTY_FUNCTION__,
-                 MblError_to_str(status));
+        TR_ERR("app_endpoint->init failed with error: %s", MblError_to_str(status));
         out_status = (Error::CCRBInvalidJson == status)
                          ? CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
                          : CloudConnectStatus::ERR_FAILED;

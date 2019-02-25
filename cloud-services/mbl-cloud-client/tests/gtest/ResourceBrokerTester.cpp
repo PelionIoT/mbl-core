@@ -17,14 +17,14 @@
 
 #include "ResourceBrokerTester.h"
 #include "DBusAdapterMock.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 #include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-res-broker-tester"
 
 ResourceBrokerTester::ResourceBrokerTester()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what cloud_connect_resource_broker_.init() usually does so dont call it...
@@ -42,18 +42,18 @@ ResourceBrokerTester::ResourceBrokerTester()
 
 ResourceBrokerTester::~ResourceBrokerTester()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 void ResourceBrokerTester::add_objects(const M2MObjectList& /*object_list*/)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     // Currently does nothing, in future test we might want to add more code here
 }
 
 void ResourceBrokerTester::register_update()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     // Currently does nothing, in future test we might want to add more code here
 }
 
@@ -65,7 +65,7 @@ void ResourceBrokerTester::register_resources_test(
     mbl::MblError expected_error_status,
     CloudConnectStatus expected_cloud_connect_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     mbl::MblError status = cloud_connect_resource_broker_.register_resources(
         ipc_conn_handle, 
@@ -92,8 +92,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
 
     if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
         // Check registration success flow
-        tr_debug("%s: Notify Application (access_token: %s) that registration was successful",
-            __PRETTY_FUNCTION__,
+        TR_DEBUG("Notify Application (access_token: %s) that registration was successful",
             access_token.c_str());
 
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
@@ -101,8 +100,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         ASSERT_TRUE(app_endpoint->registered_);
     } else {
         // Check registration failure flow
-        tr_debug("%s: Notify Application (access_token: %s) that registration failed",
-            __PRETTY_FUNCTION__,
+        TR_DEBUG("Notify Application (access_token: %s) that registration failed",
             access_token.c_str());
 
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest

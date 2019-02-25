@@ -16,7 +16,7 @@
  */
 
 #include "DBusAdapterMock.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 
 #define TRACE_GROUP "ccrb-debus-adapter-mock"
 
@@ -26,29 +26,29 @@ reg_status_(CloudConnectStatus::STATUS_SUCCESS),
 ipc_conn_handle_(0),
 update_registration_called_(false)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 DBusAdapterMock::~DBusAdapterMock()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 mbl::MblError DBusAdapterMock::update_registration_status(
     const uintptr_t ipc_conn_handle, 
     const CloudConnectStatus reg_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     ipc_conn_handle_ = ipc_conn_handle;
     reg_status_ = reg_status;
     update_registration_called_ = true;
-    tr_debug("%s: update registration called: %d", __PRETTY_FUNCTION__, update_registration_called_);
+    TR_DEBUG("update registration called: %d", update_registration_called_);
     return mbl::Error::None;
 }
 
 bool DBusAdapterMock::is_update_registration_called()
 {
-    tr_debug("%s: update registration called: %d", __PRETTY_FUNCTION__, update_registration_called_);
+    TR_DEBUG("update registration called: %d", update_registration_called_);
     return update_registration_called_;
 }
 

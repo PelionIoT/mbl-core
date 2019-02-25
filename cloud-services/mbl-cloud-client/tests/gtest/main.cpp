@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     // Make sure that trace level is debug as we want as much information posibble when running tests
     // in case error occured. This ovvirides mbl-cloud-client default trace level.
