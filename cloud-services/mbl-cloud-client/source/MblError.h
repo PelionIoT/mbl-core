@@ -68,12 +68,14 @@ enum Type {
     EnrollmentErrorEnd                  = 0x0301,
 
     // CCRB errors
-    CCRBStartFailed                     = 0x0400,       //TODO - IOTMBL-1669 - this error should be remove. it shadows the real error
-    CCRBStopFailed                      = 0x0401,       //TODO - IOTMBL-1669 - this error should be remove. it shadows the real error
-    CCRBInvalidJson                     = 0x0402,
-    CCRBCreateM2MObjFailed              = 0x0403,
-    CCRBValueTypeError                  = 0x0404,
-	
+    CCRBNotSupported                    = 0x0400,
+    CCRBStartFailed                     = 0x0401,
+    CCRBStopFailed                      = 0x0402,
+    CCRBInvalidJson                     = 0x0403,
+    CCRBCreateM2MObjFailed              = 0x0404,
+    CCRBValueTypeError                  = 0x0405,
+    CCRBGenerateUniqueIdFailed          = 0x0406,
+		
     // DBA (D-Bus Adapter) errors
     DBA_IllegalState                    = 0x0500,
     DBA_InvalidValue                    = 0x0501,

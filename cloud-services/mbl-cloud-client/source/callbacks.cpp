@@ -15,24 +15,24 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include "pal.h"
 #include "pal_plat_rtos.h"
+#include <stdio.h>
 
 #define TRACE_GROUP "mbl"
 
-
 void pal_plat_osApplicationReboot(void)
 {
-    // Hack application reboot for demo, this should ne changed later on when we have the information about the type of update in the manifest
-    FILE *fp = fopen ("/tmp/do_not_reboot", "r");
-    if (fp != NULL)
-    {
-        fclose (fp);
+    // Hack application reboot for demo, this should ne changed later on when we
+    // have the
+    // information about the type of update in the manifest
+    FILE* fp = fopen("/tmp/do_not_reboot", "r");
+    if (fp != NULL) {
+        fclose(fp);
         PAL_LOG_INFO("Not rebooting the system (application update)\r\n");
         return;
     }
-    
+
     PAL_LOG_INFO("Rebooting the system\r\n");
     pal_plat_osReboot();
 }

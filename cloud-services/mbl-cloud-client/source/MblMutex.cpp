@@ -19,7 +19,8 @@
 
 #include <cassert>
 
-namespace mbl {
+namespace mbl
+{
 
 MblMutex::MblMutex()
 {

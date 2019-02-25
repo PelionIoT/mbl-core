@@ -17,16 +17,24 @@ using namespace std::chrono;
 namespace mbl
 {
 
-EventManager::EventManager() : next_event_id_(1), event_loop_handle_(nullptr) { TR_DEBUG("Enter"); }
+EventManager::EventManager() : next_event_id_(1), event_loop_handle_(nullptr)
+{
+    TR_DEBUG("Enter");
+}
 
-EventManager::~EventManager() { TR_DEBUG("Enter"); }
+EventManager::~EventManager()
+{
+    TR_DEBUG("Enter");
+}
 
 MblError EventManager::init()
 {
     // get a reference (or create a new one) to the default sd-event loop
     int r = sd_event_default(&event_loop_handle_);
     if (r < 0) {
-        TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -71,8 +79,13 @@ int EventManager::self_event_handler_impl(sd_event_source* s, SelfEvent* ev)
 
     TR_DEBUG("=SelfEvent fired= (callback status=%s) : id_=%" PRIu64 " send_time=%" PRIu64
              " fire_time=%" PRIu64 " data_length=%lu data_type=%s description=%s",
-             MblError_to_str(status), ev->id_, ev->send_time_.count(), ev->fire_time_.count(),
-             ev->data_length_, ev->get_data_type_str(), ev->description_.c_str());
+             MblError_to_str(status),
+             ev->id_,
+             ev->send_time_.count(),
+             ev->fire_time_.count(),
+             ev->data_length_,
+             ev->get_data_type_str(),
+             ev->description_.c_str());
 
     // callback is done - remove the event  from map
     // TODO - this is done only for immidiate/delayed events. Later on need to implement different
@@ -96,9 +109,11 @@ int EventManager::self_event_handler(sd_event_source* s, void* userdata)
     return ev->event_manager_.self_event_handler_impl(s, ev);
 }
 
-MblError EventManager::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
+MblError EventManager::send_event_immediate(SelfEvent::EventData data,
+                                            unsigned long data_length,
                                             SelfEvent::EventDataType data_type,
-                                            SelfEventCallback callback, uint64_t& out_event_id,
+                                            SelfEventCallback callback,
+                                            uint64_t& out_event_id,
                                             const std::string& description)
 {
     TR_DEBUG("Enter");
@@ -106,15 +121,14 @@ MblError EventManager::send_event_immediate(SelfEvent::EventData data, unsigned 
     {
     case SelfEvent::EventDataType::RAW:
         if (data_length > SelfEvent::EventData::MAX_BYTES) {
-            TR_ERR("Illegal data_length of size %lu > %d", data_length,
+            TR_ERR("Illegal data_length of size %lu > %d",
+                   data_length,
                    SelfEvent::EventData::MAX_BYTES);
             return MblError::DBA_InvalidValue;
         }
         break;
 
-    default:
-        TR_ERR("Invalid data_type!");
-        return MblError::DBA_InvalidValue;
+    default: TR_ERR("Invalid data_type!"); return MblError::DBA_InvalidValue;
     }
 
     // create the event
@@ -133,7 +147,9 @@ MblError EventManager::send_event_immediate(SelfEvent::EventData data, unsigned 
     // https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
     int r = sd_event_add_defer(event_loop_handle_, nullptr, self_event_handler, (void*) ev.get());
     if (r < 0) {
-        TR_ERR("sd_event_add_defer failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("sd_event_add_defer failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -145,19 +161,24 @@ MblError EventManager::send_event_immediate(SelfEvent::EventData data, unsigned 
 
     TR_DEBUG("=SelfEvent sent== out_event_id=%" PRIu64 " send_time=%" PRIu64
              " data_length=%lu data_type=%s description=%s",
-             out_event_id, send_time.count(), data_length, SelfEvent::DataType_to_str(data_type),
+             out_event_id,
+             send_time.count(),
+             data_length,
+             SelfEvent::DataType_to_str(data_type),
              description.c_str());
 
     return MblError::None;
 }
 
-MblError EventManager::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
+MblError EventManager::send_event_immediate(SelfEvent::EventData data,
+                                            unsigned long data_length,
                                             SelfEvent::EventDataType data_type,
-                                            SelfEventCallback callback, uint64_t& out_event_id,
+                                            SelfEventCallback callback,
+                                            uint64_t& out_event_id,
                                             const char* description)
 {
-    return send_event_immediate(data, data_length, data_type, callback, out_event_id,
-                                std::string(description));
+    return send_event_immediate(
+        data, data_length, data_type, callback, out_event_id, std::string(description));
 }
 
 } // namespace mbl {

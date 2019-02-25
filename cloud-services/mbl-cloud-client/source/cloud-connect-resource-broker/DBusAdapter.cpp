@@ -28,7 +28,7 @@ DBusAdapter::~DBusAdapter() = default;
 
 DBusAdapter::DBusAdapter(ResourceBroker& ccrb)
     : // initialize impl_ unique_ptr
-    impl_(new DBusAdapterImpl(ccrb))
+      impl_(new DBusAdapterImpl(ccrb))
 {
     TR_DEBUG("Enter");
 }
@@ -96,15 +96,17 @@ MblError DBusAdapter::update_remove_resource_instance_status(const uintptr_t ipc
                                                                     remove_status);
 }
 
-MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
+MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data,
+                                           unsigned long data_length,
                                            SelfEvent::EventDataType data_type,
-                                           SelfEventCallback callback, uint64_t& out_event_id,
+                                           SelfEventCallback callback,
+                                           uint64_t& out_event_id,
                                            const std::string description)
 {
     assert(callback);
     TR_DEBUG("Enter");
-    return impl_->send_event_immediate(data, data_length, data_type, callback, out_event_id,
-                                       description);
+    return impl_->send_event_immediate(
+        data, data_length, data_type, callback, out_event_id, description);
 }
 
 } // namespace mbl {
