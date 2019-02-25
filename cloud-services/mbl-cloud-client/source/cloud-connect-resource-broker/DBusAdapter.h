@@ -38,7 +38,7 @@ public:
 
     // dtor must be explicitly declared and get default implementation in source in order to allow
     // member impl_ unique_ptr to reqcognize DBusAdapterImpl as a complete type and deestroy it
-    ~DBusAdapter();
+    virtual ~DBusAdapter();
 
 /**
  * @brief Initializes IPC mechanism.
@@ -89,7 +89,7 @@ public:
  * @return MblError returns Error::None if the message was successfully 
  *         delivered, or error code otherwise. 
  */
-    MblError update_registration_status(
+    virtual MblError update_registration_status(
         const uintptr_t ipc_request_handle, 
         const CloudConnectStatus reg_status);
 

@@ -23,12 +23,13 @@
 
 #define TRACE_GROUP "mbl"
 
-namespace mbl {
+namespace mbl
+{
 
 static bool application_init_fcc(void)
 {
     fcc_status_e status = fcc_init();
-    if(status != FCC_STATUS_SUCCESS) {
+    if (status != FCC_STATUS_SUCCESS) {
         tr_err("fcc_init failed with status %d! - exit", status);
         return 1;
     }
@@ -38,7 +39,9 @@ static bool application_init_fcc(void)
     status = fcc_developer_flow();
     if (status == FCC_STATUS_KCM_FILE_EXIST_ERROR) {
         tr_info("Developer credentials already exists");
-    } else if (status != FCC_STATUS_SUCCESS) {
+    }
+    else if (status != FCC_STATUS_SUCCESS)
+    {
         tr_err("Failed to load developer credentials - exit");
         return 1;
     }

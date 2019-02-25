@@ -19,7 +19,8 @@
 
 #include <cassert>
 
-namespace mbl {
+namespace mbl
+{
 
 time_t get_monotonic_time_s()
 {

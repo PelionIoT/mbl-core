@@ -51,7 +51,9 @@ MblError Mailbox::do_init()
     // are set with that flag
     int r = pipe2(pipefds_, O_NONBLOCK);
     if (r != 0) {
-        TR_ERR("pipe2 failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("pipe2 failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         return MblError::DBA_MailBoxSystemCallFailure;
     }
@@ -68,8 +70,10 @@ MblError Mailbox::do_init()
 
     protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
 
-    TR_INFO("Initialized new mailbox=%s pipefds_[READ]=%d pipefds_[WRITE]=%d", get_name(),
-            pipefds_[READ], pipefds_[WRITE]);
+    TR_INFO("Initialized new mailbox=%s pipefds_[READ]=%d pipefds_[WRITE]=%d",
+            get_name(),
+            pipefds_[READ],
+            pipefds_[WRITE]);
     return MblError::None;
 }
 
@@ -93,7 +97,9 @@ MblError Mailbox::deinit()
     if (r != 0) {
         // there is not much you can do about errors on close()
         status.set(MblError::DBA_MailBoxSystemCallFailure);
-        TR_ERR("close(pipefds_[WRITE]) failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("close(pipefds_[WRITE]) failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                status.get_status_str());
         // continue - best effort
     }
@@ -115,7 +121,8 @@ MblError Mailbox::deinit()
         {
             TR_ERR("Failed to clear mailbox %s, receive_msg() returned error %s - continue (best "
                    "effort)",
-                   name_.c_str(), MblError_to_str(ret_pair.first));
+                   name_.c_str(),
+                   MblError_to_str(ret_pair.first));
             break;
         }
         // // ret_pair.first == MblError::None -> continue (check for more elements)
@@ -126,7 +133,9 @@ MblError Mailbox::deinit()
     if (r != 0) {
         // there is not much you can do about errors on close()
         status.set(MblError::DBA_MailBoxSystemCallFailure);
-        TR_ERR("close(pipefds_[READ]) failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("close(pipefds_[READ]) failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                status.get_status_str());
         // continue - best effort
     }
@@ -151,14 +160,11 @@ MblError Mailbox::do_poll(const int poll_fd_index, int timeout_milliseconds)
     // critical issue
     switch (poll_fd_index) // avoid using gsl::at for now - safe access to array index
     {
-    case WRITE:
-        r = poll(&pollfds_[WRITE], 1, timeout_milliseconds);
-        break;
-    case READ:
-        r = poll(&pollfds_[READ], 1, timeout_milliseconds);
-        break;
+    case WRITE: r = poll(&pollfds_[WRITE], 1, timeout_milliseconds); break;
+    case READ: r = poll(&pollfds_[READ], 1, timeout_milliseconds); break;
     default:
-        TR_ERR("bad poll_fd_index=%d! returning %s", poll_fd_index,
+        TR_ERR("bad poll_fd_index=%d! returning %s",
+               poll_fd_index,
                MblError_to_str(MblError::DBA_InvalidValue));
         return MblError::DBA_InvalidValue;
     }
@@ -170,7 +176,9 @@ MblError Mailbox::do_poll(const int poll_fd_index, int timeout_milliseconds)
     }
     if (r < 0) {
         // some ther error (no timeout)!
-        TR_ERR("poll failed with error r=%d (%s) - returning %s", r, strerror(r),
+        TR_ERR("poll failed with error r=%d (%s) - returning %s",
+               r,
+               strerror(r),
                MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         return MblError::DBA_MailBoxSystemCallFailure;
     }
@@ -205,21 +213,25 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
         }
         if (bytes_written < 0) {
             // some other error!
-            TR_ERR("write failed (bytes_written=%zd < 0) - returning %s", bytes_written,
+            TR_ERR("write failed (bytes_written=%zd < 0) - returning %s",
+                   bytes_written,
                    MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
             return MblError::DBA_MailBoxSystemCallFailure;
         }
         if (bytes_written != sizeof(MailboxMsg*)) {
             TR_ERR("write failed - unexpected number of bytes written!"
                    " (bytes_written=%zd) - returning %s",
-                   bytes_written, MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
+                   bytes_written,
+                   MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
             return MblError::DBA_MailBoxSystemCallFailure;
         }
         // write was successful!, write to log and release the unique ptr .
         // be carefull not to dereference the unique_ptr, it might be free!
 
         TR_INFO("Message sent via %s mailbox. sequence_num_=%" PRIu64 " payload_len_=%zu type=%s",
-                get_name(), msg_to_send.sequence_num_, msg_to_send.payload_len_,
+                get_name(),
+                msg_to_send.sequence_num_,
+                msg_to_send.payload_len_,
                 msg_to_send.MsgType_to_str());
 
         // FIXME - remove later (keep for debug)
@@ -231,7 +243,8 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
         // unexpected event!
         TR_ERR("Unexpected revents after polling succeeded on pollfds_[WRITE], expected POLLOUT"
                " but pollfds_[WRITE].revents=%#06x - returning %s",
-               pollfds_[WRITE].revents, MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
+               pollfds_[WRITE].revents,
+               MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         return MblError::DBA_MailBoxSystemCallFailure;
     }
 
@@ -264,7 +277,8 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
         }
         if (bytes_read < 0) {
             // some other error!
-            TR_ERR("read failed (bytes_read=%zd < 0) - returning %s", bytes_read,
+            TR_ERR("read failed (bytes_read=%zd < 0) - returning %s",
+                   bytes_read,
                    MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
             ret_pair.first = MblError::DBA_MailBoxSystemCallFailure;
             return ret_pair;
@@ -272,7 +286,8 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
         if (bytes_read != sizeof(MailboxMsg*)) {
             TR_ERR("read failed - unexpected number of bytes read!"
                    " (bytes_read=%zd) - returning %s",
-                   bytes_read, MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
+                   bytes_read,
+                   MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
             ret_pair.first = MblError::DBA_MailBoxSystemCallFailure;
             return ret_pair;
         }
@@ -295,14 +310,18 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
     {
         TR_ERR("Unexpected revents after polling succeeded on pollfds_[READ], expected POLLIN"
                " but pollfds_[READ].revents=%#06x - returning %s",
-               pollfds_[READ].revents, MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
+               pollfds_[READ].revents,
+               MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         ret_pair.first = MblError::DBA_MailBoxSystemCallFailure;
         return ret_pair;
     }
     assert(MailboxMsg::MSG_PROTECTION_FIELD == msg_->protection_field_);
 
     TR_INFO("Message received via %s mailbox.sequence_num=%" PRIu64 " payload_len_=%zu type=%s",
-            get_name(), msg_->sequence_num_, msg_->payload_len_, msg_->MsgType_to_str());
+            get_name(),
+            msg_->sequence_num_,
+            msg_->payload_len_,
+            msg_->MsgType_to_str());
 
     // FIXME - remove later (keep for debug)
     // TR_DEBUG("msg_=%p", msg_);

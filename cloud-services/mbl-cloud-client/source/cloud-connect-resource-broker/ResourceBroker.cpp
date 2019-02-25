@@ -7,6 +7,8 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "DBusAdapter.h"
+#include "MblCloudClient.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 
 #include <cassert>
 #include <pthread.h>
@@ -17,19 +19,28 @@ namespace mbl
 {
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker() { TR_DEBUG("Enter"); }
-
-ResourceBroker::~ResourceBroker() { TR_DEBUG("Enter"); }
-
-MblError ResourceBroker::start()
+ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progress_(false)
 {
     TR_DEBUG("Enter");
+}
+
+ResourceBroker::~ResourceBroker()
+{
+    TR_DEBUG("Enter");
+}
+
+MblError ResourceBroker::start(MbedCloudClient* cloud_client)
+{
+    TR_DEBUG("Enter");
+    assert(cloud_client);
+    cloud_client_ = cloud_client;
 
     // create new thread which will run IPC event loop
     const int thread_create_err =
         pthread_create(&ipc_thread_id_,
                        nullptr, // thread is created with default attributes
-                       ResourceBroker::ccrb_main, this);
+                       ResourceBroker::ccrb_main,
+                       this);
     if (0 != thread_create_err) {
         // thread creation failed, print errno value and exit
         TR_ERR("Thread creation failed (%s)", strerror(errno));
@@ -109,6 +120,18 @@ MblError ResourceBroker::init()
         TR_ERR("ipc::init failed with error %s", MblError_to_str(status));
     }
 
+    // Set function pointers to point to mbed_client functions
+    // In gtest our friend test class will override these pointers to get all the
+    // calls
+    register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
+    add_objects_func_ = std::bind(
+        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
+        cloud_client_,
+        std::placeholders::_1);
+
+    // Register Cloud client callback:
+    regsiter_callback_handlers();
+
     return status;
 }
 
@@ -178,22 +201,195 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit((void*) (uintptr_t) status); // pthread_exit does "return"
 }
 
-MblError ResourceBroker::register_resources(const uintptr_t /*unused*/,
-                                            const std::string& /*unused*/,
-                                            CloudConnectStatus& /*unused*/, std::string& /*unused*/)
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Callback functions that are being called by Mbed client
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ResourceBroker::regsiter_callback_handlers()
 {
     TR_DEBUG("Enter");
-    // empty for now
+
+    // Resource broker will now get Mbed cloud client callbacks on the following
+    // cases:
+    // 1. Registration update
+    // 2. Error occurred
+
+    if (nullptr != cloud_client_) {
+        // GTest unit test might set cloud_client_ member to nullptr
+        cloud_client_->on_registration_updated(this,
+                                               &ResourceBroker::handle_registration_updated_cb);
+        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
+    }
+}
+
+void ResourceBroker::handle_registration_updated_cb()
+{
+    TR_DEBUG("Enter");
+    // Mark that registration is finished (using atomic flag)
+    registration_in_progress_.store(false);
+}
+
+void ResourceBroker::handle_error_cb(const int cloud_client_code)
+{
+    TR_DEBUG("Enter");
+    const MblError mbl_code =
+        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
+    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
+
+    // Mark that registration is finished (using atomic flag)
+    registration_in_progress_.store(false);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Callback functions that are being called by ApplicationEndpoint Class
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle,
+                                                            const std::string& access_token)
+{
+    TR_DEBUG("Application (access_token: %s) registered successfully.", access_token.c_str());
+
+    // Send the response to adapter:
+    CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
+    MblError status = ipc_adapter_->update_registration_status(ipc_conn_handle, reg_status);
+    if (Error::None != status) {
+        TR_ERR("update_registration_status failed with error: %s", MblError_to_str(status));
+    }
+
+    // Return registration updated callback to CCRB
+    regsiter_callback_handlers();
+
+    // Mark that registration is finished (using atomic flag)
+    registration_in_progress_.store(false);
+}
+
+void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
+                                         const std::string& access_token,
+                                         const MblError error)
+{
+    TR_DEBUG("Application (access_token: %s) encountered an error: %s",
+             access_token.c_str(),
+             MblError_to_str(error));
+
+    auto itr = app_endpoints_map_.find(access_token);
+    if (app_endpoints_map_.end() == itr) {
+        // Could not found application endpoint
+        TR_ERR("Application (access_token: %s) does not exist.", access_token.c_str());
+        // Mark that registration is finished (using atomic flag), even if it was failed
+        registration_in_progress_.store(false);
+        return;
+    }
+
+    ApplicationEndpoint_ptr app_endpoint = itr->second;
+
+    // Send the response to adapter:
+    if (app_endpoint->is_registered()) {
+        // TODO: add call to update_deregistration_status when deregister is
+        // implemented
+        TR_ERR("Application (access_token: %s) is already registered.", access_token.c_str());
+    }
+    else
+    {
+        // App is not registered yet, which means the error is for register request
+        MblError status = ipc_adapter_->update_registration_status(ipc_conn_handle,
+                                                                   CloudConnectStatus::ERR_FAILED);
+        if (Error::None != status) {
+            TR_ERR("Registration for Application (access_token: %s), failed with error: %s",
+                   access_token.c_str(),
+                   MblError_to_str(status));
+        }
+
+        TR_DEBUG("Erase Application (access_token: %s)", access_token.c_str());
+        app_endpoints_map_.erase(itr); // Erase endpoint as registation failed
+
+        // Mark that registration is finished (using atomic flag) (even if it was failed)
+        registration_in_progress_.store(false);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
+                                            const std::string& app_resource_definition_json,
+                                            CloudConnectStatus& out_status,
+                                            std::string& out_access_token)
+{
+    TR_DEBUG("Enter");
+
+    if (registration_in_progress_.load()) {
+        // We only allow one registration request at a time.
+        TR_ERR("Registration is already in progess.");
+        out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
+        return Error::None;
+    }
+
+    // Above check makes sure there is no registration in progress.
+    // Lets check if an app is already not registered...
+    // TODO: remove this check when supporting multiple applications
+    if (!app_endpoints_map_.empty()) {
+        // Currently support only ONE application
+        TR_ERR("Only one registered application is allowed.");
+        out_status = CloudConnectStatus::ERR_ALREADY_REGISTERED;
+        return Error::None;
+    }
+
+    // Create and init Application Endpoint:
+    // parse app_resource_definition_json and create unique access token
+    ApplicationEndpoint_ptr app_endpoint = std::make_shared<ApplicationEndpoint>(ipc_conn_handle);
+    const MblError status = app_endpoint->init(app_resource_definition_json);
+    if (Error::None != status) {
+        TR_ERR("app_endpoint->init failed with error: %s", MblError_to_str(status));
+        out_status = (Error::CCRBInvalidJson == status)
+                         ? CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
+                         : CloudConnectStatus::ERR_FAILED;
+        return Error::None;
+    }
+
+    // Register application endpoint function
+    app_endpoint->register_callback_functions(
+        std::bind(&ResourceBroker::handle_app_register_update_finished_cb,
+                  this,
+                  std::placeholders::_1,
+                  std::placeholders::_2),
+        std::bind(&ResourceBroker::handle_app_error_cb,
+                  this,
+                  std::placeholders::_1,
+                  std::placeholders::_2,
+                  std::placeholders::_3));
+
+    out_access_token = app_endpoint->get_access_token();
+
+    // Set atomic flag for registration in progress
+    registration_in_progress_.store(true);
+
+    // Register the next cloud client callbacks to app_endpoint
+    if (nullptr != cloud_client_) {
+        // GTest unit test might set cloud_client_ member to nullptr
+        cloud_client_->on_registration_updated(
+            &(*app_endpoint), &ApplicationEndpoint::handle_registration_updated_cb);
+        cloud_client_->on_error(&(*app_endpoint), &ApplicationEndpoint::handle_error_cb);
+    }
+
+    app_endpoints_map_[out_access_token] = app_endpoint; // Add application endpoint to map
+
+    // Call Mbed cloud client to start registration update
+    add_objects_func_(app_endpoint->get_m2m_object_list());
+    register_update_func_();
+
+    out_status = CloudConnectStatus::STATUS_SUCCESS;
+
     return Error::None;
 }
 
-MblError ResourceBroker::deregister_resources(const uintptr_t /*unused*/,
-                                              const std::string& /*unused*/,
-                                              CloudConnectStatus& /*unused*/)
+MblError ResourceBroker::deregister_resources(const uintptr_t /*ipc_conn_handle*/,
+                                              const std::string& /*access_token*/,
+                                              CloudConnectStatus& /*out_status*/)
 {
+
     TR_DEBUG("Enter");
     // empty for now
-    return Error::None;
+    return Error::CCRBNotSupported;
 }
 
 MblError ResourceBroker::add_resource_instances(const uintptr_t /*unused*/,

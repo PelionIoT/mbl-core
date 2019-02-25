@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-#include <stdio.h>
 #include "pal.h"
 #include "pal_plat_rtos.h"
+#include <stdio.h>
 
 #define TRACE_GROUP "mbl"
-
 
 void pal_plat_osApplicationReboot(void)
 {
@@ -28,14 +27,13 @@ void pal_plat_osApplicationReboot(void)
     // of the `do_not_reboot` file at `/tmp`).
     // It is a temporary solution until component update is supported and the
     // type of update package is provided in the manifest.
-    FILE *fp = fopen ("/tmp/do_not_reboot", "r");
-    if (fp != NULL)
-    {
-        fclose (fp);
+    FILE* fp = fopen("/tmp/do_not_reboot", "r");
+    if (fp != NULL) {
+        fclose(fp);
         PAL_LOG_INFO("Not rebooting the system (application update)\r\n");
         return;
     }
-    
+
     PAL_LOG_INFO("Rebooting the system\r\n");
     pal_plat_osReboot();
 }

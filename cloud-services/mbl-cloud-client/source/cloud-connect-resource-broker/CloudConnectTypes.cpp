@@ -77,14 +77,14 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
 {
     switch (status)
     {
-    case STATUS_SUCCESS:
-        return "STATUS SUCCESS";
+    case STATUS_SUCCESS: return "STATUS SUCCESS";
+    case ERR_FAILED: return "ERROR FAILED";
+    case ERR_INVALID_APPLICATION_RESOURCES_DEFINITION:
+        return "ERR_INVALID_APPLICATION_RESOURCES_DEFINITION";
+    case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "ERR_REGISTRATION_ALREADY_IN_PROGRESS";
+    case ERR_ALREADY_REGISTERED: return "ERR_ALREADY_REGISTERED";
 
-    case ERR_FAILED:
-        return "ERROR FAILED";
-
-    default:
-        return "Unknown Cloud Connect Status or Error";
+    default: return "Unknown Cloud Connect Status or Error";
     }
 }
 
@@ -94,9 +94,11 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
     {
         RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
         RETURN_STRINGIFIED_VALUE(ERR_FAILED);
+        RETURN_STRINGIFIED_VALUE(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
+        RETURN_STRINGIFIED_VALUE(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
+        RETURN_STRINGIFIED_VALUE(ERR_ALREADY_REGISTERED);
 
-    default:
-        return "Unknown CloudConnectStatus value";
+    default: return "Unknown CloudConnectStatus value";
     }
 }
 
@@ -112,8 +114,7 @@ const char* ResourceDataType_stringify(const ResourceDataType type)
         RETURN_STRINGIFIED_VALUE(TIME);
         RETURN_STRINGIFIED_VALUE(OBJLINK);
 
-    default:
-        return "Unknown Resource Data Type";
+    default: return "Unknown Resource Data Type";
     }
 }
 

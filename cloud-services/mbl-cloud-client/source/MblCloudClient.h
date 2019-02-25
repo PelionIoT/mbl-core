@@ -28,9 +28,13 @@
 
 extern "C" void mbl_shutdown_handler(int signal);
 
+class ResourceBrokerTester;
+
 namespace mbl {
 
 class MblCloudClient {
+
+friend ::ResourceBrokerTester;
 
 public:
     static MblError run();
