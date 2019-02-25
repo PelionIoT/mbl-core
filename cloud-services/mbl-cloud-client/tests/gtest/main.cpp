@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 #include "log.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 #include "MblError.h"
 
 #define TRACE_GROUP "ccrb-gtest"
@@ -18,7 +18,9 @@ int main(int argc, char **argv) {
     // Init Cloud Client log
     mbl::MblError retval = mbl::log_init();
     if(mbl::Error::None != retval){
+        //if mbl::log_init failed - stop test. It doesn't make sense to test without logs    
         printf("Error init Cloud Client log: %s", mbl::MblError_to_str(retval));
+        return -1;
     }
 
     tr_debug("%s", __PRETTY_FUNCTION__);
@@ -29,4 +31,3 @@ int main(int argc, char **argv) {
 
     return RUN_ALL_TESTS();
 }
-

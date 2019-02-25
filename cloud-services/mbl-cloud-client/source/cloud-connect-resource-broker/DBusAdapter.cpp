@@ -5,104 +5,106 @@
  */
 
 #include "DBusAdapter.h"
+#include "CloudConnectTrace.h"
+#include "DBusAdapter_Impl.h"
 #include "ResourceBroker.h"
-#include "mbed-trace/mbed_trace.h"
+
 #include <cassert>
-#include <pthread.h>
-#include <systemd/sd-bus.h>
-#include <unistd.h>
 
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl
 {
 
-DBusAdapter::DBusAdapter(ResourceBroker& ccrb)
-    : exit_loop_(false), // temporary flag exit_loop_ will be removed soon
-      ccrb_(ccrb)
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-}
+/*
+For holding std::unique_ptr<DBusAdapterImpl*>, need to allow unique_ptr to recognize DBusAdapterImpl
+as a complete type. std::unique_ptr checks  in its destructor if the definition of the type is
+visible before calling delete.
+DBusAdapterImpl is forward decleared in header (that a call to delete is well-formed);
+std::unique_ptr will refuse to compile and to call delete if the type is only forward declared.
+Use the default implentation for the destructor after the definition of DBusAdapterImpl :
+*/
+DBusAdapter::~DBusAdapter() = default;
 
-DBusAdapter::~DBusAdapter()
+DBusAdapter::DBusAdapter(ResourceBroker& ccrb)
+    : // initialize impl_ unique_ptr
+    impl_(new DBusAdapterImpl(ccrb))
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 MblError DBusAdapter::init()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    // FIXME: temporary - remove code bellow
-    sd_bus* bus = NULL;
-    int bus_open_status = sd_bus_open_system(&bus);
-    tr_info("sd_bus_open_system returned %d", bus_open_status);
-    // FIXME: temporary - remove code above
-
-    return Error::None;
-}
-
-MblError DBusAdapter::de_init()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    return Error::None;
-}
-
-MblError DBusAdapter::run()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // TODO: now we use simulated event-loop that will be removed after we introduce
-    // real sd-bus event-loop.
-    while (!exit_loop_) {
-        sleep(1); // 1 seconds
+    TR_DEBUG("Enter");
+    MblError status = impl_->init();
+    if (status != MblError::None) {
+        TR_DEBUG("impl_->init failed! calling impl_->deinit()");
+        impl_->deinit();
     }
-
-    tr_info("%s: event loop is finished", __PRETTY_FUNCTION__);
-
-    return Error::None;
+    return status;
 }
 
-MblError DBusAdapter::stop()
+MblError DBusAdapter::deinit()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-
-    // temporary not thread safe solution that should be removed soon.
-    // signal to event-loop that it should finish.
-    exit_loop_ = true;
-
-    return Error::None;
+    TR_DEBUG("Enter");
+    return impl_->deinit();
 }
 
-MblError DBusAdapter::update_registration_status(const uintptr_t /*unused*/,
-                                                 const CloudConnectStatus /*unused*/)
+MblError DBusAdapter::run(MblError& stop_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
-    return Error::None;
+    TR_DEBUG("Enter");
+    MblError status = impl_->run(stop_status);
+    if (status != MblError::None) {
+        // best effort - stop
+        impl_->stop(status);
+    }
+    return status;
 }
 
-MblError DBusAdapter::update_deregistration_status(const uintptr_t /*unused*/,
-                                                   const CloudConnectStatus /*unused*/)
+MblError DBusAdapter::stop(MblError stop_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
-    return Error::None;
+    TR_DEBUG("Enter");
+    return impl_->stop(stop_status);
 }
 
-MblError DBusAdapter::update_add_resource_instance_status(const uintptr_t /*unused*/,
-                                                          const CloudConnectStatus /*unused*/)
+MblError DBusAdapter::update_registration_status(const uintptr_t ipc_request_handle,
+                                                 const CloudConnectStatus reg_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
-    return Error::None;
+    TR_DEBUG("Enter");
+    return impl_->handle_ccrb_RegisterResources_status_update(ipc_request_handle, reg_status);
 }
 
-MblError DBusAdapter::update_remove_resource_instance_status(const uintptr_t /*unused*/,
-                                                             const CloudConnectStatus /*unused*/)
+MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_handle,
+                                                   const CloudConnectStatus dereg_status)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    // empty for now
-    return Error::None;
+    TR_DEBUG("Enter");
+    return impl_->handle_ccrb_DeregisterResources_status_update(ipc_request_handle, dereg_status);
 }
 
-} // namespace mbl
+MblError DBusAdapter::update_add_resource_instance_status(const uintptr_t ipc_request_handle,
+                                                          const CloudConnectStatus add_status)
+{
+    TR_DEBUG("Enter");
+    return impl_->handle_ccrb_AddResourceInstances_status_update(ipc_request_handle, add_status);
+}
+
+MblError DBusAdapter::update_remove_resource_instance_status(const uintptr_t ipc_request_handle,
+                                                             const CloudConnectStatus remove_status)
+{
+    TR_DEBUG("Enter");
+    return impl_->handle_ccrb_RemoveResourceInstances_status_update(ipc_request_handle,
+                                                                    remove_status);
+}
+
+MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
+                                           SelfEvent::EventDataType data_type,
+                                           SelfEventCallback callback, uint64_t& out_event_id,
+                                           const std::string description)
+{
+    assert(callback);
+    TR_DEBUG("Enter");
+    return impl_->send_event_immediate(data, data_length, data_type, callback, out_event_id,
+                                       description);
+}
+
+} // namespace mbl {

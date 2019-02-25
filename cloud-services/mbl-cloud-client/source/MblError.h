@@ -75,6 +75,24 @@ enum Type {
     CCRBCreateM2MObjFailed              = 0x0404,
     CCRBValueTypeError                  = 0x0405,
     CCRBGenerateUniqueIdFailed          = 0x0406,
+		
+    // DBA (D-Bus Adapter) errors
+    DBA_IllegalState                    = 0x0500,
+    DBA_InvalidValue                    = 0x0501,
+    DBA_ForbiddenCall                   = 0x0502,
+    DBA_NotSupported                    = 0x0503,
+
+    DBA_SdBusCallFailure                = 0x0520,        
+    DBA_SdBusRequestNameFailed          = 0x0521,
+    DBA_SdBusRequestAddMatchFailed      = 0x0522,
+
+    DBA_SdEventCallFailure              = 0x0540,
+    DBA_SdEventExitRequestFailure       = 0x0541,
+    
+    DBA_MailBoxInvalidMsg               = 0x0550,
+    DBA_MailBoxSystemCallFailure        = 0x0551,
+    DBA_MailBoxPollTimeout              = 0x0552,
+    DBA_MailBoxEmptyOnDeInit            = 0x0553
 };
 } // namespace Error
 

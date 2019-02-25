@@ -7,8 +7,6 @@
 #ifndef CloudConnectExternalTypes_h_
 #define CloudConnectExternalTypes_h_
 
-extern "C" {
-
 /**
  * @brief Status of Cloud Connect operations.
  */
@@ -43,7 +41,5 @@ enum ResourceDataType {
 };
     
 typedef enum ResourceDataType ResourceDataType;
-
-}
 
 #endif // CloudConnectExternalTypes_h_
