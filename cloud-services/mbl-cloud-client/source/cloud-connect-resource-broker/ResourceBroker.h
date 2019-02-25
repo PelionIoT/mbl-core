@@ -39,7 +39,7 @@ public:
  * @return MblError returns value Error::None if function succeeded, 
  *         or Error::CCRBStartFailed otherwise. 
  */
-    MblError start(MbedCloudClient* cloud_client);
+    virtual MblError start();
 
 /**
  * @brief Stops CCRB.

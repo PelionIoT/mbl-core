@@ -77,15 +77,11 @@ const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
+        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
+        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
         RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
-        RETURN_STRINGIFIED_VALUE(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
-        RETURN_STRINGIFIED_VALUE(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
-        RETURN_STRINGIFIED_VALUE(ERR_ALREADY_REGISTERED);
 
-        default:
-            return "Unknown CloudConnectStatus value";
+    default: return "Unknown CloudConnectStatus value";
     }
 }
 
@@ -93,18 +89,11 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        case STATUS_SUCCESS:
-            return "Status success";
-        case ERR_FAILED:
-            return "General failure";
-        case ERR_INTERNAL_ERROR:
-            return "Internal error in Cloud Connect infrastructure";
-        case ERR_INVALID_APPLICATION_RESOURCES_DEFINITION:
-            return "Invalid application resource definition";
-        case ERR_REGISTRATION_ALREADY_IN_PROGRESS: 
-            return "Registration already in progress";
-        case ERR_ALREADY_REGISTERED: 
-            return "Already registered";
+    case STATUS_SUCCESS: return "Status success";
+
+    case ERR_FAILED: return "General failure";
+
+    case ERR_INTERNAL_ERROR: return "Internal error in Cloud Connect infrastructure";
 
     default: return "Unknown Cloud Connect Status or Error";
     }
@@ -114,13 +103,10 @@ const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status
 {
     switch (status)
     {
-        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED); 
+        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED);
         RETURN_DBUS_FORMAT_ERROR(ERR_INTERNAL_ERROR);
-        RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
-        RETURN_DBUS_FORMAT_ERROR(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
-        RETURN_DBUS_FORMAT_ERROR(ERR_ALREADY_REGISTERED);
 
-        return "Unknown CloudConnectStatus value";
+    default: return "mbed.Cloud.Connect.UnknownError";
     }
 }
 
