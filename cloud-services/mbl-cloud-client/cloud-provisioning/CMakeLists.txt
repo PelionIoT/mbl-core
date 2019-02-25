@@ -11,6 +11,7 @@ add_compile_options(-Wall)
 add_compile_options(-Wwrite-strings)
 add_compile_options(-Wconversion)
 add_compile_options(-Wlogical-op)
+add_compile_options(-Wcast-align)
 
 FILE(GLOB PELION_PROVISIONING_UTIL_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"

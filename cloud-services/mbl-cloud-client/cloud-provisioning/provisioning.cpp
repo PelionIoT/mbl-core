@@ -53,19 +53,23 @@ namespace mbl {
             if (std::ifstream is{path, std::ios::binary | std::ios::ate}) 
             {
                 auto pos = is.tellg();
+
                 if (!is.good())
                 {
                     std::cerr << "File with path " << path << "could not be opened" << "\n";
                     return std::make_pair(std::vector<uint8_t>{}, ProvisionedStatusCode::failure);
                 }
+
                 const auto size = static_cast<size_t>(pos);
                 std::vector<uint8_t> output(size);
                 is.seekg(0);
+
                 if (!is.good())
                 {
                     std::cerr << "File with path " << path << "could not be opened" << "\n";
                     return std::make_pair(std::vector<uint8_t>{}, ProvisionedStatusCode::failure);
                 }
+
                 if (is.read(reinterpret_cast<char*>(&output[0]), size)) 
                 {
                     return std::make_pair(output, ProvisionedStatusCode::success);
@@ -154,8 +158,11 @@ namespace mbl {
             }
 
             // Hack to make the useBootstrap parameter work
-            std::vector<uint8_t> bootstrap_mode_flag(sizeof(uint32_t));
-            *reinterpret_cast<uint8_t*>(&bootstrap_mode_flag[0]) = 1;
+            // Convince the compiler the alignment is ok when casting to uint8_t
+            uint32_t bs_flag_32 = 1;
+            uint8_t* bs_flag_8_p = reinterpret_cast<uint8_t*>(&bs_flag_32);
+            // Vector represents the 4 bytes of a uint32_t
+            std::vector<uint8_t> bootstrap_mode_flag { bs_flag_8_p[0], bs_flag_8_p[1], bs_flag_8_p[2], bs_flag_8_p[3] };
 
             std::vector<KCMItem> kcm_items{
                 //Device general info
@@ -241,23 +248,31 @@ namespace mbl {
         {
             for(const auto &item: certificate)
             {  
-                kcm_item_delete(reinterpret_cast<const uint8_t*>(item.name.c_str()),
-                                item.name.size(),
-                                item.type);
+                const auto kcm_delete_status = kcm_item_delete(reinterpret_cast<const uint8_t*>(item.name.c_str()),
+                                                               item.name.size(),
+                                                               item.type);
 
-                const auto kcm_status = kcm_item_store(reinterpret_cast<const uint8_t*>(item.name.c_str()),
-                                                       item.name.size(),
-                                                       item.type,
-                                                       true, // is_factory flag
-                                                       item.data_blob.data(),
-                                                       item.data_blob.size(),
-                                                       NULL);
+                if (kcm_delete_status != KCM_STATUS_SUCCESS)
+                {
+                    print_kcm_error_status(std::cerr,
+                                           "Failed to delete KCM Item! Item name: " + item.name,
+                                           kcm_delete_status);
+                    return ProvisionedStatusCode::failure;
+                }
 
-                if (kcm_status != KCM_STATUS_SUCCESS)
+                const auto kcm_store_status = kcm_item_store(reinterpret_cast<const uint8_t*>(item.name.c_str()),
+                                                             item.name.size(),
+                                                             item.type,
+                                                             true, // is_factory flag
+                                                             item.data_blob.data(),
+                                                             item.data_blob.size(),
+                                                             NULL);
+
+                if (kcm_store_status != KCM_STATUS_SUCCESS)
                 {
                     print_kcm_error_status(std::cerr,
                                            "Failed to store KCM Item! Item name: " + item.name,
-                                           kcm_status);
+                                           kcm_store_status);
                     return ProvisionedStatusCode::failure;
                 }
             }
