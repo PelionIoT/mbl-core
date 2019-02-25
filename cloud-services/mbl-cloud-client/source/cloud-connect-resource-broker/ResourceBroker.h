@@ -26,7 +26,7 @@ class ResourceBroker {
 friend DBusAdapterImpl;
 public:
     ResourceBroker();
-    ~ResourceBroker();
+    virtual ~ResourceBroker();
 
 /////////////////////////////////////////////////////////////////////
 // API to be used by MblCloudClient class
@@ -39,7 +39,7 @@ public:
  * @return MblError returns value Error::None if function succeeded, 
  *         or Error::CCRBStartFailed otherwise. 
  */
-    MblError start();
+    virtual MblError start();
 
 /**
  * @brief Stops CCRB.
@@ -50,9 +50,9 @@ public:
  * @return MblError returns value Error::None if function succeeded, 
  *         or Error::CCRBStopFailed otherwise. 
  */
-    MblError stop();
+    virtual MblError stop();
 
-private:
+protected:
 
 /**
  * @brief Initializes CCRB instance.
@@ -60,7 +60,7 @@ private:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError init();
+    virtual MblError init();
 
 /**
  * @brief Deinitializes CCRB instance.
@@ -68,7 +68,7 @@ private:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError deinit();
+    virtual MblError deinit();
 
 /**
  * @brief Runs CCRB event-loop.
@@ -76,7 +76,7 @@ private:
  * @return MblError returns value Error::None if function succeeded, 
  *         or error code otherwise.
  */
-    MblError run();
+    virtual MblError run();
 
 
 /////////////////////////////////////////////////////////////////////
@@ -110,7 +110,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
  */
-    MblError register_resources(
+    virtual MblError register_resources(
         const uintptr_t ipc_request_handle, 
         const std::string &appl_resource_definition_json,
         CloudConnectStatus &out_status,
@@ -137,7 +137,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
  */
-    MblError deregister_resources(
+    virtual MblError deregister_resources(
         const uintptr_t ipc_request_handle, 
         const std::string &access_token,
         CloudConnectStatus &out_status);
@@ -169,7 +169,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
  */
-    MblError add_resource_instances(
+    virtual MblError add_resource_instances(
         const uintptr_t ipc_request_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
@@ -204,7 +204,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise. 
  */
-    MblError remove_resource_instances(
+    virtual MblError remove_resource_instances(
         const uintptr_t ipc_request_handle, 
         const std::string &access_token, 
         const std::string &resource_path, 
@@ -241,7 +241,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise.
  */
-    MblError set_resources_values(
+    virtual MblError set_resources_values(
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations,
         CloudConnectStatus &out_status);
@@ -278,7 +278,7 @@ private:
  * @return MblError returns Error::None if resource broker internal operations 
  *         were successfully finished, or error code otherwise.
  */
-    MblError get_resources_values(
+    virtual MblError get_resources_values(
         const std::string &access_token, 
         std::vector<ResourceGetOperation> &inout_get_operations,
         CloudConnectStatus &out_status);

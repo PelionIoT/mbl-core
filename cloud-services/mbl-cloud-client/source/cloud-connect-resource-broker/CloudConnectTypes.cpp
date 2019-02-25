@@ -73,30 +73,46 @@ int64_t ResourceData::get_value_integer() const
     return integer_value_;
 }
 
-const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
+const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-    case STATUS_SUCCESS:
-        return "STATUS SUCCESS";
+        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
+        RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
+        RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
 
-    case ERR_FAILED:
-        return "ERROR FAILED";
-
-    default:
-        return "Unknown Cloud Connect Status or Error";
+        default:
+            return "Unknown CloudConnectStatus value";
     }
 }
 
-const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
+const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
+        case STATUS_SUCCESS: 
+            return "Status success";
 
-    default:
-        return "Unknown CloudConnectStatus value";
+        case ERR_FAILED: 
+            return "General failure";
+
+        case ERR_INTERNAL_ERROR:
+            return "Internal error in Cloud Connect infrastructure";
+
+        default:
+            return "Unknown Cloud Connect Status or Error";
+    }
+}
+
+const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED); 
+        RETURN_DBUS_FORMAT_ERROR(ERR_INTERNAL_ERROR);
+ 
+        default:
+            return "mbed.Cloud.Connect.UnknownError";
     }
 }
 

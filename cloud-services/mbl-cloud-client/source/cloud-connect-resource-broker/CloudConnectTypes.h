@@ -156,7 +156,15 @@ struct ResourceGetOperation
  * @param CloudConnectStatus input status. 
  * @return const char* stringified readable explanation of the status. 
  */
-const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status);
+const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status);
+
+/**
+ * @brief Returns D-Bus format string representation of the Cloud Connect Status.
+ * 
+ * @param CloudConnectStatus input status. 
+ * @return const char* D-Bus format string representation of the provided status.
+ */
+const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status);
 
 /**
  * @brief Returns stringified value of Cloud Connect Status.
@@ -164,7 +172,7 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
  * @param CloudConnectStatus that should be stringified. 
  * @return const char* stringified value of CloudConnectStatus. 
  */
-const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
+const char* CloudConnectStatus_to_str(const CloudConnectStatus status);
 
 /**
  * @brief Returns stringified value of Resource Data Type.
@@ -172,7 +180,7 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
  * @param ResourceDataType that should be stringified. 
  * @return const char* stringified value of ResourceDataType. 
  */
-const char* ResourceDataType_stringify(const ResourceDataType type);
+const char* ResourceDataType_to_str(const ResourceDataType type);
 
 /**
  * @brief This helper new type class defines an "smart" MblError status - it initializes to 

@@ -63,6 +63,16 @@ MblError DBusAdapterImpl::add_match_rules()
     return MblError::None;
 }
 
+// Cloud Connect errors to D-Bus format error strings translation map.
+// Information from this map is used when D-Bus ifrastructure translates 
+// sd_bus_error.name field string to the negative integer value.   
+const sd_bus_error_map cloud_connect_dbus_errors[] = {
+        SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_FAILED,           ERR_FAILED),
+        SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_INTERNAL_ERROR,   ERR_INTERNAL_ERROR),
+
+        SD_BUS_ERROR_MAP_END
+};
+	
 MblError DBusAdapterImpl::bus_init()
 {
     TR_DEBUG("Enter");
@@ -131,6 +141,14 @@ MblError DBusAdapterImpl::bus_init()
     }
     service_name_ = DBUS_CLOUD_SERVICE_NAME;
     TR_INFO("Aquired D-Bus known name service_name_=%s", DBUS_CLOUD_SERVICE_NAME);
+
+    // add Cloud Connect D-Bus errors mapping
+    r = sd_bus_error_add_map(cloud_connect_dbus_errors);
+    if (r < 0){
+        TR_ERR("sd_bus_error_add_map failed with error r=%d (%s) - returning %s", r, strerror(r),
+               MblError_to_str(MblError::DBA_SdBusCallFailure));
+        return MblError::DBA_SdBusCallFailure;
+    }
 
     // TODO - IOTMBL-1606 - Add match rules -this part is commented since messages are not yet
     // handled on callback
@@ -221,6 +239,34 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
         TR_INFO("sd_event_exit called with stop_status=%d", (int) stop_status);
     }
     return r;
+}
+
+int print_log_set_sd_bus_error_f(int err_num, sd_bus_error *ret_error, const char* func, int line, const char *format, ...){
+
+    if(sd_bus_error_is_set(ret_error)){
+        // avoid overwrite of the error that was already set
+        return sd_bus_error_get_errno(ret_error);
+    }
+
+    va_list ap;
+    va_start(ap, format);
+    char buffer[MAX_LOG_LINE];
+    vsnprintf(buffer, MAX_LOG_LINE, format, ap);
+    printf("func %s, line %d %s", func, line, buffer);
+    int r = sd_bus_error_set_errnofv(ret_error, err_num, format, ap);
+    va_end(ap);
+    return r;
+}
+
+int print_log_set_sd_bus_error(int err_num, sd_bus_error *ret_error, const char* func, int line, const char *method_name){
+
+    if(sd_bus_error_is_set(ret_error)){
+        // avoid overwrite of the error that was already set
+        return sd_bus_error_get_errno(ret_error);
+    }
+    
+    printf("func %s, line %d %s failed errno = %s (%d)", func, line, method_name, strerror(err_num), err_num);
+    return sd_bus_error_set_errno(ret_error, err_num);
 }
 
 int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s, int fd,
@@ -314,39 +360,41 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m, void* user
     assert(m);
     assert(ret_error);
 
-    // TODO - For all failues here, might need to send an error reply ONLY if the message is of
+    //TODO - For all failues here, might need to send an error reply ONLY if the message is of
     // kind method_call (can check that) check what is done in other implementations
     // see https://www.freedesktop.org/software/systemd/man/sd_bus_message_get_type.html#
 
     // TODO-  IOTMBL-1606 - add handling of matching rules. they can come from any interface
     // (for now only standard)
     if (sd_bus_message_is_empty(m) >= 0) {
-        TR_ERR("Received an empty message!");
-        return (-EINVAL);
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, "Received an empty message!"); 
     }
 
     // Expect message with our known name, directly sent to us (unicast)
     if (0 != strncmp(sd_bus_message_get_destination(m), DBUS_CLOUD_SERVICE_NAME,
                      strlen(DBUS_CLOUD_SERVICE_NAME)))
     {
-        TR_ERR("Received message to wrong destination (%s)!", sd_bus_message_get_destination(m));
-        return (-EINVAL);
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(EFAULT, ret_error, 
+            "Received message to wrong destination (%s)!", 
+            sd_bus_message_get_destination(m));
     }
 
     // Expect message to a single object patch DBUS_CLOUD_CONNECT_OBJECT_PATH
     if (0 != strncmp(sd_bus_message_get_path(m), DBUS_CLOUD_CONNECT_OBJECT_PATH,
                      strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
     {
-        TR_ERR("Unexisting object path (%s)!", sd_bus_message_get_path(m));
-        return (-EINVAL);
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(EFAULT, ret_error, 
+            "Unexisting object path (%s)!", 
+            sd_bus_message_get_path(m));      
     }
 
     // Expect message to a single interface DBUS_CLOUD_CONNECT_INTERFACE_NAME
     if (0 != strncmp(sd_bus_message_get_interface(m), DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                      strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
     {
-        TR_ERR("Unexisting interface (%s)!", sd_bus_message_get_interface(m));
-        return (-EINVAL);
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(EFAULT, ret_error, 
+            "Unexisting interface (%s)!", 
+            sd_bus_message_get_interface(m));     
     }
 
     /*
@@ -355,129 +403,283 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m, void* user
     Messages can be of type Signal / Error / Method Call.
     */
     uint8_t type = 0;
-    int r = sd_bus_message_get_type(m, &type);
+    r = sd_bus_message_get_type(m, &type);
     if (r < 0) {
-        TR_ERR("sd_bus_message_get_type failed with error r=%d (%s)", r, strerror(r));
-        return r;
-    }
-    if (!is_valid_message_type(type)) {
-        TR_ERR("Invalid message type %" PRIu8 " returned by sd_bus_message_get_type!", type);
-        return (-EINVAL);
+       return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
+    } 
+    if (false == is_valid_message_type(type)) {
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, 
+            "Received message from a wrong type (%s)!", message_type_to_str(type));
     }
 
-    TR_INFO("Received message of type %s from sender %s", message_type_to_str(type),
-            sd_bus_message_get_sender(m));
+    TR_INFO("Received message of type %s from sender %s",
+        message_type_to_str(type), sd_bus_message_get_sender(m));
 
-    DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
-    if (sd_bus_message_is_method_call(m, nullptr, "RegisterResources") >= 0) {
+    r = -EBADRQC;
+    const char* member_name = nullptr;
+    DBusAdapterImpl *impl = static_cast<DBusAdapterImpl*>(userdata);
+    if (sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)){
+        member_name = DBUS_CC_REGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_RegisterResources(m, ret_error);
-        UNUSED(r); // FIXME
-        // TODO - handle return value and continue implementation
-        assert(0);
+        if(r < 0){
+            TR_ERR("process_message_RegisterResources failed!");
+        }
     }
-    else if (sd_bus_message_is_method_call(m, nullptr, "DeregisterResources") >= 0)
-    {
+    else if (sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME)) {
+        member_name = DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_DeregisterResources(m, ret_error);
-        UNUSED(r);
-        // TODO - handle return value and continue implementation
-        assert(0);
+        if(r < 0){
+            TR_ERR("process_message_DeregisterResources failed!");
+        }
     }
-    else
-    {
-        // TODO - probably need to reply with error reply to sender?
+    else {
+        //TODO - probably need to reply with error reply to sender?
         TR_ERR("Received a message with unknown member=%s!", sd_bus_message_get_member(m));
         assert(0);
-        return (-EINVAL);
     }
+
+    TR_DEBUG("Message of type %s member name %s from sender %s status:",
+            message_type_to_str(type), member_name, sd_bus_message_get_sender(m));
+
+    // handle and print to logs handling status
+    if(r == 0)
+    {
+        TR_DEBUG("Processed with success");
+    } 
+    else {
+        if (r > 0){
+            // positive value of r is unexpected
+            TR_DEBUG("Processed with unexpected status r=%d (greater that 0)!" \
+                 " Returning as negative error (%d)", r, -r);
+            r = (-r);  // return negative status
+        } 
+        else {
+            // r is negative, that means failure
+            TR_DEBUG("Processed with failure status r=%d!" r);
+        }
+    }
+
+    return r;
+}
+
+int DBusAdapterImpl::handle_resource_broker_async_method_success(
+    sd_bus_message *m_to_reply_on,
+    sd_bus_error *ret_error,
+    const char *types_format,
+    CloudConnectStatus status, 
+    const char *access_token)
+{
+    TR_DEBUG("Enter");
+
+    assert(m_to_reply_on);
+    assert(types_format);
+    
+    // An asynchronous process towards the cloud was finished successfully, 
+    // so we need to store handle.
+    if (pending_messages_.insert(m_to_reply_on).second == false){
+        TR_ERR("pending_messages_.insert failed!");
+        return sd_bus_error_set_const(ret_error, 
+            CloudConnectStatus_error_to_DBus_str(ERR_INTERNAL_ERROR), 
+            CloudConnectStatus_to_str(ERR_INTERNAL_ERROR));
+    }
+
+    int r = method_reply_on_message(m_to_reply_on, ret_error, types_format, 
+            status, access_token);
+    if(r < 0){
+        // sending reply failed. remove stored message.
+        pending_messages_.erase(m_to_reply_on);
+        TR_ERR("method_reply_on_message failed!");
+        return r;
+    }
+
+    // Increase refcount of the message in order to avoid message deallocation 
+    // until async process will be finished.
+    sd_bus_message_ref(m_to_reply_on);
 
     return 0;
 }
 
-// TODO - this function is incomplete!!
+int DBusAdapterImpl::method_reply_on_message(
+    sd_bus_message *m_to_reply_on,
+    sd_bus_error *ret_error,
+    const char *types_format, 
+    CloudConnectStatus status, 
+    const char *access_token)
+{
+    TR_DEBUG("Enter");
+
+    assert(m_to_reply_on);
+    assert(types_format);
+
+    const char* method_name = sd_bus_message_get_member(m_to_reply_on);    
+    const char* sender_name = sd_bus_message_get_sender(m_to_reply_on);
+    TR_DEBUG("Sending reply according to types_format=%s on %s method to %s", 
+        types_format, method_name, sender_name);  
+
+    sd_bus_message *reply = nullptr;
+
+    // When we leave this function scope, we need to call sd_bus_message_unrefp on reply
+    sd_objects_cleaner<sd_bus_message> reply_cleaner (reply, sd_bus_message_unref);
+ 
+    int r = sd_bus_message_new_method_return(m_to_reply_on, &reply);
+    if (r < 0){
+        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_new_method_return");
+    }
+
+    if(0 == strcmp(types_format, "us")){
+        // we expect types_format = "us" for RegisterResources.
+        // access_token argument should not be null.
+        assert(access_token);
+        r = sd_bus_message_append(reply, types_format, status, access_token);
+    } else if(0 == strcmp(types_format, "u")){
+        // we expect types_format = "u" for DeregisterResources, AddResourceInstances 
+        // and RemoveResourceInstances.
+        r = sd_bus_message_append(reply, types_format, status);
+    } else {
+        TR_ERR("Unexpected types_format (%s) in reply on %s method to %s", 
+                types_format, method_name, sender_name); 
+        assert(0);
+    }
+
+    if (r < 0){
+        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
+    }
+
+    r = sd_bus_send(connection_handle_, reply, nullptr);
+    if (r < 0){
+        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_send");
+    }
+
+    TR_DEBUG("Reply on %s method successfully sent to %s", method_name, sender_name);  
+
+    return 0;
+}
+
+int DBusAdapterImpl::handle_resource_broker_method_failure(MblError mbl_status, 
+    CloudConnectStatus cc_status, 
+    const char* method_name,
+    sd_bus_error *ret_error)
+{
+    TR_DEBUG("Enter");
+
+    assert(MblError::None!= mbl_status || is_CloudConnectStatus_error(cc_status));
+
+    CloudConnectStatus status_to_send = ERR_INTERNAL_ERROR;
+    if (MblError::None != mbl_status){
+        // we have internal error in resource broker 
+        TR_ERR("%s failed with MblError %s", method_name, MblError_to_str(mbl_status));
+    }else {
+        // we have cloud connect related error in resource broker 
+        TR_ERR("%s failed with cloud connect error %s",
+            method_name, CloudConnectStatus_to_str(cc_status));
+        status_to_send = cc_status;
+    }
+
+    // set custom error to sd_bus_error structure. 
+    // sd_bus_error_set_const translates DBus format error string to negative integer
+    // and returns it's value(in this case -status_to_send)
+    return sd_bus_error_set_const(ret_error, 
+        CloudConnectStatus_error_to_DBus_str(status_to_send), // sd_bus_error.name
+        CloudConnectStatus_to_readable_str(status_to_send));  // sd_bus_error.message
+}
+
+int DBusAdapterImpl::verify_signature_and_get_string_argument(
+    sd_bus_message *m, 
+    sd_bus_error *ret_error, 
+    std::string &out_string)
+{
+    TR_DEBUG("Enter");
+    assert(m);
+
+    if (sd_bus_message_get_expect_reply(m) == 0) {
+        // reply to the message m is not expected.
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, 
+            "Unexpected message type: no reply expected!");  
+    }
+
+    if (sd_bus_message_has_signature(m, "s") == false){
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, 
+            "Unexpected message signature!");  
+    }
+
+    const char *out_read = nullptr;       
+    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &out_read);
+    if (r < 0){
+        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_read_basic");
+    }
+
+    if ((nullptr == out_read) || (strlen(out_read) == 0)){
+        return PRINT_LOG_SET_SD_BUS_ERROR_F(EINVAL, ret_error, 
+            "Invalid message argument: empty string!");
+    }
+
+    out_string = std::string(out_read);
+
+    return 0;
+}
+
+
 int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus_error* ret_error)
 {
-    assert(ret_error);
-    assert(m);
-    UNUSED(ret_error);
     TR_DEBUG("Enter");
-    const char* app_resource_definition = nullptr;
+    assert(m);
 
     TR_INFO("Starting to process RegisterResources method call from sender %s",
             sd_bus_message_get_sender(m));
 
-    if (sd_bus_message_has_signature(m, "s") != 0) {
-        TR_ERR("Unexpected signature %s", sd_bus_message_get_signature(m, 1));
-        return (-EINVAL);
-    }
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &app_resource_definition);
-    if (r < 0) {
-        TR_ERR("sd_bus_message_read_basic failed with error r=%d (%s)", r, strerror(r));
+    std::string app_resource_definition;       
+    int r = verify_signature_and_get_string_argument(m, ret_error, app_resource_definition);
+    if (r < 0){
+        TR_ERR("verify_signature_and_get_string_argument failed!");
         return r;
     }
-    if ((nullptr == app_resource_definition) || (strlen(app_resource_definition) == 0)) {
-        TR_ERR("sd_bus_message_read_basic returned a nullptr or an empty string!");
-        return (-EINVAL);
-    }
 
-    // Register resources is an asynchronous process towards the cloud -> store handle and
-    // increase refcount
-    sd_bus_message_ref(m);
-    if (!pending_messages_.insert(m).second) {
-        TR_ERR("pending_messages_.insert failed!");
-        return (-EINVAL);
+
+    // call register_resources resource broker APi and handle output
+    CloudConnectStatus out_cc_reg_status = ERR_FAILED;
+    std::string out_access_token;
+    MblError mbl_reg_err = ccrb_.register_resources(
+        (uintptr_t)m, app_resource_definition, 
+        out_cc_reg_status, out_access_token);            
+
+    if(MblError::None != mbl_reg_err || is_CloudConnectStatus_error(out_cc_reg_status)){
+        return handle_resource_broker_method_failure(mbl_reg_err, out_cc_reg_status, 
+            "register_resources", ret_error);
     }
 
     // TODO - IOTMBL-1527
     // validate app registered expected interface on bus? (use sd-bus track)
 
-    // TODO - call CCRB
-    // ccrb_.register_resources();
-
-    // TODO - handle reply
-    assert(0);
-    return 0;
+    return handle_resource_broker_async_method_success(m, ret_error, "us", 
+        out_cc_reg_status, out_access_token.c_str());
 }
 
 int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error)
 {
-    assert(m);
-    assert(ret_error);
-    UNUSED(ret_error);
     TR_DEBUG("Enter");
-    const char* access_token = nullptr;
-
+    assert(m);
     TR_INFO("Starting to process DergisterResources method call from sender %s",
-            sd_bus_message_get_sender(m));
+        sd_bus_message_get_sender(m));
 
-    if (sd_bus_message_has_signature(m, "s") != 0) {
-        TR_ERR("Unexpected signature %s", sd_bus_message_get_signature(m, 1));
-        return (-EINVAL);
-    }
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &access_token);
-    if (r < 0) {
-        TR_ERR("sd_bus_message_read_basic failed with error r=%d (%s)", r, strerror(r));
+    std::string access_token;       
+    int r = verify_signature_and_get_string_argument(m, ret_error, access_token);
+    if (r < 0){
+        TR_ERR("verify_signature_and_get_string_argument failed!");
         return r;
     }
-    assert(access_token);
-    if ((nullptr == access_token) || (strlen(access_token) == 0)) {
-        TR_ERR("sd_bus_message_read_basic returned a nullptr or an empty string!");
-        return (-EINVAL);
+     
+    // call deregister_resources resource broker APi and handle output
+    CloudConnectStatus out_cc_dereg_status = ERR_FAILED;
+    MblError mbl_dereg_err = ccrb_.deregister_resources(
+        (uintptr_t)m, access_token, 
+        out_cc_dereg_status);            
+
+    if(MblError::None != mbl_dereg_err || is_CloudConnectStatus_error(out_cc_dereg_status)){
+        return handle_resource_broker_method_failure(mbl_dereg_err, out_cc_dereg_status, 
+            "deregister_resources", ret_error);
     }
 
-    // Deregister resources is an asynchronous process towards the cloud -> store handle and
-    // increase refcount
-    sd_bus_message_ref(m);
-    if (!pending_messages_.insert(m).second) {
-        TR_ERR("pending_messages_.insert failed!");
-        return (-EINVAL);
-    }
-
-    // TODO call CCRB
-    // ccrb_.deregister_resources();
-
-    // TODO - handle reply
-    assert(0);
-    return 0;
+    return handle_resource_broker_async_method_success(m, ret_error, "u", out_cc_dereg_status);
 }
 
 MblError DBusAdapterImpl::init()
@@ -678,112 +880,84 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
     return status;
 }
 
-MblError
-DBusAdapterImpl::handle_ccrb_RegisterResources_status_update(const uintptr_t ipc_request_handle,
-                                                             const CloudConnectStatus reg_status)
+/**
+ * TODO: The D-Bus signal functionality is tested manually and not tested by gtests. 
+ * Need to add relevant gtests. See: IOTMBL-1691 
+ */
+MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
+    const uintptr_t ipc_request_handle, 
+    const char* signal_name,
+    const CloudConnectStatus status)
 {
-    assert(ipc_request_handle != 0);
-    // TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(reg_status);
-    TR_DEBUG("Enter");
+    tr_debug("Enter");   
+    assert(ipc_request_handle);
+    assert(signal_name);
 
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+    if (state_.is_not_equal(DBusAdapterState::RUNNING)){
+        TR_ERR("Unexpected state (expected %s), returning error %s", 
+            state_.to_string(), MblError_to_str(MblError::DBA_IllegalState));
+        return MblError::DBA_IllegalState;
+    }
 
-    TR_ERR("CCRB signal updates to application are not yet supported - returning %s",
-           MblError_to_str(MblError::DBA_NotSupported));
-    return MblError::DBA_NotSupported;
+    sd_bus_message *m_to_signal_on = reinterpret_cast<sd_bus_message *>(ipc_request_handle);
 
-    // This  section is commented to prevent warnings
-    // if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
-    //     TR_ERR("Unexpected state (expected %s), returning error %s",
-    //            state_.to_string(),
-    //            MblError_to_str(MblError::DBA_IllegalState));
-    //     return MblError::DBA_IllegalState;
-    // }
+    // try erase handle from pending_messages
+    size_t deleted_items_num = pending_messages_.erase(m_to_signal_on);
+    if(0 == deleted_items_num){
+        // handle provided was not previously stored
+        TR_ERR("provided handle (0x%x) not found in pending messages, returning error %s", 
+            ipc_request_handle, MblError_to_str(MblError::DBA_IllegalState));
+        return MblError::DBA_IllegalState;
+    }
 
-    // return MblError::None;
-}
+    // m_to_signal_on's refcount should be reduces when the flow leave this function
+    sd_objects_cleaner<sd_bus_message> message_cleaner (m_to_signal_on, sd_bus_message_unref);
 
-MblError DBusAdapterImpl::handle_ccrb_DeregisterResources_status_update(
-    const uintptr_t ipc_request_handle, const CloudConnectStatus dereg_status)
-{
-    // TODO - IMPLEMENT, remove all UNUSED
-    assert(ipc_request_handle != 0);
-    UNUSED(ipc_request_handle);
-    UNUSED(dereg_status);
-    TR_DEBUG("Enter");
+    if(1 < deleted_items_num){
+        // handle provided was stored somehow more than one time!
+        TR_ERR("provided handle (0x%x) found more than once in pending messages, "
+                 "returning error %s", 
+            ipc_request_handle, MblError_to_str(MblError::DBA_IllegalState));
+        return MblError::DBA_IllegalState;
+    }
 
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+    sd_bus_message *signal = NULL;
+    sd_objects_cleaner<sd_bus_message> signal_cleaner (signal, sd_bus_message_unref);
 
-    TR_ERR("CCRB signal updates to application are not yet supported - returning %s",
-           MblError_to_str(MblError::DBA_NotSupported));
-    return MblError::DBA_NotSupported;
+    int r = sd_bus_message_new_signal(
+        connection_handle_, &signal, 
+        DBUS_CLOUD_CONNECT_OBJECT_PATH, 
+        DBUS_CLOUD_CONNECT_INTERFACE_NAME, 
+        signal_name);
+    if(r < 0){
+        TR_ERR("sd_bus_message_new_signal name=%s failed(err=%d)", signal_name, r);
+        return MblError::DBA_SdBusCallFailure;
+    }
 
-    // This  section is commented to prevent warnings
-    // if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
-    //     TR_ERR("Unexpected state (expected %s), returning error %s",
-    //            state_.to_string(),
-    //            MblError_to_str(MblError::DBA_IllegalState));
-    //     return MblError::DBA_IllegalState;
-    // }
+    // set destination of signal message
+    const char *signal_dest = sd_bus_message_get_sender(m_to_signal_on);
+    r = sd_bus_message_set_destination(signal, signal_dest);
+    if (r < 0){
+        TR_ERR("sd_bus_message_set_destination dest=%s failed(err=%d)", signal_dest, r);  
+        return MblError::DBA_SdBusCallFailure;
+    }
 
-    // return MblError::None;
-}
+    // append status
+    r = sd_bus_message_append(signal, "u", status);
+    if (r < 0){
+        TR_ERR("sd_bus_message_append failed(err=%d)", r);  
+        return MblError::DBA_SdBusCallFailure;
+    }
 
-MblError
-DBusAdapterImpl::handle_ccrb_AddResourceInstances_status_update(const uintptr_t ipc_request_handle,
-                                                                const CloudConnectStatus add_status)
-{
-    assert(ipc_request_handle != 0);
-    // TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(add_status);
-    TR_DEBUG("Enter");
+    r = sd_bus_send(connection_handle_, signal, NULL);
+    if (r < 0){
+        TR_ERR("sd_bus_send dest=%s failed(err=%d)", signal_dest, r);  
+        return MblError::DBA_SdBusCallFailure;
+    }
+    
+    tr_debug("Signal %s was successfully emitted to %s", signal_name, signal_dest);  
 
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    TR_ERR("CCRB signal updates to application are not yet supported - returning %s",
-           MblError_to_str(MblError::DBA_NotSupported));
-    return MblError::DBA_NotSupported;
-
-    // This  section is commented to prevent warnings
-    // if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
-    //     TR_ERR("Unexpected state (expected %s), returning error %s",
-    //            state_.to_string(),
-    //            MblError_to_str(MblError::DBA_IllegalState));
-    //     return MblError::DBA_IllegalState;
-    // }
-    // return MblError::None;
-}
-
-MblError DBusAdapterImpl::handle_ccrb_RemoveResourceInstances_status_update(
-    const uintptr_t ipc_request_handle, const CloudConnectStatus remove_status)
-{
-    assert(ipc_request_handle != 0);
-    // TODO - IMPLEMENT, remove all UNUSED
-    UNUSED(ipc_request_handle);
-    UNUSED(remove_status);
-    TR_DEBUG("Enter");
-
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    TR_ERR("CCRB signal updates to application are not yet supported - returning %s",
-           MblError_to_str(MblError::DBA_NotSupported));
-    return MblError::DBA_NotSupported;
-
-    // This  section is commented to prevent warnings
-    // if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
-    //     TR_ERR("Unexpected state (expected %s), returning error %s",
-    //            state_.to_string(),
-    //            MblError_to_str(MblError::DBA_IllegalState));
-    //     return MblError::DBA_IllegalState;
-    // }
-    // return MblError::None;
+    return MblError::None;
 }
 
 bool DBusAdapterImpl::is_valid_message_type(uint8_t message_type)

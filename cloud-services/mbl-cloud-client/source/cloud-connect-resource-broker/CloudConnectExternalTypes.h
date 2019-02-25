@@ -17,11 +17,30 @@ enum CloudConnectStatus {
 
     // Error range
     // Start all enums in this range with "ERR_" prefix
-    ERR_FAILED  = 0x1000,
+    FIRST_ERROR = 0x1000,
+    ERR_FAILED  = FIRST_ERROR,
+    ERR_INTERNAL_ERROR = 0x1001,
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
 
+static inline bool is_CloudConnectStatus_not_error(const CloudConnectStatus val){
+    return val >= STATUS_SUCCESS && val < FIRST_ERROR;
+}
+
+static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
+    return val >= FIRST_ERROR;
+}
+
+// mbed.Cloud.Connect DBus errors definitions
+#define CLOUD_CONNECT_ERR_FAILED "mbed.Cloud.Connect.Failed"
+#define CLOUD_CONNECT_ERR_INTERNAL_ERROR "mbed.Cloud.Connect.InternalError"
+
+/** 
+ * @brief Returns corresponding D-Bus format error. 
+ * The error returned is a string in a D-Bus format that corresponds to provided enum. 
+ */
+#define RETURN_DBUS_FORMAT_ERROR(ENUM) case ENUM: return CLOUD_CONNECT_ ## ENUM
 
 /**
  * @brief Cloud Connect resource data type.

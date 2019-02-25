@@ -71,29 +71,22 @@ MblError DBusAdapter::update_registration_status(const uintptr_t ipc_request_han
                                                  const CloudConnectStatus reg_status)
 {
     TR_DEBUG("Enter");
-    return impl_->handle_ccrb_RegisterResources_status_update(ipc_request_handle, reg_status);
+    assert(impl_);
+    assert(ipc_request_handle);
+    return impl_->handle_resource_broker_async_process_status_update(
+        ipc_request_handle, 
+        DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status); 
 }
 
 MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_handle,
                                                    const CloudConnectStatus dereg_status)
 {
     TR_DEBUG("Enter");
-    return impl_->handle_ccrb_DeregisterResources_status_update(ipc_request_handle, dereg_status);
-}
-
-MblError DBusAdapter::update_add_resource_instance_status(const uintptr_t ipc_request_handle,
-                                                          const CloudConnectStatus add_status)
-{
-    TR_DEBUG("Enter");
-    return impl_->handle_ccrb_AddResourceInstances_status_update(ipc_request_handle, add_status);
-}
-
-MblError DBusAdapter::update_remove_resource_instance_status(const uintptr_t ipc_request_handle,
-                                                             const CloudConnectStatus remove_status)
-{
-    TR_DEBUG("Enter");
-    return impl_->handle_ccrb_RemoveResourceInstances_status_update(ipc_request_handle,
-                                                                    remove_status);
+    assert(impl_);
+    assert(ipc_request_handle);
+    return impl_->handle_resource_broker_async_process_status_update(
+        ipc_request_handle, 
+        DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status); 
 }
 
 MblError DBusAdapter::send_event_immediate(SelfEvent::EventData data, unsigned long data_length,
