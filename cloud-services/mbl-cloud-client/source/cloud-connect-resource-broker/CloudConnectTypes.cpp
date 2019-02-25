@@ -77,12 +77,11 @@ const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS); 
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED); 
+        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
+        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
         RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
 
-        default:
-            return "Unknown CloudConnectStatus value";
+    default: return "Unknown CloudConnectStatus value";
     }
 }
 
@@ -90,17 +89,13 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        case STATUS_SUCCESS: 
-            return "Status success";
+    case STATUS_SUCCESS: return "Status success";
 
-        case ERR_FAILED: 
-            return "General failure";
+    case ERR_FAILED: return "General failure";
 
-        case ERR_INTERNAL_ERROR:
-            return "Internal error in Cloud Connect infrastructure";
+    case ERR_INTERNAL_ERROR: return "Internal error in Cloud Connect infrastructure";
 
-        default:
-            return "Unknown Cloud Connect Status or Error";
+    default: return "Unknown Cloud Connect Status or Error";
     }
 }
 
@@ -108,11 +103,10 @@ const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status
 {
     switch (status)
     {
-        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED); 
+        RETURN_DBUS_FORMAT_ERROR(ERR_FAILED);
         RETURN_DBUS_FORMAT_ERROR(ERR_INTERNAL_ERROR);
- 
-        default:
-            return "mbed.Cloud.Connect.UnknownError";
+
+    default: return "mbed.Cloud.Connect.UnknownError";
     }
 }
 
@@ -128,8 +122,7 @@ const char* ResourceDataType_stringify(const ResourceDataType type)
         RETURN_STRINGIFIED_VALUE(TIME);
         RETURN_STRINGIFIED_VALUE(OBJLINK);
 
-    default:
-        return "Unknown Resource Data Type";
+    default: return "Unknown Resource Data Type";
     }
 }
 
