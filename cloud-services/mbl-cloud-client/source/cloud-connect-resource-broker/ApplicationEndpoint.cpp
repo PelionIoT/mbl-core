@@ -16,9 +16,9 @@
  */
 
 #include "ApplicationEndpoint.h"
+#include "CloudConnectTrace.h"
 #include "ResourceDefinitionParser.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
-#include "CloudConnectTrace.h"
 #include <systemd/sd-id128.h>
 
 #define TRACE_GROUP "ccrb-app-end-point"
@@ -75,14 +75,14 @@ MblError ApplicationEndpoint::init(const std::string& application_resource_defin
 
     if (Error::None != build_object_list_stauts) {
         TR_ERR("build_object_list failed with error: %s",
-                 MblError_to_str(build_object_list_stauts));
+               MblError_to_str(build_object_list_stauts));
         return build_object_list_stauts;
     }
 
     const MblError generate_access_token_status = generate_access_token();
     if (Error::None != generate_access_token_status) {
         TR_ERR("generate_access_token failed with error: %s",
-                 MblError_to_str(generate_access_token_status));
+               MblError_to_str(generate_access_token_status));
         return generate_access_token_status;
     }
     TR_DEBUG("(access_token: %s) succeeded.", access_token_.c_str());
@@ -112,8 +112,7 @@ void ApplicationEndpoint::handle_error_cb(const int cloud_client_code)
            mbl_code,
            MblError_to_str(mbl_code));
 
-    TR_DEBUG("(access_token: %s) - Notify CCRB that error occured.",
-             access_token_.c_str());
+    TR_DEBUG("(access_token: %s) - Notify CCRB that error occured.", access_token_.c_str());
 
     if (nullptr != handle_app_error_cb_) {
         handle_app_error_cb_(ipc_conn_handle_, access_token_, mbl_code);

@@ -16,7 +16,7 @@
  */
 
 #include "M2MResourceObjects.h"
-#include "mbed-trace/mbed_trace.h"
+#include "CloudConnectTrace.h"
 #include <cinttypes>
 
 #define TRACE_GROUP "ccrb-m2mobjects"
@@ -45,20 +45,20 @@ RBM2MResource::RBM2MResource(std::string resource_name,
       value_(std::move(value)),
       m2m_resource_(nullptr)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    tr_debug("resource_name: %s", resource_name_.c_str());
-    tr_debug("mode: %d", static_cast<int>(mode_));
-    tr_debug("multiple_instances: %s", multiple_instances_ ? "true" : "false");
-    tr_debug("operation: %d", static_cast<int>(operation_));
-    tr_debug("observable: %s", observable_ ? "true" : "false");
-    tr_debug("resource_type: %s", resource_type.c_str());
-    tr_debug("type: %d", static_cast<int>(type_));
-    tr_debug("value: %s", value_.c_str());
+    TR_DEBUG("Enter");
+    TR_DEBUG("resource_name: %s", resource_name_.c_str());
+    TR_DEBUG("mode: %d", static_cast<int>(mode_));
+    TR_DEBUG("multiple_instances: %s", multiple_instances_ ? "true" : "false");
+    TR_DEBUG("operation: %d", static_cast<int>(operation_));
+    TR_DEBUG("observable: %s", observable_ ? "true" : "false");
+    TR_DEBUG("resource_type: %s", resource_type.c_str());
+    TR_DEBUG("type: %d", static_cast<int>(type_));
+    TR_DEBUG("value: %s", value_.c_str());
 }
 
 RBM2MResource::~RBM2MResource()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 void RBM2MResource::set_m2m_resource(M2MResource* m2m_resource)
@@ -114,7 +114,7 @@ const std::string& RBM2MResource::get_value_as_string() const
 MblError RBM2MResource::get_value_as_integer(int& value) const
 {
     if (M2MResourceBase::INTEGER != type_) {
-        tr_error("%s - Value type is not integer", __PRETTY_FUNCTION__);
+        TR_ERR("%s - Value type is not integer", __PRETTY_FUNCTION__);
         return Error::CCRBValueTypeError;
     }
     value = std::stoi(value_);
@@ -127,12 +127,12 @@ MblError RBM2MResource::get_value_as_integer(int& value) const
 RBM2MObjectInstance::RBM2MObjectInstance(uint16_t object_instance_id)
     : object_instance_id_(object_instance_id), m2m_object_instance_(nullptr)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 RBM2MObjectInstance::~RBM2MObjectInstance()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     rbm2m_resource_map_.clear();
 }
 
@@ -165,20 +165,20 @@ SPRBM2MResource RBM2MObjectInstance::create_resource(const std::string& resource
                                                      M2MResourceBase::ResourceType type,
                                                      const std::string& value)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     if (resource_name.empty()) {
-        tr_error("%s - resource name is empty", __PRETTY_FUNCTION__);
+        TR_ERR("resource name is empty");
         return nullptr;
     }
 
     // Verify resource does not exist
     auto itr = rbm2m_resource_map_.find(resource_name);
     if (itr != rbm2m_resource_map_.end()) {
-        tr_error("%s - resource %s already exist", __PRETTY_FUNCTION__, resource_name.c_str());
+        TR_ERR("resource %s already exist", resource_name.c_str());
         return nullptr;
     }
 
-    tr_debug("Created rbm2m resource: %s", resource_name.c_str());
+    TR_DEBUG("Created rbm2m resource: %s", resource_name.c_str());
     rbm2m_resource_map_[resource_name] = std::make_shared<RBM2MResource>(
         resource_name, mode, multiple_instances, operation, observable, resource_type, type, value);
 
@@ -191,12 +191,12 @@ SPRBM2MResource RBM2MObjectInstance::create_resource(const std::string& resource
 RBM2MObject::RBM2MObject(std::string object_name)
     : object_name_(std::move(object_name)), m2m_object_(nullptr)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 RBM2MObject::~RBM2MObject()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     rbm2m_object_instance_map_.clear();
 }
 
@@ -222,14 +222,12 @@ const RBM2MObjectInstanceMap& RBM2MObject::get_object_instance_map() const
 
 SPRBM2MObjectInstance RBM2MObject::create_object_instance(uint16_t object_instance_id)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 
     // Verify object_instance does not exist
     auto itr = rbm2m_object_instance_map_.find(object_instance_id);
     if (itr != rbm2m_object_instance_map_.end()) {
-        tr_error("%s - object instance %" PRId16 " already exist",
-                 __PRETTY_FUNCTION__,
-                 object_instance_id);
+        TR_ERR("object instance %" PRId16 " already exist", object_instance_id);
         return nullptr;
     }
 
@@ -244,18 +242,18 @@ SPRBM2MObjectInstance RBM2MObject::create_object_instance(uint16_t object_instan
 
 RBM2MObjectList::RBM2MObjectList()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
 }
 
 RBM2MObjectList::~RBM2MObjectList()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     clear_object_map();
 }
 
 void RBM2MObjectList::clear_object_map()
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     rbm2m_object_map_.clear();
 }
 
@@ -266,16 +264,16 @@ const RBM2MObjectMap& RBM2MObjectList::get_object_map() const
 
 SPRBM2MObject RBM2MObjectList::create_object(const std::string& object_name)
 {
-    tr_debug("%s", __PRETTY_FUNCTION__);
+    TR_DEBUG("Enter");
     if (object_name.empty()) {
-        tr_error("%s - object name is empty", __PRETTY_FUNCTION__);
+        TR_ERR("object name is empty");
         return nullptr;
     }
 
     // Verify object does not exist
     auto itr = rbm2m_object_map_.find(object_name);
     if (itr != rbm2m_object_map_.end()) {
-        tr_error("%s - object %s already exist", __PRETTY_FUNCTION__, object_name.c_str());
+        TR_ERR("object %s already exist", object_name.c_str());
         return nullptr;
     }
 
@@ -290,7 +288,7 @@ SPRBM2MObject RBM2MObjectList::get_object(const std::string& object_name)
     if (itr != rbm2m_object_map_.end()) {
         return itr->second;
     }
-    tr_info("%s: Object %s does not exist", __PRETTY_FUNCTION__, object_name.c_str());
+    TR_INFO("Object %s does not exist", object_name.c_str());
     return nullptr;
 }
 
