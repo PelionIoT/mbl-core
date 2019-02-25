@@ -52,10 +52,20 @@ namespace mbl {
             
             if (std::ifstream is{path, std::ios::binary | std::ios::ate}) 
             {
-                const auto size = static_cast<size_t>(is.tellg());
+                auto pos = is.tellg();
+                if (!is.good())
+                {
+                    std::cerr << "File with path " << path << "could not be opened" << "\n";
+                    return std::make_pair(std::vector<uint8_t>{}, ProvisionedStatusCode::failure);
+                }
+                const auto size = static_cast<size_t>(pos);
                 std::vector<uint8_t> output(size);
                 is.seekg(0);
-
+                if (!is.good())
+                {
+                    std::cerr << "File with path " << path << "could not be opened" << "\n";
+                    return std::make_pair(std::vector<uint8_t>{}, ProvisionedStatusCode::failure);
+                }
                 if (is.read(reinterpret_cast<char*>(&output[0]), size)) 
                 {
                     return std::make_pair(output, ProvisionedStatusCode::success);
