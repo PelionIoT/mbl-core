@@ -260,7 +260,7 @@ void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_
     regsiter_callback_handlers();
 
     // Mark that registration is finished (using atomic flag)
-    registration_in_progress_.store(false);
+    registration_in_progress_.store(false); // TODO: need to handle cases when cb is not called at all
 }
 
 void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
