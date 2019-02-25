@@ -252,7 +252,7 @@ void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_
 
     // Send the response to adapter:
     CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
-    MblError status = ipc_->update_registration_status(ipc_conn_handle, reg_status);
+    MblError status = ipc_adapter_->update_registration_status(ipc_conn_handle, reg_status);
     if (Error::None != status) {
         tr_error("%s: update_registration_status failed with error: %s",
                  __PRETTY_FUNCTION__,
@@ -300,7 +300,7 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
     {
         // App is not registered yet, which means the error is for register request
         MblError status =
-            ipc_->update_registration_status(ipc_conn_handle, CloudConnectStatus::ERR_FAILED);
+            ipc_adapter_->update_registration_status(ipc_conn_handle, CloudConnectStatus::ERR_FAILED);
         if (Error::None != status) {
             tr_error("%s: Registration for Application (access_token: %s), failed "
                      "with error: %s",

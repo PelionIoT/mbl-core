@@ -36,7 +36,7 @@ ResourceBrokerTester::ResourceBrokerTester()
             std::placeholders::_1);
 
     // Init resource broker ipc to be DBusAdapterMock:
-    cloud_connect_resource_broker_.ipc_ = 
+    cloud_connect_resource_broker_.ipc_adapter_ = 
         std::make_unique<DBusAdapterMock>(cloud_connect_resource_broker_);
 }
 
@@ -110,7 +110,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     }
 
     DBusAdapterMock& dbus_adapter_tester = 
-        *(static_cast<DBusAdapterMock*>(cloud_connect_resource_broker_.ipc_.get()));
+        *(static_cast<DBusAdapterMock*>(cloud_connect_resource_broker_.ipc_adapter_.get()));
     // Verify that resource broker called the adapter (both for success and failure)
     ASSERT_TRUE(dbus_adapter_tester.is_update_registration_called());
     // Verify adapter got the right call from resource broker
