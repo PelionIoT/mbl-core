@@ -28,6 +28,9 @@
 
 #define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME     "RegisterResources"
 #define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME   "DeregisterResources"
+#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME     "AddResourceInstances"
+#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_METHOD_NAME   "RemoveResourceInstances"
+
 
 #define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME     "RegisterResourcesStatus"
 #define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME   "DeregisterResourcesStatus"

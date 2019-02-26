@@ -248,7 +248,7 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
 
 
 // Maximal length of the buffer that can be printed in with LOG_AND_SET_SD_BUS_ERROR
-#define MAX_LOG_LINE 1024
+#define MAX_SD_BUS_ERROR_LOG_LINE 1024
 
 /**
  * @brief Wrapper over log_and_set_sd_bus_error_f. 
@@ -299,8 +299,8 @@ static int log_and_set_sd_bus_error_f(
 
     va_list ap;
     va_start(ap, format);
-    char buffer[MAX_LOG_LINE];
-    vsnprintf(buffer, MAX_LOG_LINE, format, ap);
+    char buffer[MAX_SD_BUS_ERROR_LOG_LINE];
+    vsnprintf(buffer, MAX_SD_BUS_ERROR_LOG_LINE, format, ap);
 
     // TODO: REPLACE printf to tr_err
     printf("func %s, line %d %s", func, line, buffer);
@@ -626,11 +626,15 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
     }
     else
     {
-        TR_ERR("Unexpected types_format (%s) in reply on %s method to %s",
-               types_format,
-               method_name,
-               sender_name);
         assert(0);
+        // never should occur, method_reply_on_message is internal function, all invocations 
+        // and parameteres are controlled by us.
+        return LOG_AND_SET_SD_BUS_ERROR_F(
+            EINVAL, ret_error,
+            "Unexpected types_format (%s) in reply on %s method to %s",
+            types_format,
+            method_name,
+            sender_name);
     }
 
     if (r < 0) {
@@ -727,7 +731,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
         return r;
     }
 
-    // call register_resources resource broker APi and handle output
+    // call register_resources resource broker API and handle output
     CloudConnectStatus out_cc_reg_status = ERR_FAILED;
     std::string out_access_token;
     MblError mbl_reg_err = ccrb_.register_resources(
@@ -741,6 +745,8 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
     // TODO - IOTMBL-1527
     // validate app registered expected interface on bus? (use sd-bus track)
 
+    // register_resources succeeded. Send method-reply to the D-Bus connection that
+    // requested register_resources invocation.
     return handle_resource_broker_async_method_success(
         m, ret_error, "us", out_cc_reg_status, out_access_token.c_str());
 }
@@ -769,6 +775,8 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
             mbl_dereg_err, out_cc_dereg_status, "deregister_resources", ret_error);
     }
 
+    // deregister_resources succeeded. Send method-reply to the D-Bus connection that
+    // requested deregister_resources invocation.
     return handle_resource_broker_async_method_success(m, ret_error, "u", out_cc_dereg_status);
 }
 
@@ -996,21 +1004,15 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         // handle provided was not previously stored
         TR_ERR("provided handle (0x%" PRIxPTR ") not found in pending messages, returning error %s",
                ipc_request_handle,
-               MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
+               MblError_to_str(MblError::DBA_InvalidValue));
+        return MblError::DBA_InvalidValue;
     }
+
+    // we expect only 1 item
+    assert(1 == deleted_items_num);
 
     // m_to_signal_on's refcount should be reduces when the flow leave this function
     sd_objects_cleaner<sd_bus_message> message_cleaner(m_to_signal_on, sd_bus_message_unref);
-
-    if (1 < deleted_items_num) {
-        // handle provided was stored somehow more than one time!
-        TR_ERR("provided handle (0x%" PRIxPTR ") found more than once in pending messages, "
-               "returning error %s",
-               ipc_request_handle,
-               MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
-    }
 
     sd_bus_message* m_signal = nullptr;
     sd_objects_cleaner<sd_bus_message> signal_cleaner(m_signal, sd_bus_message_unref);
@@ -1021,7 +1023,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
                                       DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                                       signal_name);
     if (r < 0) {
-        TR_ERR("sd_bus_message_new_signal name=%s failed(err=%d)", signal_name, r);
+        TR_ERRNO_F("sd_bus_message_new_signal", r, "(signal name=%s)", signal_name);
         return MblError::DBA_SdBusCallFailure;
     }
 
@@ -1029,20 +1031,20 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     const char* signal_dest = sd_bus_message_get_sender(m_to_signal_on);
     r = sd_bus_message_set_destination(m_signal, signal_dest);
     if (r < 0) {
-        TR_ERR("sd_bus_message_set_destination dest=%s failed(err=%d)", signal_dest, r);
+        TR_ERRNO_F("sd_bus_message_set_destination", r, "(signal destination=%s)", signal_dest);
         return MblError::DBA_SdBusCallFailure;
     }
 
     // append status
     r = sd_bus_message_append(m_signal, "u", status);
     if (r < 0) {
-        TR_ERR("sd_bus_message_append failed(err=%d)", r);
+        TR_ERRNO_F("sd_bus_message_append", r, "(signal types = %s)", "u");
         return MblError::DBA_SdBusCallFailure;
     }
 
     r = sd_bus_send(connection_handle_, m_signal, nullptr);
     if (r < 0) {
-        TR_ERR("sd_bus_send dest=%s failed(err=%d)", signal_dest, r);
+        TR_ERRNO_F("sd_bus_send", r, "(signal destination=%s)", signal_dest);
         return MblError::DBA_SdBusCallFailure;
     }
 

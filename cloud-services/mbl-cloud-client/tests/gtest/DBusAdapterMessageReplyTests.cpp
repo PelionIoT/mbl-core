@@ -15,14 +15,18 @@
 #include "TestInfra_DBusAdapterTester.h"
 #include "CloudConnectTrace.h"
 
-#define TRACE_GROUP "dbus-gtest-infra"
+#define TRACE_GROUP "ccrb-dbus-gtest"
 
 using namespace mbl;
 
 
 struct AdapterParameterizedData {
-    DBusAdapter& adapater;
-    size_t test_array_index;
+
+    AdapterParameterizedData(DBusAdapter& adapater, size_t test_array_index)
+    : adapater_(adapater), test_array_index_(test_array_index) {}
+
+    DBusAdapter& adapater_;
+    size_t test_array_index_;
 };
  
 class MessageReplyTest_ResourceBroker: public ResourceBroker {
@@ -137,7 +141,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
     assert(user_data);
     
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-    const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index];
+    const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index_];
 
     sd_bus_message *m_reply = nullptr;
     sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
@@ -192,7 +196,8 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
         }
     }
 
-    DBusAdapter &adapter = adapter_param_data->adapater;
+    // we stop adapter event loop from this thread instead of having one more additional thread
+    DBusAdapter &adapter = adapter_param_data->adapater_;
     MblError adapter_finish_status = adapter.stop(MblError::None);
     if(MblError::None != adapter_finish_status)
     {
@@ -214,7 +219,7 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
     DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);        
 
-    AdapterParameterizedData userdata = {adapter, (size_t)GetParam()};
+    AdapterParameterizedData userdata(adapter, (size_t)GetParam());
 
     AppThread app_thread(AppThreadCb_validate_adapter_register_resources, &userdata);
     ASSERT_EQ(app_thread.create(), 0);
@@ -274,7 +279,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
     assert(user_data);
     
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-    const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index];
+    const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index_];
 
     sd_bus_message *m_reply = nullptr;
     sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
@@ -321,7 +326,8 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
         }
     }
 
-    DBusAdapter &adapter = adapter_param_data->adapater;
+    // we stop adapter event loop from this thread instead of having one more additional thread
+    DBusAdapter &adapter = adapter_param_data->adapater_;
     MblError adapter_finish_status = adapter.stop(MblError::None);
     if(MblError::None != adapter_finish_status)
     {
@@ -343,7 +349,7 @@ TEST_P(ValidateDeregisterResources, BasicMethodReply)
     DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);        
 
-    AdapterParameterizedData userdata = {adapter, (size_t)GetParam()};
+    AdapterParameterizedData userdata(adapter, (size_t)GetParam());
 
     AppThread app_thread(AppThreadCb_validate_adapter_deregister_resources, &userdata);
     ASSERT_EQ(app_thread.create(), 0);
