@@ -51,7 +51,10 @@ def main():
     print("{}: {}".format("Current state is", state))
 
     # Loop until it is in the RUNNING state, or the timeout fires
-    while state != container.ContainerState.RUNNING and endtime > time.monotonic():
+    while (
+        state != container.ContainerState.RUNNING
+        and endtime > time.monotonic()
+    ):
         print(
             "{}: {}".format(
                 "Waiting for state of Running. Current state is", state
@@ -104,7 +107,8 @@ def main():
 
         # Loop until it is in the STOPPED state, or the timeout fires
         while (
-            state != container.ContainerState.STOPPED and endtime > time.monotonic()
+            state != container.ContainerState.STOPPED
+            and endtime > time.monotonic()
         ):
             print(
                 "{}: {}".format(
