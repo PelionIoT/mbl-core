@@ -67,6 +67,6 @@ int AppThread::bus_request_name(const char* name)
 sd_bus *AppThread::get_connection_handle() const
 {
     return connection_handle_;
-{
+}
 
 
