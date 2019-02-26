@@ -67,11 +67,9 @@ MblError ApplicationEndpoint::init(const std::string& application_resource_defin
 {
     TR_DEBUG("Enter");
 
-    RBM2MObjectList rbm2m_object_list; // TODO: should be remove in future task
     // Parse JSON
-    ResourceDefinitionParser resource_parser;
-    const MblError build_object_list_stauts = resource_parser.build_object_list(
-        application_resource_definition, m2m_object_list_, rbm2m_object_list);
+    const MblError build_object_list_stauts = ResourceDefinitionParser::build_object_list(
+        application_resource_definition, m2m_object_list_);
 
     if (Error::None != build_object_list_stauts) {
         TR_ERR("build_object_list failed with error: %s",

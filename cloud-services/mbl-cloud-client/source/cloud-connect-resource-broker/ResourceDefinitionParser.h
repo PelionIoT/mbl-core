@@ -19,7 +19,6 @@
 #ifndef ResourceDefinitionParser_h_
 #define ResourceDefinitionParser_h_
 
-#include "M2MResourceObjects.h"
 #include "MblError.h"
 #include "mbed-client/m2minterface.h"
 #include <string>
@@ -101,91 +100,71 @@ class ResourceDefinitionParser {
 public:
 
     /**
-     * @brief Construct a new Resource Definition Parser object
-     * 
-     */
-    ResourceDefinitionParser();
-
-    /**
-     * @brief Destroy the Resource Definition Parser object
-     * 
-     */
-    virtual ~ResourceDefinitionParser();
-
-    /**
-     * @brief Build m2m2 objects / object instances and resources based on input JSON string. 
-     * In case of an error - delete already created rmm2m and m2m objects / object instances and resources
-     * (m2m_object_list and rbm2m_object_list will be empty).
-     * @param application_resource_definition  - Input application resource definition JSON string
+     * @brief Build m2m2 objects / object instances and resources based on input application resource definition string. 
+     * In case of an error - delete already created m2m objects / object instances and resources
+     * (m2m_object_list will be empty).
+     * @param application_resource_definition  - Input application resource definition string
      * @param m2m_object_list - Output M2M object list.
-     * @param rbm2m_object_list - Output Resource Builder m2m object list.
      * @return MblError -
      *      Error::None - If function succeeded
-     *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
+     *      Error::CCRBInvalidJson - I case of invalid resource definition  (e.g. Invalid structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    MblError build_object_list(
+    static MblError build_object_list(
         const std::string &application_resource_definition,
-        M2MObjectList &m2m_object_list,
-        RBM2MObjectList &rbm2m_object_list);
+        M2MObjectList &m2m_object_list);
 
 private:
 
     /**
-     * @brief Parse JSON value of an object.
+     * @brief Parse object definition.
      * Create M2MObject using static M2MInterfaceFactory
      * Call parse_object_instance() API to parse all nested JSON object instances
      * @param object_name - Object name
-     * @param json_value_object - JSON value of an object
+     * @param object_definition - JSON value of an object
      * @param m2m_object_list - Hold created M2MObjects
-     * @param rbm2m_object_list - Hold created BRM2MObjects 
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    MblError parse_object(
+    static MblError parse_object(
         const std::string &object_name,
-        Json::Value &json_value_object,
-        M2MObjectList &m2m_object_list,
-        RBM2MObjectList &rbm2m_object_list);
+        Json::Value &object_definition,
+        M2MObjectList &m2m_object_list);
 
     /**
-     * @brief Parse JSON value of an object instance.
+     * @brief Parse object instance definition.
      * Create M2MObjectInstance using M2MObject
      * Call parse_resource() API to parse all nested JSON resources
      * @param object_instance_id - Object instance ID
-     * @param json_value_object_instance - JSON value of an object instance
+     * @param object_instance_definition - JSON value of an object instance
      * @param m2m_object - M2MObject used to create M2MObjectInstance
-     * @param sp_rbm2m_object - Smart pointer to RBM2MObject used to create RBM2MObjectInstance
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    MblError parse_object_instance(
+    static MblError parse_object_instance(
         int object_instance_id,
-        Json::Value &json_value_object_instance,
-        M2MObject *m2m_object,
-        SPRBM2MObject sp_rbm2m_object);
+        Json::Value &object_instance_definition,
+        M2MObject *m2m_object);
 
     /**
-     * @brief Parse JSON value of a resource.
+     * @brief Parse resource definition.
      * Call CreateM2MResource() API to create M2MResource
      * @param resource_name - Resource name
-     * @param json_value_resource - JSON value of a single resource
+     * @param resource_definition - JSON value of a single resource
      * @param m2m_object_instance - M2MObjectInstance used to create M2MResource
-     * @param sp_rbm2m_object_instance - Smart pointer to RBM2MObjectInstance used to create RBM2MResource
      * @return MblError -
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    MblError parse_resource(
+    static MblError parse_resource(
         const std::string &resource_name,
-        Json::Value &json_value_resource,
-        M2MObjectInstance* m2m_object_instance,
-        SPRBM2MObjectInstance sp_rbm2m_object_instance);
+        Json::Value &resource_definition,
+        M2MObjectInstance* m2m_object_instance);
 
     /**
      * @brief Parse resource operation from JSON value.
@@ -198,12 +177,11 @@ private:
      *      Error::None - If function succeeded
      *      Error::CCRBInvalidJson - I case of invalid operation found in the JSON (e..g unknown operation or no operation at all)
      */
-    MblError parse_operation(Json::Value& resource, uint8_t *operation_mask);
+    static MblError parse_operation(Json::Value& resource, uint8_t *operation_mask);
 
     /**
      * @brief Create M2MResource using M2MObjectInstance
      * @param m2m_object_instance - M2MObjectInstance used to create M2MResource
-     * @param sp_rbm2m_object_instance - Smart pointer to RBM2MObjectInstance used to create RBM2MResource
      * @param resource_name - Resource name
      * @param resource_mode  - Resource mode (static / dynamic)
      * @param resource_res_type - Resource descritpion type (e.g. "button")
@@ -216,9 +194,8 @@ private:
      *      Error::None - If function succeeded
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    MblError create_resources(
+    static MblError create_resources(
         M2MObjectInstance *m2m_object_instance,
-        SPRBM2MObjectInstance sp_rbm2m_object_instance,
         const std::string &resource_name,
         const std::string &resource_mode,
         const std::string &resource_res_type,
@@ -227,7 +204,35 @@ private:
         bool resource_multiple_instance, 
         bool resource_observable,
         uint8_t operation_mask);
-};
+
+    /**
+     * @brief Return m2m resource type
+     * 
+     * @param resource_type input string
+     * @return M2MResourceInstance::ResourceType 
+     */
+    static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string& resource_type);
+
+    /**
+     * @brief REturn m2m resource operation
+     * 
+     * @param operation_mask - Input operation mask
+     * @param operation - output m2m resource operation
+     * @return MblError - 
+     *              Error::CCRBInvalidJson - In case of illegal operation mask
+     *              Error::None - In case of success 
+     */
+    static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation& operation);
+
+    /**
+     * @brief Operation map is used to map bitmask operation with the corresponding
+     * M2MBase::Operation value. When parsing JSON, the operation are written in an
+     * array and for each operation we set the corresponding masp using or operator. Using
+     * this map the right M2MBase::Operation is returned.
+     */
+    typedef std::map<uint8_t, M2MBase::Operation> OperationMap;
+    static const OperationMap operation_;
+};        
 
 } // namespace mbl
 

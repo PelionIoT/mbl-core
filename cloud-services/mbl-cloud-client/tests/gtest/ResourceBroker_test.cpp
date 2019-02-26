@@ -219,7 +219,7 @@ TEST(Resource_Broker_Negative, registration_in_progress) {
 // and succeeds in second try
 TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
 
-     TR_DEBUG("Enter");
+    TR_DEBUG("Enter");
 
     ResourceBrokerTester resource_broker_tester;
     const uintptr_t ipc_conn_handle = 0;
