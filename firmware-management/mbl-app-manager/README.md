@@ -83,13 +83,12 @@ optional arguments:
 ```
 
 ```
-usage: mbl-app-manager list [-h] apps_path
-
-positional arguments:
-  apps_path   path to look for installed applications.
+usage: mbl-app-manager list [-h] [-p APPS_PATH]
 
 optional arguments:
-  -h, --help  show this help message and exit
+  -h, --help            show this help message and exit
+  -p APPS_PATH, --apps_path APPS_PATH
+                        path to look for installed applications.
 ```
 
 ## License

@@ -4,6 +4,7 @@
 """Contains utilities."""
 
 import logging
+import re
 
 import mbl.app_manager.utils as apu
 import mbl.app_lifecycle_manager.utils as alu
@@ -26,3 +27,15 @@ def set_log_verbosity(increase_verbosity):
     # Syncronize the log level of all MBL dependencies
     alu.set_log_verbosity(increase_verbosity)
     apu.set_log_verbosity(increase_verbosity)
+
+
+def human_sort(l):
+    """Sort the given list in the way that humans expect."""
+    # key to use for the sort
+    def convert(text):
+        return int(text) if text.isdigit() else text
+
+    def alphanum_key(key):
+        return [convert(c) for c in re.split("([0-9]+)", key)]
+
+    l.sort(key=alphanum_key)

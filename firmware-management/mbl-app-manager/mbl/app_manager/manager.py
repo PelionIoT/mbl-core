@@ -10,6 +10,9 @@ import subprocess
 
 from .parser import parse_app_info, AppInfoParserError
 from .utils import log
+from mbl.app_lifecycle_manager.container import get_oci_bundle_paths
+
+APPS_PATH = os.path.join(os.sep, "home", "app")
 
 
 class AppManager(object):
@@ -94,10 +97,13 @@ class AppManager(object):
             )
             raise AppUninstallError(msg)
         else:
+            shutil.rmtree(app_path)
+            app_parent_dir = os.path.dirname(app_path)
+            if not os.listdir(app_parent_dir):
+                shutil.rmtree(app_parent_dir)
             log.info(
                 "'{}' removal from '{}' successful".format(app_name, app_path)
             )
-            shutil.rmtree(app_path)
 
     def force_install_app(self, app_pkg, app_path):
         """
@@ -117,16 +123,12 @@ class AppManager(object):
         Each application directory is named after the installed application.
         """
         log.debug("List of installed applications:\n")
-        subdirs = [
-            name
-            for name in os.listdir(apps_path)
-            if os.path.isdir(os.path.join(apps_path, name))
-        ]
-        for subdir in subdirs:
+        app_bundles = get_oci_bundle_paths(apps_path)
+        for app_bundle in app_bundles:
+            app_name = os.path.basename(os.path.dirname(app_bundle))
             # Command syntax:
-            # opkg --add-dest <app_name>:<apps_path>/<app_name> list-installed
-            app_name = subdir
-            dest = "{}:{}".format(app_name, os.path.join(apps_path, app_name))
+            # opkg --add-dest <app_name>:<app_bundle> list-installed
+            dest = "{}:{}".format(app_name, app_bundle)
             cmd = ["opkg", "--add-dest", dest, "list-installed"]
             try:
                 subprocess.check_call(cmd)
