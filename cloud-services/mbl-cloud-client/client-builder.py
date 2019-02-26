@@ -257,7 +257,7 @@ class ClientBuilder:
                 force_rebuild
             )
         )
-        command = ["make", "mbl-cloud-client"]
+        command = ["make", "mbl-cloud-client-gtest"]
         if force_rebuild:
             command += ["-B"]
         subprocess.check_call(command, cwd=self.pal_target_directory)

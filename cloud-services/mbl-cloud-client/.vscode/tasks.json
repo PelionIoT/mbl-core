@@ -7,7 +7,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "MBL Client: Prepare",
+            "label": "MBL_Client:Prepare",
             "type": "shell",
             "command": "python3",
             "args": [
@@ -26,7 +26,7 @@
             "problemMatcher": []
         },
         {
-            "label": "MBL Client: Configure",
+            "label": "MBL_Client:Configure",
             "type": "shell",
             "command": "python3",
             "args": [
@@ -43,7 +43,7 @@
             "problemMatcher": [],
         },
         {
-            "label": "MBL Client: Build",
+            "label": "MBL_Client:Build",
             "type": "shell",
             "command": "python3",
             "args": [
@@ -65,7 +65,7 @@
             ]
         },
         {
-            "label": "MBL Client: Rebuild",
+            "label": "MBL_Client:Rebuild",
             "type": "shell",
             "command": "python3",
             "args": [

@@ -1,28 +1,16 @@
-// Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
-//
-// SPDX-License-Identifier: BSD-3-Clause
 {
-    "[python]": {
-        "editor.rulers": [79]
-    },
-    "[cpp]": {
-        "editor.rulers": [100]
-    },
-    "[c]": {
-        "editor.rulers": [100]
-    },
     "files.associations": {
-        "atomic": "cpp",
-        "functional": "cpp",
+        "cstdio": "cpp",
         "array": "cpp",
+        "atomic": "cpp",
         "*.tcc": "cpp",
         "cctype": "cpp",
+        "chrono": "cpp",
         "cinttypes": "cpp",
         "clocale": "cpp",
-        "csignal": "cpp",
+        "cmath": "cpp",
         "cstdarg": "cpp",
         "cstdint": "cpp",
-        "cstdio": "cpp",
         "cstdlib": "cpp",
         "cstring": "cpp",
         "ctime": "cpp",
@@ -33,6 +21,7 @@
         "vector": "cpp",
         "exception": "cpp",
         "fstream": "cpp",
+        "functional": "cpp",
         "initializer_list": "cpp",
         "iomanip": "cpp",
         "iosfwd": "cpp",
@@ -42,6 +31,8 @@
         "memory": "cpp",
         "new": "cpp",
         "ostream": "cpp",
+        "numeric": "cpp",
+        "ratio": "cpp",
         "sstream": "cpp",
         "stdexcept": "cpp",
         "streambuf": "cpp",
@@ -49,11 +40,6 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "typeinfo": "cpp",
-        "utility": "cpp",
-        "cmath": "cpp",
-        "numeric": "cpp",
-        "chrono": "cpp",
-        "cstddef": "cpp",
-        "ratio": "cpp"
+        "utility": "cpp"
     }
 }

@@ -32,8 +32,9 @@ namespace mbl {
 /**
  * Initialize the log and trace mechanisms. After calling this the mbed-trace
  * library can be used for logging.
+ * user_log_path may be nullptr, in that case g_log_stream will be used
  */
-MblError log_init();
+MblError log_init(const char *user_log_path);
 
 } // namespace mbl
 

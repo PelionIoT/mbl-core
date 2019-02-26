@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [        
+
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/__x86_x64_NativeLinux_mbedtls/Debug/mbl-cloud-client-gtest",
+            "args": [ 
+                "--gtest_filter=*",
+                "--gtest_repeat=1", 
+                "--gtest_shuffle",
+                "--gtest_color=yes"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [ ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing -gdb-set detach-on-fork off",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "MBL_Client:Build"
+        }
+    ]
+}
