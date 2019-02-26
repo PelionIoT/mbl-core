@@ -6,13 +6,16 @@
 
 #include <gtest/gtest.h>
 
-#include "CloudConnectCommon_Internal.h"
 #include "DBusAdapter.h"
 #include "DBusAdapter_Impl.h"
 #include "MblError.h"
 #include "ResourceBroker.h"
 #include "TestInfraAppThread.h"
-#include "TestInfraCommon.h"
+#include "TestInfra.h"
+#include "TestInfra_DBusAdapterTester.h"
+#include "CloudConnectTrace.h"
+
+#define TRACE_GROUP "dbus-gtest-infra"
 
 using namespace mbl;
 
@@ -134,7 +137,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
     assert(user_data);
     
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-    const RegisterResources_entry &data = RegisterResources_test_array[adapter_param_data->test_array_index];
+    const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index];
 
     sd_bus_message *reply = nullptr;
     sd_objects_cleaner<sd_bus_message> reply_cleaner (reply, sd_bus_message_unref);
@@ -144,7 +147,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
 
     int test_result = TEST_SUCCESS;
     int r = sd_bus_call_method(
-                    app_thread->connection_handle_,
+                    app_thread->get_connection_handle(),
                     DBUS_CLOUD_SERVICE_NAME,
                     DBUS_CLOUD_CONNECT_OBJECT_PATH,
                     DBUS_CLOUD_CONNECT_INTERFACE_NAME,
@@ -152,14 +155,14 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
                     &error,
                     &reply,
                     "s",
-                    data.input_json_data);
+                    test_data.input_json_data);
 
     if (r < 0) {
         // message reply error gotten
         // compare to expected errors
-        if(0 != strcmp(error.name, data.expected_sd_bus_error_name)) {
+        if(0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
             TR_ERR("Actual error(%s) != Expected error(%s)", 
-                error.name, data.expected_sd_bus_error_name);
+                error.name, test_data.expected_sd_bus_error_name);
             set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
         }
     }else {
@@ -173,17 +176,17 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
         } else {
             // compare to expected 
-            if(0 != strcmp(out_access_token, data.expected_access_token))
+            if(0 != strcmp(out_access_token, test_data.expected_access_token))
             {
                 TR_ERR("Actual access_token(%s) != Expected access_token(%s)", 
-                    out_access_token, test_data->expected_access_token);
+                    out_access_token, test_data.expected_access_token);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
             
-            if(data.expected_status != out_status)
+            if(test_data.expected_status != out_status)
             {
                 TR_ERR("Actual status(%d) != Expected status(%d)", 
-                    out_status, test_data->expected_status);
+                    out_status, test_data.expected_status);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
         }
@@ -271,7 +274,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
     assert(user_data);
     
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-    const DeregisterResources_entry &data = DeregisterResources_test_array[adapter_param_data->test_array_index];
+    const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index];
 
     sd_bus_message *reply = nullptr;
     sd_objects_cleaner<sd_bus_message> reply_cleaner (reply, sd_bus_message_unref);
@@ -281,7 +284,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
 
     int test_result = TEST_SUCCESS;
     int r = sd_bus_call_method(
-                    app_thread->connection_handle_,
+                    app_thread->get_connection_handle(),
                     DBUS_CLOUD_SERVICE_NAME,
                     DBUS_CLOUD_CONNECT_OBJECT_PATH,
                     DBUS_CLOUD_CONNECT_INTERFACE_NAME,
@@ -289,14 +292,14 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
                     &error,
                     &reply,
                     "s",
-                    data.input_token_data);
+                    test_data.input_token_data);
 
     if (r < 0) {
         // message reply error gotten
         // compare to expected errors
-        if(0 != strcmp(error.name, data.expected_sd_bus_error_name)) {
+        if(0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
             TR_ERR("Actual error(%s) != Expected error(%s)", 
-                error.name, data.expected_sd_bus_error_name);
+                error.name, test_data.expected_sd_bus_error_name);
             set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
         }
     } else {
@@ -309,10 +312,10 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
         } else {
             // compare to expected 
-            if(data.expected_status != out_status)
+            if(test_data.expected_status != out_status)
             {
                 TR_ERR("Actual status(%d) != Expected status(%d)", 
-                    out_status, test_data->expected_status);
+                    out_status, test_data.expected_status);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
         }
@@ -353,3 +356,4 @@ TEST_P(ValidateDeregisterResources, BasicMethodReply)
     ASSERT_EQ((uintptr_t)retval, TEST_SUCCESS);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
+
