@@ -252,7 +252,7 @@ namespace mbl {
                                                                item.name.size(),
                                                                item.type);
 
-                if (kcm_delete_status != KCM_STATUS_SUCCESS)
+                if (kcm_delete_status != KCM_STATUS_SUCCESS || kcm_delete_status != KCM_STATUS_ITEM_NOT_FOUND)
                 {
                     print_kcm_error_status(std::cerr,
                                            "Failed to delete KCM Item! Item name: " + item.name,
