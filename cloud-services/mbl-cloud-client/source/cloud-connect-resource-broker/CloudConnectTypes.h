@@ -14,14 +14,14 @@
 #include <vector>
 #include <string>
 
-#define RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return #ENUM
-
 // Simple stringify
 #define stringify(s) #s
 
 // If you want to stringify the result of expansion of a macro argument, you have to use two 
 // levels of macros. (use xstringify())
 #define xstringify(s) stringify(s)
+
+#define SWITCH_RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return stringify(ENUM)
 
 // to mark unused variable for the preprocessor
 #define UNUSED(x) (void)(x)
@@ -164,7 +164,7 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status);
  * @param CloudConnectStatus input status. 
  * @return const char* D-Bus format string representation of the provided status.
  */
-const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status);
+const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus status);
 
 /**
  * @brief Returns stringified value of Cloud Connect Status.

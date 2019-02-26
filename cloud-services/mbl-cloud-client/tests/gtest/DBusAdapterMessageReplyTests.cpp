@@ -110,21 +110,21 @@ const RegisterResources_entry RegisterResources_test_array[] = {
 
     {
         "Set_Error_Return_Error",            // input_json_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         "",       /* not relevant */         // expected_access_token             
         CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
     },                             
 
     {
         "Set_Success_Return_Error",          // input_json_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         "",      /* not relevant */          // expected_access_token
         CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
     },
 
     {
         "Set_Error_Return_Success",          // input_json_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         "",      /* not relevant */          // expected_access_token
         CLOUD_CONNECT_ERR_FAILED             // expected_sd_bus_error_name
     }
@@ -139,8 +139,8 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
     const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index];
 
-    sd_bus_message *reply = nullptr;
-    sd_objects_cleaner<sd_bus_message> reply_cleaner (reply, sd_bus_message_unref);
+    sd_bus_message *m_reply = nullptr;
+    sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
 
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_objects_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
@@ -153,7 +153,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
                     DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                     "RegisterResources",
                     &error,
-                    &reply,
+                    &m_reply,
                     "s",
                     test_data.input_json_data);
 
@@ -170,7 +170,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
         // read status and access_token
         uint32_t out_status = ERR_FAILED;
         const char* out_access_token = nullptr;
-        r = sd_bus_message_read(reply, "us", &out_status, &out_access_token);
+        r = sd_bus_message_read(m_reply, "us", &out_status, &out_access_token);
         if (r < 0) {
             TR_ERR("sd_bus_message_read failed(err=%d)", r);
             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
@@ -250,19 +250,19 @@ const DeregisterResources_entry DeregisterResources_test_array[] = {
 
     {
         "Set_Error_Return_Error",            // input_token_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
     },                             
 
     {
         "Set_Success_Return_Error",          // input_token_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
     },
 
     {
         "Set_Error_Return_Success",          // input_token_data
-        FIRST_ERROR,    /* not relevant */   // expected_status
+        ERR_FIRST,    /* not relevant */   // expected_status
         CLOUD_CONNECT_ERR_FAILED             // expected_sd_bus_error_name
     }
 };
@@ -276,8 +276,8 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
     const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index];
 
-    sd_bus_message *reply = nullptr;
-    sd_objects_cleaner<sd_bus_message> reply_cleaner (reply, sd_bus_message_unref);
+    sd_bus_message *m_reply = nullptr;
+    sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
 
     sd_bus_error error = SD_BUS_ERROR_NULL;
     sd_objects_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
@@ -290,7 +290,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
                     DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                     "DeregisterResources",
                     &error,
-                    &reply,
+                    &m_reply,
                     "s",
                     test_data.input_token_data);
 
@@ -306,7 +306,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
         // method reply gotten
         // read status and access_token
         uint32_t out_status = ERR_FAILED;
-        r = sd_bus_message_read(reply, "u", &out_status);
+        r = sd_bus_message_read(m_reply, "u", &out_status);
         if (r < 0) {
             TR_ERR("sd_bus_message_read failed(err=%d)", r);
             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);

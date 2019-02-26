@@ -77,9 +77,9 @@ const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
-        RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
+        SWITCH_RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_FAILED);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
 
     default: return "Unknown CloudConnectStatus value";
     }
@@ -99,7 +99,7 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
     }
 }
 
-const char* CloudConnectStatus_error_to_DBus_str(const CloudConnectStatus status)
+const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus status)
 {
     switch (status)
     {
@@ -114,13 +114,13 @@ const char* ResourceDataType_stringify(const ResourceDataType type)
 {
     switch (type)
     {
-        RETURN_STRINGIFIED_VALUE(STRING);
-        RETURN_STRINGIFIED_VALUE(INTEGER);
-        RETURN_STRINGIFIED_VALUE(FLOAT);
-        RETURN_STRINGIFIED_VALUE(BOOLEAN);
-        RETURN_STRINGIFIED_VALUE(OPAQUE);
-        RETURN_STRINGIFIED_VALUE(TIME);
-        RETURN_STRINGIFIED_VALUE(OBJLINK);
+        SWITCH_RETURN_STRINGIFIED_VALUE(STRING);
+        SWITCH_RETURN_STRINGIFIED_VALUE(INTEGER);
+        SWITCH_RETURN_STRINGIFIED_VALUE(FLOAT);
+        SWITCH_RETURN_STRINGIFIED_VALUE(BOOLEAN);
+        SWITCH_RETURN_STRINGIFIED_VALUE(OPAQUE);
+        SWITCH_RETURN_STRINGIFIED_VALUE(TIME);
+        SWITCH_RETURN_STRINGIFIED_VALUE(OBJLINK);
 
     default: return "Unknown Resource Data Type";
     }

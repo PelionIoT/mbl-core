@@ -66,7 +66,7 @@ MblError DBusAdapterImpl::add_match_rules()
 // Cloud Connect errors to D-Bus format error strings translation map.
 // Information from this map is used when D-Bus ifrastructure translates
 // sd_bus_error.name field string to the negative integer value.
-const sd_bus_error_map cloud_connect_dbus_errors[] = {
+static const sd_bus_error_map cloud_connect_dbus_errors[] = {
     SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_FAILED, ERR_FAILED),
     SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_INTERNAL_ERROR, ERR_INTERNAL_ERROR),
 
@@ -242,7 +242,53 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     return r;
 }
 
-int print_log_set_sd_bus_error_f(
+
+
+
+
+
+// Maximal length of the buffer that can be printed in with LOG_AND_SET_SD_BUS_ERROR
+#define MAX_LOG_LINE 1024
+
+/**
+ * @brief Wrapper over log_and_set_sd_bus_error_f. 
+ * 
+ * @param err_num errno 
+ * @param ret_error sd-bus error description place-holder that is filled in the
+ *                  case of an error. 
+ * @param format printf like format
+ * @param ... arguments according to format
+ */
+#define LOG_AND_SET_SD_BUS_ERROR_F(err_num, ret_error, format, ...) \
+    log_and_set_sd_bus_error_f(err_num, ret_error, __func__, __LINE__, format, ##__VA_ARGS__)
+
+/**
+ * @brief Wrapper over log_and_set_sd_bus_error. 
+ * 
+ * @param err_num errno 
+ * @param ret_error sd-bus error description place-holder that is filled in the
+ *                  case of an error. 
+ * @param method_name failed method name.
+ */
+#define LOG_AND_SET_SD_BUS_ERROR(err_num, ret_error, method_name) \
+    log_and_set_sd_bus_error(err_num, ret_error, __func__, __LINE__, method_name)
+/**
+ * @brief Prints error information to logs according to provided format, 
+ * fills sd bus error structure and returns negative error.  
+ * If ret_error was already filled, returns an error that was set. 
+ * 
+ * @param err_num errno 
+ * @param ret_error sd-bus error description place-holder that is filled in the
+ *                  case of an error. 
+ * @param func function name to put in logs
+ * @param line line in file to put in logs
+ * @param format printf like format
+ * @param ... arguments according to format
+ * @return int negative integer value that equals to -err_num if ret_error was not
+ *             previously filled, or existing error from ret_error if the structure
+ *             was already filled.  
+ */
+static int log_and_set_sd_bus_error_f(
     int err_num, sd_bus_error* ret_error, const char* func, int line, const char* format, ...)
 {
 
@@ -255,13 +301,30 @@ int print_log_set_sd_bus_error_f(
     va_start(ap, format);
     char buffer[MAX_LOG_LINE];
     vsnprintf(buffer, MAX_LOG_LINE, format, ap);
+
+    // TODO: REPLACE printf to tr_err
     printf("func %s, line %d %s", func, line, buffer);
     int r = sd_bus_error_set_errnofv(ret_error, err_num, format, ap);
     va_end(ap);
     return r;
 }
 
-int print_log_set_sd_bus_error(
+/**
+ * @brief Prints short error information to logs, 
+ * fills sd bus error structure and returns negative error.  
+ * If ret_error was already filled, returns an error that was set. 
+ * 
+ * @param err_num errno 
+ * @param ret_error sd-bus error description place-holder that is filled in the
+ *                  case of an error. 
+ * @param func function name to put in logs
+ * @param line line in file to put in logs
+ * @param method_name failed method name.
+ * @return int negative integer value that equals to -err_num if ret_error was not
+ *             previously filled, or existing error from ret_error if the structure
+ *             was already filled.  
+ */
+static int log_and_set_sd_bus_error(
     int err_num, sd_bus_error* ret_error, const char* func, int line, const char* method_name)
 {
 
@@ -270,6 +333,7 @@ int print_log_set_sd_bus_error(
         return sd_bus_error_get_errno(ret_error);
     }
 
+    // TODO: REPLACE printf to tr_err
     printf("func %s, line %d %s failed errno = %s (%d)",
            func,
            line,
@@ -378,7 +442,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     // TODO-  IOTMBL-1606 - add handling of matching rules. they can come from any interface
     // (for now only standard)
     if (sd_bus_message_is_empty(m) != 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, "Received an empty message!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, "Received an empty message!");
     }
 
     // Expect message with our known name, directly sent to us (unicast)
@@ -386,18 +450,18 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                      DBUS_CLOUD_SERVICE_NAME,
                      strlen(DBUS_CLOUD_SERVICE_NAME)))
     {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(EFAULT,
+        return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT,
                                             ret_error,
                                             "Received message to wrong destination (%s)!",
                                             sd_bus_message_get_destination(m));
     }
 
-    // Expect message to a single object patch DBUS_CLOUD_CONNECT_OBJECT_PATH
+    // Expect message to a single object path DBUS_CLOUD_CONNECT_OBJECT_PATH
     if (0 != strncmp(sd_bus_message_get_path(m),
                      DBUS_CLOUD_CONNECT_OBJECT_PATH,
                      strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
     {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(
+        return LOG_AND_SET_SD_BUS_ERROR_F(
             EFAULT, ret_error, "Unexisting object path (%s)!", sd_bus_message_get_path(m));
     }
 
@@ -406,7 +470,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                      DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                      strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
     {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(
+        return LOG_AND_SET_SD_BUS_ERROR_F(
             EFAULT, ret_error, "Unexisting interface (%s)!", sd_bus_message_get_interface(m));
     }
 
@@ -418,10 +482,10 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     uint8_t type = 0;
     int r = sd_bus_message_get_type(m, &type);
     if (r < 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
+        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
     }
     if (!(is_valid_message_type(type))) {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG,
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG,
                                             ret_error,
                                             "Received message from a wrong type (%s)!",
                                             message_type_to_str(type));
@@ -469,7 +533,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     {
         if (r > 0) {
             // positive value of r is unexpected
-            TR_DEBUG("Processed with unexpected status r=%d (greater that 0)!"
+            TR_ERR("Processed with unexpected status r=%d (greater that 0)!"
                      " Returning as negative error (%d)",
                      r,
                      -r);
@@ -478,7 +542,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         else
         {
             // r is negative, that means failure
-            TR_DEBUG("Processed with failure status r=%d!", r);
+            TR_ERR("Processed with failure status r=%d!", r);
         }
     }
 
@@ -501,7 +565,7 @@ int DBusAdapterImpl::handle_resource_broker_async_method_success(sd_bus_message*
     if (!(pending_messages_.insert(m_to_reply_on).second)) {
         TR_ERR("pending_messages_.insert failed!");
         return sd_bus_error_set_const(ret_error,
-                                      CloudConnectStatus_error_to_DBus_str(ERR_INTERNAL_ERROR),
+                                      CloudConnectStatus_error_to_DBus_format_str(ERR_INTERNAL_ERROR),
                                       CloudConnectStatus_to_str(ERR_INTERNAL_ERROR));
     }
 
@@ -538,27 +602,27 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
              method_name,
              sender_name);
 
-    sd_bus_message* reply = nullptr;
+    sd_bus_message* m_reply = nullptr;
 
-    // When we leave this function scope, we need to call sd_bus_message_unrefp on reply
-    sd_objects_cleaner<sd_bus_message> reply_cleaner(reply, sd_bus_message_unref);
+    // When we leave this function scope, we need to call sd_bus_message_unrefp on m_reply
+    sd_objects_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
 
-    int r = sd_bus_message_new_method_return(m_to_reply_on, &reply);
+    int r = sd_bus_message_new_method_return(m_to_reply_on, &m_reply);
     if (r < 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_new_method_return");
+        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_new_method_return");
     }
 
     if (0 == strcmp(types_format, "us")) {
         // we expect types_format = "us" for RegisterResources.
         // access_token argument should not be null.
         assert(access_token);
-        r = sd_bus_message_append(reply, types_format, status, access_token);
+        r = sd_bus_message_append(m_reply, types_format, status, access_token);
     }
     else if (0 == strcmp(types_format, "u"))
     {
         // we expect types_format = "u" for DeregisterResources, AddResourceInstances
         // and RemoveResourceInstances.
-        r = sd_bus_message_append(reply, types_format, status);
+        r = sd_bus_message_append(m_reply, types_format, status);
     }
     else
     {
@@ -570,12 +634,12 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
     }
 
     if (r < 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
+        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
     }
 
-    r = sd_bus_send(connection_handle_, reply, nullptr);
+    r = sd_bus_send(connection_handle_, m_reply, nullptr);
     if (r < 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_send");
+        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_send");
     }
 
     TR_DEBUG("Reply on %s method successfully sent to %s", method_name, sender_name);
@@ -611,7 +675,7 @@ int DBusAdapterImpl::handle_resource_broker_method_failure(MblError mbl_status,
     // and returns it's value(in this case -status_to_send)
     return sd_bus_error_set_const(
         ret_error,
-        CloudConnectStatus_error_to_DBus_str(status_to_send), // sd_bus_error.name
+        CloudConnectStatus_error_to_DBus_format_str(status_to_send), // sd_bus_error.name
         CloudConnectStatus_to_readable_str(status_to_send));  // sd_bus_error.message
 }
 
@@ -623,23 +687,23 @@ int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
     assert(m);
 
     if (sd_bus_message_get_expect_reply(m) == 0) {
-        // reply to the message m is not expected.
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(
+        // m_reply to the message m is not expected.
+        return LOG_AND_SET_SD_BUS_ERROR_F(
             ENOMSG, ret_error, "Unexpected message type: no reply expected!");
     }
 
     if (!(sd_bus_message_has_signature(m, "s"))) {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, "Unexpected message signature!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, "Unexpected message signature!");
     }
 
     const char* out_read = nullptr;
     int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &out_read);
     if (r < 0) {
-        return PRINT_LOG_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_read_basic");
+        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_read_basic");
     }
 
     if ((nullptr == out_read) || (strlen(out_read) == 0)) {
-        return PRINT_LOG_SET_SD_BUS_ERROR_F(
+        return LOG_AND_SET_SD_BUS_ERROR_F(
             EINVAL, ret_error, "Invalid message argument: empty string!");
     }
 
@@ -948,11 +1012,11 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         return MblError::DBA_IllegalState;
     }
 
-    sd_bus_message* signal = nullptr;
-    sd_objects_cleaner<sd_bus_message> signal_cleaner(signal, sd_bus_message_unref);
+    sd_bus_message* m_signal = nullptr;
+    sd_objects_cleaner<sd_bus_message> signal_cleaner(m_signal, sd_bus_message_unref);
 
     int r = sd_bus_message_new_signal(connection_handle_,
-                                      &signal,
+                                      &m_signal,
                                       DBUS_CLOUD_CONNECT_OBJECT_PATH,
                                       DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                                       signal_name);
@@ -963,20 +1027,20 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
 
     // set destination of signal message
     const char* signal_dest = sd_bus_message_get_sender(m_to_signal_on);
-    r = sd_bus_message_set_destination(signal, signal_dest);
+    r = sd_bus_message_set_destination(m_signal, signal_dest);
     if (r < 0) {
         TR_ERR("sd_bus_message_set_destination dest=%s failed(err=%d)", signal_dest, r);
         return MblError::DBA_SdBusCallFailure;
     }
 
     // append status
-    r = sd_bus_message_append(signal, "u", status);
+    r = sd_bus_message_append(m_signal, "u", status);
     if (r < 0) {
         TR_ERR("sd_bus_message_append failed(err=%d)", r);
         return MblError::DBA_SdBusCallFailure;
     }
 
-    r = sd_bus_send(connection_handle_, signal, nullptr);
+    r = sd_bus_send(connection_handle_, m_signal, nullptr);
     if (r < 0) {
         TR_ERR("sd_bus_send dest=%s failed(err=%d)", signal_dest, r);
         return MblError::DBA_SdBusCallFailure;

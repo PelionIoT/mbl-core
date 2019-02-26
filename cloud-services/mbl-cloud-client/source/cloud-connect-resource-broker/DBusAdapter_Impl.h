@@ -34,77 +34,9 @@
 #define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME     "AddResourceInstancesStatus"
 #define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME   "RemoveResourceInstancesStatus"
 
-// Maximal length of the buffer that can be printed in with PRINT_LOG_SET_SD_BUS_ERROR
-#define MAX_LOG_LINE 1024
-
-/**
- * @brief Wrapper over print_log_set_sd_bus_error_f. 
- * 
- * @param err_num errno 
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error. 
- * @param format printf like format
- * @param ... arguments according to format
- */
-#define PRINT_LOG_SET_SD_BUS_ERROR_F(err_num, ret_error, format, ...) \
-    print_log_set_sd_bus_error_f(err_num, ret_error, __func__, __LINE__, format, ##__VA_ARGS__)
-
-/**
- * @brief Wrapper over print_log_set_sd_bus_error. 
- * 
- * @param err_num errno 
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error. 
- * @param method_name failed method name.
- */
-#define PRINT_LOG_SET_SD_BUS_ERROR(err_num, ret_error, method_name) \
-    print_log_set_sd_bus_error(err_num, ret_error, __func__, __LINE__, method_name)
-
 namespace mbl {
 
-/**
- * @brief Prints error information to logs according to provided format, 
- * fills sd bus error structure and returns negative error.  
- * If ret_error was already filled, returns an error that was set. 
- * 
- * @param err_num errno 
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error. 
- * @param func function name to put in logs
- * @param line line in file to put in logs
- * @param format printf like format
- * @param ... arguments according to format
- * @return int negative integer value that equals to -err_num if ret_error was not
- *             previously filled, or existing error from ret_error if the structure
- *             was already filled.  
- */
-int print_log_set_sd_bus_error_f(
-    int err_num, 
-    sd_bus_error *ret_error, 
-    const char* func, 
-    int line, 
-    const char *format, ...);
-    
-/**
- * @brief Prints short error information to logs, 
- * fills sd bus error structure and returns negative error.  
- * If ret_error was already filled, returns an error that was set. 
- * 
- * @param err_num errno 
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error. 
- * @param func function name to put in logs
- * @param line line in file to put in logs
- * @param method_name failed method name.
- * @return int negative integer value that equals to -err_num if ret_error was not
- *             previously filled, or existing error from ret_error if the structure
- *             was already filled.  
- */
-int print_log_set_sd_bus_error(int err_num, 
-    sd_bus_error *ret_error, 
-    const char* func, 
-    int line, 
-    const char *method_name);
+
 
 /**
  * @brief sd-bus objects resource manager class.
