@@ -260,7 +260,7 @@ void ResourceBroker::handle_app_register_update_finished_cb(const uintptr_t ipc_
     regsiter_callback_handlers();
 
     // Mark that registration is finished (using atomic flag)
-    // TODO: need to handle cases when cb is not called at all
+    // TODO: need to handle cases when cb is not called at all - IOTMBL-1700
     registration_in_progress_.store(false);
 }
 

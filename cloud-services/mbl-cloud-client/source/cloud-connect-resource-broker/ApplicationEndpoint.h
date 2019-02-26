@@ -20,6 +20,7 @@
 #define ApplicationEndpoint_h_
 
 #include "MblError.h"
+
 #include <map>
 #include <string>
 #include <memory>

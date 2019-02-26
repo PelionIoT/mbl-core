@@ -231,7 +231,7 @@ private:
      * this map the right M2MBase::Operation is returned.
      */
     typedef std::map<uint8_t, M2MBase::Operation> OperationMap;
-    static OperationMap operation_map_;
+    static const OperationMap operation_;
 };        
 
 } // namespace mbl

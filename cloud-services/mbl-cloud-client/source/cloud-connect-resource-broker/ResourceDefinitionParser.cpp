@@ -53,7 +53,7 @@ namespace mbl
 {
 
 // Init static member operation_map_
-ResourceDefinitionParser::OperationMap ResourceDefinitionParser::operation_map_ = {
+const ResourceDefinitionParser::OperationMap ResourceDefinitionParser::operation_ = {
     {OP_MASK_NONE_ALLOWED, M2MBase::NOT_ALLOWED},                            // 0
     {OP_MASK_GET_ALLOWED, M2MBase::GET_ALLOWED},                             // 1
     {OP_MASK_PUT_ALLOWED, M2MBase::PUT_ALLOWED},                             // 2
@@ -99,8 +99,8 @@ MblError ResourceDefinitionParser::get_m2m_resource_operation(uint8_t operation_
     TR_DEBUG("Enter");
 
     // Verify operation mast is valid
-    auto itr = operation_map_.find(operation_mask);
-    if (itr == operation_map_.end()) {
+    auto itr = operation_.find(operation_mask);
+    if (itr == operation_.end()) {
         TR_ERR("Invalid operaion mask: %" PRId8, operation_mask);
         return Error::CCRBInvalidJson;
     }
