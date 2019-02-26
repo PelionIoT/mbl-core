@@ -17,6 +17,8 @@
 #include <stdbool.h>
 #include <string>
 #include <vector>
+#include <string>
+#include <sstream>
 
 #define TRACE_GROUP "ccrb-dbus"
 
@@ -303,7 +305,7 @@ static int log_and_set_sd_bus_error_f(
     vsnprintf(buffer, MAX_SD_BUS_ERROR_LOG_LINE, format, ap);
 
     // TODO: REPLACE printf to tr_err
-    printf("func %s, line %d %s", func, line, buffer);
+    printf("%s::%d> %s", func, line, buffer);
     int r = sd_bus_error_set_errnofv(ret_error, err_num, format, ap);
     va_end(ap);
     return r;
@@ -334,7 +336,7 @@ static int log_and_set_sd_bus_error(
     }
 
     // TODO: REPLACE printf to tr_err
-    printf("func %s, line %d %s failed errno = %s (%d)",
+    printf("%s::%d> %s failed errno = %s (%d)",
            func,
            line,
            method_name,
@@ -520,31 +522,33 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         assert(0);
     }
 
-    TR_DEBUG("Message of type %s member name %s from sender %s status:",
-             message_type_to_str(type),
-             member_name,
-             sd_bus_message_get_sender(m));
+
+    std::stringstream log_msg;
+    log_msg << "Message of type " << message_type_to_str(type) 
+            << " member name " << member_name 
+            << " from sender " << sd_bus_message_get_sender(m) << " - ";
 
     // handle and print to logs handling status
     if (r == 0) {
-        TR_DEBUG("Processed with success");
+        log_msg << "SUCCESSFULLY processed";
     }
     else
     {
+        log_msg << "FAILED to process: ";
         if (r > 0) {
             // positive value of r is unexpected
-            TR_ERR("Processed with unexpected status r=%d (greater that 0)!"
-                     " Returning as negative error (%d)",
-                     r,
-                     -r);
+            log_msg << "unexpected grater than 0 r=" << r
+                    << " (returning as negative error " << -r << ")";
             r = (-r); // return negative status
         }
         else
         {
             // r is negative, that means failure
-            TR_ERR("Processed with failure status r=%d!", r);
+            log_msg << "failure status r=" << r;
         }
     }
+
+    TR_DEBUG("%s", log_msg.str().c_str());
 
     return r;
 }
@@ -614,6 +618,9 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
 
     if (0 == strcmp(types_format, "us")) {
         // we expect types_format = "us" for RegisterResources.
+        std::string member(sd_bus_message_get_member(m_to_reply_on));
+        assert(member == "RegisterResources");
+   
         // access_token argument should not be null.
         assert(access_token);
         r = sd_bus_message_append(m_reply, types_format, status, access_token);
@@ -622,6 +629,9 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
     {
         // we expect types_format = "u" for DeregisterResources, AddResourceInstances
         // and RemoveResourceInstances.
+        std::string member(sd_bus_message_get_member(m_to_reply_on));
+        assert(member == "DeregisterResources" || member == "AddResourceInstances" || member == "RemoveResourceInstances");
+
         r = sd_bus_message_append(m_reply, types_format, status);
     }
     else
