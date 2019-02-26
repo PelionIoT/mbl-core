@@ -194,8 +194,10 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     M2MObjectList m2m_object_list;
     const std::string app_resource_definition =
         VALID_APP_RESOURCE_DEFINITION_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::None);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::None);
 
     // m2m_object_list_test (contains object_1 and object_2)
     M2MObjectList m2m_object_list_test;
@@ -285,8 +287,10 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     M2MObjectList m2m_object_list;
     std::string app_resource_definition =
         VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::None);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::None);
 
     // m2m_object_list_test (contains object_1 and object_2)
     M2MObjectList m2m_object_list_test;
@@ -352,11 +356,16 @@ TEST(JsonTest_Negative, Invalid_app_resource_definition_not_3_Level) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_1;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 
     const std::string app_resource_definition_2 = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_2;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition_2, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition_2 ,m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Invalid_app_resource_definition_missing_Observable) {
@@ -366,8 +375,10 @@ TEST(JsonTest_Negative, Invalid_app_resource_definition_missing_Observable) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_MISSING_OBSERVABLE_ENTRY;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Illegal_resource_mode) {
@@ -377,8 +388,10 @@ TEST(JsonTest_Negative, Illegal_resource_mode) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_MODE;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Illegal_resource_operation) { 
@@ -388,8 +401,10 @@ TEST(JsonTest_Negative, Illegal_resource_operation) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_OPERATION;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Unsupported_resource_type) {
@@ -399,8 +414,10 @@ TEST(JsonTest_Negative, Unsupported_resource_type) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_UNSUPPORTED_RESOURCE_TYPE;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_resource_names) {
@@ -409,8 +426,10 @@ TEST(JsonTest_Negative, Two_same_resource_names) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_RESOURCE_NAMES;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_object_instances) {
@@ -419,16 +438,20 @@ TEST(JsonTest_Negative, Two_same_object_instances) {
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT_INSTANCES;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_objects) {
     // Check that parsing of invalid JSON string with two same object names fails
     TR_DEBUG("Enter");
-    
+
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT;
     M2MObjectList m2m_object_list;
-    mbl::ResourceDefinitionParser resource_parser;
-    ASSERT_TRUE(resource_parser.build_object_list(app_resource_definition, m2m_object_list) == mbl::Error::CCRBInvalidJson);
+
+    ASSERT_TRUE(
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
+        == mbl::Error::CCRBInvalidJson);
 }

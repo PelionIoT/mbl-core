@@ -52,13 +52,8 @@
 namespace mbl
 {
 
-/**
- * @brief OPeration map is used to map bitmask operation with the corresponding
- * M2MBase::Operation value. When parsing JSON, the operation are written in an
- * array and for each operation we set the corresponding masp using or operator. Using
- * this map the right M2MBase::Operation is returned.
- */
-static std::map<uint8_t, M2MBase::Operation> operation_map = {
+// Init static member operation_map_
+ResourceDefinitionParser::OperationMap ResourceDefinitionParser::operation_map_ = {
     {OP_MASK_NONE_ALLOWED, M2MBase::NOT_ALLOWED},                            // 0
     {OP_MASK_GET_ALLOWED, M2MBase::GET_ALLOWED},                             // 1
     {OP_MASK_PUT_ALLOWED, M2MBase::PUT_ALLOWED},                             // 2
@@ -79,12 +74,14 @@ static std::map<uint8_t, M2MBase::Operation> operation_map = {
     {OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
      M2MBase::PUT_POST_DELETE_ALLOWED}, // 14
     {OP_MASK_GET_ALLOWED | OP_MASK_PUT_ALLOWED | OP_MASK_POST_ALLOWED | OP_MASK_DELETE_ALLOWED,
-     M2MBase::GET_PUT_POST_DELETE_ALLOWED}, // 15
+     M2MBase::GET_PUT_POST_DELETE_ALLOWED} // 15
 };
 
-// Helper functions:
-static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string& resource_type)
+M2MResourceInstance::ResourceType
+ResourceDefinitionParser::get_m2m_resource_type(const std::string& resource_type)
 {
+    TR_DEBUG("Enter");
+
     if (resource_type == JSON_RESOURCE_TYPE_INTEGER) {
         return M2MResourceInstance::INTEGER;
     }
@@ -96,28 +93,19 @@ static M2MResourceInstance::ResourceType get_m2m_resource_type(const std::string
     assert(0); // Shouldn't be here!
 }
 
-static MblError get_m2m_resource_operation(uint8_t operation_mask, M2MBase::Operation& operation)
+MblError ResourceDefinitionParser::get_m2m_resource_operation(uint8_t operation_mask,
+                                                              M2MBase::Operation& operation)
 {
+    TR_DEBUG("Enter");
+
     // Verify operation mast is valid
-    auto itr = operation_map.find(operation_mask);
-    if (itr == operation_map.end()) {
+    auto itr = operation_map_.find(operation_mask);
+    if (itr == operation_map_.end()) {
         TR_ERR("Invalid operaion mask: %" PRId8, operation_mask);
         return Error::CCRBInvalidJson;
     }
     operation = itr->second;
     return Error::None;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-ResourceDefinitionParser::ResourceDefinitionParser()
-{
-    TR_DEBUG("Enter");
-}
-
-ResourceDefinitionParser::~ResourceDefinitionParser()
-{
-    TR_DEBUG("Enter");
 }
 
 MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_object_instance,
@@ -131,6 +119,7 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
                                                     uint8_t operation_mask)
 {
     TR_DEBUG("Enter");
+
     M2MBase::Operation m2m_operation;
     M2MResourceInstance::ResourceType m2m_res_type = get_m2m_resource_type(resource_type);
     MblError retval = get_m2m_resource_operation(operation_mask, m2m_operation);
@@ -220,14 +209,15 @@ MblError ResourceDefinitionParser::parse_operation(Json::Value& resource, uint8_
 }
 
 MblError ResourceDefinitionParser::parse_resource(const std::string& resource_name,
-                                                  Json::Value& json_value_resource,
+                                                  Json::Value& resource_definition,
                                                   M2MObjectInstance* m2m_object_instance)
 {
     TR_DEBUG("resource_name: %s", resource_name.c_str());
-    // Leave the next debug line commented. Uncomment in case of heavy debuging
-    // TR_DEBUG("value: %s", json_value_resource.toStyledString().c_str());
 
-    if (json_value_resource.empty()) {
+    // Leave the next debug line commented. Uncomment in case of heavy debuging
+    // TR_DEBUG("value: %s", resource_definition.toStyledString().c_str());
+
+    if (resource_definition.empty()) {
         // Error: Invalid JSON, we support only JSONs with 3 levels
         // (Obj/ObjInstance/Resource)
         TR_ERR("Invalid JSON. Resource is empty.");
@@ -244,7 +234,7 @@ MblError ResourceDefinitionParser::parse_resource(const std::string& resource_na
     bool found_res_observable = false;
     bool resource_observable = false;
 
-    for (auto itr = json_value_resource.begin(); itr != json_value_resource.end(); itr++) {
+    for (auto itr = resource_definition.begin(); itr != resource_definition.end(); itr++) {
         Json::Value res = *itr;
         Json::Value res_name = itr.key();
 
@@ -350,12 +340,12 @@ MblError ResourceDefinitionParser::parse_resource(const std::string& resource_na
 }
 
 MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
-                                                         Json::Value& json_value_object_instance,
+                                                         Json::Value& object_instance_definition,
                                                          M2MObject* m2m_object)
 {
     TR_DEBUG("object instance id: %d", object_instance_id);
 
-    if (json_value_object_instance.empty()) {
+    if (object_instance_definition.empty()) {
         // Error: Invalid JSON, we support only JSONs with 3 levels
         // (Obj/ObjInstance/Resource)
         TR_ERR("Invalid JSON. ObjectInstance is empty.");
@@ -377,12 +367,13 @@ MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
         return Error::CCRBCreateM2MObjFailed;
     }
 
-    for (auto itr = json_value_object_instance.begin(); itr != json_value_object_instance.end();
+    for (auto itr = object_instance_definition.begin(); itr != object_instance_definition.end();
          itr++)
     {
-        Json::Value json_value_resource = *itr;
+        Json::Value resource_definition = *itr;
         Json::Value resource_name = itr.key();
-        if (parse_resource(resource_name.asString(), json_value_resource, m2m_object_instance) != Error::None)
+        if (parse_resource(resource_name.asString(), resource_definition, m2m_object_instance) !=
+            Error::None)
         {
             TR_ERR("parse_resource failed.");
             return Error::CCRBInvalidJson;
@@ -393,12 +384,12 @@ MblError ResourceDefinitionParser::parse_object_instance(int object_instance_id,
 }
 
 MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
-                                                Json::Value& json_value_object,
+                                                Json::Value& object_definition,
                                                 M2MObjectList& m2m_object_list)
 {
     TR_DEBUG("object_name: %s", object_name.c_str());
 
-    if (json_value_object.empty()) {
+    if (object_definition.empty()) {
         // Error: Invalid JSON, we support only JSONs with 3 levels
         // (Obj/Object Instance/Resource)
         TR_ERR("Invalid JSON. ObjectID is empty.");
@@ -413,11 +404,11 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     TR_DEBUG("Created m2m_object: %s", m2m_object->name());
     m2m_object_list.push_back(m2m_object);
 
-    for (auto itr = json_value_object.begin(); itr != json_value_object.end(); itr++) {
-        Json::Value json_value_object_instance = *itr;
+    for (auto itr = object_definition.begin(); itr != object_definition.end(); itr++) {
+        Json::Value object_instance_definition = *itr;
         Json::Value object_instance_id = itr.key();
         if (parse_object_instance(std::stoi(object_instance_id.asString()),
-                                  json_value_object_instance,
+                                  object_instance_definition,
                                   m2m_object) != Error::None)
         {
             TR_ERR("parse_object_instance failed.");
@@ -464,9 +455,9 @@ ResourceDefinitionParser::build_object_list(const std::string& application_resou
         }
         // Parse all objects:
         for (auto itr = root.begin(); itr != root.end(); itr++) {
-            Json::Value json_value_object = *itr;
+            Json::Value object_definition = *itr;
             Json::Value object_name = itr.key();
-            retval = parse_object(object_name.asString(), json_value_object, m2m_object_list);
+            retval = parse_object(object_name.asString(), object_definition, m2m_object_list);
             if (retval != Error::None) {
                 TR_ERR("parse_object failed with error %s", MblError_to_str(retval));
                 break;
