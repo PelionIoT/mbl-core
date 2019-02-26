@@ -377,7 +377,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
 
     // TODO-  IOTMBL-1606 - add handling of matching rules. they can come from any interface
     // (for now only standard)
-    if (sd_bus_message_is_empty(m) >= 0) {
+    if (sd_bus_message_is_empty(m) != 0) {
         return PRINT_LOG_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, "Received an empty message!");
     }
 
@@ -434,14 +434,14 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     r = -EBADRQC;
     const char* member_name = nullptr;
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
-    if (0 <= sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
+    if (0 < sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
         member_name = DBUS_CC_REGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_RegisterResources(m, ret_error);
         if (r < 0) {
             TR_ERR("process_message_RegisterResources failed!");
         }
     }
-    else if (0 <= sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))
+    else if (0 < sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))
     {
         member_name = DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME;
         r = impl->process_message_DeregisterResources(m, ret_error);
