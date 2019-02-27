@@ -245,13 +245,6 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
 }
 
 
-
-
-
-
-// Maximal length of the buffer that can be printed in with LOG_AND_SET_SD_BUS_ERROR
-#define MAX_SD_BUS_ERROR_LOG_LINE 1024
-
 /**
  * @brief Wrapper over log_and_set_sd_bus_error_f. 
  * 
