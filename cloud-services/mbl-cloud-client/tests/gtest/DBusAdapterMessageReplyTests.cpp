@@ -102,7 +102,7 @@ struct RegisterResources_entry{
     const char *expected_sd_bus_error_name;
 };
 
-const RegisterResources_entry RegisterResources_test_array[] = {
+const static std::vector<RegisterResources_entry> RegisterResources_test_array = {
 
     // string input                
     {
@@ -211,7 +211,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
 class ValidateRegisterResources : public testing::TestWithParam<int>{};
 INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
                         ValidateRegisterResources,
-                        ::testing::Range(0, (int)ARRAY_SIZE(RegisterResources_test_array), 1));
+                        ::testing::Range(0, (int)RegisterResources_test_array.size(), 1));
 TEST_P(ValidateRegisterResources, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;    
@@ -244,7 +244,7 @@ struct DeregisterResources_entry{
     const char *expected_sd_bus_error_name;
 };
 
-const DeregisterResources_entry DeregisterResources_test_array[] = {
+const static std::vector<DeregisterResources_entry> DeregisterResources_test_array = {
 
     // string input                
     {
@@ -341,7 +341,7 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
 class ValidateDeregisterResources : public testing::TestWithParam<int>{};
 INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
                         ValidateDeregisterResources,
-                        ::testing::Range(0, (int)ARRAY_SIZE(DeregisterResources_test_array), 1));
+                        ::testing::Range(0, (int)DeregisterResources_test_array.size(), 1));
 TEST_P(ValidateDeregisterResources, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;    

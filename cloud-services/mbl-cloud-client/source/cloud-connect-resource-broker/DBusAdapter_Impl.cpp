@@ -258,11 +258,10 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
  * @param err_num errno 
  * @param ret_error sd-bus error description place-holder that is filled in the
  *                  case of an error. 
- * @param format printf like format
- * @param ... arguments according to format
+ * @param stringstream object that should be printed 
  */
-#define LOG_AND_SET_SD_BUS_ERROR_F(err_num, ret_error, format, ...) \
-    log_and_set_sd_bus_error_f(err_num, ret_error, __func__, __LINE__, format, ##__VA_ARGS__)
+#define LOG_AND_SET_SD_BUS_ERROR_F(err_num, ret_error, stringstream) \
+    log_and_set_sd_bus_error_f(err_num, ret_error, __func__, __LINE__, stringstream)
 
 /**
  * @brief Wrapper over log_and_set_sd_bus_error. 
@@ -284,31 +283,22 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
  *                  case of an error. 
  * @param func function name to put in logs
  * @param line line in file to put in logs
- * @param format printf like format
- * @param ... arguments according to format
+ * @param msg object that should be printed 
  * @return int negative integer value that equals to -err_num if ret_error was not
  *             previously filled, or existing error from ret_error if the structure
  *             was already filled.  
  */
 static int log_and_set_sd_bus_error_f(
-    int err_num, sd_bus_error* ret_error, const char* func, int line, const char* format, ...)
+    int err_num, sd_bus_error* ret_error, const char* func, int line, const std::stringstream &msg)
 {
-
     if (0 < sd_bus_error_is_set(ret_error)) {
         // avoid overwrite of the error that was already set
         return sd_bus_error_get_errno(ret_error);
     }
 
-    va_list ap;
-    va_start(ap, format);
-    char buffer[MAX_SD_BUS_ERROR_LOG_LINE];
-    vsnprintf(buffer, MAX_SD_BUS_ERROR_LOG_LINE, format, ap);
-
     // TODO: REPLACE printf to tr_err
-    printf("%s::%d> %s", func, line, buffer);
-    int r = sd_bus_error_set_errnofv(ret_error, err_num, format, ap);
-    va_end(ap);
-    return r;
+    printf("%s::%d> %s", func, line, msg.str().c_str());
+    return sd_bus_error_set_errnof(ret_error, err_num, "%s", msg.str().c_str());
 }
 
 /**
@@ -444,7 +434,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     // TODO-  IOTMBL-1606 - add handling of matching rules. they can come from any interface
     // (for now only standard)
     if (sd_bus_message_is_empty(m) != 0) {
-        return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, "Received an empty message!");
+        std::stringstream msg("Received an empty message!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, msg);
     }
 
     // Expect message with our known name, directly sent to us (unicast)
@@ -452,10 +443,9 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                      DBUS_CLOUD_SERVICE_NAME,
                      strlen(DBUS_CLOUD_SERVICE_NAME)))
     {
-        return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT,
-                                            ret_error,
-                                            "Received message to wrong destination (%s)!",
-                                            sd_bus_message_get_destination(m));
+        std::stringstream msg("Received message to wrong destination " + 
+            std::string(sd_bus_message_get_destination(m)));
+        return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
     }
 
     // Expect message to a single object path DBUS_CLOUD_CONNECT_OBJECT_PATH
@@ -463,8 +453,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                      DBUS_CLOUD_CONNECT_OBJECT_PATH,
                      strlen(DBUS_CLOUD_CONNECT_OBJECT_PATH)))
     {
-        return LOG_AND_SET_SD_BUS_ERROR_F(
-            EFAULT, ret_error, "Unexisting object path (%s)!", sd_bus_message_get_path(m));
+        std::stringstream msg("Unexisting object path " + std::string(sd_bus_message_get_path(m)));
+        return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
     }
 
     // Expect message to a single interface DBUS_CLOUD_CONNECT_INTERFACE_NAME
@@ -472,8 +462,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                      DBUS_CLOUD_CONNECT_INTERFACE_NAME,
                      strlen(DBUS_CLOUD_CONNECT_INTERFACE_NAME)))
     {
-        return LOG_AND_SET_SD_BUS_ERROR_F(
-            EFAULT, ret_error, "Unexisting interface (%s)!", sd_bus_message_get_interface(m));
+        std::stringstream msg("Unexisting interface " + std::string(sd_bus_message_get_interface(m)));
+        return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
     }
 
     /*
@@ -487,10 +477,9 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_get_type");
     }
     if (!(is_valid_message_type(type))) {
-        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG,
-                                            ret_error,
-                                            "Received message from a wrong type (%s)!",
-                                            message_type_to_str(type));
+        std::stringstream msg("Received message from a wrong type " + 
+            std::string(message_type_to_str(type)));
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
     TR_INFO("Received message of type %s from sender %s",
@@ -639,12 +628,9 @@ int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
         assert(0);
         // never should occur, method_reply_on_message is internal function, all invocations 
         // and parameteres are controlled by us.
-        return LOG_AND_SET_SD_BUS_ERROR_F(
-            EINVAL, ret_error,
-            "Unexpected types_format (%s) in reply on %s method to %s",
-            types_format,
-            method_name,
-            sender_name);
+        std::stringstream msg("Unexpected types_format (" + std::string(types_format) + ") in reply on (" 
+                          + method_name + ") method to " + sender_name);
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
 
     if (r < 0) {
@@ -702,12 +688,14 @@ int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
 
     if (sd_bus_message_get_expect_reply(m) == 0) {
         // m_reply to the message m is not expected.
-        return LOG_AND_SET_SD_BUS_ERROR_F(
-            ENOMSG, ret_error, "Unexpected message type: no reply expected!");
+        std::stringstream msg("Unexpected message type: no reply expected!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
+
     }
 
     if (!(sd_bus_message_has_signature(m, "s"))) {
-        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, "Unexpected message signature!");
+        std::stringstream msg("Unexpected message signature!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
     const char* out_read = nullptr;
@@ -717,8 +705,8 @@ int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
     }
 
     if ((nullptr == out_read) || (strlen(out_read) == 0)) {
-        return LOG_AND_SET_SD_BUS_ERROR_F(
-            EINVAL, ret_error, "Invalid message argument: empty string!");
+        std::stringstream msg("Invalid message argument: empty string!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
 
     out_string = std::string(out_read);
