@@ -54,6 +54,13 @@ class AppThread
      */
     int bus_request_name(const char* name);
 
+    /**
+     * @brief return d-bus connection handle
+     * 
+     * @return sd_bus * d-bus connection handle
+     */
+    sd_bus *get_connection_handle() const;
+
   private:
     int start();   
     static void *thread_main(void *app_thread);

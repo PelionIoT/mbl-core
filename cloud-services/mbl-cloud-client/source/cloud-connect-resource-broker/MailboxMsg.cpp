@@ -40,9 +40,9 @@ const char* MailboxMsg::MsgType_to_str()
     TR_DEBUG("Enter");
     switch (type_)
     {
-        RETURN_STRINGIFIED_VALUE(MsgType::UNKNOWN);
-        RETURN_STRINGIFIED_VALUE(MsgType::EXIT);
-        RETURN_STRINGIFIED_VALUE(MsgType::RAW_DATA);
+        SWITCH_RETURN_STRINGIFIED_VALUE(MsgType::UNKNOWN);
+        SWITCH_RETURN_STRINGIFIED_VALUE(MsgType::EXIT);
+        SWITCH_RETURN_STRINGIFIED_VALUE(MsgType::RAW_DATA);
     default: return "Invalid Message Type!";
     }
 }

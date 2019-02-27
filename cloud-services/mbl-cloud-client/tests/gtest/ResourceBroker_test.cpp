@@ -95,7 +95,7 @@ TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
     // Test registration callback failure
     resource_broker_tester.mbed_client_register_update_callback_test(
         out_access_token,
-        CloudConnectStatus::ERR_FAILED);
+        CloudConnectStatus::ERR_INTERNAL_ERROR);
 }
 
 /**
@@ -240,7 +240,7 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
     // Test registration callback failure
     resource_broker_tester.mbed_client_register_update_callback_test(
         out_access_token,
-        CloudConnectStatus::ERR_FAILED);
+        CloudConnectStatus::ERR_INTERNAL_ERROR);
 
     // Second time - this time we simulate success
     resource_broker_tester.register_resources_test(

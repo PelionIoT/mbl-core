@@ -73,46 +73,59 @@ int64_t ResourceData::get_value_integer() const
     return integer_value_;
 }
 
-const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status)
+const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-    case STATUS_SUCCESS: return "STATUS SUCCESS";
-    case ERR_FAILED: return "ERROR FAILED";
-    case ERR_INVALID_APPLICATION_RESOURCES_DEFINITION:
-        return "ERR_INVALID_APPLICATION_RESOURCES_DEFINITION";
-    case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "ERR_REGISTRATION_ALREADY_IN_PROGRESS";
-    case ERR_ALREADY_REGISTERED: return "ERR_ALREADY_REGISTERED";
-
-    default: return "Unknown Cloud Connect Status or Error";
-    }
-}
-
-const char* CloudConnectStatus_stringify(const CloudConnectStatus status)
-{
-    switch (status)
-    {
-        RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
-        RETURN_STRINGIFIED_VALUE(ERR_FAILED);
-        RETURN_STRINGIFIED_VALUE(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
-        RETURN_STRINGIFIED_VALUE(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
-        RETURN_STRINGIFIED_VALUE(ERR_ALREADY_REGISTERED);
+        SWITCH_RETURN_STRINGIFIED_VALUE(STATUS_SUCCESS);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INTERNAL_ERROR);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_ALREADY_REGISTERED);
 
     default: return "Unknown CloudConnectStatus value";
     }
 }
 
-const char* ResourceDataType_stringify(const ResourceDataType type)
+const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+    case STATUS_SUCCESS: return "Status success";
+    case ERR_INTERNAL_ERROR: return "Internal error in Cloud Connect infrastructure";
+    case ERR_INVALID_APPLICATION_RESOURCES_DEFINITION:
+        return "Invalid application resource definition";
+    case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "Registration already in progress";
+    case ERR_ALREADY_REGISTERED: return "Already registered";
+
+    default: return "Unknown Cloud Connect Status or Error";
+    }
+}
+
+const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus status)
+{
+    switch (status)
+    {
+        RETURN_DBUS_FORMAT_ERROR(ERR_INTERNAL_ERROR);
+        RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
+        RETURN_DBUS_FORMAT_ERROR(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
+        RETURN_DBUS_FORMAT_ERROR(ERR_ALREADY_REGISTERED);
+
+    default: return "Unknown CloudConnectStatus value";
+    }
+}
+
+const char* ResourceDataType_to_str(const ResourceDataType type)
 {
     switch (type)
     {
-        RETURN_STRINGIFIED_VALUE(STRING);
-        RETURN_STRINGIFIED_VALUE(INTEGER);
-        RETURN_STRINGIFIED_VALUE(FLOAT);
-        RETURN_STRINGIFIED_VALUE(BOOLEAN);
-        RETURN_STRINGIFIED_VALUE(OPAQUE);
-        RETURN_STRINGIFIED_VALUE(TIME);
-        RETURN_STRINGIFIED_VALUE(OBJLINK);
+        SWITCH_RETURN_STRINGIFIED_VALUE(STRING);
+        SWITCH_RETURN_STRINGIFIED_VALUE(INTEGER);
+        SWITCH_RETURN_STRINGIFIED_VALUE(FLOAT);
+        SWITCH_RETURN_STRINGIFIED_VALUE(BOOLEAN);
+        SWITCH_RETURN_STRINGIFIED_VALUE(OPAQUE);
+        SWITCH_RETURN_STRINGIFIED_VALUE(TIME);
+        SWITCH_RETURN_STRINGIFIED_VALUE(OBJLINK);
 
     default: return "Unknown Resource Data Type";
     }

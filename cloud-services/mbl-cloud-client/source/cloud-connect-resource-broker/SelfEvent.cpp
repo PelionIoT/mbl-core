@@ -68,7 +68,7 @@ const char* SelfEvent::DataType_to_str(EventDataType type)
 {
     switch (type)
     {
-        RETURN_STRINGIFIED_VALUE(SelfEvent::EventDataType::RAW);
+        SWITCH_RETURN_STRINGIFIED_VALUE(SelfEvent::EventDataType::RAW);
 
     default: return "Unknown Event Type!";
     }

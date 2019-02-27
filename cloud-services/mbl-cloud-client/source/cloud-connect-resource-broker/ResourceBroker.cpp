@@ -182,7 +182,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     MblError status = this_ccrb->init();
     if (Error::None != status) {
         TR_ERR("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
-        pthread_exit((void*) (uintptr_t) status);
+        pthread_exit(reinterpret_cast<void*>(status));
     }
 
     status = this_ccrb->run();
@@ -198,7 +198,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     }
 
     TR_INFO("thread function finished");
-    pthread_exit((void*) (uintptr_t) status); // pthread_exit does "return"
+    pthread_exit(reinterpret_cast<void*>(status)); // pthread_exit does "return"
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -292,8 +292,8 @@ void ResourceBroker::handle_app_error_cb(const uintptr_t ipc_conn_handle,
     else
     {
         // App is not registered yet, which means the error is for register request
-        MblError status = ipc_adapter_->update_registration_status(ipc_conn_handle,
-                                                                   CloudConnectStatus::ERR_FAILED);
+        MblError status = ipc_adapter_->update_registration_status(
+            ipc_conn_handle, CloudConnectStatus::ERR_INTERNAL_ERROR);
         if (Error::None != status) {
             TR_ERR("Registration for Application (access_token: %s), failed with error: %s",
                    access_token.c_str(),
@@ -343,7 +343,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_conn_handle,
         TR_ERR("app_endpoint->init failed with error: %s", MblError_to_str(status));
         out_status = (Error::CCRBInvalidJson == status)
                          ? CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
-                         : CloudConnectStatus::ERR_FAILED;
+                         : CloudConnectStatus::ERR_INTERNAL_ERROR;
         return Error::None;
     }
 
