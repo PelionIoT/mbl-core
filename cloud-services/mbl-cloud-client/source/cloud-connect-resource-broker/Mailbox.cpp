@@ -50,9 +50,9 @@ MblError Mailbox::do_init()
     // are set with that flag
     int r = pipe2(pipefds_, O_NONBLOCK);
     if (r != 0) {
-        TR_ERR("pipe2 failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("pipe2 failed with errno=%d (%s) - returning %s",
+               errno,
+               strerror(errno),
                MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         return MblError::DBA_MailBoxSystemCallFailure;
     }
@@ -90,9 +90,9 @@ MblError Mailbox::deinit()
     if (r != 0) {
         // there is not much you can do about errors on close()
         status.set(MblError::DBA_MailBoxSystemCallFailure);
-        TR_ERR("close(pipefds_[WRITE]) failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("close(pipefds_[WRITE]) failed with errno=%d (%s) - returning %s",
+               errno,
+               strerror(errno),
                status.get_status_str());
         // continue - best effort
     }
@@ -126,9 +126,9 @@ MblError Mailbox::deinit()
     if (r != 0) {
         // there is not much you can do about errors on close()
         status.set(MblError::DBA_MailBoxSystemCallFailure);
-        TR_ERR("close(pipefds_[READ]) failed with error r=%d (%s) - returning %s",
-               r,
-               strerror(r),
+        TR_ERR("close(pipefds_[READ]) failed with errno=%d (%s) - returning %s",
+               errno,
+               strerror(errno),
                status.get_status_str());
         // continue - best effort
     }
@@ -171,7 +171,7 @@ MblError Mailbox::do_poll(const int poll_fd_index, int timeout_milliseconds)
         // some ther error (no timeout)!
         TR_ERR("poll failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_MailBoxSystemCallFailure));
         return MblError::DBA_MailBoxSystemCallFailure;
     }

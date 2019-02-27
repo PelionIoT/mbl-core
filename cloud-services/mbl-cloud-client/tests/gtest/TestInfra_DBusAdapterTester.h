@@ -8,6 +8,7 @@
 #define _TestInfra_DBusAdapterTester_h_
 
 #include "DBusAdapter.h"
+#include "DBusAdapter_Impl.h"
 #include "MblError.h"
 
 typedef struct sd_event sd_event;
@@ -104,6 +105,22 @@ public:
      * @return mbl::Event::EventManagerCallback
      */
     const mbl::Event::EventManagerCallback get_event_manager_callback(mbl::Event* ev) const;
+
+    /**
+     * @brief calls DBusAdapterImpl::bus_enforce_single_connection          
+     */
+    inline bool bus_enforce_single_connection(std::string& source){
+      return adapter_.impl_->bus_enforce_single_connection(source);    
+    }
+
+    /**
+     * @brief 
+     * 
+     */
+    inline int bus_track_add_dummy_sender(const char * sender){
+      adapter_.impl_->connections_tracker_.insert(make_pair(sender, nullptr));
+      return 0;    
+    }
 
 private:
     mbl::DBusAdapter& adapter_;

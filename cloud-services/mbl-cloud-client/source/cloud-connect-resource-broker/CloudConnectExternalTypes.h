@@ -37,6 +37,7 @@ enum CloudConnectStatus {
     ERR_RESOURCE_NOT_FOUND                          = 0x1006,
     ERR_INVALID_RESOURCE_TYPE                       = 0x1007,
     ERR_NOT_SUPPORTED                               = 0x1008,
+	ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED            = 0x1009
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
@@ -49,17 +50,28 @@ static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
     return val >= ERR_FIRST;
 }
 
-// mbed.Cloud.Connect DBus errors definitions
-#define CLOUD_CONNECT_ERR_INTERNAL_ERROR "mbed.Cloud.Connect.Error.InternalError"
-#define CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION "mbed.Cloud.Connect.Error.InvalidApplicationResourceDefinition"
-#define CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS "mbed.Cloud.Connect.Error.RegistrationAlreadyInProgress"
-#define CLOUD_CONNECT_ERR_ALREADY_REGISTERED "mbed.Cloud.Connect.Error.AlreadyRegistered"
-#define CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN "mbed.Cloud.Connect.Error.InvalidAccessToken"
-#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH "mbed.Cloud.Connect.Error.InvalidResourcePath"
-#define CLOUD_CONNECT_ERR_RESOURCE_NOT_FOUND "mbed.Cloud.Connect.Error.ResourceNotFound"
-#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_TYPE "mbed.Cloud.Connect.Error.InvalidResourceType"
-#define CLOUD_CONNECT_ERR_NOT_SUPPORTED "mbed.Cloud.Connect.Error.NotSupported"
-
+// com.mbed.Pelion1.Connect.Error definitions
+#define CLOUD_CONNECT_ERR_INTERNAL_ERROR \
+    "com.mbed.Pelion1.Connect.Error.InternalError"
+#define CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION \
+    "com.mbed.Pelion1.Connect.Error.InvalidApplicationResourceDefinition"
+#define CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS \
+    "com.mbed.Pelion1.Connect.Error.RegistrationAlreadyInProgress"
+#define CLOUD_CONNECT_ERR_ALREADY_REGISTERED \
+    "com.mbed.Pelion1.Connect.Error.AlreadyRegistered"
+#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH \
+	"com.mbed.Pelion1.Connect.Error.InvalidResourcePath"
+#define CLOUD_CONNECT_ERR_RESOURCE_NOT_FOUND \
+	"com.mbed.Pelion1.Connect.Error.ResourceNotFound"
+#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_TYPE \
+	"com.mbed.Pelion1.Connect.Error.InvalidResourceType"
+#define CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN \
+	"com.mbed.Pelion1.Connect.Error.InvalidAccessToken"
+#define CLOUD_CONNECT_ERR_NOT_SUPPORTED \
+	"mbed.Cloud.Connect.Error.NotSupported"
+#define CLOUD_CONNECT_ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED \
+    "com.mbed.Pelion1.Connect.Error.NumAllowedConnectionsExceeded"
+    
 /** 
  * @brief Returns corresponding D-Bus format error. 
  * The error returned is a string in a D-Bus format that corresponds to provided enum. 

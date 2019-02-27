@@ -61,7 +61,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // CloudConnectError (Cloud Connect Error)
     // TBD
 
-    // com.mbed.Cloud.Connect1.RegisterResources
+    // com.mbed.Pelion1.Connect.RegisterResources
     //
     // As a Method :
     // UINT32, STRING RegisterResources(STRING json)
@@ -91,7 +91,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_METHOD(
         "RegisterResources", "s", "us", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
 
-    // com.mbed.Cloud.Connect1.RegisterResourcesStatus
+    // com.mbed.Pelion1.Connect.RegisterResourcesStatus
     //
     // As a Signal :
     // RegisterResourcesStatus(UINT32 status)
@@ -108,7 +108,8 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // TBD
     SD_BUS_SIGNAL("RegisterResourcesStatus", "u", 0),
 
-    // com.mbed.Cloud.Connect1.DeregisterResources
+    // TODO: This method call is disabled for now - upper layer does not support it as expected.
+    // com.mbed.Pelion1.Connect.DeregisterResources
     //
     // As a Method :
     // UINT32 DeregisterResources(STRING access_token)
@@ -137,10 +138,13 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "DeregisterResources", "s", "u", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
+    // FIXME - This method should be uncommented after we deregistration is supported on higher
+    // layers.
+    // SD_BUS_METHOD(
+    //    "DeregisterResources", "s", "u", incoming_bus_message_callback,
+    //    SD_BUS_VTABLE_UNPRIVILEGED),
 
-    // com.mbed.Cloud.Connect1.DeregisterResourcesStatus
+    // com.mbed.Pelion1.Connect.DeregisterResourcesStatus
     //
     // As a Signal :
     // DeregisterResourcesStatus(UINT32 status)
@@ -155,9 +159,9 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL("DeregisterResourcesStatus", "u", 0),
+    // SD_BUS_SIGNAL("DeregisterResourcesStatus", "u", 0),
 
-    // com.mbed.Cloud.Connect1.AddResourceInstances
+    // com.mbed.Pelion1.Connect.AddResourceInstances
     //
     // As a Method :
     // UINT32 AddResourceInstances(STRING access_token,
@@ -196,7 +200,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
                   incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
-    // com.mbed.Cloud.Connect1.AddResourceInstancesStatus
+    // com.mbed.Pelion1.Connect.AddResourceInstancesStatus
     //
     // As a Signal :
     // AddResourceInstancesStatus(UINT32 status)
@@ -213,7 +217,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // TBD
     SD_BUS_SIGNAL("AddResourceInstancesStatus", "u", 0),
 
-    // com.mbed.Cloud.Connect1.RemoveResourceInstances
+    // com.mbed.Pelion1.Connect.RemoveResourceInstances
     //
     // As a Method :
     // UINT32 RemoveResourceInstances(STRING access_token,
@@ -253,7 +257,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
                   incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
-    // com.mbed.Cloud.Connect1.RemoveResourceInstancesStatus
+    // com.mbed.Pelion1.Connect.RemoveResourceInstancesStatus
     //
     // As a Signal :
     // RemoveResourceInstancesStatus(UINT32 status)
@@ -270,7 +274,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // TBD
     SD_BUS_SIGNAL("RemoveResourceInstancesStatus", "u", 0),
 
-    // com.mbed.Cloud.Connect1.SetResourcesValues
+    // com.mbed.Pelion1.Connect.SetResourcesValues
     //
     // As a Method :
     // ARRAY_of_UINT32 SetResourcesValues(STRING access_token,
@@ -307,7 +311,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
                   incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
-    // com.mbed.Cloud.Connect1.GetResourcesValues
+    // com.mbed.Pelion1.Connect.GetResourcesValues
     //
     // As a Method :
     // ARRAY_of_STRUCTS(UINT32,UINT8,VARIANT) GetResourcesValues(STRING access_token,

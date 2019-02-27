@@ -421,7 +421,7 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
             TR_ERR("sd_event_source_set_enabled with SD_EVENT_OFF flag failed with error=%d (%s) - "
                    "returning %s",
                    r,
-                   strerror(r),
+                   strerror(-r),
                    MblError_to_str(MblError::DBA_SdEventCallFailure));
 
             error.set(MblError::DBA_SdEventCallFailure);
@@ -439,7 +439,7 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
 
             TR_ERR("sd_event_exit failed with error=%d (%s) - returning %s",
                    r,
-                   strerror(r),
+                   strerror(-r),
                    MblError_to_str(MblError::DBA_SdEventCallFailure));
 
             error.set(MblError::DBA_SdEventCallFailure);
@@ -868,24 +868,24 @@ DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback(sd_even
         MblError::None != error.get())
     {
         // desable event source
-        int result = sd_event_source_set_enabled(periodic_ev->get_sd_event_source(), SD_EVENT_OFF);
-        if (result < 0) {
+        int r = sd_event_source_set_enabled(periodic_ev->get_sd_event_source(), SD_EVENT_OFF);
+        if (r < 0) {
 
             TR_ERR("sd_event_source_set_enabled with SD_EVENT_OFF flag failed with error=%d (%s) - "
                    "returning %s",
-                   result,
-                   strerror(result),
+                   r,
+                   strerror(-r),
                    MblError_to_str(MblError::DBA_SdEventCallFailure));
             error.set(MblError::DBA_SdEventCallFailure);
         }
 
-        int r = sd_event_exit(event_loop_handle, error.get());
+        r = sd_event_exit(event_loop_handle, error.get());
         if (r < 0) {
 
-            TR_ERR("sd_event_exit with code %d failed failed with error=%d (%s) - returning %s",
-                   result,
+            TR_ERR("sd_event_exit with code %d failed  with error=%d (%s) - returning %s",
+                   error.get(),
                    r,
-                   strerror(r),
+                   strerror(-r),
                    MblError_to_str(MblError::DBA_InvalidValue));
             error.set(MblError::DBA_InvalidValue);
         }
@@ -956,4 +956,34 @@ TEST(DBusAdapter_AccessTokenGenerating, check_non_repeating)
         ASSERT_EQ(generated_access_tokens.find(pair.second), generated_access_tokens.end());
         generated_access_tokens.insert(pair.second);
     }
+}
+
+
+TEST(DBusAdapterValidate1, max_allowed_connections_enforced_unitest)
+{   
+    ResourceBroker broker;    
+    DBusAdapter adapter(broker);    
+    TestInfra_DBusAdapterTester tester(adapter);
+  
+    ASSERT_EQ(adapter.init(), MblError::None);
+
+    std::string connection_id(":123");
+    // No one is tracked yet - so anyone should be allowed to send messages - 
+    // check returned value true (continue)
+    ASSERT_EQ(tester.bus_enforce_single_connection(connection_id), true);
+
+    // artificially add a source as a tracked connection
+    ASSERT_EQ(tester.bus_track_add_dummy_sender(connection_id.c_str()), 0);
+
+    // now only this connection is allowed - check returned value true (continue)
+    ASSERT_EQ(tester.bus_enforce_single_connection(connection_id), true);
+
+    // check that 2 other connections are not allowed to continue
+    connection_id.assign(":124");
+    ASSERT_EQ(tester.bus_enforce_single_connection(connection_id), false);
+
+    connection_id.assign(":125");
+    ASSERT_EQ(tester.bus_enforce_single_connection(connection_id), false);
+
+    ASSERT_EQ(adapter.deinit(), MblError::None);
 }
