@@ -21,24 +21,22 @@
 
 // sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
 // Keep those definitions here for testing
-#define DBUS_CLOUD_SERVICE_NAME                 "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME       "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH          "/com/mbed/Cloud/Connect1"
+#define DBUS_CLOUD_SERVICE_NAME                         "com.mbed.Cloud"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME               "com.mbed.Cloud.Connect1"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH                  "/com/mbed/Cloud/Connect1"
 
-#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME     "RegisterResources"
-#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME   "DeregisterResources"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME     "AddResourceInstances"
+#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME          "RegisterResources"
+#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME        "DeregisterResources"
+#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME      "AddResourceInstances"
 #define DBUS_CC_REMOVE_RESOURCE_INSTANCES_METHOD_NAME   "RemoveResourceInstances"
 
 
-#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME     "RegisterResourcesStatus"
-#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME   "DeregisterResourcesStatus"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME     "AddResourceInstancesStatus"
-#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME   "RemoveResourceInstancesStatus"
+#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME           "RegisterResourcesStatus"
+#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME         "DeregisterResourcesStatus"
+#define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME       "AddResourceInstancesStatus"
+#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME    "RemoveResourceInstancesStatus"
 
 namespace mbl {
-
-
 
 /**
  * @brief sd-bus objects resource manager class.
@@ -49,7 +47,7 @@ namespace mbl {
  * @tparam T sd-bus object (like sd_bus_message)
  */
 template <class T> 
-class sd_objects_cleaner {
+class sd_bus_object_cleaner {
 public:
 
     /**
@@ -61,21 +59,16 @@ public:
      *        https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
      *        This clean function will be called in destructor of the object. 
      */
-    sd_objects_cleaner(T *object_to_clean, std::function<void (T*)> func)
+    sd_bus_object_cleaner(T *object_to_clean, std::function<void (T*)> func)
     : object_(object_to_clean), clean_func_(func) {}
     
-    ~sd_objects_cleaner(){
+    ~sd_bus_object_cleaner(){
         clean_func_(object_);
     }
 
 private:
     T *object_;
     std::function<void (T*)> clean_func_;
-    
-    sd_objects_cleaner(sd_objects_cleaner const&) = delete;
-    sd_objects_cleaner& operator=(sd_objects_cleaner const&) = delete;
-    sd_objects_cleaner(sd_objects_cleaner&&) = delete;
-    sd_objects_cleaner& operator = (sd_objects_cleaner&&) = delete; 
 };
 
 /**
@@ -267,24 +260,7 @@ private:
     int process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error);
 
     /**
-     * @brief - TODO
-     * see parameter description above ("Callback and handler functions")
-     * For more information see :
-     * https://www.freedesktop.org/software/systemd/man/sd_bus_add_match.html#
-     *
-     */
-    static int
-    name_changed_match_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error);
-    /**
-     * @brief - TODO
-     * see parameter description above ("Callback and handler functions")
-     * for more information see
-     * https://www.freedesktop.org/software/systemd/man/sd_bus_add_match.html#
-     */
-    int name_changed_match_callback_impl(sd_bus_message* m, sd_bus_error* ret_error);
-
-    /**
-     * @brief handles incoming mailbox message sent by an external thread - the actual
+     * @brief handles incoming mailbox message sent by an external thread - the actual 
      * implementation (as member) is done by calling incoming_mailbox_message_callback_impl
      * @param s - the sd-event IO event source
      * @param fd - the Linux anonymous pipe file descriptor used to poll&read from the mailbox
@@ -309,7 +285,28 @@ private:
      * @param revents - received events
      * @return int - 0 on success, On failure, return a negative Linux errno-style error code.
      */
-    int incoming_mailbox_message_callback_impl(sd_event_source* s, int fd, uint32_t revents);
+    int incoming_mailbox_message_callback_impl(
+        sd_event_source *s, 
+        int fd, 
+        uint32_t revents);  
+
+    /**
+     * @brief 
+     * 
+     * @param track 
+     * @param userdata 
+     * @return int 
+     */
+    static int disconnected_bus_name_callback(sd_bus_track *track, void *userdata);
+
+    /**
+     * @brief 
+     * 
+     * @param track 
+     * @param userdata 
+     * @return int 
+     */
+    int disconnected_bus_name_callback_impl(sd_bus_track *track);
 
     /*
     == D-Bus bus sub-module members==
@@ -325,11 +322,35 @@ private:
     MblError bus_init();
 
     /**
+     * @brief Print connections_tracker_ to log  whenever a track object is added or removed
+     * 
+     */
+    void bus_track_debug();
+
+    /**
      * @brief deinitialize the bus sub-module
      * Can be called only when the object is in DBusAdapterState::INITALIZED state
      * @return MblError - return MblError - Error::None for success, therwise the failure reason
      */
     MblError bus_deinit();
+    
+    /**
+     * @brief Add a given bus name (unique connection id or known name) to the connections_tracker_ 
+     * container. If the given bus name is already in the container, nothing is done. If not, a new 
+     * sd_bus_track object is created in order for the adapter to be notified when the bus name 
+     * is disconnected. the sd_bus_track object is in non-recursive mode and support a single 
+     * connection only. No logic is done to prevent a case where a connection has gracefully 
+     * deregistered - upper layer must be able to handle that case. Adapter does gurentee that only
+     * connections which sent messages to its service are tracked.
+     * For more info see :
+     *  // https://www.freedesktop.org/software/systemd/man/sd_bus_track_add_name.html#
+     * // https://www.freedesktop.org/software/systemd/man/sd_bus_track_new.html#
+     * 
+     * @param bus_name - the bus name (known name or unique ID) to be tracked
+     * @return int 0 or positive for success, or C-Style negative value which is the output of the 
+     * called sd_bus functions in case of failure
+     */
+    int bus_track_sender(const char * bus_name);
 
     // sd-bus bus connection handle
     sd_bus* connection_handle_ = nullptr;
@@ -340,6 +361,16 @@ private:
 
     // D-Bus service known name (the service name) acquired explicitly by request
     const char* service_name_;
+
+
+    // Maps a unique connection bus name into it's tracking object
+    // Each time a connection is introduced to the upper layer, this map is checked and updated 
+    // accordingly. If connection is in the map - it is tracked already, else - a new tracking 
+    // object is created and the maching pair inserted to this map
+    // Key : unique connection ID
+    // Value : sd_bus_track* object (I chose not to use a unique pointer).
+    // on dtor if there are any pairs inside
+    std::map < const char*, sd_bus_track* >  connections_tracker_;
 
     /*
    == sd-event members==
@@ -418,51 +449,24 @@ private:
     static bool is_valid_message_type(uint8_t message_type);
 
     /*
-    A set which stores upper-layer-asynchronous bus request handles. the actual handle is
-    represented by the arriving message. the message should hold everything we need to know
-    about the current method call. The message stay 'alive' since its refernce is incremented.
-    */
-    // TODO - IMPORTANT - deallocate pending_messages_ on deinit - It is not done now since
-    // any code I write will need to be fixed. Need to get a clearer view on how the system goes
-    // down
-    std::set<const sd_bus_message*> pending_messages_;
-
-    /*
-    The incoming mailbox is used as a one-way inter-thread lock-free way of communication.
+    The incoming mailbox is used as a one-way inter-thread lock-free way of communication. 
     The inner implementation is explain in the Mailbox class.
-    The input (READ) edge of the mailbox is attached to the event loop as an IO event source
-    (sd_event_add_io). The event loop fires and event immediately after the message pointer is
-    written to the pipe.
-    */
-    Mailbox mailbox_in_;
+    The input (READ) edge of the mailbox is attached to the event loop as an IO event source 
+    (sd_event_add_io). The event loop fires and event immediately after the message pointer is 
+    written to the pipe.  
+    */    
+    Mailbox     mailbox_in_;   
 
     // An event manager to allow sending immediate/periodic events
     // TODO - clear on deinit
     EventManager event_manager_;
 
-    // The pthread_t thread ID of the initializing thread (CCRB thread)
-    pthread_t initializer_thread_id_;
-
-    /**
-     * @brief This vector holds all pairs of match rules to add to bus connection
-     * using sd_bus_add_match().
-     * The 1st string is a short description
-     * The 2nd string is the match rule
-     */
-    static const std::vector<std::pair<std::string, std::string>> match_rules;
-
-    /**
-     * @brief Add all match rules in match_rules vector.
-     * For now, I assume a slot for the source is unneeded. The callback is the same common
-     * callback for all arriving messages - incoming_bus_message_callback
-    *
-    * @return MblError - DBA_SdBusRequestAddMatchFailed if failure , None for success.
-    */
-    MblError add_match_rules();
+    // The pthread_t thread ID of the initializing thread (CCRB thread) 
+    pthread_t   initializer_thread_id_;
 
 public:
     /*
-    == API Implementation ==
+    == API Implementation ==     
     */
 
     /**
@@ -512,7 +516,7 @@ public:
      * Signal notifies the application that Resource Broker asynchronous process finished with the 
      * corresponding status. 
      * 
-     * @param ipc_request_handle handle of the destination application information. 
+     * @param destination_to_update handle of the destination application information. 
      * @param ret_error sd-bus error description place-holder that is filled in the
      *                  case of an error.
      * @param signal_name can be 4 types: 
@@ -529,7 +533,7 @@ public:
      * Need to add relevant gtests. See: IOTMBL-1691 
      */
     MblError handle_resource_broker_async_process_status_update(
-        const uintptr_t ipc_request_handle,
+        const IpcConnection & destination_to_update,
         const char* signal_name, 
         const CloudConnectStatus status);
 
@@ -579,6 +583,12 @@ public:
                                                       const std::string& description = "");
 
     using DBusAdapterState = State::eState;
+
+    /**
+     * brief Generate unique access token using sd_id128_randomize
+     * See DBusAdapter.h for complete documentation.
+     */
+    std::pair<MblError, std::string> generate_access_token();
 };
 
 } // namespace mbl {

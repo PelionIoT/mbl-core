@@ -44,7 +44,7 @@ public:
  * @param path resource path. Path can't be changed in future. 
  * @param type resource value type
  */
-    ResourceData(const std::string &path, const ResourceDataType type);
+    ResourceData(const std::string path, const ResourceDataType type);
 
 /**
  * @brief Construct a new Resource Data object and stores provided string. 
@@ -53,7 +53,7 @@ public:
  * @param path resource path. Path can't be changed in future. 
  * @param initial_value data that should be stored.
  */
-    ResourceData(const std::string &path, const std::string &initial_value);
+    ResourceData(const std::string path, const std::string initial_value);
 
 /**
  * @brief Construct a new Resource Data object and stores provided integer. 
@@ -62,7 +62,7 @@ public:
  * @param path resource path. Path can't be changed in future. 
  * @param initial_value data that should be stored.
  */
-    ResourceData(const std::string &path, int64_t initial_value);
+    ResourceData(const std::string path, int64_t initial_value);
 
 /**
  * @brief Gets stored resource path.
@@ -207,20 +207,42 @@ public:
      * 
      * @return MblError 
      */
-    MblError get();
+    inline MblError get() { return err_; }
     
     /**
      * @brief stringify status by calling to MblError_to_str
      * 
      * @return const char* 
      */
-    const char* get_status_str();
+    inline const char* get_status_str() { return MblError_to_str(err_); }
 private:
     MblError err_;
     bool one_time_set_flag_;
 };
 
-} //namespace mbl
+/**
+ * @brief represents a client (endpoint, application) connection. 
+ * The client connects via the adapter using IPC infrastructure.
+ * This class carries all relevent data for that client connection. 
+ */
+class IpcConnection
+{
+public:
+    IpcConnection(const char * connection_id) :
+        connection_id_(connection_id) 
+        {};
 
+    // getters
+    inline const std::string& get_connection_id() const { return connection_id_; }
+    inline const char* get_connection_id_as_cstring() const  { return connection_id_.c_str(); }
+
+private:
+    IpcConnection() = delete;
+
+    // The unique identifier of a connection is its connection ID.
+    std::string connection_id_;
+};
+
+} //namespace mbl
 
 #endif // CloudConnectTypes_h_

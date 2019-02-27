@@ -6,7 +6,6 @@
 
 #include "CloudConnectTypes.h"
 #include "CloudConnectTrace.h"
-#include "MblError.h"
 
 #include <cassert>
 
@@ -15,60 +14,60 @@
 namespace mbl
 {
 
-ResourceData::ResourceData(const std::string& path, const ResourceDataType type)
+ResourceData::ResourceData(const std::string path, const ResourceDataType type)
     : path_(path), event_type_(type)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
-ResourceData::ResourceData(const std::string& path, const std::string& initial_value)
+ResourceData::ResourceData(const std::string path, const std::string initial_value)
     : path_(path), string_value_(initial_value), event_type_(ResourceDataType::STRING)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
-ResourceData::ResourceData(const std::string& path, int64_t initial_value)
+ResourceData::ResourceData(const std::string path, int64_t initial_value)
     : path_(path), integer_value_(initial_value), event_type_(ResourceDataType::INTEGER)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 std::string ResourceData::get_path() const
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return path_;
 }
 
 ResourceDataType ResourceData::get_data_type() const
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return event_type_;
 }
 
 void ResourceData::set_value(const std::string& value)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(event_type_ == ResourceDataType::STRING);
     string_value_ = value;
 }
 
 void ResourceData::set_value(int64_t value)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(event_type_ == ResourceDataType::INTEGER);
     integer_value_ = value;
 }
 
 std::string ResourceData::get_value_string() const
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(event_type_ == ResourceDataType::STRING);
     return string_value_;
 }
 
 int64_t ResourceData::get_value_integer() const
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(event_type_ == ResourceDataType::INTEGER);
     return integer_value_;
 }
@@ -141,7 +140,7 @@ const char* ResourceDataType_to_str(const ResourceDataType type)
 
 OneSetMblError::OneSetMblError() : err_(MblError::None), one_time_set_flag_(true)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 OneSetMblError::OneSetMblError(const MblError init_val)
@@ -153,7 +152,7 @@ OneSetMblError::OneSetMblError(const MblError init_val)
 
 void OneSetMblError::set(const MblError new_val)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     if (new_val == err_) {
         TR_DEBUG("Same value, return!");
         return;
@@ -165,18 +164,6 @@ void OneSetMblError::set(const MblError new_val)
     err_ = new_val;
     one_time_set_flag_ = false;
     TR_DEBUG("Set to new value %s", get_status_str());
-}
-
-MblError OneSetMblError::get()
-{
-    TR_DEBUG("Enter");
-    return err_;
-}
-
-const char* OneSetMblError::get_status_str()
-{
-    TR_DEBUG("Enter");
-    return MblError_to_str(err_);
 }
 
 } // namespace mbl {

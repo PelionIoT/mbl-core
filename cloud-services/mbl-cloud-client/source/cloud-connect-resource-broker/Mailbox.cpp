@@ -9,15 +9,14 @@
 #include "Mailbox.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-#include "MailboxMsg.h"
-#include "MblError.h"
+
+#include <fcntl.h> /* Obtain O_* constant definitions */
+#include <unistd.h>
 
 #include <cassert>
-#include <errno.h>
-#include <fcntl.h> /* Obtain O_* constant definitions */
+#include <cerrno>
+#include <cstdlib>
 #include <memory>
-#include <stdlib.h>
-#include <unistd.h>
 
 namespace mbl
 {
@@ -25,13 +24,13 @@ namespace mbl
 Mailbox::Mailbox(const char* name)
     : name_(name), protection_flag_(DBUS_MAILBOX_PROTECTION_FLAG), pipefds_{}, pollfds_{}
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(name);
 }
 
 MblError Mailbox::init()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     // call do_init in order to deinit on failure
     MblError status = do_init();
     if (status != MblError::None) {
@@ -43,7 +42,7 @@ MblError Mailbox::init()
 
 MblError Mailbox::do_init()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // open unnamed pipe with flag O_NONBLOCK
     // This flag instructs the kernel to release the thread immediately
@@ -77,16 +76,10 @@ MblError Mailbox::do_init()
     return MblError::None;
 }
 
-const char* Mailbox::get_name()
-{
-    TR_DEBUG("Enter");
-    return name_.c_str();
-}
-
 MblError Mailbox::deinit()
 {
     OneSetMblError status;
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
 
     // TODO : we need to make sure no one is reading/writing to the pipe - implement this by
@@ -189,7 +182,7 @@ MblError Mailbox::do_poll(const int poll_fd_index, int timeout_milliseconds)
 MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
 {
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     MblError status = do_poll(WRITE, timeout_milliseconds);
     if (MblError::None != status) {
@@ -253,7 +246,7 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
 
 std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     MailboxMsg* msg_ = nullptr;
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
     std::pair<MblError, MailboxMsg> ret_pair(MblError::None, MailboxMsg());
@@ -330,13 +323,6 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
     delete (msg_);
 
     return ret_pair;
-}
-
-int Mailbox::get_pipefd_read()
-{
-    TR_DEBUG("Enter");
-    assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
-    return pipefds_[READ];
 }
 
 } // namespace mbl

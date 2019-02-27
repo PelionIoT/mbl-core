@@ -42,7 +42,7 @@ public:
     typedef union MsgPayload_
     {
         struct MsgRaw {
-            static const int MAX_SIZE = 100;
+            static constexpr int MAX_SIZE = 100;
             char bytes[MAX_SIZE];
         }raw_;
         
@@ -72,10 +72,10 @@ public:
     const char* MsgType_to_str();
 
     // Getters
-    MsgType         get_type() { return type_; }
-    MsgPayload&     get_payload() { return payload_; }
-    size_t          get_payload_len() { return payload_len_; }
-    uint64_t        get_sequence_num() { return sequence_num_; }
+    inline MsgType         get_type() { return type_; }
+    inline MsgPayload&     get_payload() { return payload_; }
+    inline size_t          get_payload_len() { return payload_len_; }
+    inline uint64_t        get_sequence_num() { return sequence_num_; }
 
 private:         
 

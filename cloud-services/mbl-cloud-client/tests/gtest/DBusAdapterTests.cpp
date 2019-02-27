@@ -62,7 +62,7 @@ public:
      */
     void generate_random_binary_string(std::string& random_str_out, int length)
     {
-        TR_DEBUG("Enter");
+        TR_DEBUG_ENTER;
         random_str_out.empty();
         for (auto i = 0; i < length; ++i) {
             random_str_out += binary_chars_[rand() % binary_chars_.size()];
@@ -141,7 +141,7 @@ TEST_F(MailBoxTestFixture, send_rcv_msg_single_thread)
 
 void* MailBoxTestFixture::reader_thread_start(void* mailbox)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(mailbox);
     uint64_t last_sequence_num = 0;
     Mailbox* mailbox_in_ = static_cast<Mailbox*>(mailbox);
@@ -174,7 +174,7 @@ void* MailBoxTestFixture::reader_thread_start(void* mailbox)
 
 void* MailBoxTestFixture::writer_thread_start(void* mailbox)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(mailbox);
     Mailbox* mailbox_in_ = static_cast<Mailbox*>(mailbox);
     MailboxMsg::MsgPayload payload;
@@ -255,7 +255,7 @@ public:
 
     void TearDown() override
     {
-        TR_DEBUG("Enter");
+        TR_DEBUG_ENTER;
         sd_event_unref(event_loop_handle_);
     }
 };
@@ -536,7 +536,7 @@ int DBusAdapeterTestFixture::DBusAdapeterTestFixture::event_loop_request_stop(sd
                                                                               void* userdata)
 {
     UNUSED(s);
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(userdata);
     TestInfra_DBusAdapterTester* tester = static_cast<TestInfra_DBusAdapterTester*>(userdata);
     return tester->event_loop_request_stop(MblError::None);
@@ -564,7 +564,7 @@ TEST_F(DBusAdapeterTestFixture, run_stop_with_self_request)
 
 void* DBusAdapeterTestFixture::mbl_cloud_client_thread(void* adapter_)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(adapter_);
     DBusAdapter* adapter = static_cast<DBusAdapter*>(adapter_);
     MblError status = MblError::Unknown;
@@ -640,7 +640,7 @@ TEST_F(DBusAdapeterTestFixture, run_stop_with_external_exit_msg)
 
 int DBusAdapeterTestFixture::validate_service_exist(AppThread* app_thread, void* user_data)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     UNUSED(user_data);
     assert(app_thread);
     AppThread* app_thread_ = static_cast<AppThread*>(app_thread);
@@ -680,7 +680,7 @@ public:
 
     void SetUp() override
     {
-        TR_DEBUG("Enter");
+        TR_DEBUG_ENTER;        
         random_numbers_.empty();
 
         // Fill up the set - no duplicates can be in a set
@@ -700,7 +700,7 @@ MblError
 DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(sd_event_source* s,
                                                                            const Event* ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     const Event::EventData& event_data = ev->get_data();
     MblError result = MblError::None;
     int n;

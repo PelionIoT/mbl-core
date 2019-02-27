@@ -22,7 +22,7 @@ MailboxMsg::MailboxMsg(MsgType type, MsgPayload& payload, size_t payload_len)
       sequence_num_(sequence_num_counter_++),
       protection_field_(MSG_PROTECTION_FIELD)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 MailboxMsg::MailboxMsg()
@@ -32,12 +32,12 @@ MailboxMsg::MailboxMsg()
       sequence_num_(0),
       protection_field_(MSG_PROTECTION_FIELD)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 const char* MailboxMsg::MsgType_to_str()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     switch (type_)
     {
         SWITCH_RETURN_STRINGIFIED_VALUE(MsgType::UNKNOWN);

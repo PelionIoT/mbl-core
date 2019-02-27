@@ -59,12 +59,12 @@ private:
 
 public:
     MblError register_resources(
-        const uintptr_t /*unused*/, 
+        const mbl::IpcConnection & /*unused*/, 
         const std::string & json,
         CloudConnectStatus & status,
         std::string & token) override
     {
-        TR_DEBUG("Enter");    
+        TR_DEBUG_ENTER;    
         if(json == "Set_Success_Return_Success")
         {
             token = std::string(json) + std::string("_token");
@@ -76,11 +76,11 @@ public:
     }
 
     MblError deregister_resources(
-            const uintptr_t /*unused*/, 
+            const mbl::IpcConnection & /*unused*/, 
             const std::string & token,
             CloudConnectStatus & status) override
     {
-        TR_DEBUG("Enter");    
+        TR_DEBUG_ENTER;    
         if(token == "Set_Success_Return_Success")
         {
             status = STATUS_SUCCESS;
@@ -136,7 +136,7 @@ const static std::vector<RegisterResources_entry> RegisterResources_test_array =
 
 static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread, void *user_data)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(app_thread);
     assert(user_data);
     
@@ -144,10 +144,10 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
     const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index_];
 
     sd_bus_message *m_reply = nullptr;
-    sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
 
     sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_objects_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
+    sd_bus_object_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
 
     int test_result = TEST_SUCCESS;
     int r = sd_bus_call_method(
@@ -274,7 +274,7 @@ const static std::vector<DeregisterResources_entry> DeregisterResources_test_arr
 
 static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thread, void *user_data)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(app_thread);
     assert(user_data);
     
@@ -282,10 +282,10 @@ static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thre
     const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index_];
 
     sd_bus_message *m_reply = nullptr;
-    sd_objects_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
 
     sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_objects_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
+    sd_bus_object_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
 
     int test_result = TEST_SUCCESS;
     int r = sd_bus_call_method(

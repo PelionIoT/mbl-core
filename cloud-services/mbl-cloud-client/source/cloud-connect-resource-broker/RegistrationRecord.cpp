@@ -38,20 +38,20 @@ static uint8_t RESOURCE_INSTANCE_INDEX = 3;
 namespace mbl
 {
 
-RegistrationRecord::RegistrationRecord(const uintptr_t ipc_request_handle)
-    : ipc_request_handle_(ipc_request_handle), registered_(false)
+RegistrationRecord::RegistrationRecord(const IpcConnection& source)
+    : source_(source), registered_(false)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 RegistrationRecord::~RegistrationRecord()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 MblError RegistrationRecord::init(const std::string& application_resource_definition)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // Parse JSON
     std::pair<MblError, M2MObjectList> ret_pair =

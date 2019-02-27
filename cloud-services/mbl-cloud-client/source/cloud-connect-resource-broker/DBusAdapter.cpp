@@ -30,12 +30,12 @@ DBusAdapter::DBusAdapter(ResourceBroker& ccrb)
     : // initialize impl_ unique_ptr
       impl_(new DBusAdapterImpl(ccrb))
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 MblError DBusAdapter::init()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     MblError status = impl_->init();
     if (status != MblError::None) {
         TR_DEBUG("impl_->init failed! calling impl_->deinit()");
@@ -46,13 +46,13 @@ MblError DBusAdapter::init()
 
 MblError DBusAdapter::deinit()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return impl_->deinit();
 }
 
 MblError DBusAdapter::run(MblError& stop_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     MblError status = impl_->run(stop_status);
     if (status != MblError::None) {
         // best effort - stop
@@ -63,28 +63,26 @@ MblError DBusAdapter::run(MblError& stop_status)
 
 MblError DBusAdapter::stop(MblError stop_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return impl_->stop(stop_status);
 }
 
-MblError DBusAdapter::update_registration_status(const uintptr_t ipc_request_handle,
+MblError DBusAdapter::update_registration_status(const IpcConnection& destination,
                                                  const CloudConnectStatus reg_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(impl_);
-    assert(ipc_request_handle);
     return impl_->handle_resource_broker_async_process_status_update(
-        ipc_request_handle, DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status);
+        destination, DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME, reg_status);
 }
 
-MblError DBusAdapter::update_deregistration_status(const uintptr_t ipc_request_handle,
+MblError DBusAdapter::update_deregistration_status(const IpcConnection& destination,
                                                    const CloudConnectStatus dereg_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(impl_);
-    assert(ipc_request_handle);
     return impl_->handle_resource_broker_async_process_status_update(
-        ipc_request_handle, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
+        destination, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
 }
 
 std::pair<MblError, uint64_t> DBusAdapter::send_event_immediate(Event::EventData data,
@@ -104,9 +102,15 @@ std::pair<MblError, uint64_t> DBusAdapter::send_event_periodic(Event::EventData 
                                                                uint64_t period_millisec,
                                                                const std::string& description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return impl_->send_event_periodic(
         data, data_length, data_type, callback, period_millisec, description);
+}
+
+std::pair<MblError, std::string> DBusAdapter::generate_access_token()
+{
+    TR_DEBUG_ENTER;
+    return impl_->generate_access_token();
 }
 
 } // namespace mbl {

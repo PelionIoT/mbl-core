@@ -19,7 +19,8 @@
 #ifndef DBusAdapterMock_h_
 #define DBusAdapterMock_h_
 
-#include "cloud-connect-resource-broker/DBusAdapter.h"
+#include "DBusAdapter.h"
+#include "CloudConnectTypes.h"
 
 /**
  * @brief Mock class for DBusAdapter
@@ -45,7 +46,7 @@ public:
      * @return MblError returns Error::None.
      */
     virtual mbl::MblError update_registration_status(
-        const uintptr_t ipc_conn_handle, 
+        const mbl::IpcConnection & destination, 
         const CloudConnectStatus reg_status) override;
 
     /**
@@ -67,7 +68,7 @@ public:
 private:
 
     CloudConnectStatus reg_status_;
-    uintptr_t ipc_conn_handle_;
+    mbl::IpcConnection connection_;
     bool update_registration_called_;
 };
 

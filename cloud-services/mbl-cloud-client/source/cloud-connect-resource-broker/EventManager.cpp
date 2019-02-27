@@ -24,12 +24,12 @@ namespace mbl
 
 EventManager::EventManager() : event_loop_handle_(nullptr)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 MblError EventManager::init()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // get a reference (or create a new one) to the default sd-event loop
     int r = sd_event_default(&event_loop_handle_);
@@ -47,7 +47,7 @@ MblError EventManager::init()
 
 MblError EventManager::deinit()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // in order to free an event loop object, all remaining event sources of the event loop
     // need to be freed as each keeps a reference to it.
@@ -66,7 +66,7 @@ MblError EventManager::deinit()
 
 int EventManager::unmanage_event(sd_event_source* s, Event* ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(ev);
     assert(s);
 
@@ -104,7 +104,7 @@ std::pair<MblError, uint64_t> EventManager::send_event_immediate(Event::EventDat
                                                                  Event::UserCallback callback,
                                                                  const std::string& description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     if (!validate_common_event_parameters(data_type, data_length)) {
         std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
