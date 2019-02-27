@@ -14,14 +14,14 @@
 #include <vector>
 #include <string>
 
-#define RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return #ENUM
-
 // Simple stringify
 #define stringify(s) #s
 
 // If you want to stringify the result of expansion of a macro argument, you have to use two 
 // levels of macros. (use xstringify())
 #define xstringify(s) stringify(s)
+
+#define SWITCH_RETURN_STRINGIFIED_VALUE(ENUM) case ENUM: return stringify(ENUM)
 
 // to mark unused variable for the preprocessor
 #define UNUSED(x) (void)(x)
@@ -130,7 +130,7 @@ struct ResourceSetOperation
     {}
 
     const ResourceData input_data_; // set operation input data
-    CloudConnectStatus output_status_ = ERR_FAILED; // set operation output status
+    CloudConnectStatus output_status_ = ERR_INTERNAL_ERROR; // set operation output status
 };
 
 struct ResourceGetOperation
@@ -147,7 +147,7 @@ struct ResourceGetOperation
     {}
 
     ResourceData inout_data_;// get operation input and output data
-    CloudConnectStatus output_status_ = ERR_FAILED; // get operation output status
+    CloudConnectStatus output_status_ = ERR_INTERNAL_ERROR; // get operation output status
 };
 
 /**
@@ -156,7 +156,15 @@ struct ResourceGetOperation
  * @param CloudConnectStatus input status. 
  * @return const char* stringified readable explanation of the status. 
  */
-const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus status);
+const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status);
+
+/**
+ * @brief Returns D-Bus format string representation of the Cloud Connect Status.
+ * 
+ * @param CloudConnectStatus input status. 
+ * @return const char* D-Bus format string representation of the provided status.
+ */
+const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus status);
 
 /**
  * @brief Returns stringified value of Cloud Connect Status.
@@ -164,7 +172,7 @@ const char* CloudConnectStatus_to_readable_string(const CloudConnectStatus statu
  * @param CloudConnectStatus that should be stringified. 
  * @return const char* stringified value of CloudConnectStatus. 
  */
-const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
+const char* CloudConnectStatus_to_str(const CloudConnectStatus status);
 
 /**
  * @brief Returns stringified value of Resource Data Type.
@@ -172,7 +180,7 @@ const char* CloudConnectStatus_stringify(const CloudConnectStatus status);
  * @param ResourceDataType that should be stringified. 
  * @return const char* stringified value of ResourceDataType. 
  */
-const char* ResourceDataType_stringify(const ResourceDataType type);
+const char* ResourceDataType_to_str(const ResourceDataType type);
 
 /**
  * @brief This helper new type class defines an "smart" MblError status - it initializes to 

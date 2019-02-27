@@ -17,14 +17,45 @@ enum CloudConnectStatus {
 
     // Error range
     // Start all enums in this range with "ERR_" prefix
-    ERR_FAILED                                      = 0x1000,
+    ERR_FIRST = 0x1000,
+
+    // TODO: required to pass over all ERR_INTERNAL_ERROR codes and check if any of them are 
+    // recoverable. For the recoverable ones, we might need other return code. 
+    // We suspect that most of them are not recoverable(fatal). In that case, 
+    // few things are important when having a fatal error :
+    // 1) We must cause the client thread to get out from blocking state (if it called blocking)
+    // to allow it response faster after we restart.
+    // 2) We must send self-exit request to deallocate all resources.
+    // 3) We must exist in the coordination with the systemd watchdog daemon (whenever we will
+    // have such one). There is an API to the systemd watchdog, need to research.
+    ERR_INTERNAL_ERROR                              = ERR_FIRST,
     ERR_INVALID_APPLICATION_RESOURCES_DEFINITION    = 0x1001,
     ERR_REGISTRATION_ALREADY_IN_PROGRESS            = 0x1002,
     ERR_ALREADY_REGISTERED                          = 0x1003,
+
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
 
+static inline bool is_CloudConnectStatus_not_error(const CloudConnectStatus val){
+    return val >= STATUS_SUCCESS && val < ERR_FIRST;
+}
+
+static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
+    return val >= ERR_FIRST;
+}
+
+// mbed.Cloud.Connect DBus errors definitions
+#define CLOUD_CONNECT_ERR_INTERNAL_ERROR "mbed.Cloud.Connect.Error.InternalError"
+#define CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION "mbed.Cloud.Connect.Error.InvalidApplicationResourceDefinition"
+#define CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS "mbed.Cloud.Connect.Error.RegistrationAlreadyInProgress"
+#define CLOUD_CONNECT_ERR_ALREADY_REGISTERED "mbed.Cloud.Connect.Error.AlreadyRegistered"
+
+/** 
+ * @brief Returns corresponding D-Bus format error. 
+ * The error returned is a string in a D-Bus format that corresponds to provided enum. 
+ */
+#define RETURN_DBUS_FORMAT_ERROR(ENUM) case ENUM: return CLOUD_CONNECT_ ## ENUM
 
 /**
  * @brief Cloud Connect resource data type.

@@ -32,6 +32,19 @@ There are additional macros to simplify logs + help debugging
 #define TR_ERR(fmtstr, ...) \
     tr_err("[%s:%s:%d]> " fmtstr, basename(__FILE__), __func__, __LINE__, ##__VA_ARGS__)
 
+/**
+ * @brief Prints failed method name and errno in the constant format. 
+ * @param failed_method_name failed method name(string).
+ * @param errno_num errno number which should be logged.
+ * @param fmtstr printf like format.
+ * @param ... arguments
+ */
+#define TR_ERRNO_F(failed_method_name, errno_num, fmtstr, ...) \
+    tr_err("[%s:%s:%d]> %s failed with errno=%d (%s)" fmtstr, \
+            basename(__FILE__), __func__, __LINE__, \
+            failed_method_name, errno_num, strerror(errno_num), \
+            ##__VA_ARGS__)
+
 //use this macro to temporarily print debug points (usually on-target-debugging)
 #define TR_DEBUG_POINT          TR_DEBUG("DBG_POINT")
 
