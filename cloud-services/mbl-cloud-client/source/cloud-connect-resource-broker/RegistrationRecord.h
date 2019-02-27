@@ -16,8 +16,8 @@
  */
 
 
-#ifndef ApplicationEndpoint_h_
-#define ApplicationEndpoint_h_
+#ifndef RegistrationRecord_h_
+#define RegistrationRecord_h_
 
 #include "MblError.h"
 
@@ -25,8 +25,6 @@
 #include <string>
 #include <memory>
 #include <functional>
-
-class ResourceBrokerTester;
 
 namespace mbl {
 
@@ -38,23 +36,12 @@ typedef std::function<void(const uintptr_t, const std::string&, const MblError)>
  * This class register for Mbed cloud client callbacks, and when called - pass the relevant information
  * to ResourceBroker.
  */
-class ApplicationEndpoint {
-
-friend ::ResourceBrokerTester;
+class RegistrationRecord {
 
 public:
 
-    ApplicationEndpoint(const uintptr_t ipc_conn_handle);
-    ~ApplicationEndpoint();
-
-    /**
-     * @brief Register resource broker callback functions
-     * 
-     * @param register_update_finished_func - Callback function for handling registration update finished
-     * @param error_func - Callback function for handling error
-     */
-    void register_callback_functions(app_register_update_finished_func register_update_finished_func,
-                                     app_error_func error_func);
+    RegistrationRecord(const uintptr_t ipc_request_handle);
+    ~RegistrationRecord();
 
     /**
      * @brief Initialize Application resource M2M lists using JSON string
@@ -69,11 +56,18 @@ public:
     MblError init(const std::string& application_resource_definition);
 
     /**
-     * @brief Return application endpoint unique access token
+     * @brief Set registered status
      * 
-     * @return Unique access token
+     * @param registered - true if registered, false if not registered.
      */
-    const std::string& get_access_token() const {return access_token_;}
+    inline void set_registered(bool registered) {registered_ = registered;}
+
+    /**
+     * @brief Return ipc request handle
+     * 
+     * @return ipc request handle
+     */
+    inline uintptr_t get_ipc_request_handle() const {return ipc_request_handle_;};
 
     /**
      * @brief Return registered status
@@ -81,51 +75,23 @@ public:
      * @return true if registerd
      * @return false if not registerd
      */
-    bool is_registered() const {return registered_;}
+    inline bool is_registered() const {return registered_;}
 
     /**
      * @brief Return m2m object list object
      * 
      * @return m2m object list object
      */
-    M2MObjectList& get_m2m_object_list() {return m2m_object_list_;}
-
-    /**
-     * @brief Resitration update callback
-     * When registration flow is finished - Mbed cloud client will call this callback.
-     * This function will notify the Resource broker that its registration finished successfully.
-     */
-    void handle_registration_updated_cb();
-
-    /**
-     * @brief Error callback
-     * Mbed cloud client will call this callback when an error occurred (e.g. during registration).
-     * This function will notify the Resource broker that an error occurred.
-     */
-    void handle_error_cb(const int cloud_client_code);
+    inline M2MObjectList& get_m2m_object_list() {return m2m_object_list_;}
 
 private:
 
-    /**
-     * @brief Generate unique access token using sd_id128_randomize
-     * Unique access token is saved in access_token_ private member
-     * @return MblError -
-     *          Error::None - in case of success
-     *          Error::CCRBGenerateUniqueIdFailed in case of failure
-     */
-    MblError generate_access_token();
-
-    uintptr_t ipc_conn_handle_;
-    std::string access_token_;
+    uintptr_t ipc_request_handle_;
     bool registered_;
-
-    // Function pointers to resource broker callback functions
-    app_register_update_finished_func handle_app_register_update_finished_cb_;
-    app_error_func handle_app_error_cb_;
 
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
 };
 
 } // namespace mbl
 
-#endif // ApplicationEndpoint_h_
+#endif // RegistrationRecord_h_
