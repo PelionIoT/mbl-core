@@ -21,8 +21,6 @@
     if (a != b)                  \
     return MblError::DBA_InvalidValue
 
-#define ARRAY_SIZE(x) ((sizeof (x)) / (sizeof *(x)))
-
 enum TestResult {
     TEST_SUCCESS,
     TEST_FAILED_EXPECTED_RESULT_MISMATCH = -1,

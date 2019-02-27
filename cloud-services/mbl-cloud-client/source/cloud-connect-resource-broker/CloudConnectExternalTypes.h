@@ -19,6 +19,16 @@ enum CloudConnectStatus {
     // Start all enums in this range with "ERR_" prefix
     ERR_FIRST = 0x1000,
     ERR_FAILED  = ERR_FIRST,
+
+    // TODO: required to pass over all ERR_INTERNAL_ERROR codes and check if any of them are 
+    // recoverable. For the recoverable ones, we might need other return code. 
+    // We suspect that most of them are not recoverable(fatal). In that case, 
+    // few things are important when having a fatal error :
+    // 1) We must cause the client thread to get out from blocking state (if it called blocking)
+    // to allow it response faster after we restart.
+    // 2) We must send self-exit request to deallocate all resources.
+    // 3) We must exist in the coordination with the systemd watchdog daemon (whenever we will
+    // have such one). There is an API to the systemd watchdog, need to research.
     ERR_INTERNAL_ERROR = 0x1001,
 };
  

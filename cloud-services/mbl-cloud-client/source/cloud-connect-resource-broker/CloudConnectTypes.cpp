@@ -110,7 +110,7 @@ const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus
     }
 }
 
-const char* ResourceDataType_stringify(const ResourceDataType type)
+const char* ResourceDataType_to_str(const ResourceDataType type)
 {
     switch (type)
     {
