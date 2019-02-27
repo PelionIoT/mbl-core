@@ -1,1 +1,3 @@
 include mbl/open_ports_checker/white_list.json
+include mbl/open_ports_checker/empty_list.json
+

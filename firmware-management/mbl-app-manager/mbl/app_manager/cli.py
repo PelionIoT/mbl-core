@@ -3,117 +3,160 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Simple command line interface for mbl app manager."""
+"""Command line interface for mbl-app-manager."""
 
 import argparse
 import logging
-import sys
 import os
-import mbl.app_manager.app_manager as apm
+import sys
+from enum import Enum
 
-__version__ = "1.0.2"
-
-
-class StoreValidFile(argparse.Action):
-    """Utility class used in CLI argument parser scripts."""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        """Perform file validity checks."""
-        prospective_file = values
-        if not os.path.isfile(prospective_file):
-            raise argparse.ArgumentTypeError(
-                "file: {} not found".format(prospective_file)
-            )
-        if not os.access(prospective_file, os.R_OK):
-            raise argparse.ArgumentTypeError(
-                "file: {} is not a readable file".format(prospective_file)
-            )
-        setattr(namespace, self.dest, os.path.abspath(prospective_file))
+from .manager import AppManager, APPS_PATH
+from .utils import log, set_log_verbosity
 
 
-def get_argument_parser():
-    """
-    Return argument parser.
+class ReturnCode(Enum):
+    """Application return codes."""
 
-    :return: parser
-    """
-    parser = argparse.ArgumentParser(
+    SUCCESS = 0
+    ERROR = 1
+    INVALID_OPTIONS = 2
+
+
+def install_action(args):
+    """Entry point for the 'install' cli command."""
+    handler = AppManager()
+    handler.install_app(args.app_package, args.app_path)
+
+
+def force_install_action(args):
+    """Entry point for the 'force-install' cli command."""
+    handler = AppManager()
+    handler.force_install_app(args.app_package, args.app_path)
+
+
+def remove_action(args):
+    """Entry point for the 'remove' cli command."""
+    handler = AppManager()
+    handler.remove_app(args.app_name, args.app_path)
+
+
+def list_action(args):
+    """Entry point for the 'list' cli command."""
+    handler = AppManager()
+    handler.list_installed_apps(args.apps_path)
+
+
+def parse_args():
+    """Parse the command line args."""
+    parser = ArgumentParserWithDefaultHelp(
+        description="MBL application manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="App manager",
     )
 
-    group = parser.add_mutually_exclusive_group(required=True)
-
-    group.add_argument(
-        "-i",
-        "--install-package",
-        metavar="FILE",
-        action=StoreValidFile,
-        help="Install package on device, input is .ipk file path",
+    command_group = parser.add_subparsers(
+        description="The commands to control the application statuses."
     )
 
-    group.add_argument(
-        "-f",
-        "--force-install-package",
-        metavar="FILE",
-        action=StoreValidFile,
-        help="Force install package on device, input is .ipk file path",
+    install = command_group.add_parser(
+        "install", help="install a user application."
     )
+    install.add_argument(
+        "app_package",
+        type=str,
+        help="application package to install a user application.",
+    )
+    install.add_argument(
+        "app_path", type=str, help="path to install the application."
+    )
+    install.set_defaults(func=install_action)
 
-    group.add_argument(
-        "-r",
-        "--remove-package-name",
-        metavar="NAME",
-        help="Remove installed package from device, input is package name",
+    force_install = command_group.add_parser(
+        "force-install",
+        help=(
+            "remove a previous installation of a user"
+            " application before installing."
+        ),
     )
+    force_install.add_argument(
+        "app_package",
+        type=str,
+        help="application package to install a user application.",
+    )
+    force_install.add_argument(
+        "app_path", type=str, help="path to install the app."
+    )
+    force_install.set_defaults(func=force_install_action)
 
-    group.add_argument(
-        "-l",
-        "--list-installed-packages",
-        action="store_true",
-        help="List installed packages on device",
+    remove = command_group.add_parser(
+        "remove", help="remove a user application."
     )
+    remove.add_argument(
+        "app_name", type=str, help="name of the user application to remove."
+    )
+    remove.add_argument(
+        "app_path", type=str, help="path the app was installed."
+    )
+    remove.set_defaults(func=remove_action)
+
+    lister = command_group.add_parser(
+        "list", help="list installed applications."
+    )
+    lister.add_argument(
+        "-p",
+        "--apps-path",
+        type=str,
+        default=APPS_PATH,
+        help="path to look for installed applications.",
+    )
+    lister.set_defaults(func=list_action)
 
     parser.add_argument(
         "-v",
         "--verbose",
-        help="increase output verbosity",
         action="store_true",
+        help="increase verbosity of status information",
     )
 
-    return parser
+    args_namespace = parser.parse_args()
+
+    # We want to fail gracefully, with a consistent
+    # help message, in the no argument case.
+    # So here's an obligatory hasattr hack.
+    if not hasattr(args_namespace, "func"):
+        parser.error("No arguments given!")
+    else:
+        return args_namespace
+
+
+def run_mbl_app_manager():
+    """Application main algorithm."""
+    args = parse_args()
+
+    set_log_verbosity(args.verbose)
+
+    log.info("Starting mbl-app-manager")
+    log.debug("Command line arguments:{}".format(args))
+
+    args.func(args)
 
 
 def _main():
-    parser = get_argument_parser()
-    args = parser.parse_args()
-    info_level = logging.DEBUG if args.verbose else logging.INFO
-
-    logging.basicConfig(
-        level=info_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logger = logging.getLogger("mbl-app-manager")
-    logger.debug("Command line arguments:{}".format(args))
-
-    app_manager = apm.AppManager()
-
+    """Run mbl-app-manager."""
     try:
-        if args.install_package is not None:
-            app_manager.install_package(args.install_package)
-        elif args.remove_package_name is not None:
-            app_manager.remove_package(args.remove_package_name)
-        elif args.force_install_package is not None:
-            app_manager.force_install_package(args.force_install_package)
-        elif args.list_installed_packages:
-            app_manager.list_installed_packages()
-    except subprocess.CalledProcessError as e:
-        logger.exception(
-            "Operation failed with return error code: {}".format(
-                str(e.returncode)
-            )
-        )
-        return 1
-    except OSError:
-        logger.exception("Operation failed with OSError")
-        return 2
+        run_mbl_app_manager()
+    except Exception as error:
+        print(error)
+        return ReturnCode.ERROR.value
+    else:
+        return ReturnCode.SUCCESS.value
+
+
+class ArgumentParserWithDefaultHelp(argparse.ArgumentParser):
+    """Subclass that always shows the help message on invalid arguments."""
+
+    def error(self, message):
+        """Error handler."""
+        sys.stderr.write("error: {}".format(message))
+        self.print_help()
+        raise SystemExit(ReturnCode.INVALID_OPTIONS.value)
