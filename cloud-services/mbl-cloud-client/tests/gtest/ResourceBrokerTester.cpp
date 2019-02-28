@@ -27,17 +27,17 @@ ResourceBrokerTester::ResourceBrokerTester()
     TR_DEBUG("Enter");
 
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
-    // This replaces what cloud_connect_resource_broker_.init() usually does so dont call it...
-    cloud_connect_resource_broker_.register_update_func_ = 
+    // This replaces what resource_broker_.init() usually does so dont call it...
+    resource_broker_.register_update_func_ = 
         std::bind(&ResourceBrokerTester::register_update, this);
-    cloud_connect_resource_broker_.add_objects_func_ = 
+    resource_broker_.add_objects_func_ = 
         std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::add_objects),
             this,
             std::placeholders::_1);
 
     // Init resource broker ipc to be DBusAdapterMock:
-    cloud_connect_resource_broker_.ipc_adapter_ = 
-        std::make_unique<DBusAdapterMock>(cloud_connect_resource_broker_);
+    resource_broker_.ipc_adapter_ = 
+        std::make_unique<DBusAdapterMock>(resource_broker_);
 }
 
 ResourceBrokerTester::~ResourceBrokerTester()
@@ -67,7 +67,7 @@ void ResourceBrokerTester::register_resources_test(
 {
     TR_DEBUG("Enter");
 
-    mbl::MblError status = cloud_connect_resource_broker_.register_resources(
+    mbl::MblError status = resource_broker_.register_resources(
         ipc_conn_handle, 
         app_resource_definition,
         out_status,
@@ -81,34 +81,32 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     const std::string& access_token,
     CloudConnectStatus dbus_adapter_expected_status)
 {
-    // Call Application Endpoint to notify registration was successful
-    auto itr = cloud_connect_resource_broker_.app_endpoints_map_.find(access_token);
-    ASSERT_TRUE(cloud_connect_resource_broker_.app_endpoints_map_.end() !=
+    auto itr = resource_broker_.registration_records_.find(access_token);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() !=
         itr);
-    mbl::ResourceBroker::ApplicationEndpoint_ptr app_endpoint = itr->second;
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
-    // Make sure application is not yet registered
-    ASSERT_FALSE(app_endpoint->registered_);
+    // Make sure registration_record is not yet registered
+    ASSERT_FALSE(registration_record->is_registered());
 
     if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
         // Check registration success flow
-        TR_DEBUG("Notify Application (access_token: %s) that registration was successful",
+        TR_DEBUG("Notify resource broker (access_token: %s) that registration was successful",
             access_token.c_str());
-
-        // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        app_endpoint->handle_registration_updated_cb();
-        ASSERT_TRUE(app_endpoint->registered_);
+        resource_broker_.handle_registration_updated_cb();
+        
+        // Make sure registration recorm is marked as registered
+        ASSERT_TRUE(registration_record->is_registered());
     } else {
         // Check registration failure flow
-        TR_DEBUG("Notify Application (access_token: %s) that registration failed",
+        TR_DEBUG("Notify resource broker (access_token: %s) that registration failed",
             access_token.c_str());
-
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        app_endpoint->handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
+        resource_broker_.handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
     }
 
     DBusAdapterMock& dbus_adapter_tester = 
-        *(static_cast<DBusAdapterMock*>(cloud_connect_resource_broker_.ipc_adapter_.get()));
+        *(static_cast<DBusAdapterMock*>(resource_broker_.ipc_adapter_.get()));
     // Verify that resource broker called the adapter (both for success and failure)
     ASSERT_TRUE(dbus_adapter_tester.is_update_registration_called());
     // Verify adapter got the right call from resource broker
