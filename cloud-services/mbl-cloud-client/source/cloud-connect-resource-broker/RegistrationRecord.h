@@ -49,7 +49,7 @@ public:
      * @param application_resource_definition - Application resource definition JSON string
      * @return MblError -
      *      Error::None - If function succeeded
-     *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
+     *      Error::CCRBInvalidJson - In case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      *      Error::CCRBGenerateUniqueIdFailed - In case unique access token creation failed
      */

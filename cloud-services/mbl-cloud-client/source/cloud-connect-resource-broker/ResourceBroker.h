@@ -315,7 +315,7 @@ protected:
     void regsiter_callback_handlers();
 
     /**
-     * @brief - Registration update cllback.
+     * @brief - Registration update callback.
      * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
      * 
      */
@@ -323,7 +323,7 @@ protected:
 
     /**
      * @brief - Error callback function
-     * Called by Mdeb cloud client to indicate last mbed-cloud-client operation failure
+     * Called by Mdeb Cloud Client to indicate last mbed-cloud-client operation failure
      * 
      * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
      */
@@ -352,7 +352,7 @@ protected:
      */
     ResourceBroker::RegistrationRecord_ptr get_registration_record(const std::string& access_token);
 
-    // Application Enpoints map that holds application that requested to register resoures
+    // Registration record map that holds records of registered / register requests
     // Used also for other application related operation
     RegistrationRecordMap registration_records_;
 

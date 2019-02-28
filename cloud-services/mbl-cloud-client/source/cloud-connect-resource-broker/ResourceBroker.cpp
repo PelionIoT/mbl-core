@@ -358,7 +358,7 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_request_handle,
 
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
-        TR_ERR("Registration is already in progess.");
+        TR_ERR("Registration is already in progress.");
         out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return Error::None;
     }
