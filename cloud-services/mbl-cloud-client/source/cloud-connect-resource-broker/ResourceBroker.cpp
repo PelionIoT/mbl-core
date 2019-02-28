@@ -15,6 +15,7 @@
 #include <cassert>
 #include <pthread.h>
 
+#define SD_ID_128_UNIQUE_ID_LEN 33
 #define TRACE_GROUP "ccrb"
 
 namespace mbl
@@ -274,8 +275,14 @@ void ResourceBroker::handle_registration_updated_cb()
         // Mark that registration is finished (using atomic flag)
         registration_in_progress_.store(false);
     }
+    else
+    {
+        TR_DEBUG("handle_registration_updated_cb was called as a result of keep-alive request");
+    }
 }
 
+// TODO: this callback is related to the following scenarios which are not yet implemented:
+// keep alive, deregistration, add resource instances and remove resource instances.
 void ResourceBroker::handle_error_cb(const int cloud_client_code)
 {
     TR_DEBUG("Enter");
@@ -321,10 +328,14 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
             TR_DEBUG("Erase registration record (access_token: %s)",
                      in_progress_access_token_.c_str());
             auto itr = registration_records_.find(in_progress_access_token_);
-            registration_records_.erase(itr); // Erase registration record as registation failed
+            registration_records_.erase(itr); // Erase registration record as regitsration failed
         }
         // Mark that registration is finished (using atomic flag) (even if it was failed)
         registration_in_progress_.store(false);
+    }
+    else
+    {
+        TR_DEBUG("handle_error_cb was called as a result of keep-alive request");
     }
 }
 
@@ -344,7 +355,7 @@ std::pair<MblError, std::string> ResourceBroker::generate_access_token()
         return ret_pair;
     }
 
-    char buffer[33] = {0};
+    char buffer[SD_ID_128_UNIQUE_ID_LEN] = {0};
     ret_pair.second = sd_id128_to_string(id128, buffer);
     return ret_pair;
 }
@@ -380,17 +391,17 @@ MblError ResourceBroker::register_resources(const uintptr_t ipc_request_handle,
     const MblError init_status = registration_record->init(app_resource_definition_json);
     if (Error::None != init_status) {
         TR_ERR("registration_record->init failed with error: %s", MblError_to_str(init_status));
-        out_status = (Error::CCRBInvalidJson == init_status)
-                         ? CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION
-                         : CloudConnectStatus::ERR_INTERNAL_ERROR;
-        return Error::None;
+        if (Error::CCRBInvalidJson == init_status) {
+            out_status = CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
+            return Error::None;
+        }
+        return init_status;
     }
 
     auto ret_pair = generate_access_token();
     if (Error::None != ret_pair.first) {
         TR_ERR("Generate access token failed with error: %s", MblError_to_str(ret_pair.first));
-        out_status = CloudConnectStatus::ERR_INTERNAL_ERROR;
-        return Error::None;
+        return ret_pair.first;
     }
 
     // Set atomic flag for registration in progress

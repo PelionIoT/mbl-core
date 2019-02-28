@@ -354,6 +354,8 @@ protected:
 
     // Registration record map that holds records of registered / register requests
     // Used also for other application related operation
+    // Modifing this map should be done carefully as it can be done in callbacks and in Broker's
+    // register_resource API.
     RegistrationRecordMap registration_records_;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////    
