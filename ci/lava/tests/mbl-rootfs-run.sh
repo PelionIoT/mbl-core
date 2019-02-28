@@ -21,42 +21,20 @@ else
 
     mbl_command="mbl-cli -a $dut_address"
 
-
-    # Initially attempt to cleanup any previous runs
-    $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
+    sleep 6000
+    wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1148/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
+    sleep 6000
 
     # Now copy the package and ptyhon checker script to the DUT
-    $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/root
-    $mbl_command put ./ci/lava/dependencies/check_container.py /home/root
+    $mbl_command put mbl-image-development-imx7s-warp-mbl.tar.xz /home/root
+    sleep 6000
 
     # Now install the package - this should cause it to run
-    $mbl_command shell "mbl-app-update-manager /home/root/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+    $mbl_command shell "mbl-app-firmware-manager -i /home/root/mbl-image-development-imx7s-warp-mbl.tar.xz"
 
-    # Check it is executing as expected
-    $mbl_command shell "python3 /home/root/check_container.py user-sample-app-package"
+    sleep 6000
 
-    # Extract the log file from the device. Note that the parsing of the log
-    # file could be done on the DUT but doing it this way tests the mbl-cli get
-    # functionality.
-    $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
-
-    # Echo it to the test run
-    cat /home/ubuntu/user-sample-app-package.log
-
-    # Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
-    count_hello_world=$(grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log)
-    if [ "$count_hello_world" = 10 ]
-    then
-        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
-    else
-        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
-    fi
-
-
-    # Attempt to cleanup after the run
-    $mbl_command shell "mbl-app-manager remove user-sample-app-package /home/app/user-sample-app-package"
-    $mbl_command shell "rm /home/root/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
-    $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
+    $mbl_command list
 
 fi
 
