@@ -24,7 +24,7 @@
 /**
  * @brief This class tests ResourceBroker functionality
  * 
- * This class is a friend of ResourceBroker and ApplicationEndpoint classes
+ * This class is a friend of ResourceBroker classe
  * and is therefore able to evaluate private members and test operations
  * 
  */
@@ -69,7 +69,7 @@ public:
      * @brief Simulate Mbed cloud client register update callback calls
      * 
      * Depending on dbus_adapter_expected_status it either calls handle_register_cb or handle_error_cd 
-     * of ApplicationEnpoint class to signal a success or failed registration
+     * of resource broker class to signal a success or failed registration
      * 
      * @param access_token is a token that should be used by the client 
      *        application in all APIs that access (in any way) to the provided 
@@ -106,7 +106,7 @@ private:
      * @brief ResourceBroker module to be tested
      * 
      */
-    mbl::ResourceBroker cloud_connect_resource_broker_;
+    mbl::ResourceBroker resource_broker_;
 };
 
 #endif // ResourceBrokerTester_h_

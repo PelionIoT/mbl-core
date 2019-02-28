@@ -8,7 +8,7 @@
 #define ResourceBroker_h_
 
 #include "DBusAdapter.h"
-#include "ApplicationEndpoint.h"
+#include "RegistrationRecord.h"
 #include "CloudConnectTypes.h"
 
 #include <inttypes.h>
@@ -104,7 +104,7 @@ protected:
      * 
      * @param ipc_request_handle handle to the IPC unique connection information 
      *        of the application that should get update_registration_status message.
-     * @param appl_resource_definition_json json file that describes resources 
+     * @param app_resource_definition_json json file that describes resources 
      *        that should be registered. The structure of the JSON document 
      *        reflects the structure of the required resource tree. 
      * @param out_status cloud connect operation status for operations like 
@@ -114,7 +114,7 @@ protected:
      *        was Error::None.  
      * @param out_access_token is a token that should be used by the client 
      *        application in all APIs that access (in any way) to the provided 
-     *        (via appl_resource_definition_json) set of resources. 
+     *        (via app_resource_definition_json) set of resources. 
      *        Note: This parameter is valid, if MblError return error code 
      *        was Error::None.  
      * 
@@ -123,7 +123,7 @@ protected:
      */
     virtual MblError register_resources(
         const uintptr_t ipc_request_handle, 
-        const std::string &appl_resource_definition_json,
+        const std::string &app_resource_definition_json,
         CloudConnectStatus &out_status,
         std::string &out_access_token);
 
@@ -315,7 +315,7 @@ protected:
     void regsiter_callback_handlers();
 
     /**
-     * @brief - Registration update cllback.
+     * @brief - Registration update callback.
      * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
      * 
      */
@@ -323,45 +323,40 @@ protected:
 
     /**
      * @brief - Error callback function
-     * Called by Mdeb cloud client to indicate last mbed-cloud-client operation failure
+     * Called by Mdeb Cloud Client to indicate last mbed-cloud-client operation failure
      * 
      * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
      */
     void handle_error_cb(const int cloud_client_code);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Callback functions that are being called by ApplicationEndpoint Class
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+    typedef std::shared_ptr<RegistrationRecord> RegistrationRecord_ptr;
+    typedef std::map<std::string, RegistrationRecord_ptr> RegistrationRecordMap;
 
     /**
-     * @brief Application registration update callback function
-     * Called by application endpoint to notify it is now successfully registered
+     * @brief Generate unique access token using sd_id128_randomize
+     * Unique access token is saved in in_progress_access_token_ private member
      * 
-     * @param ipc_conn_handle - Handle to the IPC unique connection information 
-     *        of the application that should be notified.
-     * @param access_token - Token that should be used by the client 
-     *        application.
+     * @return std::pair<MblError, std::string> - a pair where the first element Error::None for 
+     * success, therwise the failure reason.
+     * If the first element is Error::None, user may access the second element which is the 
+     * generate access token. most compilers will optimize (move and not copy). If first element is 
+     * not success - user should ignore the second element.
      */
-    void handle_app_register_update_finished_cb(const uintptr_t ipc_conn_handle, const std::string &access_token);
+    std::pair<MblError, std::string> generate_access_token();
 
     /**
-     * @brief Application error callback function
-     * Called by Application endpoint to notify that the last mbed-cloud-client operation failed.
+     * @brief Return registration record using acceess token
      * 
-     * @param ipc_conn_handle - Handle to the IPC unique connection information 
-     *        of the application that should be notified.
-     * @param access_token - Token that should be used by the client 
-     *        application.
-     * @param error - Mbed cloud client error code for the last register / deregister operations.
+     * @param access_token - access token arrived from ipc adapter
+     * @return Registration record
      */
-    void handle_app_error_cb(const uintptr_t ipc_conn_handle, const std::string &access_token, const MblError error);
+    ResourceBroker::RegistrationRecord_ptr get_registration_record(const std::string& access_token);
 
-    typedef std::shared_ptr<ApplicationEndpoint> ApplicationEndpoint_ptr;
-    typedef std::map<std::string, ApplicationEndpoint_ptr> ApplicationEndpointMap;
-
-    // Application Enpoints map that holds application that requested to register resoures
+    // Registration record map that holds records of registered / register requests
     // Used also for other application related operation
-    ApplicationEndpointMap app_endpoints_map_;
+    // Modifing this map should be done carefully as it can be done in callbacks and in Broker's
+    // register_resource API.
+    RegistrationRecordMap registration_records_;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////    
 
@@ -385,6 +380,8 @@ protected:
     // This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
     std::atomic_bool registration_in_progress_;
 
+    // Access token of the current operation against Mbed client
+    std::string in_progress_access_token_;
 
     // register_update function pointer
     // Mbl cloud client use it to point to Mbed cloud client register_update API
