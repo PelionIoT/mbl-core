@@ -21,6 +21,8 @@ else
 
     mbl_command="mbl-cli -a $dut_address"
 
+    $mbl_command 'shell lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'
+
     wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1148/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
 
     mv mbl-image-development-imx7s-warp-mbl.tar.xz /home/root
