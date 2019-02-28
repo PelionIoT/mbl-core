@@ -5,6 +5,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Find and select the device to talk to
+apt install wget
 
 mbl-cli list > device_list
 dut_address=$(grep "mbed-linux-os" device_list | cut -d":" -f3-)
