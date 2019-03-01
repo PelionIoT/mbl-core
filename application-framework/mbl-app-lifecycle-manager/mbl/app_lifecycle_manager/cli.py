@@ -11,8 +11,9 @@ import shutil
 import sys
 from enum import Enum
 
-from .container import get_oci_bundle_paths
+from mbl.app_manager.manager import APPS_PATH
 
+from .container import get_oci_bundle_paths
 from .manager import (
     run_app,
     terminate_app,
@@ -20,7 +21,7 @@ from .manager import (
     DEFAULT_TIMEOUT_AFTER_SIGTERM,
     DEFAULT_TIMEOUT_AFTER_SIGKILL,
 )
-from .utils import log, set_log_verbosity, human_sort
+from .utils import log, set_log_verbosity, alphanum_sort
 
 
 class ReturnCode(Enum):
@@ -31,19 +32,46 @@ class ReturnCode(Enum):
     INVALID_OPTIONS = 2
 
 
-def run_action(args):
-    """Entry point for the 'run' cli command."""
-    app_version_dirs = get_oci_bundle_paths(args.app_path)
+def run_app_from_parent_dir(name):
+    """Run an application from its parent directory.
 
-    if app_version_dirs:
-        human_sort(app_version_dirs)
-        app_path = app_version_dirs.pop(0)
-        run_app(args.app_name, app_path)
+    For an application `app_a` located at `/home/app/app_a`,
+    run the application version with the lowest number and remove
+    all other versions found if any.
+    i.e If `/home/app/app_a/9` and `/home/app/app_a/10` are found,
+    run `/home/app/app_a/9` and remove `/home/app/app_a/10` if
+    successful.
+    """
+    app_parent_dir = os.path.join(APPS_PATH, name)
+
+    if not os.path.isdir(app_parent_dir):
+        raise AppNotInstalled("'{}' is not installed".format(name))
+
+    versions = get_oci_bundle_paths(app_parent_dir)
+
+    if versions:
+        alphanum_sort(versions)
+        valid_version = versions.pop(0)
+        run_app(name, valid_version)
 
         # clean up other app versions if any
-        if app_version_dirs:
-            for version in app_version_dirs:
-                shutil.rmtree(version)
+        if versions:
+            for invalid_version in versions:
+                shutil.rmtree(invalid_version)
+
+
+def run_action(args):
+    """Entry point for the 'run' cli command."""
+    run_app_from_parent_dir(args.app_name)
+
+
+def run_all_action(args):
+    """Entry point for the `run-all` cli command."""
+    # Get the immediate subdirectory names, these names are the names the
+    # applications installed on the system.
+    app_names = next(os.walk(APPS_PATH))[1]
+    for app_name in app_names:
+        run_app_from_parent_dir(app_name)
 
 
 def terminate_action(args):
@@ -67,18 +95,17 @@ def parse_args():
         description="The commands to control the application statuses."
     )
 
-    run = command_group.add_parser("run", help="run a user application.")
-    run.add_argument(
-        "app_name",
-        type=str,
-        help="name the application will be referred as"
-        " once it has been started.",
+    run = command_group.add_parser(
+        "run", help="run a user application found at {}.".format(APPS_PATH)
     )
-    run.add_argument(
-        "app_path", type=str, help="path of the application to start."
-    )
-
+    run.add_argument("app_name", type=str, help="the name of the application.")
     run.set_defaults(func=run_action)
+
+    run_all = command_group.add_parser(
+        "run-all",
+        help="run all user applications found at {}.".format(APPS_PATH),
+    )
+    run_all.set_defaults(func=run_all_action)
 
     terminate = command_group.add_parser(
         "terminate",
@@ -89,7 +116,7 @@ def parse_args():
         ),
     )
     terminate.add_argument(
-        "app_name", type=str, help="name of the application to terminate."
+        "app_name", type=str, help="the name of the application to terminate."
     )
     terminate.add_argument(
         "-t",
@@ -115,7 +142,7 @@ def parse_args():
         ),
     )
     kill.add_argument(
-        "app_name", type=str, help="name of the application to kill."
+        "app_name", type=str, help="the name of the application to kill."
     )
     kill.add_argument(
         "-t",
@@ -175,3 +202,7 @@ class ArgumentParserWithDefaultHelp(argparse.ArgumentParser):
         sys.stderr.write("error: {}".format(message))
         self.print_help()
         raise SystemExit(ReturnCode.INVALID_OPTIONS.value)
+
+
+class AppNotInstalled(Exception):
+    """Error to indicate that an application is not installed."""
