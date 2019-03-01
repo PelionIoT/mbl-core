@@ -67,6 +67,8 @@ def run_action(args):
 
 def run_all_action(args):
     """Entry point for the `run-all` cli command."""
+    # Get the immediate subdirectory names, these names are the names the
+    # applications installed on the system.
     app_names = next(os.walk(APPS_PATH))[1]
     for app_name in app_names:
         run_app_from_parent_dir(app_name)
