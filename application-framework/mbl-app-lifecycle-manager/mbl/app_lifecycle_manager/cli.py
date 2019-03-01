@@ -21,7 +21,7 @@ from .manager import (
     DEFAULT_TIMEOUT_AFTER_SIGTERM,
     DEFAULT_TIMEOUT_AFTER_SIGKILL,
 )
-from .utils import log, set_log_verbosity, human_sort
+from .utils import log, set_log_verbosity, alphanum_sort
 
 
 class ReturnCode(Enum):
@@ -50,7 +50,7 @@ def run_app_from_parent_dir(name):
     versions = get_oci_bundle_paths(app_parent_dir)
 
     if versions:
-        human_sort(versions)
+        alphanum_sort(versions)
         valid_version = versions.pop(0)
         run_app(name, valid_version)
 

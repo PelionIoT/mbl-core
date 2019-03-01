@@ -23,7 +23,7 @@ def set_log_verbosity(increase_verbosity):
     logging.basicConfig(level=log_level, format=log_format)
 
 
-def human_sort(l):
+def alphanum_sort(l):
     """Sort the given list in ascending order the way that humans expect.
 
     i.e For a list l containing `["5", "24", "10"]`, the function sorts it as
