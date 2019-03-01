@@ -258,9 +258,10 @@ def get_oci_bundle_paths(path):
             config_path = os.path.join(dirpath, OCI_BUNDLE_CONFIGURATION)
             with open(config_path, "r") as filelike:
                 config = json.load(filelike)
-            if "root" in config and "path" in config["root"]:
-                if config["root"]["path"] in dirnames:
-                    oci_bundles.append(dirpath)
+            if "ociVersion" in config:
+                if "root" in config and "path" in config["root"]:
+                    if config["root"]["path"] in dirnames:
+                        oci_bundles.append(dirpath)
 
     return oci_bundles
 
