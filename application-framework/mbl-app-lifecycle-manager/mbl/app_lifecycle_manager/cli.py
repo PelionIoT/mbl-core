@@ -45,7 +45,7 @@ def run_app_from_parent_dir(name):
     app_parent_dir = os.path.join(APPS_PATH, name)
 
     if not os.path.isdir(app_parent_dir):
-        raise Exception("'{}' is not installed".format(name))
+        raise AppNotInstalled("'{}' is not installed".format(name))
 
     versions = get_oci_bundle_paths(app_parent_dir)
 
@@ -202,3 +202,7 @@ class ArgumentParserWithDefaultHelp(argparse.ArgumentParser):
         sys.stderr.write("error: {}".format(message))
         self.print_help()
         raise SystemExit(ReturnCode.INVALID_OPTIONS.value)
+
+
+class AppNotInstalled(Exception):
+    """Error to indicate that an application is not installed."""
