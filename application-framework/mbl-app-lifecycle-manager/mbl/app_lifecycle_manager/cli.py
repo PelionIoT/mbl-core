@@ -101,8 +101,7 @@ def parse_args():
     run.add_argument(
         "app_name",
         type=str,
-        help="name the application will be referred as"
-        " once it has been started.",
+        help="the name of the application.",
     )
     run.set_defaults(func=run_action)
 
@@ -121,7 +120,7 @@ def parse_args():
         ),
     )
     terminate.add_argument(
-        "app_name", type=str, help="name of the application to terminate."
+        "app_name", type=str, help="the name of the application to terminate."
     )
     terminate.add_argument(
         "-t",
@@ -147,7 +146,7 @@ def parse_args():
         ),
     )
     kill.add_argument(
-        "app_name", type=str, help="name of the application to kill."
+        "app_name", type=str, help="the name of the application to kill."
     )
     kill.add_argument(
         "-t",
