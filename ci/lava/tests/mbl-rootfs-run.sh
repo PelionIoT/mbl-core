@@ -41,6 +41,9 @@ else
     # Now install the package - this should cause it to run
     $mbl_command shell "mbl-firmware-update-manager -i /home/root/payload.tar  -v"
 
+    sleep 120
 
+    mbl-cli list > device_list
+    cat device_list
 fi
 
