@@ -99,9 +99,7 @@ def parse_args():
         "run", help="run a user application found at {}.".format(APPS_PATH)
     )
     run.add_argument(
-        "app_name",
-        type=str,
-        help="the name of the application.",
+        "app_name", type=str, help="the name of the application."
     )
     run.set_defaults(func=run_action)
 
