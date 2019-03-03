@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <pthread.h>
+#include <time.h>
 
 #define SD_ID_128_UNIQUE_ID_LEN 33
 #define TRACE_GROUP "ccrb"
@@ -22,7 +23,8 @@ namespace mbl
 {
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progress_(false)
+ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progress_(false), 
+                                    init_semaphore_initialized_(false)
 {
     TR_DEBUG("Enter");
 }
@@ -38,16 +40,56 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     assert(cloud_client);
     cloud_client_ = cloud_client;
 
+    // initialize init semaphore
+    int ret = sem_init(&init_finished_, 
+        0 /* semaphore used between threads in the process */, 
+        0 /* create "used" semaphore, with initial value 0 */ );
+    if (0 != ret) {
+        // semaphore init failed, print errno value and exit
+        TR_ERRNO_F("sem_init", errno);
+        return Error::CCRBStartFailed;
+    }
+
+    // mark that semaphore was initialized successfully
+    init_semaphore_initialized_.store(true);
+
     // create new thread which will run IPC event loop
-    const int thread_create_err =
-        pthread_create(&ipc_thread_id_,
+    ret = pthread_create(&ipc_thread_id_,
                        nullptr, // thread is created with default attributes
                        ResourceBroker::ccrb_main,
                        this);
-    if (0 != thread_create_err) {
+    if (0 != ret) {
         // thread creation failed, print errno value and exit
-        TR_ERR("Thread creation failed (%s)", strerror(errno));
+        TR_ERRNO_F("pthread_create", errno);
         return Error::CCRBStartFailed;
+    }
+
+    struct timespec timeout_time;
+    if (0 != clock_gettime(CLOCK_REALTIME, &timeout_time))
+    {
+        TR_ERRNO_F("clock_gettime", errno);
+        return Error::CCRBStartFailed;
+    }
+
+    // wait for 2 second for initialization procedure
+    timeout_time.tv_sec += 2;
+    while ((0 != (ret = sem_timedwait(&sem_init, &timeout_time))) && errno == EINTR){
+           continue;    /* Restart if interrupted by handler */
+    }
+
+    /* Check what happened */
+    if (0 != ret)
+    {
+        if (errno == ETIMEDOUT){
+            TR_ERRNO_F("sem_timedwait", errno, "Timeout ocurred!" );
+            return Error::CCRBStartFailed;
+        }
+        else {
+            TR_ERRNO_F("sem_timedwait", errno);
+            return Error::CCRBStartFailed;
+        }
+    } else {
+        TR_INFO("Resource Broker initializations finished successfully");
     }
 
     // thread was created
@@ -105,6 +147,17 @@ MblError ResourceBroker::stop()
         TR_ERR("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
     }
 
+    if(init_semaphore_initialized_.load()) {
+        // destroy init semaphore
+        const int sem_destroy_err = sem_destroy(&init_finished_);
+        if (0 != sem_destroy_err) {
+            // semaphore destroy failed, print errno value
+            TR_ERRNO_F("sem_destroy", errno);
+            de_init_err = (de_init_err == Error::None) ?
+                            Error::CCRBStopFailed : de_init_err;
+        }
+    }
+
     return de_init_err;
 }
 
@@ -144,12 +197,12 @@ MblError ResourceBroker::deinit()
 
     assert(ipc_adapter_);
 
-    // FIXME: Currently we call ipc_adapter_->de_init unconditionally.
-    //        ipc_adapter_->de_init can't be called if ccrb thread was not finished.
-    //        Required to call ipc_adapter_->de_init only if ccrb thread was finished.
+    // FIXME: Currently we call ipc_adapter_->deinit unconditionally.
+    //        ipc_adapter_->deinit can't be called if ccrb thread was not finished.
+    //        Required to call ipc_adapter_->deinit only if ccrb thread was finished.
     MblError status = ipc_adapter_->deinit();
     if (Error::None != status) {
-        TR_ERR("ipc::de_init failed with error %s", MblError_to_str(status));
+        TR_ERR("ipc::deinit failed with error %s", MblError_to_str(status));
     }
 
     return status;
@@ -186,6 +239,14 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     if (Error::None != status) {
         TR_ERR("ccrb::init failed with error %s. Exit CCRB thread.", MblError_to_str(status));
         pthread_exit(reinterpret_cast<void*>(status));
+    }
+
+    // signal to the semaphore that initialization was finished
+    int ret = sem_post(&init_finished_);
+    if (0 != ret) {
+        // semaphore post failed, print errno value and exit
+        TR_ERRNO_F("sem_post", errno);
+        pthread_exit(reinterpret_cast<void*>(Error::CCRBStartFailed));
     }
 
     status = this_ccrb->run();

@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <memory>
 #include <pthread.h>
+#include <semaphore.h>
 #include <queue>
 #include <atomic>
 #include <functional>
@@ -369,6 +370,10 @@ protected:
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
+
+    sem_t init_finished_;
+    std::atomic_bool init_semaphore_initialized_;
+
 
     // pointer to ipc binder instance
     std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
