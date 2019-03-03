@@ -135,16 +135,12 @@ MblError ResourceBroker::stop()
 
     // thread was succesfully joined, handle thread_status. Thread_status will contain
     // value that was returned via pthread_Exit(MblError) from ccrb main function.
-    MblError* ret_value = static_cast<MblError*>(thread_status);
-    if (Error::None != (*ret_value)) {
+    uintptr_t thread_ret_value = reinterpret_cast<uintptr_t>(thread_status);
+    MblError ret_value = static_cast<MblError>(thread_ret_value);
+    if (Error::None != ret_value) {
         // the return with an error ret_Value indicate of the reason for exit, but not the
         // failure of the current function.
-        TR_ERR("ccrb_main() exit with error (*ret_value)= %s", MblError_to_str((*ret_value)));
-    }
-
-    MblError de_init_err = deinit();
-    if (Error::None != de_init_err) {
-        TR_ERR("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
+        TR_ERR("ccrb_main() exit with error %s", MblError_to_str(ret_value));
     }
 
     if(init_semaphore_initialized_.load()) {
@@ -153,12 +149,11 @@ MblError ResourceBroker::stop()
         if (0 != sem_destroy_err) {
             // semaphore destroy failed, print errno value
             TR_ERRNO("sem_destroy", errno);
-            de_init_err = (de_init_err == Error::None) ?
-                            Error::CCRBStopFailed : de_init_err;
+            ret_value = (ret_value == Error::None) ? Error::CCRBStopFailed : ret_value;
         }
     }
 
-    return de_init_err;
+    return ret_value;
 }
 
 MblError ResourceBroker::init()
