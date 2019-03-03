@@ -23,8 +23,8 @@ namespace mbl
 {
 
 // Currently, this constructor is called from MblCloudClient thread.
-ResourceBroker::ResourceBroker() : cloud_client_(nullptr), registration_in_progress_(false), 
-                                    init_semaphore_initialized_(false)
+ResourceBroker::ResourceBroker() : init_semaphore_initialized_(false), 
+                                    cloud_client_(nullptr), registration_in_progress_(false) 
 {
     TR_DEBUG("Enter");
 }
@@ -46,7 +46,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
         0 /* create "used" semaphore, with initial value 0 */ );
     if (0 != ret) {
         // semaphore init failed, print errno value and exit
-        TR_ERRNO_F("sem_init", errno);
+        TR_ERRNO("sem_init", errno);
         return Error::CCRBStartFailed;
     }
 
@@ -60,20 +60,20 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
                        this);
     if (0 != ret) {
         // thread creation failed, print errno value and exit
-        TR_ERRNO_F("pthread_create", errno);
+        TR_ERRNO("pthread_create", errno);
         return Error::CCRBStartFailed;
     }
 
     struct timespec timeout_time;
     if (0 != clock_gettime(CLOCK_REALTIME, &timeout_time))
     {
-        TR_ERRNO_F("clock_gettime", errno);
+        TR_ERRNO("clock_gettime", errno);
         return Error::CCRBStartFailed;
     }
 
     // wait for 2 second for initialization procedure
     timeout_time.tv_sec += 2;
-    while ((0 != (ret = sem_timedwait(&sem_init, &timeout_time))) && errno == EINTR){
+    while ((0 != (ret = sem_timedwait(&init_finished_, &timeout_time))) && errno == EINTR){
            continue;    /* Restart if interrupted by handler */
     }
 
@@ -85,7 +85,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
             return Error::CCRBStartFailed;
         }
         else {
-            TR_ERRNO_F("sem_timedwait", errno);
+            TR_ERRNO("sem_timedwait", errno);
             return Error::CCRBStartFailed;
         }
     } else {
@@ -142,7 +142,7 @@ MblError ResourceBroker::stop()
         TR_ERR("ccrb_main() exit with error (*ret_value)= %s", MblError_to_str((*ret_value)));
     }
 
-    const MblError de_init_err = deinit();
+    MblError de_init_err = deinit();
     if (Error::None != de_init_err) {
         TR_ERR("ccrb::de_init failed! (%s)", MblError_to_str(de_init_err));
     }
@@ -152,7 +152,7 @@ MblError ResourceBroker::stop()
         const int sem_destroy_err = sem_destroy(&init_finished_);
         if (0 != sem_destroy_err) {
             // semaphore destroy failed, print errno value
-            TR_ERRNO_F("sem_destroy", errno);
+            TR_ERRNO("sem_destroy", errno);
             de_init_err = (de_init_err == Error::None) ?
                             Error::CCRBStopFailed : de_init_err;
         }
@@ -242,10 +242,10 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     }
 
     // signal to the semaphore that initialization was finished
-    int ret = sem_post(&init_finished_);
+    int ret = sem_post(&this_ccrb->init_finished_);
     if (0 != ret) {
         // semaphore post failed, print errno value and exit
-        TR_ERRNO_F("sem_post", errno);
+        TR_ERRNO("sem_post", errno);
         pthread_exit(reinterpret_cast<void*>(Error::CCRBStartFailed));
     }
 
