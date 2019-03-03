@@ -62,6 +62,8 @@ public:
      * - deinitializes CCRB instance.
      * 
      * Note: This function should be called only after ResourceBroker::start() being called.
+     *       This function should be called only from the same thread as ResourceBroker::start() 
+     *       was called.
      *
      * @return MblError returns value Error::None if function succeeded, 
      *         or Error::CCRBStopFailed otherwise. 
