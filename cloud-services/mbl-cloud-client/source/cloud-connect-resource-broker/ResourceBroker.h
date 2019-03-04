@@ -377,10 +377,10 @@ protected:
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
 
-    // semaphore for the initialization procedure syncronization
+    // semaphore for the initialization procedure syncronization.
     sem_t init_sem_;
 
-    // flag that marks if the init_sem_ was successfully intialized
+    // flag that marks if the init_sem_ was intialized and required destroy.
     std::atomic_bool init_sem_initialized_;
 
     // pointer to ipc binder instance

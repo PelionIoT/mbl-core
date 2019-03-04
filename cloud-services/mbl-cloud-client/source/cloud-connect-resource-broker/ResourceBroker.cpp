@@ -75,7 +75,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     timeout_time.tv_sec += 2;
     
     // wait for initialization procedure to finish
-    while ((0 != (ret = sem_timedwait(&init_sem_, &timeout_time))) && errno == EINTR){
+    while ((0 != (ret = sem_timedwait(&init_sem_, &timeout_time))) && (errno == EINTR)){
            continue;    // restart if interrupted by signal handler
     }
 
@@ -83,13 +83,14 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     if (0 != ret) {
         // analyse why sem_timedwait failed
         if (errno == ETIMEDOUT) {
-            TR_ERRNO_F("sem_timedwait", errno, "Timeout ocurred!");
+            TR_ERRNO_F("sem_timedwait", ETIMEDOUT, "Timeout ocurred!");
         }
         else {
             TR_ERRNO("sem_timedwait", errno);
         }
         return Error::CCRBStartFailed;
     } else {
+        // init_sem_ was signalled  
         TR_INFO("Resource Broker initializations finished successfully");
     }
 
