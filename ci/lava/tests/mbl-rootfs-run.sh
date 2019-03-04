@@ -39,7 +39,8 @@ else
     $mbl_command put payload.tar /home/root
 
     # Now install the package - this should cause it to run
-    $mbl_command shell '/bin/sh -c "PATH=${PATH}:/usr/sbin;/sbin;"mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
+    #$mbl_command shell '/bin/sh -c "PATH=${PATH}:/usr/sbin;/sbin;"mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
+    $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
 
 fi
 
