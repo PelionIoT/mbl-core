@@ -15,7 +15,7 @@ pip install .
 ## Usage
 
 ```
-usage: mbl-app-lifecycle-manager [-h] [-v] {run,terminate,kill} ...
+usage: mbl-app-lifecycle-manager [-h] [-v] {run,run-all,terminate,kill} ...
 ```
 
 ## Return code
@@ -37,8 +37,9 @@ optional arguments:
 subcommands:
   The commands to control the application statuses.
 
-  {run,terminate,kill}
-    run                 run a user application.
+  {run,run-all,terminate,kill}
+    run                 run a user application found at /home/app.
+    run-all             run all user applications found at /home/app.
     terminate           kill a user application process with SIGTERM then
                         delete its associated resources. Note: A SIGKILL is
                         sent if the application does not stop after a SIGTERM.
@@ -52,7 +53,13 @@ usage: mbl-app-lifecycle-manager run [-h] app_name app_path
 positional arguments:
   app_name    name the application will be referred as once it has been
               started.
-  app_path    path of the application to start.
+
+optional arguments:
+  -h, --help  show this help message and exit
+```
+
+```
+usage: mbl-app-lifecycle-manager run-all [-h]
 
 optional arguments:
   -h, --help  show this help message and exit

@@ -9,7 +9,7 @@ import subprocess
 import os
 from subprocess import check_output
 
-SET_HOSTNAME_CMD = [os.path.join(os.path.sep, "etc", "init.d", "hostname.sh")]
+SET_HOSTNAME_CMD = [os.path.join(os.path.sep, "opt", "arm", "mbl-hostname.sh")]
 HOSTNAME_CMD = [os.path.join(os.path.sep, "bin", "hostname")]
 HOSTNAME_FACTORY_FILE = os.path.join(
     os.path.sep, "config", "factory", "hostname"
@@ -186,7 +186,7 @@ class TestHostname:
         assert hostname.stdout.decode("utf-8").strip() == self.hostname_orig
 
     def _run_hostname_script(self):
-        """Set hostname by running /etc/init.d/hostname.sh."""
+        """Set hostname by running /opt/arm/mbl-hostname.sh."""
         p = subprocess.Popen(
             SET_HOSTNAME_CMD,
             stdin=subprocess.PIPE,
