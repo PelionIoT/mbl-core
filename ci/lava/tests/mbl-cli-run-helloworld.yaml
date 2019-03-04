@@ -5,8 +5,8 @@
 metadata:
     format: "Lava-Test Test Definition 1.0"
     name: Run Hello World Test
-    description: "MBL Core Tests behaviour"
+    description: "Run the helloworld application on the target using mbl-cli"
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-helloworld-run.sh
+        - ./ci/lava/tests/mbl-cli-run-helloworld.sh

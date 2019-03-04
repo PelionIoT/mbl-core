@@ -4,14 +4,20 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Find and select the device to talk to
+# Run the hello world test and confirm it is functioning correctly
 
+# Find the address of the first device found by the mbl-cli. This will only
+# work correctly if there is a point to point connection between lxc and target.
 mbl-cli list > device_list
-dut_address=$(grep "mbed-linux-os" device_list | cut -d":" -f3-)
+dut_address=$(grep "mbed-linux-os" device_list | head -1 | cut -d":" -f3-)
 
+# list the devices for debug
 cat device_list
 
+# Tidy up
 rm device_list
+
+# Only proceed if a device has been found
 
 if [ -z "$dut_address" ]
 then
@@ -25,7 +31,7 @@ else
     # Initially attempt to cleanup any previous runs
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
-    # Now copy the package and ptyhon checker script to the DUT
+    # Now copy the package and python checker script to the DUT
     $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/root
     $mbl_command put ./ci/lava/dependencies/check_container.py /home/root
 
