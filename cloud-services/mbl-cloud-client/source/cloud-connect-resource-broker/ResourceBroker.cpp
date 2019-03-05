@@ -140,7 +140,7 @@ MblError ResourceBroker::stop()
     uintptr_t thread_ret_value = reinterpret_cast<uintptr_t>(thread_status);
     MblError ret_value = static_cast<MblError>(thread_ret_value);
     if (Error::None != ret_value) {
-        // the return with an error ret_Value indicate of the reason for exit, but not the
+        // the return with an error ret_value indicate of the reason for exit, and the
         // failure of the current function.
         TR_ERR("ccrb_main() exit with error %s", MblError_to_str(ret_value));
     }
