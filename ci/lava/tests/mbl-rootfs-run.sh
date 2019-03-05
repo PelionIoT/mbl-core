@@ -29,19 +29,46 @@ else
 
     mbl_command="mbl-cli -a $dut_address"
 
-    $mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'
+    active_partition = $mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'
 
-    wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1148/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
+    echo -n "Active Partition: "
+    echo $active_partition
 
-    tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
+    if [ $test_stage eq "PART_1" ]
+    then
+        # At the start rootfs1 should be the active partition.
+        if [$active_partition eq "rootfs1" ]
+        then
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
+        else
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
+        fi
 
-    # Now copy the package and ptyhon checker script to the DUT
-    $mbl_command put payload.tar /home/root
 
-    # Now install the package - this should cause it to run
-    #$mbl_command shell '/bin/sh -c "PATH=${PATH}:/usr/sbin;/sbin;"mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
-    $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
-    sleep 60
+        # Get the root filesystem image from the server.
+        wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1148/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
+
+        # Tar it up in the expected manner
+        tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
+
+        # Now copy the tar file to the DUT
+        $mbl_command put payload.tar /home/root
+
+        # Now update the rootfs - this will cause the boart to reboot
+        $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
+
+        # Sleep to allow the reboot to happen
+        sleep 60
+    else
+        # At the end rootfs2 should be the active partition.
+        if [$active_partition eq "rootfs2" ]
+        then
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
+        else
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>"
+        fi
+    fi
+
 
 fi
 
