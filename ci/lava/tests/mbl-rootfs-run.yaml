@@ -4,8 +4,15 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run Hello World Test
+    name: Run RootFS Upgrade Test
     description: "MBL Core Tests behaviour"
+
+params:
+    # COMPONENT specifies the folder that pytest runs in. If this is not
+    #           provided by the test submission pytest will run over the
+    #           entire repository.
+    #
+    test_stage:
 
 run:
     steps:
