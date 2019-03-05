@@ -47,9 +47,7 @@ else
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
         fi
 
-        echo "lava-"`hostname` > /config/user/hostname
-
-        sleep 3000
+        $mbl_command shell 'echo "lava-"`hostname` > /config/user/hostname'
 
         # Get the root filesystem image from the server.
         wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1148/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
