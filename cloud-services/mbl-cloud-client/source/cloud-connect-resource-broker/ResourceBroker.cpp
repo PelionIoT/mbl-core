@@ -257,8 +257,9 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
     const MblError deinit_status = this_ccrb->deinit();
     if (Error::None != deinit_status) {
-        TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.", MblError_to_str(deinit_status));
-        pthread_exit((void*) &deinit_status);
+        TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.", 
+            MblError_to_str(deinit_status));
+        pthread_exit(reinterpret_cast<void*>(deinit_status));
     }
 
     TR_INFO("CCRB thread function finished. CCRB::run status %s.", MblError_to_str(run_status));
