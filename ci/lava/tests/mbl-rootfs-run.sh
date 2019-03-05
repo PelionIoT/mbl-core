@@ -47,7 +47,7 @@ else
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
         fi
 
-        echo "lava-"`hostname` /config/user/hostname
+        echo "lava-"`hostname` > /config/user/hostname
 
         sleep 3000
 
