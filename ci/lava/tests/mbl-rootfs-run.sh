@@ -40,7 +40,7 @@ else
     if [ $test_stage = "PART_1" ]
     then
         # At the start rootfs1 should be the active partition.
-        if [$active_partition eq "rootfs1" ]
+        if [ $active_partition = "rootfs1" ]
         then
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
         else
@@ -67,7 +67,7 @@ else
         sleep 60
     else
         # At the end rootfs2 should be the active partition.
-        if [$active_partition eq "rootfs2" ]
+        if [ $active_partition = "rootfs2" ]
         then
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
         else
