@@ -29,10 +29,12 @@ else
 
     mbl_command="mbl-cli -a $dut_address"
 
-    active_partition = $mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'
+    active_partition=`$mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'`
 
     echo -n "Active Partition: "
     echo ${active_partition}
+
+    echo $test_stage
 
     if [ $test_stage eq "PART_1" ]
     then
