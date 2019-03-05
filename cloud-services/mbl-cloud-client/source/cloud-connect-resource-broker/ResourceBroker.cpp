@@ -242,7 +242,7 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     }
 
     // signal to the semaphore that initialization was finished
-    int ret = sem_post(&this_ccrb->init_sem_);
+    const int ret = sem_post(&this_ccrb->init_sem_);
     if (0 != ret) {
         // semaphore post failed, print errno value and exit
         TR_ERRNO_F("sem_post", errno, "Exit CCRB thread.");

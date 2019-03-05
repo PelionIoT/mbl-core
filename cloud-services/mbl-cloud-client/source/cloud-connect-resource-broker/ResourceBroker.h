@@ -380,7 +380,7 @@ protected:
     // semaphore for the initialization procedure syncronization.
     sem_t init_sem_;
 
-    // flag that marks if the init_sem_ was intialized and required destroy.
+    // flag that marks if the init_sem_ was intialized and requires destroy.
     std::atomic_bool init_sem_initialized_;
 
     // pointer to ipc binder instance
