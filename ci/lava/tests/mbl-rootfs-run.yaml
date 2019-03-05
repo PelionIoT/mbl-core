@@ -16,4 +16,4 @@ params:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-rootfs-run.sh
+        - ./ci/lava/tests/mbl-rootfs-run.sh $test_stage
