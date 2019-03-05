@@ -19,15 +19,10 @@ SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -fomit-frame-pointer")
 SET(ENABLE_PROGRAMS OFF CACHE STRING "Avoid compiling mbedtls programs" )
 SET(ENABLE_TESTING OFF CACHE STRING "Avoid compiling mbedtls tests")
 
-#!!! 
-# Patch: all excessive include_directories commented out in order to make includes ("-I...") length 
-# in CFLAGS as short as possible. Without this patch we get compilation failure "execv: argument too long" 
-# due to excessive include directories. This bug appeared in integration of mbed-cloud-client 1.4.0 into MBL.
-
 include_directories ("${CMAKE_SOURCE_DIR}/pal-platform/Middleware/mbedtls")
 include_directories ("${CMAKE_SOURCE_DIR}/pal-platform/Middleware/mbedtls/mbedtls/include")
 include_directories ("${CMAKE_SOURCE_DIR}/pal-platform/Middleware/mbedtls/mbedtls/include/mbedtls")
-# include_directories ("${CMAKE_SOURCE_DIR}/pal-platform/Middleware/mbedtls/mbedtls/port/ksdk")
+include_directories ("${CMAKE_SOURCE_DIR}/pal-platform/Middleware/mbedtls/mbedtls/port/ksdk")
 # include_directories ("./pal-platform/Middleware/mbedtls/mmcau_2.0.0")
 
 message(status "device = ${PAL_TARGET_DEVICE}")

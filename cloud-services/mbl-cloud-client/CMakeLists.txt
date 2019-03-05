@@ -19,21 +19,20 @@ SET(CMAKE_SYSTEM_NAME Generic)
 
 project(mblCloudClient)
 
-# Compile mbl-cloud-client-gtest using c++14 standard
+# Compile mbl-cloud-client using c++14 standard
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 ADDSUBDIRS()
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(JSONCPP jsoncpp)
-find_package(GTest REQUIRED)
 
 # TODO: ensure there are secure versions of this in mbed-client-pal for the
 # platforms we need to support and use those instead
 # Currently the compilation flag PAL_USE_HW_ROT is 0, which means that mbedPalInsecureROT library is not supported on HW.
 # If this will be changed a proper implementation will need to be used.
 
-# Add these options after all none mbl-cloud-client bits so they only apply to
+# Add these options after all non-mbl-cloud-client bits so they only apply to
 # mbl-cloud-client code
 add_compile_options(-Werror)
 add_compile_options(-Wall)
@@ -54,9 +53,7 @@ include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/mbed-tr
 include_directories(${MBED_CLOUD_CLIENT_DIR}/factory-configurator-client/factory-configurator-client)
 include_directories(${MBED_CLOUD_CLIENT_DIR}/mbed-trace)
 
-FILE(GLOB GTestSources "${CMAKE_CURRENT_SOURCE_DIR}/tests/gtest/*.cpp")
-
-add_executable(mbl-cloud-client-gtest ${GTestSources})
+add_executable(mbl-cloud-client ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
 FILE(GLOB MBED_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/mbed_cloud_dev_credentials.c"
@@ -68,7 +65,7 @@ FILE(GLOB MBL_CLOUD_CLIENT_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.c"      
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker/*.c"
 )
 
 option(CODE_CHECK_MODE "Code check cmake mode" OFF)
@@ -93,28 +90,22 @@ unset(CODE_CHECK_MODE CACHE)
 add_library(mblCloudClient STATIC "${MBL_CLOUD_CLIENT_SRC}")
 
 # Order is important here: dependencies must follow dependents
-target_link_libraries(mbl-cloud-client-gtest mblCloudClient)
-target_link_libraries(mbl-cloud-client-gtest mbedCloudClient mbedCloudClientExternal)
+target_link_libraries(mbl-cloud-client mblCloudClient)
+target_link_libraries(mbl-cloud-client mbedCloudClient mbedCloudClientExternal)
 
-target_link_libraries(mbl-cloud-client-gtest factory-configurator-client)
-target_link_libraries(mbl-cloud-client-gtest pal mblCloudClient)
-target_link_libraries(mbl-cloud-client-gtest mbedcrypto)
-target_link_libraries(mbl-cloud-client-gtest mbedtls)
-target_link_libraries(mbl-cloud-client-gtest mbedx509)
-target_link_libraries(mbl-cloud-client-gtest mbedTrace)
-target_link_libraries(mbl-cloud-client-gtest ${JSONCPP_LIBRARIES})
+target_link_libraries(mbl-cloud-client factory-configurator-client)
+target_link_libraries(mbl-cloud-client pal mblCloudClient)
+target_link_libraries(mbl-cloud-client mbedcrypto)
+target_link_libraries(mbl-cloud-client mbedtls)
+target_link_libraries(mbl-cloud-client mbedx509)
+target_link_libraries(mbl-cloud-client mbedTrace)
+target_link_libraries(mbl-cloud-client ${JSONCPP_LIBRARIES})
 
 # mbedCloudClient seems to be co-dependent with mbedTrace (at least when
 # MBED_CONF_MBED_TRACE_FEA_IPV6 == 1), hence the second mention here
-target_link_libraries(mbl-cloud-client-gtest mbedCloudClient mbedCloudClientExternal)
+target_link_libraries(mbl-cloud-client mbedCloudClient mbedCloudClientExternal)
 
-target_link_libraries(mbl-cloud-client-gtest pthread)
-target_link_libraries(mbl-cloud-client-gtest rt)
+target_link_libraries(mbl-cloud-client pthread)
+target_link_libraries(mbl-cloud-client rt)
 # link with systemd to get sd-bus and sd-event support
-target_link_libraries(mbl-cloud-client-gtest systemd)
-
-# Add Gtests mbl-cloud=client tests and gtest libraries and includes
-#this include is for gtests tests
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/source/cloud-connect-resource-broker)
-include_directories(${GTEST_INCLUDE_DIRS} ${SYSTEMD_INCLUDE_DIRS})
-target_link_libraries(mbl-cloud-client-gtest ${GTEST_LIBRARIES})
+target_link_libraries(mbl-cloud-client systemd)
