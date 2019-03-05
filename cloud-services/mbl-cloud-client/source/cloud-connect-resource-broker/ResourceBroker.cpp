@@ -188,6 +188,17 @@ MblError ResourceBroker::init()
     // Register Cloud client callback:
     regsiter_callback_handlers();
 
+    //////////////////////////////////////////////////////////////////
+    // PAY ATTENTION: This should be the last action in this function!
+    //////////////////////////////////////////////////////////////////
+    // signal to the semaphore that initialization was finished
+    const int ret = sem_post(&init_sem_);
+    if (0 != ret) {
+        // semaphore post failed, print errno value and exit
+        TR_ERRNO("sem_post", errno);
+        status = (status == Error::None) ? Error::IpcProcedureFailed : status;
+    }
+
     return status;
 }
 
@@ -239,14 +250,6 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     if (Error::None != init_status) {
         TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", MblError_to_str(init_status));
         pthread_exit(reinterpret_cast<void*>(init_status));
-    }
-
-    // signal to the semaphore that initialization was finished
-    const int ret = sem_post(&this_ccrb->init_sem_);
-    if (0 != ret) {
-        // semaphore post failed, print errno value and exit
-        TR_ERRNO_F("sem_post", errno, "Exit CCRB thread.");
-        pthread_exit(reinterpret_cast<void*>(Error::CCRBStartFailed));
     }
 
     const MblError run_status = this_ccrb->run();
