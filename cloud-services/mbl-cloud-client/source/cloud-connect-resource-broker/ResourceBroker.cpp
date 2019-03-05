@@ -64,7 +64,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
         return Error::CCRBStartFailed;
     }
 
-    struct timespec timeout_time;
+    struct timespec timeout_time = {0, 0};
     if (0 != clock_gettime(CLOCK_REALTIME, &timeout_time))
     {
         TR_ERRNO("clock_gettime", errno);
@@ -83,6 +83,9 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     if (0 != ret) {
         // analyse why sem_timedwait failed
         if (errno == ETIMEDOUT) {
+            // the timeout ocurres when by some reason initialization procedure was not finished
+            // during expected period of time(much less than 2 seconds). Possible reasons can be 
+            // that CCRB thread exited with error, or initialization procedure failed.  
             TR_ERRNO_F("sem_timedwait", ETIMEDOUT, "Timeout ocurred!");
         }
         else {
@@ -196,7 +199,7 @@ MblError ResourceBroker::init()
     if (0 != ret) {
         // semaphore post failed, print errno value and exit
         TR_ERRNO("sem_post", errno);
-        status = (status == Error::None) ? Error::IpcProcedureFailed : status;
+        status = (status == Error::None) ? Error::IPCProcedureFailed : status;
     }
 
     return status;
@@ -249,7 +252,8 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     const MblError init_status = this_ccrb->init();
     if (Error::None != init_status) {
         TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", MblError_to_str(init_status));
-        pthread_exit(reinterpret_cast<void*>(init_status));
+        uintptr_t int_init_status = static_cast<uintptr_t>(init_status);
+        pthread_exit(reinterpret_cast<void*>(int_init_status));
     }
 
     const MblError run_status = this_ccrb->run();
@@ -262,11 +266,13 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     if (Error::None != deinit_status) {
         TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.", 
             MblError_to_str(deinit_status));
-        pthread_exit(reinterpret_cast<void*>(deinit_status));
+        uintptr_t int_deinit_status = static_cast<uintptr_t>(deinit_status);
+        pthread_exit(reinterpret_cast<void*>(int_deinit_status));
     }
 
     TR_INFO("CCRB thread function finished. CCRB::run status %s.", MblError_to_str(run_status));
-    pthread_exit(reinterpret_cast<void*>(run_status)); // pthread_exit does "return"
+    uintptr_t int_run_status = static_cast<uintptr_t>(run_status);
+    pthread_exit(reinterpret_cast<void*>(int_run_status)); // pthread_exit does "return"
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
