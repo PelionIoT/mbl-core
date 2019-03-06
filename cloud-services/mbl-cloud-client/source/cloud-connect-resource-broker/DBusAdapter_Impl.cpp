@@ -13,6 +13,8 @@
 #include "MailboxMsg.h"
 #include "ResourceBroker.h"
 
+#include <systemd/sd-event.h>
+
 #include <cassert>
 #include <sstream>
 #include <stdbool.h>
@@ -1142,12 +1144,11 @@ bool DBusAdapterImpl::State::is_not_equal(eState state)
     return (current_ != state);
 }
 
-MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
-                                               unsigned long data_length,
-                                               SelfEvent::EventDataType data_type,
-                                               SelfEventCallback callback,
-                                               uint64_t& out_event_id,
-                                               const std::string description)
+std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_immediate(Event::EventData data,
+                                                                    unsigned long data_length,
+                                                                    Event::EventDataType data_type,
+                                                                    Event::UserCallback callback,
+                                                                    const std::string& description)
 {
     TR_DEBUG("Enter");
     assert(callback);
@@ -1155,8 +1156,24 @@ MblError DBusAdapterImpl::send_event_immediate(SelfEvent::EventData data,
     // Must be first! only CCRB initializer thread should call this function.
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
-    return event_manager_.send_event_immediate(
-        data, data_length, data_type, callback, out_event_id, description);
+    return event_manager_.send_event_immediate(data, data_length, data_type, callback, description);
+}
+
+std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_periodic(Event::EventData data,
+                                                                   unsigned long data_length,
+                                                                   Event::EventDataType data_type,
+                                                                   Event::UserCallback callback,
+                                                                   uint64_t period_millisec,
+                                                                   const std::string& description)
+{
+    TR_DEBUG("Enter");
+    assert(callback);
+
+    // Must be first! only CCRB initializer thread should call this function.
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+    return event_manager_.send_event_periodic(
+        data, data_length, data_type, callback, period_millisec, description);
 }
 
 } // namespace mbl {
