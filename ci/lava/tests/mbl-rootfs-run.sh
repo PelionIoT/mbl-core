@@ -26,7 +26,7 @@ rm device_list
 if [ -z "$dut_address" ]
 then
     echo "ERROR - mbl-cli failed to find MBL device"
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>"
 else
 
     mbl_command="mbl-cli -a $dut_address"
@@ -68,7 +68,7 @@ else
         $mbl_command shell 'su -l -c "reboot || echo $?"'
 
         # Sleep to allow the reboot to happen
-        sleep 60
+        sleep 90
     else
         # At the end rootfs2 should be the active partition.
         if [ $active_partition = "rootfs2" ]
