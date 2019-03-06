@@ -7,10 +7,13 @@
 import os
 import shutil
 import subprocess
+from pathlib import Path
+
+from mbl.app_lifecycle_manager.container import get_oci_bundle_paths
 
 from .parser import parse_app_info, AppInfoParserError
 from .utils import log
-from mbl.app_lifecycle_manager.container import get_oci_bundle_paths
+
 
 APPS_PATH = os.path.join(os.sep, "home", "app")
 
@@ -97,9 +100,9 @@ class AppManager(object):
             )
             raise AppUninstallError(msg)
         else:
+            app_parent_dir = str(Path(app_path).resolve().parent)
             shutil.rmtree(app_path)
-            app_parent_dir = os.path.dirname(app_path)
-            if not os.listdir(app_parent_dir):
+            if not os.listdir(app_parent_dir) and app_parent_dir != APPS_PATH:
                 shutil.rmtree(app_parent_dir)
             log.info(
                 "'{}' removal from '{}' successful".format(app_name, app_path)
