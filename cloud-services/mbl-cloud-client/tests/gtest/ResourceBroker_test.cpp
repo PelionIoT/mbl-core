@@ -16,6 +16,9 @@
  */
 
 #include <gtest/gtest.h>
+#include "cloud-connect-resource-broker/ResourceBroker.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
+
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"
 #include "CloudConnectTrace.h"
@@ -256,4 +259,14 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
     resource_broker_tester.mbed_client_register_update_callback_test(
         out_access_token,
         CloudConnectStatus::STATUS_SUCCESS);    
+}
+
+TEST(Resource_Broker_Positive, start_stop) {
+
+    TR_DEBUG("Enter");
+
+    MbedCloudClient test_mbed_client;
+    mbl::ResourceBroker resource_broker;
+    ASSERT_EQ(mbl::Error::None, resource_broker.start(&test_mbed_client));
+    ASSERT_EQ(mbl::Error::None, resource_broker.stop());
 }
