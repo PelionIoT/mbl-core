@@ -10,16 +10,14 @@
 #include "systemd/sd-bus.h"
 #include "systemd/sd-event.h"
 
-#include "MblError.h"
 #include "CloudConnectTrace.h"
+#include "MblError.h"
 
-#define GTEST_LOG_START_TEST \
-    TR_DEBUG("Starting Test : %s", \
-    ::testing::UnitTest::GetInstance()->current_test_info()->name())
+#define GTEST_LOG_START_TEST                                                                       \
+    TR_DEBUG("Starting Test : %s", ::testing::UnitTest::GetInstance()->current_test_info()->name())
 
-#define TESTER_VALIDATE_EQ(a, b) \
-    if (a != b)                  \
-    return MblError::DBA_InvalidValue
+#define TESTER_VALIDATE_EQ(a, b)                                                                   \
+    if (a != b) return MblError::DBA_InvalidValue
 
 enum TestResult {
     TEST_SUCCESS,
