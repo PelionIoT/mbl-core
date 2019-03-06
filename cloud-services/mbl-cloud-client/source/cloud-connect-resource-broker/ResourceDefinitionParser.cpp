@@ -131,18 +131,12 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
     M2MResource* m2m_resource = nullptr;
     TR_INFO("Create %s resource: %s", resource_mode.c_str(), resource_name.c_str());
     if (resource_mode == JSON_RESOURCE_MODE_STATIC) {
-        const uint8_t value_length = static_cast<uint8_t>(
-            resource_value.length()); // During the JSON parsing we verify valid
-                                      // length so we are safe
-        auto value = new uint8_t[resource_value.length()];
-        memmove(value, resource_value.data(), resource_value.length());
         m2m_resource = m2m_object_instance->create_static_resource(resource_name.c_str(),
                                                                    resource_res_type.c_str(),
                                                                    m2m_res_type,
-                                                                   value,
-                                                                   value_length,
+                                                                   nullptr,
+                                                                   0,
                                                                    resource_multiple_instance);
-        delete[] value;
     }
     else
     {
@@ -156,6 +150,17 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
         TR_ERR("Create %s m2m_resource: %s failed", resource_mode.c_str(), resource_name.c_str());
         return Error::CCRBCreateM2MObjFailed;
     }
+    // Set value for the created static / dynamic resource
+    if (!resource_value.empty()) {
+        // During the JSON parsing we verify valid length so we are safe:
+        const uint8_t value_length = static_cast<uint8_t>(resource_value.length());
+        std::vector<uint8_t> value(resource_value.begin(), resource_value.end());
+        if (!m2m_resource->set_value(value.data(), value_length)) {
+            TR_ERR("Set value of resource: %s failed", resource_name.c_str());
+            return Error::CCRBCreateM2MObjFailed;
+        }
+    }
+
     TR_DEBUG("Set M2MResource operation to %d", m2m_operation);
     m2m_resource->set_operation(m2m_operation); // Set allowed operations for accessing the resource
     return Error::None;
@@ -419,13 +424,13 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
     return Error::None;
 }
 
-MblError
-ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition,
-                                            M2MObjectList& m2m_object_list)
+std::pair<MblError, M2MObjectList>
+ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition)
 {
     TR_DEBUG("Enter");
 
-    MblError retval = Error::None;
+    std::pair<MblError, M2MObjectList> ret_pair(MblError::None, M2MObjectList());
+
     // We must catch exception to avoid crashes when application send invalid /
     // corrupted JSON
     try
@@ -447,49 +452,52 @@ ResourceDefinitionParser::build_object_list(const std::string& application_resou
         delete reader;
         if (!parsing_successful) {
             TR_ERR("parsing Json string failed with errors: %s.", errors.c_str());
-            return Error::CCRBInvalidJson;
+            ret_pair.first = Error::CCRBInvalidJson;
+            return ret_pair;
         }
         if (root.empty()) {
             TR_ERR("Invalid JSON. Root is empty.");
-            return Error::CCRBInvalidJson;
+            ret_pair.first = Error::CCRBInvalidJson;
+            return ret_pair;
         }
         // Parse all objects:
         for (auto itr = root.begin(); itr != root.end(); itr++) {
             Json::Value object_definition = *itr;
             Json::Value object_name = itr.key();
-            retval = parse_object(object_name.asString(), object_definition, m2m_object_list);
-            if (retval != Error::None) {
-                TR_ERR("parse_object failed with error %s", MblError_to_str(retval));
+            ret_pair.first =
+                parse_object(object_name.asString(), object_definition, ret_pair.second);
+            if (ret_pair.first != Error::None) {
+                TR_ERR("parse_object failed with error %s", MblError_to_str(ret_pair.first));
                 break;
             }
         }
     } catch (Json::Exception& e)
     {
         TR_ERR("BuildResourceList failed with Json::Exception exception msg: %s.", e.what());
-        retval = Error::CCRBInvalidJson;
+        ret_pair.first = Error::CCRBInvalidJson;
     } catch (std::runtime_error& e)
     {
         TR_ERR("BuildResourceList failed with runtime_error exception msg: %s.", e.what());
-        retval = Error::CCRBInvalidJson;
+        ret_pair.first = Error::CCRBInvalidJson;
     } catch (std::exception& e)
     {
         TR_ERR("BuildResourceList failed with std::exception exception msg: %s.", e.what());
-        retval = Error::CCRBInvalidJson;
+        ret_pair.first = Error::CCRBInvalidJson;
     }
 
     // Free allocated memory for object instances in case error occured
-    if (retval != Error::None) {
+    if (ret_pair.first != Error::None) {
         // Clear m2m_object list
         M2MObject* m2m_object = nullptr;
-        for (auto& itr : m2m_object_list) {
+        for (auto& itr : ret_pair.second) {
             m2m_object = itr;
             TR_DEBUG("Deleting m2m_object: %s", m2m_object->name());
             delete m2m_object; // This will delete all created object instances and
                                // all resources that belongs to it
         }
-        m2m_object_list.clear();
+        ret_pair.second.clear();
     }
-    return retval;
+    return ret_pair;
 }
 
 } // namespace mbl

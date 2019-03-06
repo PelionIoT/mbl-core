@@ -87,6 +87,7 @@ Notes:
 * "multiple_instance" and "observable" must have boolean value (e.g. true or false)
 * "mode" entry is mandatory and can either be "dynamic" or "static"
 * "observable" entry is mandatory in case of Dynamic resource, and it is not allowed to appear in case of Static resource
+* "value" entry is optional as resource value can be set later on
 
 */
 
@@ -110,9 +111,7 @@ public:
      *      Error::CCRBInvalidJson - I case of invalid resource definition  (e.g. Invalid structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
      */
-    static MblError build_object_list(
-        const std::string &application_resource_definition,
-        M2MObjectList &m2m_object_list);
+    static std::pair<MblError, M2MObjectList> build_object_list(const std::string& application_resource_definition);
 
 private:
 

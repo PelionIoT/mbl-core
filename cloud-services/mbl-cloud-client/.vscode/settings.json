@@ -51,6 +51,9 @@
         "typeinfo": "cpp",
         "utility": "cpp",
         "cmath": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "chrono": "cpp",
+        "cstddef": "cpp",
+        "ratio": "cpp"
     }
 }

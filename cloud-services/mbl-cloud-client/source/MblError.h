@@ -76,6 +76,8 @@ enum Type {
     CCRBCreateM2MObjFailed              = 0x0404,
     CCRBValueTypeError                  = 0x0405,
     CCRBGenerateUniqueIdFailed          = 0x0406,
+    CCRBInvalidResourcePath             = 0x0407,
+    CCRBResourceNotFound                = 0x0408,
 		
     // DBA (D-Bus Adapter) errors
     DBA_IllegalState                    = 0x0500,

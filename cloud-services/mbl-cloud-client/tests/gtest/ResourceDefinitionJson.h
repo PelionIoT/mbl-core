@@ -126,14 +126,25 @@
           "delete"
         ],
         "observable": true,
-        "multiple_instance": true
+        "multiple_instance": false
+      },
+      "112": {
+        "mode": "dynamic",
+        "type": "integer",
+        "operations": [
+          "get",
+          "put",
+          "delete"
+        ],
+        "observable": true,
+        "multiple_instance": false
       }
     }
   }
 }
 */
-#define VALID_APP_RESOURCE_DEFINITION_ONE_DYMANIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE \
-  R"({"8888" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : true } } } })"
+#define VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE \
+  R"({"8888" : { "11" : { "111" : { "mode" : "dynamic", "type" : "string", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : false },  "112" : { "mode" : "dynamic", "type" : "integer", "operations" : ["get","put", "delete"], "observable" : true, "multiple_instance" : false } } } })"
 
 
 /*
