@@ -81,6 +81,8 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     const std::string& access_token,
     CloudConnectStatus dbus_adapter_expected_status)
 {
+    TR_DEBUG("Enter");
+
     auto itr = resource_broker_.registration_records_.find(access_token);
     ASSERT_TRUE(resource_broker_.registration_records_.end() !=
         itr);
@@ -95,7 +97,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
             access_token.c_str());
         resource_broker_.handle_registration_updated_cb();
         
-        // Make sure registration recorm is marked as registered
+        // Make sure registration record is marked as registered
         ASSERT_TRUE(registration_record->is_registered());
     } else {
         // Check registration failure flow
@@ -112,4 +114,66 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     // Verify adapter got the right call from resource broker
     ASSERT_TRUE(dbus_adapter_expected_status == 
         dbus_adapter_tester.get_register_cloud_connect_status());
+}
+
+void ResourceBrokerTester::get_m2m_resource_test(
+    const std::string& access_token,
+    const std::string& path,
+    mbl::MblError expected_error_status)
+{
+    TR_DEBUG("Enter");
+
+    auto itr = resource_broker_.registration_records_.find(access_token);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() !=
+        itr);
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
+
+    std::pair<mbl::MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+
+    ASSERT_TRUE(expected_error_status == ret_pair.first);
+
+    // In case of success - verify valid resource
+    if (mbl::Error::None == expected_error_status) {
+        ASSERT_TRUE(nullptr != ret_pair.second);
+    }
+}
+
+void ResourceBrokerTester::set_resources_values_test(
+    const std::string& access_token,
+    std::vector<mbl::ResourceSetOperation>& inout_set_operations,
+    const std::vector<mbl::ResourceSetOperation> expected_inout_set_operations,
+    const CloudConnectStatus expected_out_status)
+{
+    TR_DEBUG("Enter");
+    
+    CloudConnectStatus out_status;
+    mbl::MblError status = resource_broker_.set_resources_values(
+        access_token,
+        inout_set_operations,
+        out_status);
+    
+    ASSERT_TRUE(mbl::MblError::None == status);
+    ASSERT_TRUE(expected_out_status == out_status);
+
+    if(CloudConnectStatus::STATUS_SUCCESS != out_status) {
+        return; // Nothing left to check
+    }
+
+    // Compare expected_out_status to out_status
+    bool found_path = false;
+    for (auto in_out_itr : inout_set_operations) {
+        std::string path = in_out_itr.input_data_.get_path();
+
+        found_path = false;
+        CloudConnectStatus expected_status = CloudConnectStatus::ERR_FIRST;
+        for (auto expected_itr : expected_inout_set_operations) {
+                if(path == expected_itr.input_data_.get_path()) {
+                    expected_status = expected_itr.output_status_;
+                    found_path = true;
+                    break;
+                }
+        }
+        ASSERT_TRUE(found_path);
+        ASSERT_TRUE(expected_status == in_out_itr.output_status_);
+    }
 }

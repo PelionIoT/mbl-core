@@ -228,9 +228,11 @@ protected:
         const std::vector<uint16_t> &resource_instance_ids,
         CloudConnectStatus &out_status);
 
+   
     /**
      * @brief Set resources values for multiple resources. 
-     *
+     * Calling this API is allowed right after register_resources() was called.
+     * 
      * @param access_token token used for access control to the resources pointed 
      *        from inout_set_operations vector. 
      * @param inout_set_operations vector of structures that provide all input and 
@@ -245,7 +247,7 @@ protected:
      *        - output_status is the status of the set operation for the corresponding 
      *          resource.
      *        Note: This parameter is valid, if MblError return error code 
-     *        was Error::None.  
+     *        is Error::None AND if out_status is CloudConnectStatus::STATUS_SUCCESS
      *
      * 
      * @param out_status cloud connect operation status for operations like 
@@ -253,7 +255,7 @@ protected:
      *        The set operation status is not returned via MblError, but by filling 
      *        corresponding value to the output_status in inout_set_operations.
      *        Note: This parameter is valid, if MblError return error code 
-     *        was Error::None.  
+     *        is Error::None.  
      * 
      * @return MblError returns Error::None if resource broker internal operations 
      *         were successfully finished, or error code otherwise.
@@ -262,6 +264,7 @@ protected:
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations,
         CloudConnectStatus &out_status);
+
 
     /**
      * @brief Get resources values from multiple resources. 
@@ -338,6 +341,88 @@ protected:
 
     typedef std::shared_ptr<RegistrationRecord> RegistrationRecord_ptr;
     typedef std::map<std::string, RegistrationRecord_ptr> RegistrationRecordMap;
+
+
+    /**
+     * @brief Validate resource data to be used in set/get operation against the registered resource
+     * 
+     * @param registration_record - Registration record
+     * @param resource_data - Resource data to be used in set / get operation
+     * 
+     * @return CloudConnectStatus - 
+     *      CloudConnectStatus::ERR_INVALID_RESOURCE_PATH - In case of invalid resource path
+     *      CloudConnectStatus::ERR_RESOURCE_NOT_FOUND - In case resource not found
+     *      CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE - In case of invalid resource type
+     *      CloudConnectStatus::STATUS_SUCCESS - In case of valid resource data
+     */
+    CloudConnectStatus validate_resource_data(const RegistrationRecord_ptr registration_record,
+                                              ResourceData resource_data);
+
+    /**
+     * @brief Set value of one resource
+     * 
+     * @param registration_record - Registration record
+     * @param resource_data - Resource data to be used in set / get operation
+     * 
+     * @return CloudConnectStatus - 
+     *      CloudConnectStatus::ERR_INTERNAL_ERROR - In case set value in Mbed client failed
+     *      CloudConnectStatus::STATUS_SUCCESS - In case of valid resource data
+     */
+    CloudConnectStatus set_resource_value(const RegistrationRecord_ptr registration_record,
+                                          const ResourceData resource_data);
+
+    /**
+     * @brief Validate set operation param and update each resource output status.
+     * Used by set_resources_values() API.
+     * 
+     * @param registration_record - Registration record for set operation
+     * @param inout_set_operations vector of structures that provide all input and 
+     *        output parameters to perform setting operation. 
+     *        Each entry in inout_set_operations contains:
+     * 
+     *        input fields: 
+     *        - input_data is the data that includes resources's path type and value 
+     *          of the corresponding resource.
+     * 
+     *        output field: 
+     *        - output_status is the status of the set operation for the corresponding 
+     *          resource.
+     *        Note: This parameter is valid, if MblError return error code 
+     *        was Error::None.  
+     * 
+     * @return bool - true if inout_set_operations is valid, false if not.
+     */
+    bool validate_set_resources_input_params(
+        const RegistrationRecord_ptr registration_record,
+        std::vector<ResourceSetOperation>& inout_set_operations);
+
+    /**
+     * @brief Validate get operation param and update each resource output status.
+     * Used by get_resources_values() API.
+     * 
+     * @param registration_record - Registration record for set operation
+     * @param inout_get_operations vector of structures that provide all input and 
+     *        output parameters required to perform getting operation. 
+     *        Each entry in inout_get_operations contains:
+     * 
+     *        input fields: 
+     *        - inout_data.path field is the path of the corresponding resource 
+     *          who's value should be gotten. 
+     *        - inout_data.type field is the type of the resource data.
+     * 
+     *        output fields: 
+     *        - output_status is the status of the set operation for the corresponding
+     *          resource.
+     *        - inout_data.value field is the value that was gotten from resource. 
+     *          Use inout_data.value only if the output_status has SUCCESS value. 
+     *        Note: This parameter is valid, if MblError return error code 
+     *        was Error::None.  
+     * 
+     * @return bool - true if inout_get_operations is valid, false if not.
+     */
+    bool validate_get_resources_input_params(
+        RegistrationRecord_ptr registration_record,
+        std::vector<ResourceGetOperation>& inout_get_operations);
 
     /**
      * @brief Generate unique access token using sd_id128_randomize

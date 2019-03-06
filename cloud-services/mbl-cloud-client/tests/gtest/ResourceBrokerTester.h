@@ -24,7 +24,7 @@
 /**
  * @brief This class tests ResourceBroker functionality
  * 
- * This class is a friend of ResourceBroker classe
+ * This class is a friend of ResourceBroker class
  * and is therefore able to evaluate private members and test operations
  * 
  */
@@ -75,10 +75,60 @@ public:
      *        application in all APIs that access (in any way) to the provided 
      *        (via app_resource_definition_json) set of resources. 
      * @param dbus_adapter_expected_status - expected dbus adapter cloud connect status
+     * 
+     * Note: register_resources_test() must be called before calling this API.
      */
     void mbed_client_register_update_callback_test(
         const std::string& access_token,
         CloudConnectStatus dbus_adapter_expected_status);
+
+    /**
+     * @brief Get resource by path and compare to expected status
+     * 
+     * @param access_token is a token that should be used by the client 
+     *        application in all APIs that access (in any way) to the provided 
+     *        (via app_resource_definition_json) set of resources. 
+     * @param path - resource path
+     * @param expected_error_status - expected error status
+     * 
+     * Note: register_resources_test() must be called before calling this API.
+     */
+    void get_m2m_resource_test(
+        const std::string& access_token,
+        const std::string& path,
+        mbl::MblError expected_error_status);
+
+    /**
+     * @brief Test set_resources_values API
+     * 
+     * @param access_token is a token that should be used by the client 
+     *        application in all APIs that access (in any way) to the provided 
+     *        (via app_resource_definition_json) set of resources. 
+     * @param inout_set_operations vector of structures that provide all input and 
+     *        output parameters to perform setting operation. 
+     *        Each entry in inout_set_operations contains:
+     * 
+     *        input fields: 
+     *        - input_data is the data that includes resources's path type and value 
+     *          of the corresponding resource.
+     * 
+     *        output field: 
+     *        - output_status is the status of the set operation for the corresponding 
+     *          resource.
+     *        Note: This parameter is valid, if MblError return error code 
+     *        was Error::None.  
+     * @param expected_inout_set_operations - expected inout_set operation
+     * @param expected_out_status cloud connect operation status for operations like 
+     *        access_token validity, access permissions to the resources, and so on. 
+     *        fills corresponding value to the output_status in inout_set_operations.
+     * 
+     * Note: register_resources_test() must be called before calling this API.
+     */
+    void set_resources_values_test(
+        const std::string& access_token,
+        std::vector<mbl::ResourceSetOperation>& inout_set_operations,
+        const std::vector<mbl::ResourceSetOperation> expected_inout_set_operations,
+        const CloudConnectStatus expected_out_status);
 
 private:
 

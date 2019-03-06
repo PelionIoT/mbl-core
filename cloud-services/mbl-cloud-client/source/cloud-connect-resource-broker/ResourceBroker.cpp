@@ -524,21 +524,199 @@ MblError ResourceBroker::remove_resource_instances(const uintptr_t /*unused*/,
     return Error::None;
 }
 
-MblError ResourceBroker::set_resources_values(const std::string& /*unused*/,
-                                              std::vector<ResourceSetOperation>& /*unused*/,
-                                              CloudConnectStatus& /*unused*/)
+CloudConnectStatus
+ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration_record,
+                                       ResourceData resource_data)
 {
     TR_DEBUG("Enter");
-    // empty for now
+
+    std::string resource_path = resource_data.get_path();
+    std::pair<MblError, M2MResource*> ret_pair =
+        registration_record->get_m2m_resource(resource_path);
+    if (Error::None != ret_pair.first) {
+        TR_ERR("get_m2m_resource failed with error: %s", MblError_to_str(ret_pair.first));
+        return (ret_pair.first == Error::CCRBInvalidResourcePath)
+                   ? CloudConnectStatus::ERR_INVALID_RESOURCE_PATH
+                   : CloudConnectStatus::ERR_RESOURCE_NOT_FOUND;
+    }
+
+    M2MResource* m2m_resource = ret_pair.second; // Found m2m resource
+    M2MResourceBase::ResourceType resource_type = m2m_resource->resource_instance_type();
+
+    // Type validity check
+    switch (resource_data.get_data_type())
+    {
+    case ResourceDataType::INTEGER:
+        if (resource_type != M2MResourceInstance::INTEGER) {
+            TR_ERR("Resource: %s - type is not integer", resource_path.c_str());
+            return CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
+        }
+        break;
+    case ResourceDataType::STRING:
+        if (resource_type != M2MResourceInstance::STRING) {
+            TR_ERR("Resource: %s - type is not string", resource_path.c_str());
+            return CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
+        }
+        break;
+    default:
+        TR_ERR("Resource: %s - type not supported: %d",
+               resource_path.c_str(),
+               resource_data.get_data_type());
+        return ERR_INVALID_RESOURCE_TYPE;
+    }
+    return CloudConnectStatus::STATUS_SUCCESS;
+}
+
+bool ResourceBroker::validate_set_resources_input_params(
+    const RegistrationRecord_ptr registration_record,
+    std::vector<ResourceSetOperation>& inout_set_operations)
+{
+    TR_DEBUG("Enter");
+    bool status = true;
+    // Go over all resources in the vector, check for validity and update out status
+    for (auto& itr : inout_set_operations) {
+
+        ResourceSetOperation set_operation = itr;
+        const ResourceData input_data = set_operation.input_data_;
+
+        itr.output_status_ = validate_resource_data(registration_record, input_data);
+        if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
+            status = false;
+        }
+    }
+    return status;
+}
+
+CloudConnectStatus
+ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_record,
+                                   const ResourceData resource_data)
+{
+    TR_DEBUG("Enter");
+    
+    const std::string path = resource_data.get_path();
+
+    // No need to check ret_pair as we already did a validity check and we know it exists
+    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    M2MResource* m2m_resource = ret_pair.second;
+
+    switch (resource_data.get_data_type())
+    {
+    case ResourceDataType::INTEGER:
+    {
+        int64_t value = resource_data.get_value_integer();
+        if (!m2m_resource->set_value(value)) {
+            TR_ERR("Set value of resource: %s to: %" PRId64 " (type: integer) failed",
+                    path.c_str(),
+                    value);
+            return CloudConnectStatus::ERR_INTERNAL_ERROR;
+        }
+        TR_INFO("Set value of resource: %s to: %" PRId64 " (type: integer) succeeded.",
+                path.c_str(),
+                value);
+        break;
+    }
+    case ResourceDataType::STRING:
+    {
+        std::string value = resource_data.get_value_string();
+        const uint8_t value_length = static_cast<uint8_t>(value.length());
+        std::vector<uint8_t> value_uint8(value.begin(), value.end());
+        if (!m2m_resource->set_value(value_uint8.data(), value_length)) {
+            TR_ERR("Set value of resource: %s to: %s (type: string) failed",
+                    path.c_str(),
+                    value.c_str());
+            return CloudConnectStatus::ERR_INTERNAL_ERROR;
+        }
+        TR_INFO("Set value of resource: %s to: %s (type: string) succeeded.",
+                path.c_str(),
+                value.c_str());
+        break;
+    }
+    default: // Already did a validity check so we can't be here...
+        break;
+    }
+    return CloudConnectStatus::STATUS_SUCCESS;
+}
+
+MblError
+ResourceBroker::set_resources_values(const std::string& access_token,
+                                     std::vector<ResourceSetOperation>& inout_set_operations,
+                                     CloudConnectStatus& out_status)
+{
+    TR_DEBUG("access_token: %s", access_token.c_str());
+
+    RegistrationRecord_ptr registration_record = get_registration_record(access_token);
+    if (nullptr == registration_record) {
+        TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
+        out_status = CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+        return Error::None;
+    }
+
+    // Validate all set operations and update their statuses. This is done preior to actual
+    // set operation to reduce inconsistent state where some of the set operation were done and
+    // some didn't.
+    if (!validate_set_resources_input_params(registration_record, inout_set_operations)) {
+        TR_ERR("validate_set_resources_input_params (access_token: %s) failed",
+               access_token.c_str());
+        out_status = STATUS_SUCCESS;
+        return Error::None;
+    }
+
+    // Go over all resources, set values and update out status
+    for (auto& itr : inout_set_operations) {
+        ResourceSetOperation set_operation = itr;
+        itr.output_status_ = set_resource_value(registration_record, set_operation.input_data_);
+    }
+    out_status = CloudConnectStatus::STATUS_SUCCESS;
     return Error::None;
 }
 
-MblError ResourceBroker::get_resources_values(const std::string& /*unused*/,
-                                              std::vector<ResourceGetOperation>& /*unused*/,
-                                              CloudConnectStatus& /*unused*/)
+bool ResourceBroker::validate_get_resources_input_params(
+    RegistrationRecord_ptr registration_record,
+    std::vector<ResourceGetOperation>& inout_get_operations)
 {
     TR_DEBUG("Enter");
-    // empty for now
+    bool status = true;
+    // Go over all resources in the vector, check for validity and update out status
+    for (auto& itr : inout_get_operations) {
+
+        ResourceGetOperation get_operation = itr;
+        ResourceData inout_data = get_operation.inout_data_;
+        const std::string path = inout_data.get_path();
+        itr.output_status_ = validate_resource_data(registration_record, inout_data);
+        if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
+            status = false;
+        }
+    }
+    return status;
+}
+
+MblError
+ResourceBroker::get_resources_values(const std::string& access_token,
+                                     std::vector<ResourceGetOperation>& inout_get_operations,
+                                     CloudConnectStatus& out_status)
+{
+    TR_DEBUG("Enter");
+
+    TR_DEBUG("access_token: %s", access_token.c_str());
+
+    RegistrationRecord_ptr registration_record = get_registration_record(access_token);
+    if (nullptr == registration_record) {
+        TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
+        out_status = CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+        return Error::None;
+    }
+
+    // Validate all get operations and update their statuses. This is done preior to actual
+    // get operation to reduce inconsistent state where some of the get operation were done and
+    // some didn't.
+    if (!validate_get_resources_input_params(registration_record, inout_get_operations)) {
+        TR_ERR("validate_get_resources_input_params (access_token: %s) failed",
+               access_token.c_str());
+        out_status = STATUS_SUCCESS;
+        return Error::None;
+    }
+
+    // IMPLEMENTATION IN PROGRESS
     return Error::None;
 }
 

@@ -97,6 +97,10 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
         return "Invalid application resource definition";
     case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "Registration already in progress";
     case ERR_ALREADY_REGISTERED: return "Already registered";
+    case ERR_INVALID_ACCESS_TOKEN: return "Invalid access token";
+    case ERR_INVALID_RESOURCE_PATH: return "Invalid resource path";
+    case ERR_RESOURCE_NOT_FOUND: return "Resource not found";
+    case ERR_INVALID_RESOURCE_TYPE: return "Invalid resource type";
 
     default: return "Unknown Cloud Connect Status or Error";
     }
@@ -110,6 +114,10 @@ const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus
         RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
         RETURN_DBUS_FORMAT_ERROR(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
         RETURN_DBUS_FORMAT_ERROR(ERR_ALREADY_REGISTERED);
+        RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_ACCESS_TOKEN);
+        RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_RESOURCE_PATH);
+        RETURN_DBUS_FORMAT_ERROR(ERR_RESOURCE_NOT_FOUND);
+        RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_RESOURCE_TYPE);
 
     default: return "Unknown CloudConnectStatus value";
     }
