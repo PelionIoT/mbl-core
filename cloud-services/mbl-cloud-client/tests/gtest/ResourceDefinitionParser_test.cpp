@@ -16,10 +16,9 @@
  */
 
 #include <gtest/gtest.h>
+#include "TestInfra.h"
 #include "ResourceDefinitionJson.h"
 #include "MblCloudClient.h"
-#include "MblError.h"
-#include "CloudConnectTrace.h"
 #include "cloud-connect-resource-broker/ResourceDefinitionParser.h"
 #include <cinttypes>
 
@@ -39,7 +38,7 @@
  */
 static void check_equal_resources(M2MResource* m2m_resource, M2MResource* m2m_resource_test)
 {
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     // Compare resource names
     ASSERT_STREQ(m2m_resource->name(), m2m_resource_test->name());
@@ -66,7 +65,10 @@ static void check_equal_resources(M2MResource* m2m_resource, M2MResource* m2m_re
         {
             ASSERT_STREQ(m2m_resource->get_value_string().c_str(), m2m_resource_test->get_value_string().c_str());
         }
-        TR_DEBUG("Compare value succeeded (%s)", m2m_resource->get_value_string().c_str());
+        TR_DEBUG("Compare value (type: %s) succeeded (%s)",
+            (m2m_resource->resource_instance_type() == M2MResourceInstance::INTEGER) ?
+            "integer" : "string",
+            m2m_resource->get_value_string().c_str());
     }
 
     // Compare supports multiple instances
@@ -94,7 +96,7 @@ static void check_equal_resources(M2MResource* m2m_resource, M2MResource* m2m_re
  */
 static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, M2MObjectInstance* m2m_object_instance_test)
 {
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     // Compare number of resources under each object instance
     ASSERT_TRUE(m2m_object_instance->resources().size() == 
@@ -124,7 +126,7 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
  */
 static void CheckEqualObject(M2MObject* m2m_object, M2MObject* m2m_object_test)
 {
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
     
     // Compare number of object instances under each object
     ASSERT_TRUE(m2m_object->instance_count() == m2m_object_test->instance_count());
@@ -153,7 +155,7 @@ static void CheckEqualObject(M2MObject* m2m_object, M2MObject* m2m_object_test)
  */
 static void check_equal_object_lists(const M2MObjectList &m2m_object_list, const M2MObjectList &m2m_object_list_test)
 {
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     // Compare number of object instances under each object
     ASSERT_TRUE(m2m_object_list.size() == m2m_object_list_test.size());
@@ -189,15 +191,15 @@ static void check_equal_object_lists(const M2MObjectList &m2m_object_list, const
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
 
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
-    M2MObjectList m2m_object_list;
     const std::string app_resource_definition =
         VALID_APP_RESOURCE_DEFINITION_OBJECT_WITH_SEVERAL_OBJECT_INSTANCES_AND_RESOURCES;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::None);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::None);
 
     // m2m_object_list_test (contains object_1 and object_2)
     M2MObjectList m2m_object_list_test;
@@ -214,17 +216,15 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     //resource_111
     std::string resource_value = "string_val";
     uint8_t value_length = static_cast<uint8_t>(resource_value.length());
-    auto value = new uint8_t[resource_value.length()];
-    memmove(value, resource_value.data(), resource_value.length());
+    std::vector<uint8_t> value_111(resource_value.begin(), resource_value.end());
     auto m2m_resource_111 = object_instance_11->create_static_resource(
         "111", // Resource name
         "reset_button", // Resource type
         M2MResourceInstance::STRING, // Type
-        value,
+        value_111.data(),
         value_length,
         false // Supports multiple instances
     );
-    delete[] value;
     m2m_resource_111->set_operation(M2MBase::GET_ALLOWED);
 
     //resource_112
@@ -250,17 +250,15 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
 	
     resource_value = "999";
     value_length = static_cast<uint8_t>(resource_value.length());
-    value = new uint8_t[resource_value.length()];
-    memmove(value, resource_value.data(), resource_value.length());
+    std::vector<uint8_t> value_211(resource_value.begin(), resource_value.end());
     auto m2m_resource_211 = object_instance_21->create_static_resource(
         "211", // Resource name
         "", // Resource type
         M2MResourceInstance::INTEGER, // Type
-        value,
+        value_211.data(),
         value_length,
         true // Supports multiple instances
     );
-    delete[] value;
     m2m_resource_211->set_operation(M2MBase::GET_ALLOWED);
 
     // object_instance_22
@@ -277,20 +275,20 @@ TEST(JsonTest_Positive, Objects_with_several_object_instances_and_resources) {
     m2m_resource_221->set_operation(M2MBase::GET_PUT_POST_ALLOWED);
 
     // Compare m2m_object_list with m2m_object_list_test
-    check_equal_object_lists(m2m_object_list, m2m_object_list_test);
+    check_equal_object_lists(ret_pair.second, m2m_object_list_test);
 }
 
 TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) {
     
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
-    M2MObjectList m2m_object_list;
     std::string app_resource_definition =
         VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::None);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::None);
 
     // m2m_object_list_test (contains object_1 and object_2)
     M2MObjectList m2m_object_list_test;
@@ -306,17 +304,15 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
 
     std::string resource_value = "string_val";
     uint8_t value_length = static_cast<uint8_t>(resource_value.length());
-    auto value = new uint8_t[resource_value.length()];
-    memmove(value, resource_value.data(), resource_value.length());
+    std::vector<uint8_t> value_111(resource_value.begin(), resource_value.end());
     auto m2m_resource_111 = object_instance_11->create_static_resource(
         "111", // Resource name
         "reset_button", // Resource type
         M2MResourceInstance::STRING, // Type
-        value,
+        value_111.data(),
         value_length,
         false // Supports multiple instances
     );
-    delete[] value;
     m2m_resource_111->set_operation(M2MBase::GET_ALLOWED);
 
     // Object 2
@@ -329,21 +325,19 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
     // Object instance 21 (contains resource_211)
     resource_value = "123456";
     value_length = static_cast<uint8_t>(resource_value.length());
-    value = new uint8_t[resource_value.length()];
-    memmove(value, resource_value.data(), resource_value.length());
+    std::vector<uint8_t> value_211(resource_value.begin(), resource_value.end());
     auto m2m_resource_211 = object_instance_21->create_static_resource(
         "211", // Resource name
         "", // Resource type
         M2MResourceInstance::INTEGER, // Type
-        value,
+        value_211.data(),
         value_length,
         true // Supports multiple instances
     );
-    delete[] value;
     m2m_resource_211->set_operation(M2MBase::GET_ALLOWED);
 
     // Compare m2m_object_list with m2m_object_list_test
-    check_equal_object_lists(m2m_object_list, m2m_object_list_test);
+    check_equal_object_lists(ret_pair.second, m2m_object_list_test);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -352,106 +346,107 @@ TEST(JsonTest_Positive, Two_objects_with_one_object_instances_and_one_resource) 
 TEST(JsonTest_Negative, Invalid_app_resource_definition_not_3_Level) {
     // Valid JSON includes 3 levels per node (Object/Object Instance and resource).
     // This function verifies that parsing fails in case it doesn't
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_1;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 
     const std::string app_resource_definition_2 = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_2;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition_2 ,m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair_2 = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition_2);
+
+    ASSERT_TRUE(ret_pair_2.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Invalid_app_resource_definition_missing_Observable) {
     // In a valid JSON - "observable" entry is mandatory in Dynamic resource
     // This function verifies that parsing fails in case it doesn't includes it.
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_MISSING_OBSERVABLE_ENTRY;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Illegal_resource_mode) {
     // Valid JSON includes either "dynamic" or "static" modes.
     // This function verifies that parsing fails in case of invalid mode.
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_MODE;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Illegal_resource_operation) { 
     // Valid JSON includes either "put" / "get" / "post" and "delete" as allowed operation
     // This function verifies that parsing fails in case of invalid operation.
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_ILLEGAL_RESOURCE_OPERATION;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Unsupported_resource_type) {
     // Valid JSON includes either "string" or "integer" resource types.
     // This function verifies that parsing fails in case of invalid resource type.
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_UNSUPPORTED_RESOURCE_TYPE;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_resource_names) {
     // Check that parsing of invalid JSON string with two same resource names fails
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_RESOURCE_NAMES;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_object_instances) {
     // Check that parsing of invalid JSON string with two same object instance ids fails
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT_INSTANCES;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }
 
 TEST(JsonTest_Negative, Two_same_objects) {
     // Check that parsing of invalid JSON string with two same object names fails
-    TR_DEBUG("Enter");
+    GTEST_LOG_START_TEST;
 
     const std::string app_resource_definition = INVALID_APP_RESOURCE_DEFINITION_TWO_SAME_OBJECT;
-    M2MObjectList m2m_object_list;
 
-    ASSERT_TRUE(
-        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition, m2m_object_list) 
-        == mbl::Error::CCRBInvalidJson);
+    std::pair<mbl::MblError, M2MObjectList> ret_pair = 
+        mbl::ResourceDefinitionParser::build_object_list(app_resource_definition);
+
+    ASSERT_TRUE(ret_pair.first == mbl::Error::CCRBInvalidJson);
 }

@@ -26,6 +26,8 @@
 #include <memory>
 #include <functional>
 
+class RegistrationRecordTester;
+
 namespace mbl {
 
 typedef std::function<void(const uintptr_t, const std::string&)> app_register_update_finished_func;
@@ -38,6 +40,8 @@ typedef std::function<void(const uintptr_t, const std::string&, const MblError)>
  */
 class RegistrationRecord {
 
+friend ::RegistrationRecordTester;
+
 public:
 
     RegistrationRecord(const uintptr_t ipc_request_handle);
@@ -49,10 +53,25 @@ public:
      * @param application_resource_definition - Application resource definition JSON string
      * @return MblError -
      *      Error::None - If function succeeded
-     *      Error::CCRBInvalidJson - In case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
+     *      Error::CCRBInvalidJson - I case of invalid JSON (e.g. Invalid JSON structure or invalid M2M content such as missing mandatory entries)
      *      Error::CCRBCreateM2MObjFailed - If create of M2M object/object instance/resource failed
+     *      Error::CCRBGenerateUniqueIdFailed - In case unique access token creation failed
      */
     MblError init(const std::string& application_resource_definition);
+
+    /**
+     * @brief Get resource by its path
+     * 
+     * @param path - resource path (e.g. "/8888/11/1")
+     * @return std::pair<MblError, M2MResource*> -
+     *          first element in the pair is error code:
+     *              Error::CCRBInvalidResourcePath - In case of invalid path
+     *              Error::CCRBResourceNotFound - In case resource not found
+     *              Error::None - In case of success
+     *          second element is a pointer to resource
+     * Note: resource pointer is valid only if error code is Error::None
+     */
+    std::pair<MblError, M2MResource*> get_m2m_resource(const std::string& path);
 
     /**
      * @brief Set registered status
@@ -71,8 +90,8 @@ public:
     /**
      * @brief Return registered status
      * 
-     * @return true if registerd
-     * @return false if not registerd
+     * @return true if registered
+     * @return false if not registered
      */
     inline bool is_registered() const {return registered_;}
 
@@ -84,6 +103,24 @@ public:
     inline M2MObjectList& get_m2m_object_list() {return m2m_object_list_;}
 
 private:
+
+    /**
+     * @brief Get resource identifiers by path
+     * 
+     * @param path - resource path (e.g. "/8888/112/11/1")
+     * @param out_object_name - Object name (e.g. "8888")
+     * @param out_object_instance_id  - Object instance id (e.g. 112)
+     * @param out_resource_name - Resource name (e.g. "11")
+     * @param out_resource_instance_name - Resource instance name (e.g. "1")
+     * @return MblError -
+     *              Error::CCRBInvalidResourcePath - In case of invalid path
+     *              Error::None - In case of success
+     */
+    static MblError get_resource_identifiers(const std::string& path,
+                                      std::string& out_object_name,
+                                      uint16_t& out_object_instance_id,
+                                      std::string& out_resource_name,
+                                      std::string& out_resource_instance_name);
 
     uintptr_t ipc_request_handle_;
     bool registered_;

@@ -32,7 +32,10 @@ enum CloudConnectStatus {
     ERR_INVALID_APPLICATION_RESOURCES_DEFINITION    = 0x1001,
     ERR_REGISTRATION_ALREADY_IN_PROGRESS            = 0x1002,
     ERR_ALREADY_REGISTERED                          = 0x1003,
-
+    ERR_INVALID_ACCESS_TOKEN                        = 0x1004,
+    ERR_INVALID_RESOURCE_PATH                       = 0x1005,
+    ERR_RESOURCE_NOT_FOUND                          = 0x1006,
+    ERR_INVALID_RESOURCE_TYPE                       = 0x1007,
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
@@ -50,6 +53,10 @@ static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
 #define CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION "mbed.Cloud.Connect.Error.InvalidApplicationResourceDefinition"
 #define CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS "mbed.Cloud.Connect.Error.RegistrationAlreadyInProgress"
 #define CLOUD_CONNECT_ERR_ALREADY_REGISTERED "mbed.Cloud.Connect.Error.AlreadyRegistered"
+#define CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN "mbed.Cloud.Connect.Error.InvalidAccessToken"
+#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH "mbed.Cloud.Connect.Error.InvalidResourcePath"
+#define CLOUD_CONNECT_ERR_RESOURCE_NOT_FOUND "mbed.Cloud.Connect.Error.ResourceNotFound"
+#define CLOUD_CONNECT_ERR_INVALID_RESOURCE_TYPE "mbed.Cloud.Connect.Error.InvalidResourceType"
 
 /** 
  * @brief Returns corresponding D-Bus format error. 
