@@ -58,8 +58,11 @@ else
         # Now copy the tar file to the DUT
         $mbl_command put payload.tar /home/root
 
-        # Now update the rootfs - this will cause the boart to reboot
-        $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar  -v"'
+        # Now update the rootfs - the -s prevents the automatic reboot
+        $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar -v -s"'
+
+        # Now reboot the board and get the result of the reboot command
+        $mbl_command shell 'su -l -c "reboot || echo $?"'
 
         # Sleep to allow the reboot to happen
         sleep 60
