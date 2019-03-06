@@ -42,7 +42,7 @@ class TestAppLifecycleManager:
 
         print("Installing test container package - done.\n")
         # Init app_id that will be used in all tests
-        cls.app_path = os.path.join(MBL_APPS_DIR, cls.app_name)
+        cls.app_path = os.path.join(MBL_APPS_DIR, cls.app_name, "0")
 
         print("Installing test container package...")
         assert (
