@@ -199,7 +199,7 @@ MblError ResourceBroker::init()
     if (0 != ret) {
         // semaphore post failed, print errno value and exit
         TR_ERRNO("sem_post", errno);
-        status = (status == Error::None) ? Error::IPCProcedureFailed : status;
+        status = (status == Error::None) ? Error::IpcProcedureFailed : status;
     }
 
     return status;
