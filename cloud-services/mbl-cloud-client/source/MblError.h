@@ -31,6 +31,7 @@ enum Type {
     SignalsInitSigaction                = 0x0004,
     DeviceUnregistered                  = 0x0005,
     ShutdownRequested                   = 0x0006,
+    IpcProcedureFailed                  = 0x0007,
 
     ConnectAlreadyExists                = 0x0100,
     ConnectBootstrapFailed              = 0x0101,

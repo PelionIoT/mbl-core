@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <memory>
 #include <pthread.h>
+#include <semaphore.h>
 #include <queue>
 #include <atomic>
 #include <functional>
@@ -45,7 +46,9 @@ public:
      * @brief Starts CCRB.
      * In details: 
      * - initializes CCRB instance and runs event-loop.
-     *
+     * 
+     * Note: This function should be called before ResourceBroker::stop().  
+     * 
      * @param cloud_client - mbed cloud client
      * @return MblError returns value Error::None if function succeeded, 
      *         or Error::CCRBStartFailed otherwise. 
@@ -58,6 +61,10 @@ public:
      * - stops CCRB event-loop.
      * - deinitializes CCRB instance.
      * 
+     * Note: This function should be called only after ResourceBroker::start() being called.
+     *       This function should be called only from the same thread as ResourceBroker::start() 
+     *       was called.
+     *
      * @return MblError returns value Error::None if function succeeded, 
      *         or Error::CCRBStopFailed otherwise. 
      */
@@ -369,6 +376,12 @@ protected:
 
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
+
+    // semaphore for the initialization procedure syncronization.
+    sem_t init_sem_;
+
+    // flag that marks if the init_sem_ was intialized and requires destroy.
+    std::atomic_bool init_sem_initialized_;
 
     // pointer to ipc binder instance
     std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
