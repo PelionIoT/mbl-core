@@ -7,7 +7,7 @@
 # Find and select the device to talk to
 
 test_stage=$1
-image_name==${$2//wic.gz/tar.xz}
+image_name=${$2//wic.gz/tar.xz}
 echo $image_name
 
 mbl-cli list > device_list
