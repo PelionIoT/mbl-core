@@ -10,3 +10,4 @@ cloud-services/mbl-cloud-client/pal-platform/Middleware/mbedtls/mbedtls/
 cloud-services/mbl-cloud-client/pal-platform/x86_x64_NativeLinux_mbedtls.txt
 cloud-services/mbl-cloud-client/update_default_resources.c
 /cloud-services/mbl-cloud-client/code-checkers/clang-tidy-suggested-fixes.txt
+/cloud-services/mbl-cloud-client/clang-tidy-suggested-fixes.txt

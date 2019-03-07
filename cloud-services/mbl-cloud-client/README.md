@@ -1,3 +1,4 @@
+
 # Mbed Linux OS Cloud Client
 
 ## Purpose
@@ -71,6 +72,14 @@ If a new files added to the project, need to run ```configure``` command before 
 ### Running
 
 TBD
+
+### Clang (*Mandatory step before raising a PR)
+
+Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud Client:
+1. Configure clang (using cmake): ```client-builder.py -a clang_configure```
+2. Run clang tidy: ```client-builder.py -a clang_tidy```. In case of errors / warnings you will set a list of the issues needs to be handled.
+3. Run clang format: ```client-builder.py -a clang_format```. Note: This will modify the files in case bad formating. Make sure you review the modified changes.
+
 
 ### Optional installation of Visual Studio Code IDE
 

@@ -86,6 +86,72 @@
                 }
             ]
         },
+        {
+            "label": "clang: Configure",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "./client-builder.py",
+                "-a",
+                "clang_configure"
+              ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+            },
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ]
+        },
+        {
+            "label": "clang: Tidy",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "./client-builder.py",
+                "-a",
+                "clang_tidy"
+              ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+            },
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ]
+        },
+        {
+            "label": "clang: Format",
+            "type": "shell",
+            "command": "python3",
+            "args": [
+                "./client-builder.py",
+                "-a",
+                "clang_format"
+              ],
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true,
+            },
+            "problemMatcher": [
+                {
+                    "base": "$gcc",
+                    "fileLocation": "absolute"
+                }
+            ]
+        },                
     ],
 	"inputs":[
 		{
