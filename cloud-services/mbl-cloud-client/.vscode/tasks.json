@@ -87,13 +87,13 @@
             ]
         },
         {
-            "label": "clang: Configure",
+            "label": "clang: Prepare",
             "type": "shell",
             "command": "python3",
             "args": [
                 "./client-builder.py",
                 "-a",
-                "clang_configure"
+                "clang_prepare"
               ],
             "group": "build",
             "presentation": {
@@ -110,7 +110,7 @@
             "args": [
                 "./client-builder.py",
                 "-a",
-                "clang_tidy"
+                "run_clang_tidy"
               ],
             "group": "build",
             "presentation": {
@@ -132,7 +132,7 @@
             "args": [
                 "./client-builder.py",
                 "-a",
-                "clang_format"
+                "run_clang_format"
               ],
             "group": "build",
             "presentation": {
