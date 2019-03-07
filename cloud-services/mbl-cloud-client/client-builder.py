@@ -322,13 +322,18 @@ class ClientBuilder:
     def clang_tidy(self):
         """Run clang tidy."""
         flags = "{}{}".format(CLANG_TIDY_FLAGS, CLANG_TIDY_SUPPRESS_WARNING)
+        suggested_fixes_file_path = os.path.join(
+            self.mbl_cloud_client_directory,
+            "code-checkers",
+            "clang-tidy-suggested-fixes.txt",
+        )
         for filename in os.listdir(self.ccrb_source_dir):
             if not filename.endswith(".h"):
                 full_path = os.path.join(self.ccrb_source_dir, filename)
                 command = [
                     "clang-tidy",
                     "-p=.",
-                    "-export-fixes=./clang-tidy-suggested-fixes.txt",
+                    "-export-fixes={}".format(suggested_fixes_file_path),
                     flags,
                     full_path,
                 ]

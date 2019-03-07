@@ -101,12 +101,7 @@
                 "panel": "shared",
                 "focus": true,
             },
-            "problemMatcher": [
-                {
-                    "base": "$gcc",
-                    "fileLocation": "absolute"
-                }
-            ]
+            "problemMatcher": []
         },
         {
             "label": "clang: Tidy",
@@ -145,12 +140,7 @@
                 "panel": "shared",
                 "focus": true,
             },
-            "problemMatcher": [
-                {
-                    "base": "$gcc",
-                    "fileLocation": "absolute"
-                }
-            ]
+            "problemMatcher": []
         },                
     ],
 	"inputs":[

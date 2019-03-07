@@ -44,8 +44,8 @@ Valid options are:
 
   ```bash
   sudo apt-get update
-  sudo apt-get install python3-pip cmake libsystemd-dev libjsoncpp-dev
-  sudo pip3 install requests click gitpython build-essential
+  sudo apt-get install python3-pip cmake libsystemd-dev libjsoncpp-dev build-essential
+  sudo pip3 install requests click gitpython
   ```
 
 ### Building
@@ -74,7 +74,19 @@ If a new files added to the project, need to run ```configure``` command before 
 TBD
 
 ### Clang (*Mandatory step before raising a PR)
+clang-tidy is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. This tool does not enforce C/C++ style. Read more about the clang-tidy tool.
 
+#### Prerequisites
+##### Toolchains installations
+```sudo apt-get install -y clang clang-tidy clang-format```
+
+##### Libraries for mbl-cloud-client on PC compilation installations
+Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
+```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
+libjsoncpp-dev installs the header to /usr/include/jsoncpp/json/ while bitbake expects it to be under /usr/include/json directory.
+In order to enable both - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
+
+#### Usage
 Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud Client:
 1. Configure clang (using cmake): ```client-builder.py -a clang_configure```
 2. Run clang tidy: ```client-builder.py -a clang_tidy```. In case of errors / warnings you will set a list of the issues needs to be handled.
@@ -117,4 +129,4 @@ Please see the [Contributing][mbl-contributing] document for more information.
 [cc-2-1-1]: https://github.com/ARMmbed/mbed-cloud-client/releases/tag/2.1.1
 [meta-mbl]: https://github.com/ARMmbed/meta-mbl/blob/master/README.md
 [mbl-license]: LICENSE
-[mbl-contributing]: CONTRIBUTING.md
+[mbl-contributing]: CONTRIBUTING.md 
