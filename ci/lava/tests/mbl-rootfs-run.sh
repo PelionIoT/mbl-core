@@ -7,8 +7,7 @@
 # Find and select the device to talk to
 
 test_stage=$1
-image_name=$2
-
+image_name==${$2//wic.gz/tar.xz}
 echo $image_name
 
 mbl-cli list > device_list
@@ -56,7 +55,7 @@ else
         apt-get install -q -q --yes wget
 
         # Get the root filesystem image from the server.
-        wget http://artifactory-proxy.mbed-linux.arm.com/artifactory/isg-mbed-linux/mbed-linux/mbl-master/mbl-master.1162/machine/imx7s-warp-mbl/images/mbl-image-development/images/mbl-image-development-imx7s-warp-mbl.tar.xz/mbl-image-development-imx7s-warp-mbl.tar.xz 
+        wget $image_name
 
         # Tar it up in the expected manner
         tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
