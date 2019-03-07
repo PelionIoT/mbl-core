@@ -20,4 +20,4 @@ params:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-rootfs-run.sh $test_stage $image_url
+        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url
