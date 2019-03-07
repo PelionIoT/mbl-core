@@ -8,12 +8,16 @@ metadata:
     description: "MBL Core Tests behaviour"
 
 params:
-    # COMPONENT specifies the folder that pytest runs in. If this is not
-    #           provided by the test submission pytest will run over the
-    #           entire repository.
+    # test_stage: specifies which stage of the test we are running - the
+    #             upgrade or the post check
     #
     test_stage:
 
+    # image_url: specifies the url of the test image in order to extract the 
+    #            root_fs image
+    #
+    image_url:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-rootfs-run.sh $test_stage
+        - ./ci/lava/tests/mbl-rootfs-run.sh $test_stage $image_url

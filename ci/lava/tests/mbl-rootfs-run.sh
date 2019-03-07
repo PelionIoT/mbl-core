@@ -7,6 +7,9 @@
 # Find and select the device to talk to
 
 test_stage=$1
+image_name=$2
+
+echo $image_name
 
 mbl-cli list > device_list
 cat device_list
@@ -37,7 +40,7 @@ else
     echo ${active_partition}
 
 
-    if [ $test_stage = "PART_1" ]
+    if [ $test_stage = "UPDATE" ]
     then
         # At the start rootfs1 should be the active partition.
         if [ $active_partition = "rootfs1" ]
