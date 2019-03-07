@@ -63,12 +63,22 @@ class AppManager(object):
         cmd = ["opkg", "--add-dest", dest, "install", app_pkg]
         log.debug("Execute command: {}".format(" ".join(cmd)))
         try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError as error:
-            err_output = error.stdout.decode("utf-8")
-            msg = "Installing '{}' at '{}' failed, error: '{}'".format(
-                app_pkg, app_path, err_output
+            subprocess.run(
+                cmd,
+                check=True,
+                stdin=None,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
+        except subprocess.CalledProcessError as error:
+            msg = "Installing '{}' at '{}' failed, error: '{}'".format(
+                app_pkg,
+                app_path,
+                error.stdout.decode() if error.stdout else error.returncode,
+            )
+            # perform cleanup if the application was partly installed
+            if os.path.exists(app_path):
+                self.remove_app(app_name, app_path)
             raise AppInstallError(msg)
         else:
             log.info(
@@ -92,11 +102,18 @@ class AppManager(object):
         cmd = ["opkg", "--add-dest", dest, "remove", app_name]
         log.debug("Execute command: {}".format(" ".join(cmd)))
         try:
-            subprocess.check_call(cmd)
+            subprocess.run(
+                cmd,
+                check=True,
+                stdin=None,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
         except subprocess.CalledProcessError as error:
-            err_output = error.stdout.decode("utf-8")
             msg = "Removing '{}' at '{}' failed, error: {}".format(
-                app_name, app_path, err_output
+                app_name,
+                app_path,
+                error.stdout.decode() if error.stdout else error.returncode,
             )
             raise AppUninstallError(msg)
         else:
@@ -134,13 +151,21 @@ class AppManager(object):
             dest = "{}:{}".format(app_name, app_bundle)
             cmd = ["opkg", "--add-dest", dest, "list-installed"]
             try:
-                subprocess.check_call(cmd)
+                subprocess.run(
+                    cmd,
+                    check=True,
+                    stdin=None,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
             except subprocess.CalledProcessError as error:
-                err_output = error.stdout.decode("utf-8")
                 msg = (
                     "Listing installed apps at '{}' failed,"
                     " error: '{}'".format(
-                        os.path.join(apps_path, app_name), err_output
+                        os.path.join(apps_path, app_name),
+                        error.stdout.decode()
+                        if error.stdout
+                        else error.returncode,
                     )
                 )
                 raise AppListingError(msg)
