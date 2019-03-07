@@ -29,8 +29,8 @@ rm device_list
 
 if [ -z "$dut_address" ]
 then
-    printf "ERROR - mbl-cli failed to find MBL device"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>"
+    printf "ERROR - mbl-cli failed to find MBL device\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>\n"
 else
 
     mbl_command="mbl-cli -a $dut_address"
@@ -47,14 +47,20 @@ else
         # should be cleanly flashed.
         if [ "$active_partition" = "rootfs1" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>\n"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>\n"
         fi
 
         # Update the hostname of the DUT to contain "lava-". This is so the
         # test stage after the reboot will expect a different prompt.
-        $mbl_command shell "echo 'lava-'$(hostname) > /config/user/hostname"
+
+
+        # The single quotes upsets shellcheck, however we need to send the
+        # command as specified to the DUT. Otherwise the hostname is expanded
+        # on the host rather than on the DUT.
+        # shellcheck disable=SC2016
+        $mbl_command shell 'echo lava-"$(hostname)" > /config/user/hostname'
 
         # Install wget
         apt-get update
@@ -67,17 +73,17 @@ else
             # The wget failed. This could be because the server in the main farm has been refused the connection.
             # https://confluence.arm.com/display/mbedlinux/LAVA+and+Artifactory#LAVAandArtifactory-Ouluinstance suggests
             # this can be worked around by mapping the name to IP address in /etc/hosts so try that.
-            printf "wget failed. Trying alternative method on adding mapping between 192.168.130.43  artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
+            printf "wget failed. Trying alternative method on adding mapping between 192.168.130.43  artifactory-proxy.mbed-linux.arm.com into /etc/hosts.\n"
             printf "192.168.130.43  artifactory-proxy.mbed-linux.arm.com" >> /etc/hosts
             wget "$rootfs_image"
             retVal=$?
             if [ "$retVal" -ne 0 ]; then
-                printf "Alternative method also failed."
+                printf "Alternative method also failed.\n"
             fi
         fi
 
         if [ $retVal -eq 0 ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>\n"
             # Tar it up in the expected manner
             tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
 
@@ -94,16 +100,16 @@ else
             # for the DUT to shut down but not long enough for it to fully restart.
             sleep 40
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=fail>\n"
         fi
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
         if [ "$active_partition" = "rootfs2" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>\n"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>\n"
         fi
     fi
 
