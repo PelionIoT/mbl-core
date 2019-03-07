@@ -25,14 +25,6 @@ cat device_list
 
 dut_address=$(grep "mbed-linux-os" device_list | cut -d":" -f3-)
 
-if [ -z "$dut_address" ]
-then
-    echo "ERROR - mbl-cli failed to find MBL device"
-    echo "ERROR - mbl-cli retry with linux"
-    dut_address=$(grep "linux" device_list | cut -d":" -f3-)
-fi
-
-
 rm device_list
 
 if [ -z "$dut_address" ]
