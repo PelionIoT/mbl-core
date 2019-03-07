@@ -35,6 +35,7 @@ PATCHES_LIST = [
     ),
 ]
 
+# Note: "-DCODE_CHECK_MODE=ON" option will add files and flags for clang-tidy
 PAL_CMAKE_COMMAND = [
     "cmake",
     ".",
@@ -43,9 +44,8 @@ PAL_CMAKE_COMMAND = [
     "-DCMAKE_BUILD_TYPE=Debug",
     "-DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake",
     "-DEXTARNAL_DEFINE_FILE=./../define.txt",
+    "-DCODE_CHECK_MODE=ON",
 ]
-
-PAL_CMAKE_COMMAND_FOR_CLANG = PAL_CMAKE_COMMAND + ["-DCODE_CHECK_MODE=ON"]
 
 CLANG_TIDY_FLAGS = (
     "-checks=-*,bugprone-*,"
@@ -83,7 +83,6 @@ def get_argument_parser():
             "configure",
             "build",
             "rebuild",
-            "clang_prepare",
             "run_clang_tidy",
             "run_clang_format",
         ],
@@ -202,7 +201,7 @@ class ClientBuilder:
                     command, stdin=patch_file, cwd=patch_apply_path
                 )
 
-    def configure_pal(self):
+    def _configure_pal(self):
         """Configure PAL."""
         command = [
             "python3",
@@ -213,6 +212,17 @@ class ClientBuilder:
         ]
         self.logger.info("Configuring PAL...")
         subprocess.check_call(command, cwd=self.mbl_cloud_client_directory)
+
+    def _verify_configure_is_done(self):
+        """
+        Verify if configure step is done.
+
+        Raise exception if not.
+        """
+        if not os.path.exists(
+            os.path.join(self.pal_target_directory, "CMakeFiles")
+        ):
+            raise Exception("Not configured. Run configure command first.")
 
     def prepare(self):
         """
@@ -259,7 +269,7 @@ class ClientBuilder:
             meta_mbl_cloned_repo.git.checkout(self.meta_mbl_revision)
             self._apply_patches(meta_mbl_directory)
 
-        self.configure_pal()
+        self._configure_pal()
         self.logger.info("Prepare: done")
 
     def configure(self):
@@ -284,10 +294,7 @@ class ClientBuilder:
 
         configure() method should run before.
         """
-        if not os.path.exists(
-            os.path.join(self.pal_target_directory, "CMakeFiles")
-        ):
-            raise Exception("Not configured. Run configure command first.")
+        self._verify_configure_is_done()
 
         self.logger.info(
             "Building mbl-cloud-client, force rebuild: {}".format(
@@ -300,24 +307,24 @@ class ClientBuilder:
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("Build: done")
 
-    def clang_prepare(self):
-        """Prepare clang."""
-        self.configure_pal()
-
-        self.logger.info("Generate makefiles...")
-        subprocess.check_call(
-            PAL_CMAKE_COMMAND_FOR_CLANG, cwd=self.pal_target_directory
-        )
-        self.logger.info("Prepare clang DONE.")
-
     def run_clang_format(self):
-        """Run clang-format."""
+        """Run clang-format.
+
+        configure() method should run before.
+        """
+        self._verify_configure_is_done()
+
         command = ["make", "clang-format"]
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("clang format DONE.")
 
     def run_clang_tidy(self):
-        """Run clang-tidy."""
+        """Run clang-tidy.
+
+        configure() method should run before.
+        """
+        self._verify_configure_is_done()
+
         flags = "{}{}".format(CLANG_TIDY_FLAGS, CLANG_TIDY_SUPPRESS_WARNING)
         suggested_fixes_file_path = os.path.join(
             self.mbl_cloud_client_directory,
@@ -361,8 +368,6 @@ def _main():
         client_builder.build()
     elif args.action == "rebuild":
         client_builder.build(force_rebuild=True)
-    elif args.action == "clang_prepare":
-        client_builder.clang_prepare()
     elif args.action == "run_clang_tidy":
         client_builder.run_clang_tidy()
     elif args.action == "run_clang_format":

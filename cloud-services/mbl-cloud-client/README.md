@@ -88,12 +88,10 @@ In order to enable both - make a soft link: ```sudo ln -s /usr/include/jsoncpp/j
 
 #### Usage
 Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud Client:
-1. Prepare clang (using cmake): ```client-builder.py -a clang_configure```
-2. Run clang tidy: ```client-builder.py -a clang_tidy```. In case of errors / warnings you will set a list of the issues needs to be handled. 
-In order to run clang tidy need to run prepare step first.
-3. Run clang format: ```client-builder.py -a clang_format```. Note: This will modify the files in case bad formating. Make sure you review the modified changes.
-In order to run clang format need to run prepare step first.
+1. Run clang tidy: ```client-builder.py -a clang_tidy```. In case of errors / warnings you will set a list of the issues needs to be handled.
+1. Run clang format: ```client-builder.py -a clang_format```. Note: This will modify the files in case bad formating. Make sure you review the modified changes.
 
+Note: ```prepare``` and ```configure``` commands should run before using ```clang-format``` and ```clang-tidy``` commands.
 
 ### Optional installation of Visual Studio Code IDE
 

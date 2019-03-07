@@ -87,24 +87,7 @@
             ]
         },
         {
-            "label": "clang: Prepare",
-            "type": "shell",
-            "command": "python3",
-            "args": [
-                "./client-builder.py",
-                "-a",
-                "clang_prepare"
-              ],
-            "group": "build",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared",
-                "focus": true,
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "clang: Tidy",
+            "label": "Run clang-tidy",
             "type": "shell",
             "command": "python3",
             "args": [
@@ -120,13 +103,13 @@
             },
             "problemMatcher": [
                 {
-                    "base": "$gcc",
-                    "fileLocation": "absolute"
+                    "owner": "cpp",
+                    "fileLocation": "absolute",
                 }
             ]
         },
         {
-            "label": "clang: Format",
+            "label": "Run clang-format",
             "type": "shell",
             "command": "python3",
             "args": [
