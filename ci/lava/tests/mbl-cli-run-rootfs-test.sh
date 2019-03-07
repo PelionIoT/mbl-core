@@ -47,9 +47,9 @@ else
         # should be cleanly flashed.
         if [ "$active_partition" = "rootfs1" ]
         then
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
         else
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>"
         fi
 
         # Update the hostname of the DUT to contain "lava-". This is so the
@@ -67,17 +67,17 @@ else
             # The wget failed. This could be because the server in the main farm has been refused the connection.
             # https://confluence.arm.com/display/mbedlinux/LAVA+and+Artifactory#LAVAandArtifactory-Ouluinstance suggests
             # this can be worked around by mapping the name to IP address in /etc/hosts so try that.
-            echo "wget failed. Trying alternative method on adding mapping between 192.168.130.43  artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
-            echo "192.168.130.43  artifactory-proxy.mbed-linux.arm.com" >> /etc/hosts
+            printf "wget failed. Trying alternative method on adding mapping between 192.168.130.43  artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
+            printf "192.168.130.43  artifactory-proxy.mbed-linux.arm.com" >> /etc/hosts
             wget "$rootfs_image"
             retVal=$?
             if [ "$retVal" -ne 0 ]; then
-                echo "Alternative method also failed."
+                printf "Alternative method also failed."
             fi
         fi
 
         if [ $retVal -eq 0 ]; then
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>"
             # Tar it up in the expected manner
             tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
 
@@ -94,16 +94,16 @@ else
             # for the DUT to shut down but not long enough for it to fully restart.
             sleep 40
         else
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=fail>"
         fi
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
         if [ "$active_partition" = "rootfs2" ]
         then
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
         else
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>"
         fi
     fi
 
