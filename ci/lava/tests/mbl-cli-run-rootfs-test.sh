@@ -29,24 +29,23 @@ rm device_list
 
 if [ -z "$dut_address" ]
 then
-    echo "ERROR - mbl-cli failed to find MBL device"
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>"
+    printf "ERROR - mbl-cli failed to find MBL device"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>"
 else
 
     mbl_command="mbl-cli -a $dut_address"
 
     # Work out current active partition. 
-    active_partition=`$mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}'`
+    active_partition=$($mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}')
 
-    echo -n "Active Partition: "
-    echo ${active_partition}
+    printf "Active Partition: %s\n" "$active_partition"
 
 
-    if [ $test_stage = "UPDATE" ]
+    if [ "$test_stage" = "UPDATE" ]
     then
         # At the start rootfs1 should be the active partition, since the board
         # should be cleanly flashed.
-        if [ $active_partition = "rootfs1" ]
+        if [ "$active_partition" = "rootfs1" ]
         then
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>"
         else
@@ -55,24 +54,24 @@ else
 
         # Update the hostname of the DUT to contain "lava-". This is so the
         # test stage after the reboot will expect a different prompt.
-        $mbl_command shell 'echo "lava-"`hostname` > /config/user/hostname'
+        $mbl_command shell "echo 'lava-'$(hostname) > /config/user/hostname"
 
         # Install wget
         apt-get update
         apt-get install -q -q --yes wget
 
         # Get the root filesystem image from the server.
-        wget $rootfs_image
+        wget "$rootfs_image"
         retVal=$?
-        if [ $retVal -ne 0 ]; then
+        if [ "$retVal" -ne 0 ]; then
             # The wget failed. This could be because the server in the main farm has been refused the connection.
             # https://confluence.arm.com/display/mbedlinux/LAVA+and+Artifactory#LAVAandArtifactory-Ouluinstance suggests
             # this can be worked around by mapping the name to IP address in /etc/hosts so try that.
             echo "wget failed. Trying alternative method on adding mapping between 192.168.130.43  artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
             echo "192.168.130.43  artifactory-proxy.mbed-linux.arm.com" >> /etc/hosts
-            wget $rootfs_image
+            wget "$rootfs_image"
             retVal=$?
-            if [ $retVal -ne 0 ]; then
+            if [ "$retVal" -ne 0 ]; then
                 echo "Alternative method also failed."
             fi
         fi
@@ -100,7 +99,7 @@ else
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
-        if [ $active_partition = "rootfs2" ]
+        if [ "$active_partition" = "rootfs2" ]
         then
             echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>"
         else
