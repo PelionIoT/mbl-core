@@ -63,22 +63,37 @@ else
 
         # Get the root filesystem image from the server.
         wget $rootfs_image
+        retVal=$?
+        if [ $retVal -ne 0 ]; then
+            echo "wget failed. Trying alternative method."
+            echo "192.168.130.43  artifactory-proxy.mbed-linux.arm.com" >> /etc/hosts
+            wget $rootfs_image
+            retVal=$?
+            if [ $retVal -ne 0 ]; then
+                echo "Alternative method also failed."
+            fi
+        fi
 
-        # Tar it up in the expected manner
-        tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
+        if [ $retVal -eq 0 ]; then
+            # Tar it up in the expected manner
+            tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
 
-        # Now copy the tar file to the DUT
-        $mbl_command put payload.tar /home/root
+            # Now copy the tar file to the DUT
+            $mbl_command put payload.tar /home/root
 
-        # Now update the rootfs - the -s prevents the automatic reboot
-        $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar -v -s"'
+            # Now update the rootfs - the -s prevents the automatic reboot
+            $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar -v -s"'
 
-        # Now reboot the board and get the result of the reboot command
-        $mbl_command shell 'su -l -c "reboot || echo $?"'
+            # Now reboot the board and get the result of the reboot command
+            $mbl_command shell 'su -l -c "reboot || echo $?"'
 
-        # Sleep to allow the reboot to happen. This is nasty but is long enough
-        # for the DUT to shut down but not long enough for it to fully restart.
-        sleep 40
+            # Sleep to allow the reboot to happen. This is nasty but is long enough
+            # for the DUT to shut down but not long enough for it to fully restart.
+            sleep 40
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=FirmwareUpdateAttempted RESULT=pass>"
+        else
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=FirmwareUpdateAttempted RESULT=fail>"
+        fi
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
