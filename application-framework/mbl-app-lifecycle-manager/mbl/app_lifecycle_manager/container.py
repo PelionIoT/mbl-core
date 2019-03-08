@@ -153,9 +153,9 @@ def create(container_id, bundle_path):
                 stderr=container_log,
             )
         except subprocess.CalledProcessError as error:
-            err_output = error.stdout.decode()
             msg = "Creating container '{}' failed, error: {}".format(
-                container_id, bundle_path, err_output
+                container_id,
+                error.stdout.decode() if error.stdout else error.returncode,
             )
             raise ContainerCreationError(msg)
 
@@ -182,9 +182,9 @@ def start(container_id):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode()
         msg = "Starting container '{}' failed, error: '{}'".format(
-            container_id, err_output
+            container_id,
+            error.stdout.decode() if error.stdout else error.returncode,
         )
         raise ContainerStartError(msg)
     else:
@@ -209,9 +209,9 @@ def kill(container_id, signal="SIGTERM"):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode()
         msg = "Killing container '{}' failed, error: '{}'".format(
-            container_id, err_output
+            container_id,
+            error.stdout.decode() if error.stdout else error.returncode,
         )
         raise ContainerKillError(msg)
     else:
@@ -238,9 +238,9 @@ def delete(container_id):
             stderr=subprocess.STDOUT,
         )
     except subprocess.CalledProcessError as error:
-        err_output = error.stdout.decode()
         msg = "Deleting container '{}' failed, error: '{}'".format(
-            container_id, err_output
+            container_id,
+            error.stdout.decode() if error.stdout else error.returncode,
         )
         raise ContainerDeleteError(msg)
     else:
@@ -258,9 +258,10 @@ def get_oci_bundle_paths(path):
             config_path = os.path.join(dirpath, OCI_BUNDLE_CONFIGURATION)
             with open(config_path, "r") as filelike:
                 config = json.load(filelike)
-            if "root" in config and "path" in config["root"]:
-                if config["root"]["path"] in dirnames:
-                    oci_bundles.append(dirpath)
+            if "ociVersion" in config:
+                if "root" in config and "path" in config["root"]:
+                    if config["root"]["path"] in dirnames:
+                        oci_bundles.append(dirpath)
 
     return oci_bundles
 

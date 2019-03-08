@@ -42,7 +42,7 @@ class TestAppLifecycleManager:
 
         print("Installing test container package - done.\n")
         # Init app_id that will be used in all tests
-        cls.app_path = os.path.join(MBL_APPS_DIR, cls.app_name)
+        cls.app_path = os.path.join(MBL_APPS_DIR, cls.app_name, "0")
 
         print("Installing test container package...")
         assert (
@@ -81,10 +81,7 @@ class TestAppLifecycleManager:
         :return: None
         """
         # Test that a container state can be set to 'running'
-        assert (
-            run_app(cls.app_name, cls.app_path, True)
-            == alm_cli.ReturnCode.SUCCESS.value
-        )
+        assert run_app(cls.app_name, True) == alm_cli.ReturnCode.SUCCESS.value
         state = alm_con.get_state(cls.app_name)
         assert state == alm_con.ContainerState.RUNNING
 
@@ -103,10 +100,7 @@ class TestAppLifecycleManager:
         :return: None
         """
         # Test that a container state can be set to 'running'
-        assert (
-            run_app(cls.app_name, cls.app_path, True)
-            == alm_cli.ReturnCode.SUCCESS.value
-        )
+        assert run_app(cls.app_name, True) == alm_cli.ReturnCode.SUCCESS.value
         state = alm_con.get_state(cls.app_name)
         assert state == alm_con.ContainerState.RUNNING
 
@@ -137,10 +131,10 @@ class TestAppLifecycleManager:
         )
 
 
-def run_app(app_name, app_path, check_exit_code):
+def run_app(app_name, check_exit_code):
     """Run an app."""
-    # usage: mbl-app-lifecycle-manager run [-h] app_name app_path
-    command = [MBL_APP_LIFECYCLE_MANAGER, "-v", "run", app_name, app_path]
+    # usage: mbl-app-lifecycle-manager run [-h] app_name
+    command = [MBL_APP_LIFECYCLE_MANAGER, "-v", "run", app_name]
     print("Executing command: {}".format(command))
     process = subprocess.run(command, check=check_exit_code)
     print("run_app returned {}".format(process.returncode))

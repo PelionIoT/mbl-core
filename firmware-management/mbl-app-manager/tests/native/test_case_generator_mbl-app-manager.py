@@ -361,12 +361,14 @@ def _main():
             package_architecture="invalid-architecture",
             package_files=package_files,
             return_code_install=1,
-            # Expect successful removal even if installation failed.
+            # Expect unsuccessful removal.
             # This is because OPKG tries to install the package and puts some
-            # files where the application was to be installed.
-            # OPKG successfully removes the files upon request to remove the
-            # application.
-            return_code_remove=0,
+            # files where the application was to be installed, however,
+            # mbl-app-manager removes the partly installed application in case
+            # of installation failure.
+            # OPKG does not successfully removes the application because of the
+            # cleanup by mbl-app-manager
+            return_code_remove=1,
         )
         app_manager_test_case_generator.create_test_files(test_case_config4)
 

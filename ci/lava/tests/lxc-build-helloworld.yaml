@@ -1,0 +1,16 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: "Lava-Test Test Definition 1.0"
+    name: Build Hello World Test
+    description: "Build Hello World in an LXC container"
+
+run:
+    steps:
+        # The tutorial is cloned as root, but we build it as user "ubuntu".
+        # Give the directory write permisions so that the images can be written
+        - chmod a+w tutorials/helloworld
+        # Build the Hello World sample app.
+        - su ubuntu -c ./ci/lava/tests/lxc-build-helloworld.sh
