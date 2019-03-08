@@ -88,10 +88,10 @@ else
             tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
 
             # Now copy the tar file to the DUT
-            $mbl_command put payload.tar /home/root
+            $mbl_command put payload.tar /scratch
 
             # Now update the rootfs - the -s prevents the automatic reboot
-            $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /home/root/payload.tar -v -s"'
+            $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
 
             # Now reboot the board and get the result of the reboot command
             $mbl_command shell 'su -l -c "reboot || echo $?"'
