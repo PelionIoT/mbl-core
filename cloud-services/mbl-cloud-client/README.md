@@ -49,13 +49,13 @@ Valid options are:
   sudo pip3 install requests click gitpython
   ```
 
-- clang Toolchains installations
+- clang toolchains installations
   ```sudo apt-get install -y clang clang-tidy clang-format```
 
 - Libraries for mbl-cloud-client on PC compilation installations
   Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
   ```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
-  The libjsoncpp-dev on Ubuntu installs the header files in `/usr/include/jsoncpp/`, instead of `/usr/include/` as expected. In order to fix this - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
+  The libjsoncpp-dev package on Ubuntu installs the header files in `/usr/include/jsoncpp/` directory, instead of `/usr/include/` directory as expected. In order to fix this - make a symbolic link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
 
 ### Building
 
@@ -80,6 +80,7 @@ If a new files added to the project, need to run ```configure``` command before 
 
 ### Using clang-tidy and clang-format tools
 [clang-tidy][clang-tidy-link] is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. 
+
 [clang-format][clang-format-link] enforces a set of rools on the C/C++ code style. It can help in finding and fixing of code style compliance failures.
 
 #### Usage
