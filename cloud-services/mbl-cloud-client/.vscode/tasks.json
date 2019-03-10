@@ -93,7 +93,7 @@
             "args": [
                 "./client-builder.py",
                 "-a",
-                "run_clang_tidy"
+                "run-clang-tidy"
               ],
             "group": "build",
             "presentation": {
@@ -115,7 +115,7 @@
             "args": [
                 "./client-builder.py",
                 "-a",
-                "run_clang_format"
+                "run-clang-format"
               ],
             "group": "build",
             "presentation": {

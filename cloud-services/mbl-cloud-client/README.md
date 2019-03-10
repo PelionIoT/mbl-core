@@ -48,6 +48,15 @@ Valid options are:
   sudo pip3 install requests click gitpython
   ```
 
+- clang Toolchains installations
+  ```sudo apt-get install -y clang clang-tidy clang-format```
+
+- Libraries for mbl-cloud-client on PC compilation installations
+  Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
+  ```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
+  libjsoncpp-dev installs the header to /usr/include/jsoncpp/json/ while bitbake expects it to be under /usr/include/json directory.
+  In order to enable both - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
+
 ### Building
 
 Use ```client-builder.py``` script to build the MBL Cloud Client:
@@ -75,16 +84,6 @@ TBD
 
 ### Clang (*Mandatory step before raising a PR)
 clang-tidy is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. This tool does not enforce C/C++ style. Read more about the clang-tidy tool.
-
-#### Prerequisites
-##### Toolchains installations
-```sudo apt-get install -y clang clang-tidy clang-format```
-
-##### Libraries for mbl-cloud-client on PC compilation installations
-Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
-```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
-libjsoncpp-dev installs the header to /usr/include/jsoncpp/json/ while bitbake expects it to be under /usr/include/json directory.
-In order to enable both - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
 
 #### Usage
 Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud Client:

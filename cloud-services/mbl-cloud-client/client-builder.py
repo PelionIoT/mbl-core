@@ -83,8 +83,8 @@ def get_argument_parser():
             "configure",
             "build",
             "rebuild",
-            "run_clang_tidy",
-            "run_clang_format",
+            "run-clang-tidy",
+            "run-clang-format",
         ],
         default="prepare",
         help="Specify which action to perform",
@@ -215,7 +215,7 @@ class ClientBuilder:
 
     def _verify_configure_is_done(self):
         """
-        Verify if configure step is done.
+        Verify that configure step is done.
 
         Raise exception if not.
         """
@@ -332,16 +332,16 @@ class ClientBuilder:
             "clang-tidy-suggested-fixes.txt",
         )
         for filename in os.listdir(self.ccrb_source_dir):
-            if not filename.endswith(".h"):
-                full_path = os.path.join(self.ccrb_source_dir, filename)
-                command = [
-                    "clang-tidy",
-                    "-p=.",
-                    "-export-fixes={}".format(suggested_fixes_file_path),
-                    flags,
-                    full_path,
-                ]
-                subprocess.check_call(command, cwd=self.pal_target_directory)
+            # if not filename.endswith(".h"):
+            full_path = os.path.join(self.ccrb_source_dir, filename)
+            command = [
+                "clang-tidy",
+                "-p=.",
+                "-export-fixes={}".format(suggested_fixes_file_path),
+                flags,
+                full_path,
+            ]
+            subprocess.check_call(command, cwd=self.pal_target_directory)
 
         self.logger.info("clang tidy DONE.")
 
@@ -368,9 +368,9 @@ def _main():
         client_builder.build()
     elif args.action == "rebuild":
         client_builder.build(force_rebuild=True)
-    elif args.action == "run_clang_tidy":
+    elif args.action == "run-clang-tidy":
         client_builder.run_clang_tidy()
-    elif args.action == "run_clang_format":
+    elif args.action == "run-clang-format":
         client_builder.run_clang_format()
     else:
         assert 0, "Unknown value of 'action' parameter"
