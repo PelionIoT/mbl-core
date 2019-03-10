@@ -40,10 +40,12 @@ There are additional macros to simplify logs + help debugging
  * @param ... arguments
  */
 #define TR_ERRNO_F(failed_method_name, errno_num, fmtstr, ...) \
-    tr_err("[%s:%s:%d]> %s failed with errno=%d (%s)" fmtstr, \
-            basename(__FILE__), __func__, __LINE__, \
-            failed_method_name, errno_num, strerror(errno_num), \
-            ##__VA_ARGS__)
+    TR_ERR("%s failed with errno=%d (%s) " fmtstr, \
+        failed_method_name, \
+        errno_num, \
+        strerror(errno_num), \
+        ##__VA_ARGS__)
+
 
 /**
  * @brief Prints failed method name and errno in the constant format. 
@@ -51,9 +53,8 @@ There are additional macros to simplify logs + help debugging
  * @param errno_num errno number which should be logged.
  */
 #define TR_ERRNO(failed_method_name, errno_num) \
-    tr_err("[%s:%s:%d]> %s failed with errno=%d (%s)", \
-            basename(__FILE__), __func__, __LINE__, \
-            failed_method_name, errno_num, strerror(errno_num))
+    TR_ERR("%s failed with errno=%d (%s)", failed_method_name, errno_num, strerror(errno_num))
+
 
 //use this macro to temporarily print debug points (usually on-target-debugging)
 #define TR_DEBUG_POINT          TR_DEBUG("DBG_POINT")

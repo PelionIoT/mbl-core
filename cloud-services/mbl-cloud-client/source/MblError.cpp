@@ -32,6 +32,8 @@ const char* MblError_to_str(const MblError error)
     case Error::DeviceUnregistered: return "Device became unregistered";
     case Error::ShutdownRequested: return "Shutdown requested";
     case Error::IpcProcedureFailed: return "IPC procedure call failed";
+    case Error::SystemCallFailed: return "System call failed";
+    case Error::IpcTimeout: return "IPC Timeout";
     case Error::ConnectAlreadyExists: return "ConnectAlreadyExists";
     case Error::ConnectBootstrapFailed: return "ConnectBootstrapFailed";
     case Error::ConnectInvalidParameters: return "ConnectInvalidParameters";
@@ -65,8 +67,6 @@ const char* MblError_to_str(const MblError error)
     case Error::EnrollmentErrorBase: return "EnrollmentErrorBase";
     case Error::EnrollmentErrorEnd: return "EnrollmentErrorEnd";
     case Error::CCRBNotSupported: return "CCRBNotSupported";
-    case Error::CCRBStartFailed: return "CCRBStartFailed";
-    case Error::CCRBStopFailed: return "CCRBStopFailed";
     case Error::CCRBInvalidJson: return "CCRBInvalidJson";
     case Error::CCRBCreateM2MObjFailed: return "CCRBCreateM2MObjFailed";
     case Error::CCRBValueTypeError: return "CCRBValueTypeError";

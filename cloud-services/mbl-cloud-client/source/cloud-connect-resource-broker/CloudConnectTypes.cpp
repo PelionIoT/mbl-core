@@ -142,7 +142,14 @@ const char* ResourceDataType_to_str(const ResourceDataType type)
 OneSetMblError::OneSetMblError() : err_(MblError::None), one_time_set_flag_(true)
 {
     TR_DEBUG("Enter");
-};
+}
+
+OneSetMblError::OneSetMblError(const MblError init_val)
+    : err_(MblError::None), one_time_set_flag_(true)
+{
+    TR_DEBUG("Enter");
+    set(init_val);
+}
 
 void OneSetMblError::set(const MblError new_val)
 {

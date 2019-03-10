@@ -193,6 +193,8 @@ class OneSetMblError
 public:
     OneSetMblError();
 
+    OneSetMblError(const MblError init_val);
+
     /**
      * @brief set the value to a new value if it has never been set yet
      * 

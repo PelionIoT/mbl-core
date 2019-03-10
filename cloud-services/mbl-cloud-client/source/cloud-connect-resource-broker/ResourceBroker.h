@@ -462,9 +462,9 @@ protected:
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
 
+    // FIXME: init_sem_ and init_sem_initialized_ should be removed in IOTMBL-1707.      
     // semaphore for the initialization procedure syncronization.
     sem_t init_sem_;
-
     // flag that marks if the init_sem_ was intialized and requires destroy.
     std::atomic_bool init_sem_initialized_;
 
