@@ -35,6 +35,34 @@ PATCHES_LIST = [
     ),
 ]
 
+# Note: "-DCODE_CHECK_MODE=ON" option will add files and flags for clang-tidy
+PAL_CMAKE_COMMAND = [
+    "cmake",
+    ".",
+    "-G",
+    "Unix Makefiles",
+    "-DCMAKE_BUILD_TYPE=Debug",
+    "-DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake",
+    "-DEXTARNAL_DEFINE_FILE=./../define.txt",
+    "-DCODE_CHECK_MODE=ON",
+]
+
+CLANG_TIDY_FLAGS = (
+    "-checks=-*,bugprone-*,"
+    "cert-*,"
+    "cppcoreguidelines-*,"
+    "clang-analyzer-*,"
+    "modernize-*,"
+    "performance-*,"
+    "readability-*"
+)
+
+CLANG_TIDY_SUPPRESS_WARNING = (
+    ","
+    "-cppcoreguidelines-pro-type-vararg,"
+    "-cppcoreguidelines-pro-bounds-array-to-pointer-decay"
+)
+
 
 def get_argument_parser():
     """
@@ -50,7 +78,14 @@ def get_argument_parser():
     parser.add_argument(
         "-a",
         "--action",
-        choices=["prepare", "configure", "build", "rebuild"],
+        choices=[
+            "prepare",
+            "configure",
+            "build",
+            "rebuild",
+            "run-clang-tidy",
+            "run-clang-format",
+        ],
         default="prepare",
         help="Specify which action to perform",
     )
@@ -89,6 +124,11 @@ class ClientBuilder:
         )
         self.mbed_cloud_client_direcotry = os.path.join(
             self.mbl_cloud_client_directory, "mbed-cloud-client"
+        )
+        self.ccrb_source_dir = os.path.join(
+            self.mbl_cloud_client_directory,
+            "source",
+            "cloud-connect-resource-broker",
         )
 
     def _apply_patches(self, meta_mbl_directory):
@@ -161,6 +201,29 @@ class ClientBuilder:
                     command, stdin=patch_file, cwd=patch_apply_path
                 )
 
+    def _configure_pal(self):
+        """Configure PAL."""
+        command = [
+            "python3",
+            "pal-platform/pal-platform.py",
+            "deploy",
+            "--target={}".format(PAL_TARGET),
+            "generate",
+        ]
+        self.logger.info("Configuring PAL...")
+        subprocess.check_call(command, cwd=self.mbl_cloud_client_directory)
+
+    def _verify_configure_is_done(self):
+        """
+        Verify that configure step is done.
+
+        Raise exception if not.
+        """
+        if not os.path.exists(
+            os.path.join(self.pal_target_directory, "CMakeFiles")
+        ):
+            raise Exception("Not configured. Run configure command first.")
+
     def prepare(self):
         """
         Prepare SW tree for compilaiton.
@@ -206,16 +269,7 @@ class ClientBuilder:
             meta_mbl_cloned_repo.git.checkout(self.meta_mbl_revision)
             self._apply_patches(meta_mbl_directory)
 
-        # Configure PAL
-        command = [
-            "python3",
-            "pal-platform/pal-platform.py",
-            "deploy",
-            "--target={}".format(PAL_TARGET),
-            "generate",
-        ]
-        self.logger.info("Configuring PAL")
-        subprocess.check_call(command, cwd=self.mbl_cloud_client_directory)
+        self._configure_pal()
         self.logger.info("Prepare: done")
 
     def configure(self):
@@ -228,17 +282,10 @@ class ClientBuilder:
         pal_configured = os.path.exists(self.pal_target_directory)
         if not (client_dir_exists and pal_configured):
             raise Exception("Not prepared. Run prepare command first.")
-        command = [
-            "cmake",
-            "-G",
-            "Unix Makefiles",
-            "-DCMAKE_BUILD_TYPE=Debug",
-            "-DCMAKE_TOOLCHAIN_FILE=./../pal-platform/Toolchain/GCC/GCC.cmake",
-            "-DEXTARNAL_DEFINE_FILE=./../define.txt",
-        ]
 
+        self.logger.info("Generate makefiles...")
         self.logger.info("Running cmake")
-        subprocess.check_call(command, cwd=self.pal_target_directory)
+        subprocess.check_call(PAL_CMAKE_COMMAND, cwd=self.pal_target_directory)
         self.logger.info("Configure: done")
 
     def build(self, force_rebuild=False):
@@ -247,10 +294,7 @@ class ClientBuilder:
 
         configure() method should run before.
         """
-        if not os.path.exists(
-            os.path.join(self.pal_target_directory, "CMakeFiles")
-        ):
-            raise Exception("Not configured. Run configure command first.")
+        self._verify_configure_is_done()
 
         self.logger.info(
             "Building mbl-cloud-client, force rebuild: {}".format(
@@ -262,6 +306,44 @@ class ClientBuilder:
             command += ["-B"]
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("Build: done")
+
+    def run_clang_format(self):
+        """Run clang-format.
+
+        configure() method should run before.
+        """
+        self._verify_configure_is_done()
+
+        command = ["make", "clang-format", "-B"]
+        subprocess.check_call(command, cwd=self.pal_target_directory)
+        self.logger.info("clang format DONE.")
+
+    def run_clang_tidy(self):
+        """Run clang-tidy.
+
+        configure() method should run before.
+        """
+        self._verify_configure_is_done()
+
+        flags = "{}{}".format(CLANG_TIDY_FLAGS, CLANG_TIDY_SUPPRESS_WARNING)
+        suggested_fixes_file_path = os.path.join(
+            self.mbl_cloud_client_directory,
+            "code-checkers",
+            "clang-tidy-suggested-fixes.txt",
+        )
+        for filename in os.listdir(self.ccrb_source_dir):
+            # if not filename.endswith(".h"):
+            full_path = os.path.join(self.ccrb_source_dir, filename)
+            command = [
+                "clang-tidy",
+                "-p=.",
+                "-export-fixes={}".format(suggested_fixes_file_path),
+                flags,
+                full_path,
+            ]
+            subprocess.check_call(command, cwd=self.pal_target_directory)
+
+        self.logger.info("clang tidy DONE.")
 
 
 def _main():
@@ -286,6 +368,10 @@ def _main():
         client_builder.build()
     elif args.action == "rebuild":
         client_builder.build(force_rebuild=True)
+    elif args.action == "run-clang-tidy":
+        client_builder.run_clang_tidy()
+    elif args.action == "run-clang-format":
+        client_builder.run_clang_format()
     else:
         assert 0, "Unknown value of 'action' parameter"
 
