@@ -332,16 +332,16 @@ class ClientBuilder:
             "clang-tidy-suggested-fixes.txt",
         )
         for filename in os.listdir(self.ccrb_source_dir):
-            # if not filename.endswith(".h"):
-            full_path = os.path.join(self.ccrb_source_dir, filename)
-            command = [
-                "clang-tidy",
-                "-p=.",
-                "-export-fixes={}".format(suggested_fixes_file_path),
-                flags,
-                full_path,
-            ]
-            subprocess.check_call(command, cwd=self.pal_target_directory)
+            if not filename.endswith(".h"):
+                full_path = os.path.join(self.ccrb_source_dir, filename)
+                command = [
+                    "clang-tidy",
+                    "-p=.",
+                    "-export-fixes={}".format(suggested_fixes_file_path),
+                    flags,
+                    full_path,
+                ]
+                subprocess.check_call(command, cwd=self.pal_target_directory)
 
         self.logger.info("clang tidy DONE.")
 
