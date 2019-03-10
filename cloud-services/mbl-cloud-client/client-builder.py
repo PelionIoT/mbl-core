@@ -314,7 +314,7 @@ class ClientBuilder:
         """
         self._verify_configure_is_done()
 
-        command = ["make", "clang-format"]
+        command = ["make", "clang-format" ,"-B"]
         subprocess.check_call(command, cwd=self.pal_target_directory)
         self.logger.info("clang format DONE.")
 
