@@ -70,7 +70,7 @@ class TestAppLifecycleManager:
         # Do not assert because mbl-app-lifecycle-manager returns an error code
         # if instructed to kill a non-existing application.
         print("Teardown method start...")
-        kill_app(cls.app_name, False) == alm_cli.ReturnCode.SUCCESS.value
+        kill_app(cls.app_name, False)
         print("Teardown method end")
 
     # ---------------------------- Test Methods -----------------------------
