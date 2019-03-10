@@ -1,5 +1,6 @@
 
 
+
 # Mbed Linux OS Cloud Client
 
 ## Purpose
@@ -49,13 +50,20 @@ Valid options are:
   sudo pip3 install requests click gitpython
   ```
 
-- clang toolchains installations
-  ```sudo apt-get install -y clang clang-tidy clang-format```
+- clang toolchains installations:
+  ```bash
+  sudo apt-get install -y clang clang-tidy clang-format
+  ```
 
 - Libraries for mbl-cloud-client on PC compilation installations
-  Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
-  ```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
-  The libjsoncpp-dev package on Ubuntu installs the header files in `/usr/include/jsoncpp/` directory, instead of `/usr/include/` directory as expected. In order to fix this - make a symbolic link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
+  Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library):
+  ```bash 
+  sudo apt-get install -y libsystemd-dev libjsoncpp-dev
+  ```
+  The libjsoncpp-dev package on Ubuntu installs the header files in `/usr/include/jsoncpp/` directory, instead of `/usr/include/` directory as expected. In order to fix this - make a symbolic link:
+  ```bash
+  sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json
+  ```
 
 ### Building
 
