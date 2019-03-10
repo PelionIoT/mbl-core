@@ -1,4 +1,5 @@
 
+
 # Mbed Linux OS Cloud Client
 
 ## Purpose
@@ -54,8 +55,7 @@ Valid options are:
 - Libraries for mbl-cloud-client on PC compilation installations
   Install all required libraries in order to compile mbl-cloud-client code (among which systemd development library).
   ```sudo apt-get install -y libsystemd-dev libjsoncpp-dev```
-  libjsoncpp-dev installs the header to /usr/include/jsoncpp/json/ while bitbake expects it to be under /usr/include/json directory.
-  In order to enable both - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
+  The libjsoncpp-dev on Ubuntu installs the header files in `/usr/include/jsoncpp/`, instead of `/usr/include/` as expected. In order to fix this - make a soft link: ```sudo ln -s /usr/include/jsoncpp/json/ /usr/include/json```
 
 ### Building
 
@@ -78,12 +78,9 @@ The execution order of those commands is important. The order should be:
 
 If a new files added to the project, need to run ```configure``` command before ```build``` or ```rebuild```.
 
-### Running
-
-TBD
-
-### Clang (*Mandatory step before raising a PR)
-clang-tidy is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. This tool does not enforce C/C++ style. Read more about the clang-tidy tool.
+### Using clang-tidy and clang-format tools
+[clang-tidy][clang-tidy-link] is a clang-based C/C++ static analysis tool. Its purpose is to provide an extensible framework for diagnosing and fixing typical programming errors, like style violations, interface misuse, or bugs that can be deduced via static analysis. 
+[clang-format][clang-format-link] enforces a set of rools on the C/C++ code style. It can help in finding and fixing of code style compliance failures.
 
 #### Usage
 Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud Client:
@@ -91,6 +88,10 @@ Use ```client-builder.py``` script to run clang code checkers on the MBL Cloud C
 1. Run clang format: ```client-builder.py -a clang_format```. Note: This will modify the files in case bad formating. Make sure you review the modified changes.
 
 Note: ```prepare``` and ```configure``` commands should run before using ```clang-format``` and ```clang-tidy``` commands.
+
+### Running
+
+TBD
 
 ### Optional installation of Visual Studio Code IDE
 
@@ -121,9 +122,11 @@ Please see the [License][mbl-license] document for more information.
 
 Please see the [Contributing][mbl-contributing] document for more information.
 
-[generate-a-developer-device-certificate]: [https://cloud.mbed.com/docs/v1.2/quick-start/connecting-your-device-to-mbed-cloud.html#generate-a-developer-device-certificate]
-[manifest-dev-tutorial]: [https://cloud.mbed.com/docs/v1.2/updating-firmware/manifest-dev-tutorial.html]
-[mbed-cli]: [https://github.com/ARMmbed/mbed-cli]
+[clang-tidy-link]: https://releases.llvm.org/7.0.0/tools/clang/tools/extra/docs/clang-tidy/index.html
+[clang-format-link]: https://clang.llvm.org/docs/ClangFormat.html
+[generate-a-developer-device-certificate]: https://cloud.mbed.com/docs/v1.2/quick-start/connecting-your-device-to-mbed-cloud.html#generate-a-developer-device-certificate
+[manifest-dev-tutorial]: https://cloud.mbed.com/docs/v1.2/updating-firmware/manifest-dev-tutorial.html
+[mbed-cli]: https://github.com/ARMmbed/mbed-cli
 [vs-code-installaiton]: https://code.visualstudio.com/docs/setup/linux
 [cc-2-1-1]: https://github.com/ARMmbed/mbed-cloud-client/releases/tag/2.1.1
 [meta-mbl]: https://github.com/ARMmbed/meta-mbl/blob/master/README.md
