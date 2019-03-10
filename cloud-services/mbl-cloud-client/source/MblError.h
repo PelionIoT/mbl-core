@@ -32,6 +32,8 @@ enum Type {
     DeviceUnregistered                  = 0x0005,
     ShutdownRequested                   = 0x0006,
     IpcProcedureFailed                  = 0x0007,
+    SystemCallFailed                    = 0x0008,
+    IpcTimeout                          = 0x0009,
 
     ConnectAlreadyExists                = 0x0100,
     ConnectBootstrapFailed              = 0x0101,
@@ -73,8 +75,6 @@ enum Type {
 
     // CCRB errors
     CCRBNotSupported                    = 0x0400,
-    CCRBStartFailed                     = 0x0401,
-    CCRBStopFailed                      = 0x0402,
     CCRBInvalidJson                     = 0x0403,
     CCRBCreateM2MObjFailed              = 0x0404,
     CCRBValueTypeError                  = 0x0405,

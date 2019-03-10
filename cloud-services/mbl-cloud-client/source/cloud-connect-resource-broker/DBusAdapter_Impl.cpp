@@ -508,7 +508,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
             message_type_to_str(type),
             sd_bus_message_get_sender(m));
 
-    r = -EBADRQC;
+    r = -EBADRQC; // NOLINT
     const char* member_name = nullptr;
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
     if (0 < sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
@@ -754,7 +754,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
     // call register_resources resource broker API and handle output
     CloudConnectStatus out_cc_reg_status = ERR_INTERNAL_ERROR;
     std::string out_access_token;
-    MblError mbl_reg_err = ccrb_.register_resources(reinterpret_cast<uintptr_t>(m),
+    MblError mbl_reg_err = ccrb_.register_resources(reinterpret_cast<uintptr_t>(m), // NOLINT
                                                     app_resource_definition,
                                                     out_cc_reg_status,
                                                     out_access_token);
@@ -790,7 +790,7 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
     // call deregister_resources resource broker APi and handle output
     CloudConnectStatus out_cc_dereg_status = ERR_INTERNAL_ERROR;
     MblError mbl_dereg_err = ccrb_.deregister_resources(
-        reinterpret_cast<uintptr_t>(m), access_token, out_cc_dereg_status);
+        reinterpret_cast<uintptr_t>(m), access_token, out_cc_dereg_status); // NOLINT
 
     if (MblError::None != mbl_dereg_err || is_CloudConnectStatus_error(out_cc_dereg_status)) {
         return handle_resource_broker_method_failure(
@@ -1024,7 +1024,8 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         return MblError::DBA_IllegalState;
     }
 
-    sd_bus_message* m_to_signal_on = reinterpret_cast<sd_bus_message*>(ipc_request_handle);
+    sd_bus_message* m_to_signal_on =
+        reinterpret_cast<sd_bus_message*>(ipc_request_handle); // NOLINT
 
     // try erase handle from pending_messages
     size_t deleted_items_num = pending_messages_.erase(m_to_signal_on);
