@@ -47,8 +47,8 @@ def get_argument_parser():
 
     parser.add_argument(
         "-j",
-        "--app-resource-definition-json-file",
-        help="Path to the application resource definition json data",
+        "--app-resource-definition-file",
+        help="Path to the application resource definition data",
         metavar="FILE",
         action=GetValidFile,
         default=os.path.join(
@@ -77,7 +77,7 @@ def _main():
     app.setup()
 
     logger.info("Call Hello Pelion Connect application register_resources")
-    app.register_resources(args.app_resource_definition_json_file)    
+    app.register_resources(args.app_resource_definition_file)    
     
     logger.info("Hello Pelion Connect application successfully finished")
     return 0
