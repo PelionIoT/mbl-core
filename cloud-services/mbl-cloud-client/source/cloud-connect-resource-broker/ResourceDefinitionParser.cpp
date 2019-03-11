@@ -17,8 +17,8 @@
 
 #include "ResourceDefinitionParser.h"
 #include "CloudConnectTrace.h"
-#include "mbed-client/m2minterfacefactory.h"
-#include "mbed-client/m2mresource.h"
+#include "m2minterfacefactory.h"
+#include "m2mresource.h"
 
 #include <cassert>
 #include <cinttypes>
@@ -80,7 +80,7 @@ const ResourceDefinitionParser::OperationMap ResourceDefinitionParser::operation
 M2MResourceInstance::ResourceType
 ResourceDefinitionParser::get_m2m_resource_type(const std::string& resource_type)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     if (resource_type == JSON_RESOURCE_TYPE_INTEGER) {
         return M2MResourceInstance::INTEGER;
@@ -96,7 +96,7 @@ ResourceDefinitionParser::get_m2m_resource_type(const std::string& resource_type
 MblError ResourceDefinitionParser::get_m2m_resource_operation(uint8_t operation_mask,
                                                               M2MBase::Operation& operation)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // Verify operation mast is valid
     auto itr = operation_.find(operation_mask);
@@ -118,7 +118,7 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
                                                     bool resource_observable,
                                                     uint8_t operation_mask)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     M2MBase::Operation m2m_operation;
     M2MResourceInstance::ResourceType m2m_res_type = get_m2m_resource_type(resource_type);
@@ -168,7 +168,7 @@ MblError ResourceDefinitionParser::create_resources(M2MObjectInstance* m2m_objec
 
 MblError ResourceDefinitionParser::parse_operation(Json::Value& resource, uint8_t* operation_mask)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     *operation_mask = OP_MASK_NONE_ALLOWED;
     if (!resource.isArray()) {
@@ -427,7 +427,7 @@ MblError ResourceDefinitionParser::parse_object(const std::string& object_name,
 std::pair<MblError, M2MObjectList>
 ResourceDefinitionParser::build_object_list(const std::string& application_resource_definition)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     std::pair<MblError, M2MObjectList> ret_pair(MblError::None, M2MObjectList());
 

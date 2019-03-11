@@ -12,7 +12,7 @@
 
 struct sd_bus;
 
-// TODO - continue develop more infra-capabilities on client side to simulate app behavior and
+// TODO: continue develop more infra-capabilities on client side to simulate app behavior and
 // re-use code in tests
 
 /**
@@ -65,7 +65,7 @@ public:
     int start();   
     static void *thread_main(void *app_thread);
 
-    // TODO - consider convert this to a vector of std::functions to prefor multiple operations
+    // TODO: consider convert this to a vector of std::functions to prefor multiple operations
     // The user callback to be invoked after object invoked a new thread and connected to bus
     std::function<int(AppThread*, void*)> user_callback_;
 

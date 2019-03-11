@@ -38,13 +38,13 @@ EventImmediate::EventImmediate(EventData& data,
             event_loop_handle,
             description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(data_length_ <= sizeof(data_)); // don't assert by type, just avoid corruption
 }
 
 int EventImmediate::immediate_event_handler(sd_event_source* s, void* userdata)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     assert(userdata);
     assert(s);
@@ -60,7 +60,7 @@ int EventImmediate::immediate_event_handler(sd_event_source* s, void* userdata)
 
 int EventImmediate::send()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // send the event, hand the event id_ as userdata (first id is 1)
     // for more details:

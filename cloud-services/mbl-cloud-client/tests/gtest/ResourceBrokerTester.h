@@ -19,7 +19,8 @@
 #ifndef ResourceBrokerTester_h_
 #define ResourceBrokerTester_h_
 
-#include "cloud-connect-resource-broker/ResourceBroker.h"
+#include "ResourceBroker.h"
+
 
 /**
  * @brief This class tests ResourceBroker functionality
@@ -58,8 +59,8 @@ public:
      * @param expected_cloud_connect_status is the expected cloud connect status returned by ResourceBroker
      */
     void register_resources_test(
-        const uintptr_t ipc_conn_handle,
-        const std::string& app_resource_definition_json,
+        const mbl::IpcConnection &source,
+        const std::string& app_resource_definition,
         CloudConnectStatus& out_status,
         std::string& out_access_token,
         mbl::MblError expected_error_status,

@@ -18,13 +18,15 @@
 #include "ResourceBrokerTester.h"
 #include "DBusAdapterMock.h"
 #include "CloudConnectTrace.h"
+#include "CloudConnectTypes.h"
+
 #include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-res-broker-tester"
 
 ResourceBrokerTester::ResourceBrokerTester()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what resource_broker_.init() usually does so dont call it...
@@ -42,33 +44,33 @@ ResourceBrokerTester::ResourceBrokerTester()
 
 ResourceBrokerTester::~ResourceBrokerTester()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
 void ResourceBrokerTester::add_objects(const M2MObjectList& /*object_list*/)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     // Currently does nothing, in future test we might want to add more code here
 }
 
 void ResourceBrokerTester::register_update()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     // Currently does nothing, in future test we might want to add more code here
 }
 
 void ResourceBrokerTester::register_resources_test(
-    const uintptr_t ipc_conn_handle,
+    const mbl::IpcConnection &source,
     const std::string& app_resource_definition,
     CloudConnectStatus& out_status,
     std::string& out_access_token,
     mbl::MblError expected_error_status,
     CloudConnectStatus expected_cloud_connect_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     mbl::MblError status = resource_broker_.register_resources(
-        ipc_conn_handle, 
+        source, 
         app_resource_definition,
         out_status,
         out_access_token);
@@ -81,7 +83,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     const std::string& access_token,
     CloudConnectStatus dbus_adapter_expected_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     auto itr = resource_broker_.registration_records_.find(access_token);
     ASSERT_TRUE(resource_broker_.registration_records_.end() !=
@@ -121,7 +123,7 @@ void ResourceBrokerTester::get_m2m_resource_test(
     const std::string& path,
     mbl::MblError expected_error_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     auto itr = resource_broker_.registration_records_.find(access_token);
     ASSERT_TRUE(resource_broker_.registration_records_.end() !=
@@ -144,10 +146,11 @@ void ResourceBrokerTester::set_resources_values_test(
     const std::vector<mbl::ResourceSetOperation> expected_inout_set_operations,
     const CloudConnectStatus expected_out_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     
     CloudConnectStatus out_status;
     mbl::MblError status = resource_broker_.set_resources_values(
+        mbl::IpcConnection("source1"),
         access_token,
         inout_set_operations,
         out_status);

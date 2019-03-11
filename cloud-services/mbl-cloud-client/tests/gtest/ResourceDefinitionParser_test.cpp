@@ -15,11 +15,14 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include "TestInfra.h"
 #include "ResourceDefinitionJson.h"
 #include "MblCloudClient.h"
-#include "cloud-connect-resource-broker/ResourceDefinitionParser.h"
+#include "ResourceDefinitionParser.h"
+#include "TestInfra.h"
+
+#include <gtest/gtest.h>
+
 #include <cinttypes>
 
 #define TRACE_GROUP "ccrb-resdefparser-test"
@@ -38,7 +41,7 @@
  */
 static void check_equal_resources(M2MResource* m2m_resource, M2MResource* m2m_resource_test)
 {
-    GTEST_LOG_START_TEST;
+    TR_DEBUG_ENTER;
 
     // Compare resource names
     ASSERT_STREQ(m2m_resource->name(), m2m_resource_test->name());
@@ -96,7 +99,7 @@ static void check_equal_resources(M2MResource* m2m_resource, M2MResource* m2m_re
  */
 static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance, M2MObjectInstance* m2m_object_instance_test)
 {
-    GTEST_LOG_START_TEST;
+    TR_DEBUG_ENTER;
 
     // Compare number of resources under each object instance
     ASSERT_TRUE(m2m_object_instance->resources().size() == 
@@ -126,7 +129,7 @@ static void check_equal_object_instances(M2MObjectInstance* m2m_object_instance,
  */
 static void CheckEqualObject(M2MObject* m2m_object, M2MObject* m2m_object_test)
 {
-    GTEST_LOG_START_TEST;
+    TR_DEBUG_ENTER;
     
     // Compare number of object instances under each object
     ASSERT_TRUE(m2m_object->instance_count() == m2m_object_test->instance_count());
@@ -155,7 +158,7 @@ static void CheckEqualObject(M2MObject* m2m_object, M2MObject* m2m_object_test)
  */
 static void check_equal_object_lists(const M2MObjectList &m2m_object_list, const M2MObjectList &m2m_object_list_test)
 {
-    GTEST_LOG_START_TEST;
+    TR_DEBUG_ENTER;
 
     // Compare number of object instances under each object
     ASSERT_TRUE(m2m_object_list.size() == m2m_object_list_test.size());

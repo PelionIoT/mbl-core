@@ -40,7 +40,7 @@ class Mailbox
 {
 public:    
     // maximum time to wait inside the mailbox
-    static const int MAILBOX_MAX_POLLING_TIME_MILLISECONDS = 30;
+    static constexpr int MAILBOX_MAX_POLLING_TIME_MILLISECONDS = 30;
 
     /**
      * @brief Construct a new Mailbox object
@@ -58,7 +58,7 @@ public:
      */
     MblError  init();
 
-    //TODO make sure producer doesnt touch the mailbox (use initialzer thread id) 
+    //TODO:make sure producer doesnt touch the mailbox (use initialzer thread id) 
     // (using CCRB API - not not use any mutexes!)
     /**
      * @brief deinitialize mailbox, removes and clear any pending events if exist.
@@ -111,19 +111,19 @@ public:
      * to the sd-event loop object.
      * @return int - return the fd.
      */
-    int       get_pipefd_read();
+    inline int get_pipefd_read() { return pipefds_[READ]; }
 
     /**
      * @brief Get the name of the mail box assigned on ctor
      * 
      * @return const char* - the name
      */
-    const char* get_name();
+    inline const char* get_name() { return name_.c_str(); }
 private:
 
-    static const int READ = 0;
-    static const int WRITE = 1;
-    static const long DBUS_MAILBOX_PROTECTION_FLAG = 0xF0F0F0F0;
+    static constexpr int READ = 0;
+    static constexpr int WRITE = 1;
+    static constexpr int DBUS_MAILBOX_PROTECTION_FLAG = 0xF0F0F0F0;
     
     /**
      * @brief - implements init()
@@ -142,7 +142,7 @@ private:
     std::string name_;
 
     //use to protect against corruption and mark that mailbox is initialized
-    long    protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
+    int    protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
 
     // Store read (0) and write (1) file descriptors for the pipe
     int           pipefds_[2];

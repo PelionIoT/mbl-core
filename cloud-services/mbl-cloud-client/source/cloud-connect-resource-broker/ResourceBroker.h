@@ -9,11 +9,10 @@
 
 #include "DBusAdapter.h"
 #include "RegistrationRecord.h"
-#include "CloudConnectTypes.h"
 
-#include <inttypes.h>
-#include <memory>
 #include <pthread.h>
+#include <cinttypes>
+#include <memory>
 #include <semaphore.h>
 #include <queue>
 #include <atomic>
@@ -22,6 +21,8 @@
 
 class ResourceBrokerTester;
 namespace mbl {
+
+class IpcConnection;
 
 /**
  * @brief Class implements functionality of Mbl Cloud Connect Resource 
@@ -109,8 +110,7 @@ protected:
      * CCRB will send the final status of the registration to the application 
      * (when it will be ready) by calling update_registration_status API. 
      * 
-     * @param ipc_request_handle handle to the IPC unique connection information 
-     *        of the application that should get update_registration_status message.
+     * @param source - holds all data related to the to caller IPC connection
      * @param app_resource_definition_json json file that describes resources 
      *        that should be registered. The structure of the JSON document 
      *        reflects the structure of the required resource tree. 
@@ -129,7 +129,7 @@ protected:
      *         were successfully finished, or error code otherwise. 
      */
     virtual MblError register_resources(
-        const uintptr_t ipc_request_handle, 
+        const IpcConnection & source, 
         const std::string &app_resource_definition_json,
         CloudConnectStatus &out_status,
         std::string &out_access_token);
@@ -142,8 +142,7 @@ protected:
      * deregistration to the application (when it will be ready) by calling 
      * update_deregistration_status API. 
      * 
-     * @param ipc_request_handle handle to the IPC unique connection information 
-     *        of the application that should be notified.
+     * @param source - holds all data related to the to caller IPC connection
      * @param access_token token that defines set of resources that should be 
      *        deregistered.   
      * @param out_status cloud connect operation status for operations like 
@@ -156,7 +155,7 @@ protected:
      *         were successfully finished, or error code otherwise. 
      */
     virtual MblError deregister_resources(
-        const uintptr_t ipc_request_handle, 
+        const IpcConnection & source, 
         const std::string &access_token,
         CloudConnectStatus &out_status);
 
@@ -169,8 +168,7 @@ protected:
      * to the application (when it will be ready) by calling 
      * update_add_resource_instance_status API.
      * 
-     * @param ipc_conn_handle handle to the IPC unique connection information 
-     *        of the application that should be notified.
+     * @param source - holds all data related to the to caller IPC connection
      * @param access_token token used for access control to the resource which path 
      *        is provided in resource_path argument.
      * @param resource_path path of the resource to which instances 
@@ -188,7 +186,7 @@ protected:
      *         were successfully finished, or error code otherwise. 
      */
     virtual MblError add_resource_instances(
-        const uintptr_t ipc_request_handle, 
+        const IpcConnection & source, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids,
@@ -203,8 +201,7 @@ protected:
      * to the application (when it will be ready) by calling 
      * update_remove_resource_instance_status API.
      * 
-     * @param ipc_request_handle handle to the IPC unique connection information 
-     *        of the application that should be notified.
+     * @param source - holds all data related to the to caller IPC connection
      * @param access_token token used for access control to the resource which path 
      *        is provided in resource_path argument.
      * @param resource_path path of the resource from which instances 
@@ -222,7 +219,7 @@ protected:
      *         were successfully finished, or error code otherwise. 
      */
     virtual MblError remove_resource_instances(
-        const uintptr_t ipc_request_handle, 
+        const IpcConnection & source, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids,
@@ -231,7 +228,8 @@ protected:
    
     /**
      * @brief Set resources values for multiple resources. 
-     * Calling this API is allowed right after register_resources() was called.
+     *  
+     * @param source - holds all data related to the to caller IPC connection
      * 
      * @param access_token token used for access control to the resources pointed 
      *        from inout_set_operations vector. 
@@ -261,6 +259,7 @@ protected:
      *         were successfully finished, or error code otherwise.
      */
     virtual MblError set_resources_values(
+        const IpcConnection & source,
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations,
         CloudConnectStatus &out_status);
@@ -269,6 +268,8 @@ protected:
     /**
      * @brief Get resources values from multiple resources. 
      *
+     * @param source - holds all data related to the to caller IPC connection
+     * 
      * @param access_token token used for access control to the resources pointed 
      *        from inout_get_operations vector. 
      * @param inout_get_operations vector of structures that provide all input and 
@@ -299,9 +300,19 @@ protected:
      *         were successfully finished, or error code otherwise.
      */
     virtual MblError get_resources_values(
+        const IpcConnection & source,
         const std::string &access_token, 
         std::vector<ResourceGetOperation> &inout_get_operations,
         CloudConnectStatus &out_status);
+
+    /**
+     * @brief Inform CCRB that a connection has been closed
+     * This is a one-side notification. Nothing is expected to be returned. 
+     * (No operation is requested by caller so the internal outcomes are irrelevant for the caller)
+     * 
+     * @param source - connection which has been closed
+     */    
+    void notify_connection_closed(const IpcConnection & source);
 
     /**
      * @brief CCRB thread main function.
@@ -341,7 +352,6 @@ protected:
 
     typedef std::shared_ptr<RegistrationRecord> RegistrationRecord_ptr;
     typedef std::map<std::string, RegistrationRecord_ptr> RegistrationRecordMap;
-
 
     /**
      * @brief Validate resource data to be used in set/get operation against the registered resource
@@ -424,17 +434,6 @@ protected:
         RegistrationRecord_ptr registration_record,
         std::vector<ResourceGetOperation>& inout_get_operations);
 
-    /**
-     * @brief Generate unique access token using sd_id128_randomize
-     * Unique access token is saved in in_progress_access_token_ private member
-     * 
-     * @return std::pair<MblError, std::string> - a pair where the first element Error::None for 
-     * success, therwise the failure reason.
-     * If the first element is Error::None, user may access the second element which is the 
-     * generate access token. most compilers will optimize (move and not copy). If first element is 
-     * not success - user should ignore the second element.
-     */
-    std::pair<MblError, std::string> generate_access_token();
 
     /**
      * @brief Return registration record using acceess token

@@ -48,7 +48,7 @@ int main()
         return 1;
     }
 
-    const MblError log_err = log_init();
+    const MblError log_err = log_init(nullptr);
     if (log_err != Error::None) {
         std::fprintf(
             stderr,

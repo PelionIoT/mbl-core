@@ -16,25 +16,25 @@
 AppThread::AppThread(std::function<int(AppThread*, void*)> user_callback, void* user_data)
     : user_callback_(user_callback), user_data_(user_data)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(user_callback);
 }
 
 int AppThread::create()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return pthread_create(&tid_, NULL, thread_main, this);
 }
 
 int AppThread::join(void** retval)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return pthread_join(tid_, retval);
 }
 
 int AppThread::start()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     int r = sd_bus_open_user(&connection_handle_);
     if (r < 0) {
         pthread_exit((void*) -1000);
@@ -51,7 +51,7 @@ int AppThread::start()
 
 void* AppThread::thread_main(void* app_thread)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(app_thread);
     AppThread* app_thread_ = static_cast<AppThread*>(app_thread);
     pthread_exit((void*) (uintptr_t) app_thread_->start());

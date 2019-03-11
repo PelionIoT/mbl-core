@@ -40,7 +40,7 @@ Event::Event(EventData& data,
       sd_event_source_(nullptr),
       event_loop_handle_(event_loop_handle)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(user_callback);
     assert(data_length_ <= sizeof(data_)); // don't assert by type, just avoid corruption
     assert(event_loop_handle_);
@@ -54,7 +54,7 @@ Event::Event(EventData& data,
 
 Event::~Event()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     sd_event_unref(event_loop_handle_);
 }
 
@@ -75,7 +75,7 @@ const char* Event::EventType_to_str(EventDataType type)
 
 void Event::on_fire()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     // record fire time
     fire_time_ = duration_cast<milliseconds>(system_clock::now().time_since_epoch());

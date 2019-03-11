@@ -20,26 +20,29 @@
 
 #define TRACE_GROUP "ccrb-debus-adapter-mock"
 
-DBusAdapterMock::DBusAdapterMock(mbl::ResourceBroker &ccrb)
-: DBusAdapter(ccrb),
-reg_status_(CloudConnectStatus::STATUS_SUCCESS),
-ipc_conn_handle_(0),
-update_registration_called_(false)
+using namespace mbl;
+
+DBusAdapterMock::DBusAdapterMock(mbl::ResourceBroker &ccrb) : 
+    DBusAdapter(ccrb),
+    reg_status_(CloudConnectStatus::STATUS_SUCCESS),
+    connection_(""),
+    update_registration_called_(false)    
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
+
 DBusAdapterMock::~DBusAdapterMock()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 }
 
-mbl::MblError DBusAdapterMock::update_registration_status(
-    const uintptr_t ipc_conn_handle, 
-    const CloudConnectStatus reg_status)
+ mbl::MblError DBusAdapterMock::update_registration_status(
+        const IpcConnection & destination, 
+        const CloudConnectStatus reg_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
-    ipc_conn_handle_ = ipc_conn_handle;
+    connection_ = destination;
     reg_status_ = reg_status;
     update_registration_called_ = true;
     TR_DEBUG("update registration called: %d", update_registration_called_);
