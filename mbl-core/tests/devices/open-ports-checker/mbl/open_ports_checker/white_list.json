@@ -40,6 +40,9 @@
     },
     {
       "executable": "/usr/sbin/wpa_supplicant"
+    },
+    {
+      "executable": "/lib/systemd/systemd-networkd"
     }
   ]
 }
