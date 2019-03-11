@@ -13,9 +13,12 @@
 #include <stdlib.h>
 
 #define TRACE_GROUP                             "ccrb-gtest"
+
+#define MBL_CLOUD_CLIENT_GTEST_LOG_PATH         "/var/tmp/mbl-cloud-client.log"
 #define MBL_CLOUD_CLIENT_DAEMON_NAME            "mbl-cloud-client"
-#define MBL_CLOUD_CLIENT_INIT_SCRIPT_START_CMD  "/etc/init.d/mbl-cloud-client start"  
-#define MBL_CLOUD_CLIENT_INIT_SCRIPT_STOP_CMD   "/etc/init.d/mbl-cloud-client stop"
+#define MBL_CLOUD_CLIENT_DAEMON_INIT_FILE_PATH  "/etc/init.d/mbl-cloud-client"
+#define MBL_CLOUD_CLIENT_INIT_SCRIPT_START_CMD  MBL_CLOUD_CLIENT_DAEMON_INIT_FILE_PATH " start"  
+#define MBL_CLOUD_CLIENT_INIT_SCRIPT_STOP_CMD   MBL_CLOUD_CLIENT_DAEMON_INIT_FILE_PATH " stop"
 
 /**
  * @brief initialize test environment :
@@ -34,8 +37,8 @@ static int mbl_cloud_client_gtest_init();
 static int mbl_cloud_client_gtest_deinit();
 
 int main(int argc, char **argv) 
-{
-    TR_DEBUG("Enter");
+{    
+    TR_DEBUG_ENTER;
 
     // == must be first ==
     // Initialize/config test environment for the test for mbl
@@ -48,18 +51,7 @@ int main(int argc, char **argv)
     // Initialize google test
     ::testing::InitGoogleTest(&argc, argv);
 
-    // Initialize Cloud Client log
-    mbl::MblError retval = mbl::log_init();
-    if(mbl::Error::None != retval){
-        //if mbl::log_init failed - stop test. It doesn't make sense to test without logs    
-        printf("Error init Cloud Client log: %s", mbl::MblError_to_str(retval));
-        return -1;
-    }
-
-    // Make sure that trace level is debug as we want as much information posibble when running tests
-    // in case error occured. This ovvirides mbl-cloud-client default trace level.
-    mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
-
+    // run the tests
     int ret2 = RUN_ALL_TESTS();
     TR_INFO("=== RUN_ALL_TESTS() returned status : (%d) ===", ret2);
 
@@ -74,57 +66,79 @@ int main(int argc, char **argv)
     return ret2;
 }
 
-enum class Command { START = 1, STOP = 2 };
-
 /**
- * @brief Helper function for mbl_cloud_client_gtest_init/mbl_cloud_client_gtest_deinit
- * Start / Stop mbl-cloud-client daemon - do it with best effort, do not scan /proc to check if 
- * process exist at all. We assume that current process runs with the right permissions
- * @param command 
- * @return return  or positive value on success,  or negative value on failure.
+ * @brief check if file exist
+ * 
+ * @param path fill path to the file
+ * @return true 
+ * @return false 
  */
-static int start_stop_mbl_client_daemon(Command command)
-{
-    // This is going to be a  "best effort operation". 
-    // I won't check if process exist (no /proc scanning)
-    switch (command)
-    {
-        case Command::START :
-            return system(MBL_CLOUD_CLIENT_INIT_SCRIPT_START_CMD);
-        case Command::STOP :
-            return system(MBL_CLOUD_CLIENT_INIT_SCRIPT_STOP_CMD);  
-        default:
-        {
-            TR_ERR("Unrecognized command!");
-            return -1;
-        }
-    }
+inline bool is_file_exist (const std::string& path) {
+    return ( access( path.c_str(), F_OK ) != -1 );
 }
 
+/**
+ * @brief Initialize gtest environment for mbl-cloud-client-gtest :
+ * * Stop mbl-cloud-client if exist
+ * * Initialize Cloud Client log
+ * * Make sure that trace level is debug
+ * 
+ * @return int 
+ */
 static int mbl_cloud_client_gtest_init()
 {
-    int ret = start_stop_mbl_client_daemon(Command::STOP);
-    if (0 == ret){
-        TR_INFO("%s stopped!", MBL_CLOUD_CLIENT_DAEMON_NAME);
+    TR_DEBUG_ENTER;
+    
+    // stop mbl-cloud-client if exist - this should be usually done on a target. This is done as 
+    // best effort - we do not walk the /proc and do not check if process really exist.
+    // The presence of an init file is enough to invoke a stop command
+    if (is_file_exist(MBL_CLOUD_CLIENT_DAEMON_INIT_FILE_PATH)){
+        int ret = system(MBL_CLOUD_CLIENT_INIT_SCRIPT_STOP_CMD);
+        if (0 == ret){
+            TR_INFO("%s stopped!", MBL_CLOUD_CLIENT_DAEMON_NAME);
+        }
+        else {
+            TR_INFO("failed to stop %s with error %d! exiting..", 
+                MBL_CLOUD_CLIENT_DAEMON_NAME, ret);
+            exit(ret);
+        }
     }
-    else {
-        TR_INFO("failed to stop %s with error %d!", MBL_CLOUD_CLIENT_DAEMON_NAME, ret);
-        exit(ret);
+
+    // Initialize Cloud Client log
+    mbl::MblError retval = mbl::log_init(MBL_CLOUD_CLIENT_GTEST_LOG_PATH);
+    if(mbl::Error::None != retval){
+        //if mbl::log_init failed - stop test. It doesn't make sense to test without logs    
+        printf("Error init Cloud Client log: %s", mbl::MblError_to_str(retval));
+        return -1;
     }
+
+    // Make sure that trace level is debug as we want as much information posibble when running tests
+    // in case error occured. This ovvirides mbl-cloud-client default trace level.
+    mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
 
     return 0;
 }
 
+/**
+ * @brief Deinitialize gtest environment for mbl-cloud-client-gtest
+ * 
+ * @return int 
+ */
 static int mbl_cloud_client_gtest_deinit()
-{
-    int ret = start_stop_mbl_client_daemon(Command::START);
-    if (0 == ret){
-        TR_INFO("%s started!", MBL_CLOUD_CLIENT_DAEMON_NAME);
-    }
-    else {
-        TR_INFO("failed to start %s with error %d!", MBL_CLOUD_CLIENT_DAEMON_NAME, ret);
-        //continue
-        return ret;
+{   
+    TR_DEBUG_ENTER;
+
+    if (is_file_exist(MBL_CLOUD_CLIENT_DAEMON_INIT_FILE_PATH)){
+        int ret = system(MBL_CLOUD_CLIENT_INIT_SCRIPT_START_CMD);
+        if (0 == ret){
+            TR_INFO("%s started!", MBL_CLOUD_CLIENT_DAEMON_NAME);
+        }
+        else {
+            TR_INFO("failed to start %s with error %d!", 
+                MBL_CLOUD_CLIENT_DAEMON_NAME, ret);
+            //continue
+            return ret;
+        }
     }
 
     return 0;

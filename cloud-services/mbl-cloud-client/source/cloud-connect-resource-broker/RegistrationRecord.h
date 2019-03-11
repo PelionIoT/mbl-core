@@ -20,6 +20,7 @@
 #define RegistrationRecord_h_
 
 #include "MblError.h"
+#include "CloudConnectTypes.h"
 
 #include <map>
 #include <string>
@@ -44,7 +45,7 @@ friend ::RegistrationRecordTester;
 
 public:
 
-    RegistrationRecord(const uintptr_t ipc_request_handle);
+    RegistrationRecord(const IpcConnection &source);
     ~RegistrationRecord();
 
     /**
@@ -85,7 +86,7 @@ public:
      * 
      * @return ipc request handle
      */
-    inline uintptr_t get_ipc_request_handle() const {return ipc_request_handle_;};
+    const IpcConnection& get_connection() const { return source_; }
 
     /**
      * @brief Return registered status
@@ -122,7 +123,7 @@ private:
                                       std::string& out_resource_name,
                                       std::string& out_resource_instance_name);
 
-    uintptr_t ipc_request_handle_;
+    const IpcConnection & source_;
     bool registered_;
 
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration

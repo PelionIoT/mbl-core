@@ -30,10 +30,22 @@ extern "C" void mbl_log_reopen_signal_handler(int signal);
 namespace mbl {
 
 /**
- * Initialize the log and trace mechanisms. After calling this the mbed-trace
- * library can be used for logging.
+ * 
+ * user_log_path may be nullptr, in that case g_log_stream will be used
  */
-MblError log_init();
+
+/**
+ * @brief Initialize the log and trace mechanisms. After calling this the mbed-trace
+ * library can be used for logging.
+ * 
+ * @param user_log_path - the path to open log file. If null, it is openned as default g_log_stream
+ * value
+ * @return MblError  
+ * None on success 
+ * LogInitFopen if failed to open file
+ * LogInitMutexCreate if failed to create mutex
+ */
+MblError log_init(const char *user_log_path);
 
 } // namespace mbl
 

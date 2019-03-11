@@ -23,7 +23,7 @@ namespace mbl
 
 class ResourceBroker;
 class DBusAdapterImpl;
-
+class IpcConnection;
 /**
  * @brief Implements an interface to the D-Bus IPC.
  * This class provides an implementation for the handlers that
@@ -76,40 +76,41 @@ public:
      */
     MblError stop(MblError stop_status);
 
-    /**
-     * @brief Sends registration request final status to the destination
-     * client application.
-     * This function sends a final status of the registration request,
-     * that was initiated by a client application via calling
-     * register_resources_async API.
-     * @param ipc_request_handle is a handle to the IPC unique connection information
-     *        of the application that should be notified.
-     * @param reg_status status of registration of all resources.
-     *        reg_status is SUCCESS only if registration of all resources was
-     *        successfully finished, or error code otherwise.
-     *
-     * @return MblError returns Error::None if the message was successfully
-     *         delivered, or error code otherwise.
-     */
-    virtual MblError update_registration_status(const uintptr_t ipc_request_handle,
-                                        const CloudConnectStatus reg_status);
+/**
+ * @brief Sends registration request final status to the destination 
+ * client application. 
+ * This function sends a final status of the registration request, 
+ * that was initiated by a client application via calling 
+ * register_resources API. 
+ * @param destination represents the unique IPC connection information
+ *        of the application that should be notified.
+ * @param reg_status status of registration of all resources. 
+ *        reg_status is SUCCESS only if registration of all resources was 
+ *        successfully finished, or error code otherwise.
+ * 
+ * @return MblError returns Error::None if the message was successfully 
+ *         delivered, or error code otherwise. 
+ */
+    virtual MblError update_registration_status(
+        const IpcConnection & destination, 
+        const CloudConnectStatus reg_status);
 
-    /**
-     * @brief Sends deregistration request final status to the destination client
-     * application. This function sends a final status of the deregistration
-     * request, that was initiated by a client application via calling
-     * deregister_resources_async API.
-     * @param ipc_request_handle is a handle to the IPC unique connection information
-     *        of the application that should be notified.
-     * @param dereg_status status of deregistration of all resources.
-     *        dereg_status is SUCCESS only if deregistration of all resources was
-     *        successfully finished, or error code otherwise.
-     * @return MblError returns Error::None if the message was successfully delivered,
-     *         or error code otherwise.
-     */
-    MblError update_deregistration_status(const uintptr_t ipc_request_handle,
-                                          const CloudConnectStatus dereg_status);
-
+/**
+ * @brief Sends deregistration request final status to the destination client 
+ * application. This function sends a final status of the deregistration 
+ * request, that was initiated by a client application via calling 
+ * deregister_resources API. 
+ * @param destination represents the unique IPC connection information
+ *        of the application that should be notified.
+ * @param dereg_status status of deregistration of all resources. 
+ *        dereg_status is SUCCESS only if deregistration of all resources was 
+ *        successfully finished, or error code otherwise.
+ * @return MblError returns Error::None if the message was successfully delivered, 
+ *         or error code otherwise. 
+ */
+    MblError update_deregistration_status(
+        const IpcConnection & destination, 
+        const CloudConnectStatus dereg_status);
 
     /**
      * @brief
@@ -158,6 +159,17 @@ public:
                                                       Event::UserCallback callback,
                                                       uint64_t period_millisec,
                                                       const std::string& description);
+
+/**
+* @brief Generate unique access token using sd_id128_randomize
+* 
+* @return std::pair<MblError, std::string> - a pair where the first element Error::None for 
+* success, therwise the failure reason.
+* If the first element is Error::None, user may access the second element which is the 
+* generate access token. most compilers will optimize (move and not copy). If first element is 
+* not success - user should ignore the second element.
+*/
+    std::pair<MblError, std::string> generate_access_token();
 
 private:
     // forward declaration - PIMPL implementation class - defined in cpp source file

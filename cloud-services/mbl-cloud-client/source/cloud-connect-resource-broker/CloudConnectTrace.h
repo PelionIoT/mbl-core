@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO - decide if we want to keep this file before going back to master
+// TODO: decide if we want to keep this file before going back to master
 
 /*
 pre-processor macros which Add function name line number on top of mbed-trace/mbed_trace.h
@@ -56,7 +56,11 @@ There are additional macros to simplify logs + help debugging
     TR_ERR("%s failed with errno=%d (%s)", failed_method_name, errno_num, strerror(errno_num))
 
 
-//use this macro to temporarily print debug points (usually on-target-debugging)
+// Use this macro to temporarily print debug points (usually on-target-debugging)
 #define TR_DEBUG_POINT          TR_DEBUG("DBG_POINT")
+
+// Use those 2 macros when entering and exiting functions 
+#define TR_DEBUG_ENTER         TR_DEBUG("Enter")
+#define TR_DEBUG_EXIT          TR_DEBUG("Exit")
 
 #endif //_CloudConnectTrace_h_

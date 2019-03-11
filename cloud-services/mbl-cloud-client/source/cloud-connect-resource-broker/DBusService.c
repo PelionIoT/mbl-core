@@ -6,8 +6,6 @@
 
 #include "DBusService.h"
 
-#include <systemd/sd-bus.h>
-
 #include <assert.h>
 
 #define TRACE_GROUP "ccrb-dbus"

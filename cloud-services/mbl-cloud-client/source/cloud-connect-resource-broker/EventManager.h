@@ -17,8 +17,8 @@
 namespace mbl
 {
 
-// TODO - extend this class to support delayed events and delayed periodic events
-// TODO - consider adding memory pool to avoid dynamic construction of events
+// TODO: extend this class to support delayed events and delayed periodic events
+// TODO: consider adding memory pool to avoid dynamic construction of events
 /**
  * @brief The events manager is a utility class which allows the upper layer to easily send itself
  * events. It generates event id for debugging and to allow caller to cancel events.
