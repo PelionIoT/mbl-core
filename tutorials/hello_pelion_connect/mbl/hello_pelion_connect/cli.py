@@ -3,12 +3,14 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""Hello-world mbl application CLI."""
 
 import argparse
 import logging
 import sys
 import os
 import mbl.hello_pelion_connect.hello_pelion_connect as ccapp
+
 
 class GetValidFile(argparse.Action):
     """Utility class used in CLI argument parser scripts."""
@@ -52,7 +54,8 @@ def get_argument_parser():
         metavar="FILE",
         action=GetValidFile,
         default=os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "app_resource_definition.json"
+            os.path.dirname(os.path.abspath(__file__)),
+            "app_resource_definition.json",
         ),
     )
 
@@ -77,8 +80,7 @@ def _main():
     app.setup()
 
     logger.info("Call Hello Pelion Connect application register_resources")
-    app.register_resources(args.app_resource_definition_file)    
-    
+    app.register_resources(args.app_resource_definition_file)
+
     logger.info("Hello Pelion Connect application successfully finished")
     return 0
-
