@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "DBusAdapter.h"
+#include "DBusAdapter_Impl.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-#include "DBusAdapter_Impl.h"
+#include "DBusAdapter.h"
 #include "DBusService.h"
 #include "MailboxMsg.h"
 #include "ResourceBroker.h"
@@ -19,7 +19,6 @@
 #include <sstream>
 #include <vector>
 
-#define SD_ID_128_UNIQUE_ID_LEN 33
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl
@@ -385,6 +384,7 @@ static int log_and_set_sd_bus_error_f(
         return sd_bus_error_get_errno(ret_error);
     }
 
+    // do not replace this tr_err with TR_ERR!
     tr_err("%s::%d> %s", func, line, msg.str().c_str());
     return sd_bus_error_set_errnof(ret_error, err_num, "%s", msg.str().c_str());
 }
@@ -413,6 +413,7 @@ static int log_and_set_sd_bus_error(
         return sd_bus_error_get_errno(ret_error);
     }
 
+    // do not replace this tr_err with TR_ERR!
     tr_err(
         "%s::%d> %s failed errno = %s (%d)", func, line, method_name, strerror(err_num), err_num);
     return sd_bus_error_set_errno(ret_error, err_num);
@@ -570,16 +571,23 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
-    std::string sender(sd_bus_message_get_sender(m));
-    TR_INFO(
-        "Received message of type %s from sender %s", message_type_to_str(type), sender.c_str());
+    const char * csender = sd_bus_message_get_sender(m);
+    if (!csender){
+        std::stringstream msg("Unknown SENDER field on message header is not allowed!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
+    }
+    std::string sender(csender);
 
     // sender fields must be non-empty , must start with with colon and its length must be
     // larger than 1,
     if ((sender.size() <= 1) || (sender[0] != ':')) {
-        TR_ERR("Invalid sender, returning -EFAULT");
+        TR_ERR("Invalid sender=[%s] (sender connection ID must be at least 2 characters and start"
+            " with a colon) - returning -EFAULT", sender.c_str());
         return LOG_AND_SET_SD_BUS_ERROR(-EFAULT, ret_error, __func__);
     }
+    TR_INFO("Received message of type %s from sender %s", message_type_to_str(type),
+        sender.c_str());
+
     // Add sender to tracked connections (if not tracked already).
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
     r = impl->bus_track_sender(sender.c_str());
@@ -842,7 +850,6 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
     assert(m);
 
     const char* sender = sd_bus_message_get_sender(m);
-    assert(sender && strlen(sender) > 0);
     TR_INFO("Starting to process DergisterResources method call from sender %s", sender);
 
     std::string access_token;
@@ -1094,7 +1101,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     const char* signal_name,
     const CloudConnectStatus status)
 {
-    tr_debug("Enter");
+    TR_DEBUG_ENTER;
     assert(signal_name);
 
     if (state_.is_not_equal(DBusAdapterState::RUNNING)) {

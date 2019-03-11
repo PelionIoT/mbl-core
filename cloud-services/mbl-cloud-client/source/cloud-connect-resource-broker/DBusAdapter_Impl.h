@@ -36,6 +36,8 @@
 #define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME       "AddResourceInstancesStatus"
 #define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME    "RemoveResourceInstancesStatus"
 
+#define SD_ID_128_UNIQUE_ID_LEN 32
+
 namespace mbl {
 
 /**
@@ -291,20 +293,25 @@ private:
         uint32_t revents);  
 
     /**
-     * @brief 
+     * @brief callback used in sd_bus_track_new in order to track a specific bus name
+     * This callback is called when a name is removed from bus - that means a connection dropped.
+     * For more information refer to :
+     * https://www.freedesktop.org/software/systemd/man/sd_bus_track_new.html# 
      * 
-     * @param track 
-     * @param userdata 
-     * @return int 
+     * @param track - track object to create
+     * @param userdata - user data that has been passed when calling sd_bus_track_new
+     * @return int - the result of disconnected_bus_name_callback_impl (the actual implementation)
      */
     static int disconnected_bus_name_callback(sd_bus_track *track, void *userdata);
 
     /**
-     * @brief 
+     * @brief This is the actual implementation when disconnected_bus_name_callback is called. see
+     * disconnected_bus_name_callback for more information
      * 
-     * @param track 
-     * @param userdata 
-     * @return int 
+     * @param track - track object to create
+     * @param userdata - user data that has been passed when calling sd_bus_track_new
+     * @return int - 0 on success, or -EBADF on failire (track object not found in 
+     * connections_tracker_ )
      */
     int disconnected_bus_name_callback_impl(sd_bus_track *track);
 
@@ -585,7 +592,7 @@ public:
     using DBusAdapterState = State::eState;
 
     /**
-     * brief Generate unique access token using sd_id128_randomize
+     * @brief Generate unique access token using sd_id128_randomize
      * See DBusAdapter.h for complete documentation.
      */
     std::pair<MblError, std::string> generate_access_token();

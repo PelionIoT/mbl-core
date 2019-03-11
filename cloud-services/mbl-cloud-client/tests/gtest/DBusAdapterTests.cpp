@@ -32,6 +32,7 @@
 #include <semaphore.h>
 #include <stdlib.h>
 #include <vector>
+#include <unordered_set>
 
 #define TRACE_GROUP "ccrb-dbus-gtest"
 
@@ -931,4 +932,28 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
 
     // deinitialize adapter
     ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
+/**
+ * @brief Check 100K times calls to generate access tocken, we never get the same token and 
+ * call succeed. Check also that length of generated token is 
+ * 
+ */
+TEST(DBusAdapter_AccessTokenGenerating, check_non_repeating)
+{
+    const ssize_t NUM_ITERATIONS = 100000;
+    ResourceBroker broker;
+    DBusAdapter adapter(broker);
+    //use and unordered set - prefer speed
+    std::unordered_set<std::string> generated_access_tokens;
+
+    for (auto i = 0; i < NUM_ITERATIONS; ++i){
+        auto pair = adapter.generate_access_token();        
+        ASSERT_EQ(pair.first, MblError::None);
+        ASSERT_EQ(pair.second.size(), SD_ID_128_UNIQUE_ID_LEN);
+
+        //check it has never been generated
+        ASSERT_EQ(generated_access_tokens.find(pair.second), generated_access_tokens.end());
+        generated_access_tokens.insert(pair.second);
+    }
 }
