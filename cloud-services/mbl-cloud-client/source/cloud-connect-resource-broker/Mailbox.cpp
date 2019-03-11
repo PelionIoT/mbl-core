@@ -82,7 +82,7 @@ MblError Mailbox::deinit()
     TR_DEBUG_ENTER;
     assert(DBUS_MAILBOX_PROTECTION_FLAG == protection_flag_);
 
-    // TODO : we need to make sure no one is reading/writing to the pipe - implement this by
+    // TODO: we need to make sure no one is reading/writing to the pipe - implement this by
     // external API
     // usually each side closes its edge, but here we might make easier assumptions
     // first, close the WRITE

@@ -60,7 +60,7 @@ public:
      */
     void register_resources_test(
         const mbl::IpcConnection &source,
-        const std::string& app_resource_definition_json,
+        const std::string& app_resource_definition,
         CloudConnectStatus& out_status,
         std::string& out_access_token,
         mbl::MblError expected_error_status,

@@ -44,14 +44,13 @@ TEST(Resource_Broker_Positive, registration_success)
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const mbl::IpcConnection source("");
     const std::string application_resource_definition = 
         VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        source,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -77,19 +76,19 @@ TEST(Resource_Broker_Positive, registration_success)
  * 6. ApplicationEndpoint notify the Resource Broker that registration FAILED
  * 7. Resource Broker notifys DbusAdapter that registration was FAILED
  */
-TEST(Resource_Broker_Negative, parsing_succedded_registration_failed) {
+TEST(Resource_Broker_Negative, parsing_succedded_registration_failed)
 {
     GTEST_LOG_START_TEST;
 
+    
     ResourceBrokerTester resource_broker_tester;
-    const mbl::IpcConnection source("");
     const std::string application_resource_definition =
         VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        source,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -116,13 +115,12 @@ TEST(Resource_Broker_Negative, invalid_app_resource_definition_1)
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const mbl::IpcConnection source("");
     const std::string application_resource_definition = INVALID_APP_RESOURCE_DEFINITION_NOT_3_LEVEL_1;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        source,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -263,10 +261,9 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded)
 
 void ResourceBroker_start_stop(size_t times) {
 
-    MbedCloudClient test_mbed_client;
     mbl::ResourceBroker resource_broker;
     for( size_t i = 0; i < times; ++i){
-        ASSERT_EQ(mbl::Error::None, resource_broker.start(&test_mbed_client));
+        ASSERT_EQ(mbl::Error::None, resource_broker.start(nullptr));
         ASSERT_EQ(mbl::Error::None, resource_broker.stop());
     }
 }

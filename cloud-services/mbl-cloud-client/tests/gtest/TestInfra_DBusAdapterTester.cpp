@@ -82,7 +82,7 @@ TestInfra_DBusAdapterTester::send_event_periodic(Event::EventData data,
 
 void TestInfra_DBusAdapterTester::unref_event_source(Event* ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     ev->sd_event_source_ = sd_event_source_unref(ev->sd_event_source_);
 }
 

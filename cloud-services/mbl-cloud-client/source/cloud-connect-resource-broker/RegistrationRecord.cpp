@@ -72,7 +72,7 @@ MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
                                                       std::string& out_resource_name,
                                                       std::string& out_resource_instance_name)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     std::size_t current_pos = path.find_first_of(PATH_SEPERATOR);
 

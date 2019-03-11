@@ -429,7 +429,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
 
     // Validate that revents contains epoll read event flag
     if ((revents & EPOLLIN) == 0) {
-        // TODO : not sure if this error is possible - if it is -
+        // TODO: not sure if this error is possible - if it is -
         // we need to restart thread/process or target (??)
 
         TR_ERR("(revents & EPOLLIN == 0), returning -EBADFD to  disable event source");
@@ -438,7 +438,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
 
     // Another validation - given fd is the one belongs to the mailbox (input side)
     if (fd != mailbox_in_.get_pipefd_read()) {
-        // TODO : handle on upper layer - need to notify somehow
+        // TODO: handle on upper layer - need to notify somehow
         TR_ERR("fd does not belong to incoming mailbox_in_,"
                "returning %d to disable event source",
                -EBADF);
@@ -514,11 +514,11 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     assert(m);
     assert(ret_error);
 
-    // TODO - For all failues here, might need to send an error reply ONLY if the message is of
+    // TODO: For all failues here, might need to send an error reply ONLY if the message is of
     // kind method_call (can check that) check what is done in other implementations
     // see https://www.freedesktop.org/software/systemd/man/sd_bus_message_get_type.html#
 
-    // TODO - as of now, we do not expect for this callback any empty message.
+    // TODO: as of now, we do not expect for this callback any empty message.
     // In the future - if there are any empty messages - need to handle them here
     // (for now only standard)
     if (sd_bus_message_is_empty(m) != 0) {
@@ -614,7 +614,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
     else
     {
-        // TODO - probably need to reply with error reply to sender?
+        // TODO: probably need to reply with error reply to sender?
         TR_ERR("Received a message with unknown member=%s!", sd_bus_message_get_member(m));
         assert(0);
     }
@@ -835,7 +835,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
             mbl_reg_err, out_cc_reg_status, "register_resources", ret_error);
     }
 
-    // TODO - IOTMBL-1527
+    // TODO: IOTMBL-1527
     // validate app registered expected interface on bus? (use sd-bus track)
 
     // register_resources succeeded. Send method-reply to the D-Bus connection that
@@ -1111,8 +1111,6 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
         return MblError::DBA_IllegalState;
     }
 
-    sd_bus_message* m_to_signal_on =
-    sd_bus_message* m_to_signal_on = reinterpret_cast<sd_bus_message*>(ipc_request_handle);
     sd_bus_message* m_signal = nullptr;
     sd_bus_object_cleaner<sd_bus_message> signal_cleaner(m_signal, sd_bus_message_unref);
 
@@ -1221,7 +1219,7 @@ std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_immediate(Event::Event
                                                                     Event::UserCallback callback,
                                                                     const std::string& description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(callback);
 
     // Must be first! only CCRB initializer thread should call this function.

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// TODO - decide if we want to keep this file before going back to master
+// TODO: decide if we want to keep this file before going back to master
 
 /*
 pre-processor macros which Add function name line number on top of mbed-trace/mbed_trace.h

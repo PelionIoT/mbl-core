@@ -77,7 +77,6 @@ inline bool is_file_exist (const std::string& path) {
     return ( access( path.c_str(), F_OK ) != -1 );
 }
 
-
 /**
  * @brief Initialize gtest environment for mbl-cloud-client-gtest :
  * * Stop mbl-cloud-client if exist

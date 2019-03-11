@@ -249,7 +249,7 @@ public:
 
     void SetUp() override
     {
-        TR_DEBUG("Enter");
+        TR_DEBUG_ENTER;
         ASSERT_GE(sd_event_default(&event_loop_handle_), 0);
         iteration_ = 0;
     }
@@ -268,7 +268,7 @@ milliseconds EventManagerTestFixture::send_time_(0);
 MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, const Event* ev)
 {
     UNUSED(s);
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     const Event::EventData& event_data = ev->get_data();
     OneSetMblError result;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
@@ -356,7 +356,7 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_immediate)
 MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_source* s,
                                                                      const Event* ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     OneSetMblError error;
     uint64_t delay_milliseconds = 0;
@@ -795,7 +795,7 @@ public:
 
     void SetUp() override
     {
-        TR_DEBUG("Enter");
+        TR_DEBUG_ENTER;
         callback_count_ = 1;
     }
 
@@ -811,7 +811,7 @@ MblError
 DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback(sd_event_source* s,
                                                                          const Event* ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     milliseconds arrive_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     const EventPeriodic* periodic_ev = dynamic_cast<const EventPeriodic*>(ev);

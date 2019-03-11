@@ -41,7 +41,7 @@ EventPeriodic::EventPeriodic(EventData& data,
                    description),
       period_millisec_(period_millisec)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(period_millisec >= min_periodic_event_duration_millisec &&
            period_millisec <= max_periodic_event_duration_millisec);
 }
@@ -50,7 +50,7 @@ int EventPeriodic::immediate_event_handler(sd_event_source* s,
                                            uint64_t microseconds,
                                            void* userdata)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     assert(userdata);
     assert(s);
@@ -118,7 +118,7 @@ int EventPeriodic::immediate_event_handler(sd_event_source* s,
 
 int EventPeriodic::send()
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     uint64_t when_to_expire_microseconds = 0; // next experation timestamp in microseconds
 

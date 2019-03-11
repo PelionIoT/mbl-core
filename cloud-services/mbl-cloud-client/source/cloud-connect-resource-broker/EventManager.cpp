@@ -77,7 +77,7 @@ int EventManager::unmanage_event(sd_event_source* s, Event* ev)
         return (-EINVAL);
     }
 
-    // TODO -IOTMBL-1686 consider adding a "free pool" to avoid dynamic allocations and
+    // TODO:IOTMBL-1686 consider adding a "free pool" to avoid dynamic allocations and
     // deallocations, this will be a vector or queue of pre allocated elements, with a bitmap
     // pointing. on free elements. if no empty left - double the size. need 2 functions with lock
     // guard at the entrance - something like get_free_element and return_element
@@ -88,7 +88,7 @@ int EventManager::unmanage_event(sd_event_source* s, Event* ev)
 
 void EventManager::do_send_event(std::unique_ptr<Event>& ev)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     assert(ev);
 
     // send immediate event
@@ -134,7 +134,7 @@ std::pair<MblError, uint64_t> EventManager::send_event_periodic(Event::EventData
                                                                 uint64_t period_millisec,
                                                                 const std::string& description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     if (!validate_periodic_event_parameters(data_type, data_length, period_millisec)) {
         std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);

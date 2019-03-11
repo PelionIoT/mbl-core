@@ -96,7 +96,7 @@ private:
     // containing object for
     ResourceBroker& ccrb_;
 
-    // TODO : (when upper layer code is more complete)
+    // TODO: (when upper layer code is more complete)
     // consider set <atomic> + add conditional variable in order to
     // synchronize upper layer init/deinit in a simple way
     /**
@@ -465,7 +465,7 @@ private:
     Mailbox     mailbox_in_;   
 
     // An event manager to allow sending immediate/periodic events
-    // TODO - clear on deinit
+    // TODO: clear on deinit
     EventManager event_manager_;
 
     // The pthread_t thread ID of the initializing thread (CCRB thread) 

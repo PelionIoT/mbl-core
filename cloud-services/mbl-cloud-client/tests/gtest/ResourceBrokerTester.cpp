@@ -83,7 +83,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     const std::string& access_token,
     CloudConnectStatus dbus_adapter_expected_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     auto itr = resource_broker_.registration_records_.find(access_token);
     ASSERT_TRUE(resource_broker_.registration_records_.end() !=
@@ -123,7 +123,7 @@ void ResourceBrokerTester::get_m2m_resource_test(
     const std::string& path,
     mbl::MblError expected_error_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     auto itr = resource_broker_.registration_records_.find(access_token);
     ASSERT_TRUE(resource_broker_.registration_records_.end() !=
@@ -146,10 +146,11 @@ void ResourceBrokerTester::set_resources_values_test(
     const std::vector<mbl::ResourceSetOperation> expected_inout_set_operations,
     const CloudConnectStatus expected_out_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     
     CloudConnectStatus out_status;
     mbl::MblError status = resource_broker_.set_resources_values(
+        "source1",
         access_token,
         inout_set_operations,
         out_status);

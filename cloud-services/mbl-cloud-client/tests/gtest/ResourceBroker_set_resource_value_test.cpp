@@ -15,10 +15,12 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include "TestInfra.h"
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"
+#include "CloudConnectTypes.h"
+
+#include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-set_res_value-test"
 
@@ -108,12 +110,11 @@ TEST_P(ResourceBrokerTest, get_m2m_resource)
         get_m2m_resource_entry_vector[(size_t)GetParam()];
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),        
         test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -137,14 +138,13 @@ TEST(Resource_Broker_Positive, set_resource_value) {
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     const std::string application_resource_definition = 
         VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -187,14 +187,13 @@ TEST(Resource_Broker_Negative, set_resource_value_invalid_type) {
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     const std::string application_resource_definition = 
         VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -237,14 +236,13 @@ TEST(Resource_Broker_Negative, set_resource_value_resource_not_found) {
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     const std::string application_resource_definition = 
         VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -287,14 +285,13 @@ TEST(Resource_Broker_Negative, set_resource_value_invalid_path) {
     GTEST_LOG_START_TEST;
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     const std::string application_resource_definition = 
         VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,

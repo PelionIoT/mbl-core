@@ -91,7 +91,7 @@ std::pair<MblError, uint64_t> DBusAdapter::send_event_immediate(Event::EventData
                                                                 Event::UserCallback callback,
                                                                 const std::string& description)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     return impl_->send_event_immediate(data, data_length, data_type, callback, description);
 }
 

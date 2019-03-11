@@ -58,7 +58,7 @@ public:
      */
     MblError  init();
 
-    //TODO make sure producer doesnt touch the mailbox (use initialzer thread id) 
+    //TODO:make sure producer doesnt touch the mailbox (use initialzer thread id) 
     // (using CCRB API - not not use any mutexes!)
     /**
      * @brief deinitialize mailbox, removes and clear any pending events if exist.

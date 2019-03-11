@@ -36,7 +36,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     // Initialization of the semaphore and call to the sem_timedwait will be removed.
 
     TR_DEBUG_ENTER;
-    assert(cloud_client);
+    //assert(cloud_client);     // TODO: uncomment after solving PAL issues on Linux Desktop
     cloud_client_ = cloud_client;
 
     // initialize init semaphore
@@ -514,7 +514,7 @@ CloudConnectStatus
 ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration_record,
                                        ResourceData resource_data)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
 
     std::string resource_path = resource_data.get_path();
     std::pair<MblError, M2MResource*> ret_pair =
@@ -553,11 +553,10 @@ ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
-MblError ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
-                                              const std::string& /*unused*/,
-                                              std::vector<ResourceSetOperation>& /*unused*/,
-											  CloudConnectStatus& /*unused*/)
 
+bool ResourceBroker::validate_set_resources_input_params(
+    const RegistrationRecord_ptr registration_record,
+    std::vector<ResourceSetOperation>& inout_set_operations)
 {
     TR_DEBUG("Enter");
     bool status = true;
@@ -626,7 +625,8 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
 }
 
 MblError
-ResourceBroker::set_resources_values(const std::string& access_token,
+ResourceBroker::set_resources_values(const IpcConnection & /*source*/,
+                                     const std::string& access_token,
                                      std::vector<ResourceSetOperation>& inout_set_operations,
                                      CloudConnectStatus& out_status)
 {
@@ -662,7 +662,7 @@ bool ResourceBroker::validate_get_resources_input_params(
     RegistrationRecord_ptr registration_record,
     std::vector<ResourceGetOperation>& inout_get_operations)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_get_operations) {
@@ -678,10 +678,11 @@ bool ResourceBroker::validate_get_resources_input_params(
     return status;
 }
 
-MblError ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
-                                              const std::string& /*unused*/,
-                                              std::vector<ResourceGetOperation>& /*unused*/,
-                                              CloudConnectStatus& /*unused*/)
+MblError ResourceBroker::get_resources_values(
+        const IpcConnection & /*source*/,
+        const std::string &access_token, 
+        std::vector<ResourceGetOperation> &inout_get_operations,
+        CloudConnectStatus &out_status)
 {
     TR_DEBUG_ENTER;
 
@@ -711,7 +712,7 @@ MblError ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
 void ResourceBroker::notify_connection_closed(const IpcConnection& /*source*/)
 {
     TR_DEBUG_ENTER;
-    // TODO implement
+    // TODO:implement
     assert(0);
 }
 

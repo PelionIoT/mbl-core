@@ -146,7 +146,7 @@ OneSetMblError::OneSetMblError() : err_(MblError::None), one_time_set_flag_(true
 OneSetMblError::OneSetMblError(const MblError init_val)
     : err_(MblError::None), one_time_set_flag_(true)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     set(init_val);
 }
 
