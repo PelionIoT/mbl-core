@@ -16,12 +16,10 @@
  */
 #include "CloudConnectTypes.h"
 #include "ResourceBroker.h"
-#include "MbedCloudClient.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 #include "TestInfra.h"
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"
-#include "TestInfra.h"
-
 
 #include <gtest/gtest.h>
 

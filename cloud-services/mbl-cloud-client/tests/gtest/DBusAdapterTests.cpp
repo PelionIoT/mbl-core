@@ -935,8 +935,8 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
 }
 
 /**
- * @brief Check 100K times calls to generate access tocken, we never get the same token and 
- * call succeed. Check also that length of generated token is 
+ * @brief Check 100K times calls to generate access token, we never get the same token and 
+ * call succeed. Check also that length of generated token is SD_ID_128_UNIQUE_ID_LEN
  * 
  */
 TEST(DBusAdapter_AccessTokenGenerating, check_non_repeating)

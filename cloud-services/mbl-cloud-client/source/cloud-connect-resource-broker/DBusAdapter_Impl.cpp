@@ -178,10 +178,10 @@ int DBusAdapterImpl::disconnected_bus_name_callback_impl(sd_bus_track* track)
         TR_ERR("track object not found in connections_tracker_!returning error -EBADF");
         return -EBADF;
     }
-    const char* disconnected_bus_name = iter->first;
+    std::string disconnected_bus_name = iter->first;
     connections_tracker_.erase(iter);
 
-    TR_INFO("bus name=%s disconnected! Informing CCRB!", disconnected_bus_name);
+    TR_INFO("bus name=%s disconnected! Informing CCRB!", disconnected_bus_name.c_str());
     bus_track_debug();
 
     ccrb_.notify_connection_closed(IpcConnection(disconnected_bus_name));
@@ -384,7 +384,7 @@ static int log_and_set_sd_bus_error_f(
         return sd_bus_error_get_errno(ret_error);
     }
 
-    // do not replace this tr_err with TR_ERR!
+    // do not replace this tr_err with TR_ERR! - this is a formatting
     tr_err("%s::%d> %s", func, line, msg.str().c_str());
     return sd_bus_error_set_errnof(ret_error, err_num, "%s", msg.str().c_str());
 }
@@ -413,7 +413,7 @@ static int log_and_set_sd_bus_error(
         return sd_bus_error_get_errno(ret_error);
     }
 
-    // do not replace this tr_err with TR_ERR!
+    // do not replace this tr_err with TR_ERR! - this is a formatting
     tr_err(
         "%s::%d> %s failed errno = %s (%d)", func, line, method_name, strerror(err_num), err_num);
     return sd_bus_error_set_errno(ret_error, err_num);
@@ -1126,7 +1126,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     }
 
     // set destination of signal message
-    const char* signal_dest = destination_to_update.get_connection_id_as_cstring();
+    const char* signal_dest = destination_to_update.get_connection_id().c_str();
     r = sd_bus_message_set_destination(m_signal, signal_dest);
     if (r < 0) {
         TR_ERRNO_F("sd_bus_message_set_destination", r, "(signal destination=%s)", signal_dest);

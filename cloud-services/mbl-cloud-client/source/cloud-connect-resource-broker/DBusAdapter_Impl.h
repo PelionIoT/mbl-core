@@ -377,7 +377,7 @@ private:
     // Key : unique connection ID
     // Value : sd_bus_track* object (I chose not to use a unique pointer).
     // on dtor if there are any pairs inside
-    std::map < const char*, sd_bus_track* >  connections_tracker_;
+    std::map < std::string, sd_bus_track* >  connections_tracker_;
 
     /*
    == sd-event members==

@@ -111,7 +111,7 @@ public:
      * to the sd-event loop object.
      * @return int - return the fd.
      */
-    inline int       get_pipefd_read() { return pipefds_[READ]; }
+    inline int get_pipefd_read() { return pipefds_[READ]; }
 
     /**
      * @brief Get the name of the mail box assigned on ctor

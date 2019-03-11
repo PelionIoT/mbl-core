@@ -7,8 +7,7 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-#include "MbedCloudClient.h"
-#include "MblCloudClient.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 
 #include <cassert>
 #include <time.h>

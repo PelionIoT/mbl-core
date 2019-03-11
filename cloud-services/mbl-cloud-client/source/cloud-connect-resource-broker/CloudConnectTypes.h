@@ -228,13 +228,12 @@ private:
 class IpcConnection
 {
 public:
-    IpcConnection(const char * connection_id) :
+    IpcConnection(const std::string & connection_id) :
         connection_id_(connection_id) 
         {};
 
     // getters
     inline const std::string& get_connection_id() const { return connection_id_; }
-    inline const char* get_connection_id_as_cstring() const  { return connection_id_.c_str(); }
 
 private:
     IpcConnection() = delete;
