@@ -572,7 +572,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     const char* csender = sd_bus_message_get_sender(m);
-    if (!csender) {
+    if (nullptr == csender) {
         std::stringstream msg("Unknown SENDER field on message header is not allowed!");
         return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
