@@ -65,11 +65,12 @@ class TestAppLifecycleManager:
 
         teardown_method is invoked for every test method of a class.
         """
-        # Kill container in case test failed
+        # Kill the test user application in case a test case fails to
+        # terminate/kill it.
+        # Do not assert because mbl-app-lifecycle-manager returns an error code
+        # if instructed to kill a non-existing application.
         print("Teardown method start...")
-        assert (
-            kill_app(cls.app_name, False) == alm_cli.ReturnCode.SUCCESS.value
-        )
+        kill_app(cls.app_name, False)
         print("Teardown method end")
 
     # ---------------------------- Test Methods -----------------------------
