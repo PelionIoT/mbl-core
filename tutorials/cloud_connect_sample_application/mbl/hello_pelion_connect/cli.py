@@ -8,7 +8,7 @@ import argparse
 import logging
 import sys
 import os
-import mbl.cloud_connect_sample_application.cloud_connect_sample_application as ccapp
+import mbl.hello_pelion_connect.hello_pelion_connect as ccapp
 
 class GetValidFile(argparse.Action):
     """Utility class used in CLI argument parser scripts."""
@@ -35,7 +35,7 @@ def get_argument_parser():
     """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Cloud Connect sample application",
+        description="Hello Pelion Connect application",
     )
 
     parser.add_argument(
@@ -71,14 +71,14 @@ def _main():
     logger = logging.getLogger("mbl-app-cloud-connect")
     logger.debug("Command line arguments:{}".format(args))
 
-    app = ccapp.CloudConnectSampleApp()
+    app = ccapp.HelloPelionConnect()
 
-    logger.info("Call Cloud Connect sample application setup")
+    logger.info("Call Hello Pelion Connect application setup")
     app.setup()
 
-    logger.info("Call Cloud Connect sample application register_resources")
+    logger.info("Call Hello Pelion Connect application register_resources")
     app.register_resources(args.app_resource_definition_json_file)    
     
-    logger.info("Cloud Connect sample application successfully finished")
+    logger.info("Hello Pelion Connect application successfully finished")
     return 0
 

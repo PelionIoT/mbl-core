@@ -1,17 +1,17 @@
-# MBL Cloud Client over D-Bus sample application
+# MBL Pelion Connect hello-world application
 
-The Cloud Client sample application runs in a virtual environment.
+The Pelion Connect hello-world application runs in a virtual environment.
 
 To set up the virtual environment, perform the following steps:
 
-1. Copy sample application subtree `/mbl-core/tutorials/cloud_connect_sample_application`
+1. Copy application subtree `/mbl-core/tutorials/hello_pelion_connect`
    to the device under the `/scratch` partition.
    
 1. Make sure the device has internet connection 
 
 1. Set the current directory as follows:
    ```shell
-    cd /scratch/cloud_connect_sample_application
+    cd /scratch/hello_pelion_connect
    ```
    
 1. Create virtual environment:
@@ -35,9 +35,9 @@ To set up the virtual environment, perform the following steps:
    pip install . --upgrade
    ```
 
-Run sample application:
+Run application:
    ```shell
-   cloud_connect_sample_application
+   hello_pelion_connect
    ```
 
 Exit virtual environment:

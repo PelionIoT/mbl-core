@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Sample application that demonstrates mbl application connectivity to Cloud Client."""
+"""Application that demonstrates mbl application connectivity to Pelion Connect service."""
 
 import os
 import sys
@@ -19,28 +19,28 @@ from gi.repository import GLib
 DISPLAY = "0"
 
 # tell D-Bus binding (gd-bus) what is the bus address (which is unix socket path)   
-DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
+DBUS_MBL_PELION_CONNECT_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 
-CLOUD_CONNECT_DBUS_NAME = "com.mbed.Cloud"
-CLOUD_CONNECT_DBUS_OBJECT_PATH = (
+PELION_CONNECT_DBUS_NAME = "com.mbed.Cloud"
+PELION_CONNECT_DBUS_OBJECT_PATH = (
     "/com/mbed/Cloud/Connect1"
 )
 
-class CloudConnectSampleApp:
-    """Cloud Connect sample application main class."""
+class HelloPelionConnect:
+    """Hello Pelion Connect application main class."""
     logger = logging.getLogger("mbl-app-cloud-connect")    
 
     
     def setup(self):
         """Set up connection to D-Bus."""
         self.logger.info("Connecting to D-Bus {} D-Bus object {}...".format(
-            CLOUD_CONNECT_DBUS_NAME, 
-            CLOUD_CONNECT_DBUS_OBJECT_PATH
+            PELION_CONNECT_DBUS_NAME, 
+            PELION_CONNECT_DBUS_OBJECT_PATH
             )
         )
 
         os.environ["DISPLAY"] = DISPLAY
-        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_CLOUD_BUS_ADDRESS
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_PELION_CONNECT_BUS_ADDRESS
 
         # get the session bus
         self.bus = SessionBus()
@@ -48,23 +48,23 @@ class CloudConnectSampleApp:
         try:
             # connect to the bus
             self.cc_object = self.bus.get(
-                CLOUD_CONNECT_DBUS_NAME,
-                object_path=CLOUD_CONNECT_DBUS_OBJECT_PATH,
+                PELION_CONNECT_DBUS_NAME,
+                object_path=PELION_CONNECT_DBUS_OBJECT_PATH,
             )
         except GLib.GError:
             self.logger.error("Connection to the D-Bus {} object {} failed!".format(
-                CLOUD_CONNECT_DBUS_NAME, 
-                CLOUD_CONNECT_DBUS_OBJECT_PATH
+                PELION_CONNECT_DBUS_NAME, 
+                PELION_CONNECT_DBUS_OBJECT_PATH
                 )
             )
 
         assert self.cc_object, "Couldn't get {} D-Bus object".format(
-            CLOUD_CONNECT_DBUS_OBJECT_PATH
+            PELION_CONNECT_DBUS_OBJECT_PATH
         )
         
         self.logger.info("Successfully connected to the D-Bus {} object {}...".format(
-            CLOUD_CONNECT_DBUS_NAME, 
-            CLOUD_CONNECT_DBUS_OBJECT_PATH
+            PELION_CONNECT_DBUS_NAME, 
+            PELION_CONNECT_DBUS_OBJECT_PATH
             )
         )
 
