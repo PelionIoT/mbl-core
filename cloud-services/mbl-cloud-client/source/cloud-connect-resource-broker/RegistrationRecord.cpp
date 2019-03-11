@@ -83,11 +83,10 @@ MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
     }
 
     std::size_t last_pos = path.find_last_of(PATH_SEPERATOR);
-    if(last_pos == path.length() - 1) {
+    if (last_pos == path.length() - 1) {
         TR_ERR("Invalid path: %s, should end with '/'", path.c_str());
         return Error::CCRBInvalidResourcePath;
     }
-    
 
     // Split all identifiers by path seperator and push into resource_identifiers vector
     std::string substr;
@@ -100,7 +99,7 @@ MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
         }
         previous_pos = current_pos + 1;
         current_pos = path.find_first_of(PATH_SEPERATOR, previous_pos);
-        if(current_pos == previous_pos) {
+        if (current_pos == previous_pos) {
             TR_ERR("Invalid path: %s, Two subsequent '/' are not allowed", path.c_str());
             return Error::CCRBInvalidResourcePath;
         }
@@ -109,7 +108,9 @@ MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
 
     // In case of object/object_instance,resource - depth is 3
     // In case of object/object_instance,resource/resource_instance - depth is 4
-    if ((resource_identifiers.size() < RESOURCE_DEPTH) || (resource_identifiers.size() > RESOURCE_INSTANCE_DEPTH)) {
+    if ((resource_identifiers.size() < RESOURCE_DEPTH) ||
+        (resource_identifiers.size() > RESOURCE_INSTANCE_DEPTH))
+    {
         TR_ERR("Invalid path: %s, depth = %d", path.c_str(), (int) resource_identifiers.size());
         return Error::CCRBInvalidResourcePath;
     }
@@ -142,7 +143,7 @@ MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
         TR_ERR("Invalid path: %s, invalid argument instance id value: %s",
                path.c_str(),
                resource_identifiers[OBJECT_INSTANCE_INDEX].c_str());
-        return Error::CCRBInvalidResourcePath;        
+        return Error::CCRBInvalidResourcePath;
     }
     if (object_instance_id < 0 || object_instance_id > UINT16_MAX) {
         TR_ERR("Invalid path %s, object_instance_id allowed value should be between 0 and %d",
@@ -191,7 +192,7 @@ std::pair<MblError, M2MResource*> RegistrationRecord::get_m2m_resource(const std
     M2MResource* m2m_resource = nullptr;
     for (auto& obj_itr : m2m_object_list_) {
         // Object names and object instances are unique as we use strict mode app definition parsing
-        
+
         // Object names are unique
         M2MObject* m2m_object = obj_itr;
         if (object_name != m2m_object->name()) {

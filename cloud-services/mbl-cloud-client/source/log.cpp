@@ -120,9 +120,9 @@ extern "C" char* mbl_trace_prefix_handler(size_t)
 namespace mbl
 {
 
-MblError log_init(const char *user_log_path)
+MblError log_init(const char* user_log_path)
 {
-    assert(g_log_stream == 0);    
+    assert(g_log_stream == 0);
     g_log_stream = std::fopen(user_log_path ? user_log_path : g_log_path, "a");
     if (!g_log_stream) {
         std::perror("log_init: fopen");

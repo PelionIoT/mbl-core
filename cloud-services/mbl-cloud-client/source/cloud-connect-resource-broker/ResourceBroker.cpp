@@ -36,7 +36,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
     // Initialization of the semaphore and call to the sem_timedwait will be removed.
 
     TR_DEBUG_ENTER;
-    //assert(cloud_client);     // TODO: uncomment after solving PAL issues on Linux Desktop
+    // assert(cloud_client);     // TODO: uncomment after solving PAL issues on Linux Desktop
     cloud_client_ = cloud_client;
 
     // initialize init semaphore
@@ -553,12 +553,11 @@ ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
-
 bool ResourceBroker::validate_set_resources_input_params(
     const RegistrationRecord_ptr registration_record,
     std::vector<ResourceSetOperation>& inout_set_operations)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_set_operations) {
@@ -579,7 +578,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
                                    const ResourceData resource_data)
 {
     TR_DEBUG_ENTER;
-    
+
     const std::string path = resource_data.get_path();
 
     // No need to check ret_pair as we already did a validity check and we know it exists
@@ -593,8 +592,8 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
         int64_t value = resource_data.get_value_integer();
         if (!m2m_resource->set_value(value)) {
             TR_ERR("Set value of resource: %s to: %" PRId64 " (type: integer) failed",
-                    path.c_str(),
-                    value);
+                   path.c_str(),
+                   value);
             return CloudConnectStatus::ERR_INTERNAL_ERROR;
         }
         TR_INFO("Set value of resource: %s to: %" PRId64 " (type: integer) succeeded.",
@@ -609,8 +608,8 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
         std::vector<uint8_t> value_uint8(value.begin(), value.end());
         if (!m2m_resource->set_value(value_uint8.data(), value_length)) {
             TR_ERR("Set value of resource: %s to: %s (type: string) failed",
-                    path.c_str(),
-                    value.c_str());
+                   path.c_str(),
+                   value.c_str());
             return CloudConnectStatus::ERR_INTERNAL_ERROR;
         }
         TR_INFO("Set value of resource: %s to: %s (type: string) succeeded.",
@@ -625,7 +624,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
 }
 
 MblError
-ResourceBroker::set_resources_values(const IpcConnection & /*source*/,
+ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
                                      const std::string& access_token,
                                      std::vector<ResourceSetOperation>& inout_set_operations,
                                      CloudConnectStatus& out_status)
@@ -678,11 +677,11 @@ bool ResourceBroker::validate_get_resources_input_params(
     return status;
 }
 
-MblError ResourceBroker::get_resources_values(
-        const IpcConnection & /*source*/,
-        const std::string &access_token, 
-        std::vector<ResourceGetOperation> &inout_get_operations,
-        CloudConnectStatus &out_status)
+MblError
+ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
+                                     const std::string& access_token,
+                                     std::vector<ResourceGetOperation>& inout_get_operations,
+                                     CloudConnectStatus& out_status)
 {
     TR_DEBUG_ENTER;
 

@@ -571,8 +571,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
-    const char * csender = sd_bus_message_get_sender(m);
-    if (!csender){
+    const char* csender = sd_bus_message_get_sender(m);
+    if (!csender) {
         std::stringstream msg("Unknown SENDER field on message header is not allowed!");
         return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
@@ -582,11 +582,12 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     // larger than 1,
     if ((sender.size() <= 1) || (sender[0] != ':')) {
         TR_ERR("Invalid sender=[%s] (sender connection ID must be at least 2 characters and start"
-            " with a colon) - returning -EFAULT", sender.c_str());
+               " with a colon) - returning -EFAULT",
+               sender.c_str());
         return LOG_AND_SET_SD_BUS_ERROR(-EFAULT, ret_error, __func__);
     }
-    TR_INFO("Received message of type %s from sender %s", message_type_to_str(type),
-        sender.c_str());
+    TR_INFO(
+        "Received message of type %s from sender %s", message_type_to_str(type), sender.c_str());
 
     // Add sender to tracked connections (if not tracked already).
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
