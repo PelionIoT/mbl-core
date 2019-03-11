@@ -1,10 +1,10 @@
-# MBL Cloud Client over DBus sample application
+# MBL Cloud Client over D-Bus sample application
 
 The Cloud Client sample application runs in a virtual environment.
 
 To set up the virtual environment, perform the following steps:
 
-1. Copy sample application subtree `/home/maxaxe01/work/mbl-core/tutorials/cloud_connect_sample_application`
+1. Copy sample application subtree `/mbl-core/tutorials/cloud_connect_sample_application`
    to the device under the `/scratch` partition.
    
 1. Make sure the device has internet connection 

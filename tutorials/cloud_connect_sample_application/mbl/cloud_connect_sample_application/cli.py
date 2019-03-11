@@ -76,11 +76,8 @@ def _main():
     logger.info("Call Cloud Connect sample application setup")
     app.setup()
 
-    with open(args.app_resource_definition_json_file, 'r') as json_file:
-        json_data = json_file.read().strip()
-    
     logger.info("Call Cloud Connect sample application register_resources")
-    app.register_resources(json_data)    
+    app.register_resources(args.app_resource_definition_json_file)    
     
     logger.info("Cloud Connect sample application successfully finished")
     return 0
