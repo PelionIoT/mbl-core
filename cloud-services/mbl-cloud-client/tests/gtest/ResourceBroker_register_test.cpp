@@ -258,12 +258,24 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded) {
         CloudConnectStatus::STATUS_SUCCESS);    
 }
 
-TEST(Resource_Broker_Positive, start_stop) {
-
-    GTEST_LOG_START_TEST;
+void ResourceBroker_start_stop(size_t times) {
 
     MbedCloudClient test_mbed_client;
     mbl::ResourceBroker resource_broker;
-    ASSERT_EQ(mbl::Error::None, resource_broker.start(&test_mbed_client));
-    ASSERT_EQ(mbl::Error::None, resource_broker.stop());
+    for( size_t i = 0; i < times; ++i){
+        ASSERT_EQ(mbl::Error::None, resource_broker.start(&test_mbed_client));
+        ASSERT_EQ(mbl::Error::None, resource_broker.stop());
+    }
+}
+
+TEST(Resource_Broker_Positive, start_stop_20_times) {
+
+    GTEST_LOG_START_TEST;
+    ResourceBroker_start_stop(20);
+}
+
+TEST(Resource_Broker_Positive, start_stop) {
+
+    GTEST_LOG_START_TEST;
+    ResourceBroker_start_stop(1);
 }
