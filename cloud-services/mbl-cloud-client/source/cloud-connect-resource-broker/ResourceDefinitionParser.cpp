@@ -17,8 +17,8 @@
 
 #include "ResourceDefinitionParser.h"
 #include "CloudConnectTrace.h"
-#include "mbed-client/m2minterfacefactory.h"
-#include "mbed-client/m2mresource.h"
+#include "m2minterfacefactory.h"
+#include "m2mresource.h"
 
 #include <cassert>
 #include <cinttypes>
