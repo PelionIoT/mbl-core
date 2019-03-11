@@ -84,8 +84,10 @@ else
 
         if [ $retVal -eq 0 ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>\n"
-            # Tar it up in the expected manner
-            tar -cf payload.tar mbl-image-development-imx7s-warp-mbl.tar.xz '--transform=s/.*/rootfs.tar.xz/'
+            # Tar it up in the expected manner. Take the url of the tar file
+            # specified in rootfs_image and remove everything upto and
+            # including the final "/"
+            tar -cf payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
 
             # Now copy the tar file to the DUT
             $mbl_command put payload.tar /scratch
