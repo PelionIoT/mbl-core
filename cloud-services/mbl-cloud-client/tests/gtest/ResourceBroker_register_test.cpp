@@ -16,7 +16,7 @@
  */
 #include "CloudConnectTypes.h"
 #include "ResourceBroker.h"
-#include "mbed-cloud-client/MbedCloudClient.h"
+#include "MbedCloudClient.h"
 #include "TestInfra.h"
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"

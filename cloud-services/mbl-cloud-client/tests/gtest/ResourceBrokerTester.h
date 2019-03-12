@@ -21,7 +21,6 @@
 
 #include "ResourceBroker.h"
 
-
 /**
  * @brief This class tests ResourceBroker functionality
  * 
@@ -129,6 +128,42 @@ public:
         const std::string& access_token,
         std::vector<mbl::ResourceSetOperation>& inout_set_operations,
         const std::vector<mbl::ResourceSetOperation> expected_inout_set_operations,
+        const CloudConnectStatus expected_out_status);
+
+    /**
+     * @brief Test get_resources_values API
+     * 
+     * @param access_token is a token that should be used by the client 
+     *        application in all APIs that access (in any way) to the provided 
+     *        (via app_resource_definition_json) set of resources. 
+     * @param inout_get_operations vector of structures that provide all input and 
+     *        output parameters required to perform getting operation. 
+     *        Each entry in inout_get_operations contains:
+     * 
+     *        input fields: 
+     *        - inout_data.path field is the path of the corresponding resource 
+     *          who's value should be gotten. 
+     *        - inout_data.type field is the type of the resource data.
+     * 
+     *        output fields: 
+     *        - output_status is the status of the set operation for the corresponding
+     *          resource.
+     *        - inout_data.value field is the value that was gotten from resource. 
+     *          Use inout_data.value only if the output_status has SUCCESS value. 
+     *        Note: This parameter is valid, if MblError return error code 
+     *        was Error::None.  
+     * @param expected_inout_get_operations - expected inout_get operation
+     * @param expected_out_status cloud connect operation status for operations like 
+     *        access_token validity, access permissions to the resources, and so on. 
+     *        fills corresponding value to the output_status in inout_set_operations.
+     * 
+     * Note: register_resources_test() and set_Resource_value_test() must be called before 
+     * calling this API.
+     */
+    void get_resources_values_test(
+        const std::string& access_token,
+        std::vector<mbl::ResourceGetOperation>& inout_get_operations,
+        const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
         const CloudConnectStatus expected_out_status);
 
 private:

@@ -7,7 +7,7 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-#include "mbed-cloud-client/MbedCloudClient.h"
+#include "MbedCloudClient.h"
 
 #include <cassert>
 #include <time.h>
@@ -91,6 +91,7 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
             TR_ERRNO("sem_timedwait", errno);
             return Error::SystemCallFailed;
         }
+    }
     }
     else
     {
@@ -483,7 +484,6 @@ MblError ResourceBroker::deregister_resources(const IpcConnection& /*source*/,
 {
 
     TR_DEBUG_ENTER;
-    // empty for now
     return Error::CCRBNotSupported;
 }
 
@@ -494,8 +494,7 @@ MblError ResourceBroker::add_resource_instances(const IpcConnection& /*source*/,
                                                 CloudConnectStatus& /*unused*/)
 {
     TR_DEBUG_ENTER;
-    // empty for now
-    return Error::None;
+    return Error::CCRBNotSupported;
 }
 
 MblError ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
@@ -505,8 +504,7 @@ MblError ResourceBroker::remove_resource_instances(const IpcConnection& /*source
                                                    CloudConnectStatus& /*unused*/)
 {
     TR_DEBUG_ENTER;
-    // empty for now
-    return Error::None;
+    return Error::CCRBNotSupported;
 }
 
 CloudConnectStatus
@@ -643,7 +641,7 @@ ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
     if (!validate_set_resources_input_params(registration_record, inout_set_operations)) {
         TR_ERR("validate_set_resources_input_params (access_token: %s) failed",
                access_token.c_str());
-        out_status = STATUS_SUCCESS;
+        out_status = CloudConnectStatus::STATUS_SUCCESS;
         return Error::None;
     }
 
@@ -676,6 +674,38 @@ bool ResourceBroker::validate_get_resources_input_params(
     return status;
 }
 
+void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registration_record,
+                                        ResourceData& resource_data)
+{
+    TR_DEBUG_ENTER;
+
+    const std::string path = resource_data.get_path();
+
+    // No need to check ret_pair as we already did a validity check and we know it exists
+    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    M2MResource* m2m_resource = ret_pair.second;
+
+    switch (resource_data.get_data_type())
+    {
+    case ResourceDataType::INTEGER:
+    {
+        int64_t value = m2m_resource->get_value_int();
+        resource_data.set_value(value);
+        TR_INFO("Value of resource: %s (type: integer) is: %" PRId64, path.c_str(), value);
+        break;
+    }
+    case ResourceDataType::STRING:
+    {
+        std::string value = m2m_resource->get_value_string().c_str();
+        resource_data.set_value(value);
+        TR_INFO("Value of resource: %s (type: string) is: %s", path.c_str(), value.c_str());
+        break;
+    }
+    default: // Already did a validity check so we can't be here...
+        break;
+    }
+}
+
 MblError
 ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
                                      const std::string& access_token,
@@ -699,11 +729,16 @@ ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
     if (!validate_get_resources_input_params(registration_record, inout_get_operations)) {
         TR_ERR("validate_get_resources_input_params (access_token: %s) failed",
                access_token.c_str());
-        out_status = STATUS_SUCCESS;
+        out_status = CloudConnectStatus::STATUS_SUCCESS;
         return Error::None;
     }
 
-    // IMPLEMENTATION IN PROGRESS
+    // Go over all resources, get values and update out status
+    for (auto& itr : inout_get_operations) {
+        get_resource_value(registration_record, itr.inout_data_);
+    }
+    out_status = CloudConnectStatus::STATUS_SUCCESS;
+
     return Error::None;
 }
 

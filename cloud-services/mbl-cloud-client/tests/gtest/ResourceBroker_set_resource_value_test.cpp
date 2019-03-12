@@ -24,6 +24,9 @@
 
 #define TRACE_GROUP "ccrb-set_res_value-test"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// get_m2m_resource tests
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 struct GetM2MResourceEntry{
     const std::string application_resource_definition;
@@ -86,9 +89,9 @@ const static std::vector<GetM2MResourceEntry> get_m2m_resource_entry_vector = {
     }
 };
 
-class ResourceBrokerTest : public testing::TestWithParam<int>{};
+class ResourceBrokerGetM2MResourceTest : public testing::TestWithParam<int>{};
 INSTANTIATE_TEST_CASE_P(GetM2MResourceParameterizedTest,
-                        ResourceBrokerTest,
+                        ResourceBrokerGetM2MResourceTest,
                         ::testing::Range(0, (int)get_m2m_resource_entry_vector.size(), 1));
 
 /**
@@ -101,8 +104,7 @@ INSTANTIATE_TEST_CASE_P(GetM2MResourceParameterizedTest,
  * 4. Resource Broker calls Mbed cloud client to register the resources
  * 5. Get resource with valid path
  */
-
-TEST_P(ResourceBrokerTest, get_m2m_resource)
+TEST_P(ResourceBrokerGetM2MResourceTest, get_m2m_resource)
 {
     GTEST_LOG_START_TEST;
 
@@ -129,223 +131,137 @@ TEST_P(ResourceBrokerTest, get_m2m_resource)
         test_data.expected_error_status);
 }
 
-/**
- * @brief Test setting value of string and integer
- * 
- */
-TEST(Resource_Broker_Positive, set_resource_value) {
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Set resource value tests
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    GTEST_LOG_START_TEST;
+        ipc_conn_handle,
+struct SetResourcesValueEntry{
+     // Register resources
+    const std::string application_resource_definition;
+    // Set resource data
+    mbl::ResourceData set_resource_data_1;
+    mbl::ResourceData set_resource_data_2;
+    CloudConnectStatus expected_set_resource_status;
+    // Expected set resource data
+    CloudConnectStatus expected_get_resource_value_status_1;
+    CloudConnectStatus expected_get_resource_value_status_2;
+};
+
+const static std::vector<SetResourcesValueEntry> set_resources_values_entry_vector = {
+    
+    // Test valid scenario
+    {
+        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE,
+        // Set resource data
+        mbl::ResourceData("/8888/11/111", "my_test_string"), // res 1
+        mbl::ResourceData("/8888/11/112", 556677), // res 2
+        CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
+        ipc_conn_handle,
+        CloudConnectStatus::STATUS_SUCCESS, // res 1
+        CloudConnectStatus::STATUS_SUCCESS, // res 2
+    },
+
+    // Test setting value of string to an integer resource and vica versa
+    {
+        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE,
+        // Set resource data
+        mbl::ResourceData("/8888/11/111", 123), // should be a string
+        mbl::ResourceData("/8888/11/112", "this_is_not_an_integer"), // should be integer
+        CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
+        // Expected set resource data
+        CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE, // res 1
+        CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE, // res 2
+    },
+
+    // Test setting value resource that wasn't registered
+    {
+        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE,
+        // Set resource data
+        mbl::ResourceData("/9999/11/111", "string_value"), //no such resource
+        mbl::ResourceData("/8888/99/112", 555), //no such resource
+        CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
+        // Expected set resource data
+        CloudConnectStatus::ERR_RESOURCE_NOT_FOUND, // res 1
+        CloudConnectStatus::ERR_RESOURCE_NOT_FOUND, // res 2
+    },
+
+    // Test setting value resource with invalid path
+    {
+        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE,
+        // Set resource data
+        mbl::ResourceData("8888/11/111", "string_value"), // path should start with "/"
+        mbl::ResourceData("/8888/11", 555), // path not 3 level depth
+        ipc_conn_handle,
+        CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
+        // Expected set resource data
+        CloudConnectStatus::ERR_INVALID_RESOURCE_PATH, // res 1
+        CloudConnectStatus::ERR_INVALID_RESOURCE_PATH, // res 2
+    },
+
+    // Test setting value resource with invalid access token
+    {
+        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE,
+        // Set resource data
+        mbl::ResourceData("8888/11/111", "string_value"), // path should start with "/"
+        mbl::ResourceData("/8888/11", 555), // path not 3 level depth
+        CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN, // expected set resource_status
+        // Expected set resource data
+        CloudConnectStatus::STATUS_SUCCESS, // ignored in this test as access token is invalid
+        CloudConnectStatus::STATUS_SUCCESS, // ignored in this test as access token is invalid
+    },    
+};
+
+/**
+ * @brief Test resource broker set_resources_values API
+ * 
+ * The tested scenario is:
+ * 1. Register 2 resources
+ * 2. Set resource value of these 2 resources
+ * 3. Compare with expectred results
+ */
+class ResourceBrokerSetResourceTest : public testing::TestWithParam<int>{};
+INSTANTIATE_TEST_CASE_P(SetResourcesValueParameterizedTest,
+                        ResourceBrokerSetResourceTest,
+                        ::testing::Range(0, (int)set_resources_values_entry_vector.size(), 1));
+TEST_P(ResourceBrokerSetResourceTest, set_resources_values)
+{
+    const SetResourcesValueEntry &test_data = set_resources_values_entry_vector[(size_t)GetParam()];
 
     ResourceBrokerTester resource_broker_tester;
-    const std::string application_resource_definition = 
-        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
         mbl::IpcConnection("source1"),
-        application_resource_definition,
+        test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
         mbl::MblError::None, // expected error status
         CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
     );
 
-    // Above application resource definition register the following resources:
-    // 1. /8888/11/111 - dynamic string
-    // 2. /8888/11/112 - dynamic integer
-
     std::vector<mbl::ResourceSetOperation> inout_set_operations;
-    mbl::ResourceData input_data_1("/8888/11/111", "string_value");
-    mbl::ResourceData input_data_2("/8888/11/112", 555);
-    mbl::ResourceSetOperation res_set_op_1(input_data_1);
-    mbl::ResourceSetOperation res_set_op_2(input_data_2);
+    mbl::ResourceSetOperation res_set_op_1(test_data.set_resource_data_1);
+    mbl::ResourceSetOperation res_set_op_2(test_data.set_resource_data_2);
     inout_set_operations.push_back(res_set_op_1);
     inout_set_operations.push_back(res_set_op_2);
 
     std::vector<mbl::ResourceSetOperation> expected_inout_set_operations = inout_set_operations;
+    expected_inout_set_operations[0].output_status_ = test_data.expected_get_resource_value_status_1;
+    expected_inout_set_operations[1].output_status_ = test_data.expected_get_resource_value_status_2;
 
-    // Set expected statuses
-    expected_inout_set_operations[0].output_status_ = CloudConnectStatus::STATUS_SUCCESS;
-    expected_inout_set_operations[1].output_status_ = CloudConnectStatus::STATUS_SUCCESS;
-
+    std::string test_access_token = out_access_token;
+    if(test_data.expected_set_resource_status == 
+        CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN) 
+    {
+        test_access_token = "dummy_access_token";
+    }
+    // Set resources value
     resource_broker_tester.set_resources_values_test(
-        out_access_token,
+        test_access_token,
         inout_set_operations,
         expected_inout_set_operations,
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-}
-
-/**
- * @brief Test setting value of string to an integer resource and vica versa
- * 
- */
-TEST(Resource_Broker_Negative, set_resource_value_invalid_type) {
-
-    GTEST_LOG_START_TEST;
-
-    ResourceBrokerTester resource_broker_tester;
-    const std::string application_resource_definition = 
-        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
-    CloudConnectStatus cloud_connect_out_status;
-    std::string out_access_token;
-
-    resource_broker_tester.register_resources_test(
-        mbl::IpcConnection("source1"),
-        application_resource_definition,
-        cloud_connect_out_status,
-        out_access_token,
-        mbl::MblError::None, // expected error status
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-
-    // Above application resource definition register the following resources:
-    // 1. /8888/11/111 - dynamic string
-    // 2. /8888/11/112 - dynamic integer
-
-    std::vector<mbl::ResourceSetOperation> inout_set_operations;
-    mbl::ResourceData input_data_1("/8888/11/111", 123); // should be a string
-    mbl::ResourceData input_data_2("/8888/11/112", "this_is_not_an_integer"); // should be integer
-    mbl::ResourceSetOperation res_set_op_1(input_data_1);
-    mbl::ResourceSetOperation res_set_op_2(input_data_2);
-    inout_set_operations.push_back(res_set_op_1);
-    inout_set_operations.push_back(res_set_op_2);
-
-    std::vector<mbl::ResourceSetOperation> expected_inout_set_operations = inout_set_operations;
-
-    // Set expected statuses
-    expected_inout_set_operations[0].output_status_ = CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
-    expected_inout_set_operations[1].output_status_ = CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
-
-    resource_broker_tester.set_resources_values_test(
-        out_access_token,
-        inout_set_operations,
-        expected_inout_set_operations,
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-}
-
-/**
- * @brief Test setting value resource that wasn't registered
- * 
- */
-TEST(Resource_Broker_Negative, set_resource_value_resource_not_found) {
-
-    GTEST_LOG_START_TEST;
-
-    ResourceBrokerTester resource_broker_tester;
-    const std::string application_resource_definition = 
-        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
-    CloudConnectStatus cloud_connect_out_status;
-    std::string out_access_token;
-
-    resource_broker_tester.register_resources_test(
-        mbl::IpcConnection("source1"),
-        application_resource_definition,
-        cloud_connect_out_status,
-        out_access_token,
-        mbl::MblError::None, // expected error status
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-
-    // Above application resource definition register the following resources:
-    // 1. /8888/11/111 - dynamic string
-    // 2. /8888/11/112 - dynamic integer
-
-    std::vector<mbl::ResourceSetOperation> inout_set_operations;
-    mbl::ResourceData input_data_1("/9999/11/111", "string_value"); //no such resource
-    mbl::ResourceData input_data_2("/8888/99/112", 555); //no such resource
-    mbl::ResourceSetOperation res_set_op_1(input_data_1);
-    mbl::ResourceSetOperation res_set_op_2(input_data_2);
-    inout_set_operations.push_back(res_set_op_1);
-    inout_set_operations.push_back(res_set_op_2);
-
-    std::vector<mbl::ResourceSetOperation> expected_inout_set_operations = inout_set_operations;
-
-    // Set expected statuses
-    expected_inout_set_operations[0].output_status_ = CloudConnectStatus::ERR_RESOURCE_NOT_FOUND;
-    expected_inout_set_operations[1].output_status_ = CloudConnectStatus::ERR_RESOURCE_NOT_FOUND;
-
-    resource_broker_tester.set_resources_values_test(
-        out_access_token,
-        inout_set_operations,
-        expected_inout_set_operations,
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-}
-
-/**
- * @brief Test setting value resource with invalid path
- * 
- */
-TEST(Resource_Broker_Negative, set_resource_value_invalid_path) {
-
-    GTEST_LOG_START_TEST;
-
-    ResourceBrokerTester resource_broker_tester;
-    const std::string application_resource_definition = 
-        VALID_APP_RESOURCE_DEFINITION_ONE_DYNAMIC_OBJECT_WITH_ONE_OBJECT_INSTANCE_AND_TWO_RESOURCE;
-    CloudConnectStatus cloud_connect_out_status;
-    std::string out_access_token;
-
-    resource_broker_tester.register_resources_test(
-        mbl::IpcConnection("source1"),
-        application_resource_definition,
-        cloud_connect_out_status,
-        out_access_token,
-        mbl::MblError::None, // expected error status
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-
-    // Above application resource definition register the following resources:
-    // 1. /8888/11/111 - dynamic string
-    // 2. /8888/11/112 - dynamic integer
-
-    std::vector<mbl::ResourceSetOperation> inout_set_operations;
-    mbl::ResourceData input_data_1("8888/11/111", "string_value"); // path should start with "/"
-    mbl::ResourceData input_data_2("/8888/11", 555); // path not 3 level depth
-    mbl::ResourceSetOperation res_set_op_1(input_data_1);
-    mbl::ResourceSetOperation res_set_op_2(input_data_2);
-    inout_set_operations.push_back(res_set_op_1);
-    inout_set_operations.push_back(res_set_op_2);
-
-    std::vector<mbl::ResourceSetOperation> expected_inout_set_operations = inout_set_operations;
-
-    // Set expected statuses
-    expected_inout_set_operations[0].output_status_ = CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
-    expected_inout_set_operations[1].output_status_ = CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
-
-    resource_broker_tester.set_resources_values_test(
-        out_access_token,
-        inout_set_operations,
-        expected_inout_set_operations,
-        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
-    );
-}
-
-/**
- * @brief Test setting value resource with invalid access token
- * 
- */
-
-TEST(Resource_Broker_Negative, set_resource_invalid_access_token) {
-
-    GTEST_LOG_START_TEST;
-
-    std::vector<mbl::ResourceSetOperation> inout_set_operations;
-    mbl::ResourceData input_data_1("8888/11/111", "string_value"); // resource not registered
-    mbl::ResourceSetOperation res_set_op_1(input_data_1);
-    inout_set_operations.push_back(res_set_op_1);
-
-    std::string invalid_access_token("invalid_access_token");
-    std::vector<mbl::ResourceSetOperation> expected_inout_set_operations = inout_set_operations;
-    ResourceBrokerTester resource_broker_tester;
-    resource_broker_tester.set_resources_values_test(
-        invalid_access_token,
-        inout_set_operations,
-        expected_inout_set_operations,
-        CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN // expected cloud connect status
+        test_data.expected_set_resource_status
     );
 }

@@ -369,21 +369,8 @@ protected:
                                               ResourceData resource_data);
 
     /**
-     * @brief Set value of one resource
-     * 
-     * @param registration_record - Registration record
-     * @param resource_data - Resource data to be used in set / get operation
-     * 
-     * @return CloudConnectStatus - 
-     *      CloudConnectStatus::ERR_INTERNAL_ERROR - In case set value in Mbed client failed
-     *      CloudConnectStatus::STATUS_SUCCESS - In case of valid resource data
-     */
-    CloudConnectStatus set_resource_value(const RegistrationRecord_ptr registration_record,
-                                          const ResourceData resource_data);
-
-    /**
      * @brief Validate set operation param and update each resource output status.
-     * Used by set_resources_values() API.
+     * Used by set_resources_values API.
      * 
      * @param registration_record - Registration record for set operation
      * @param inout_set_operations vector of structures that provide all input and 
@@ -408,7 +395,7 @@ protected:
 
     /**
      * @brief Validate get operation param and update each resource output status.
-     * Used by get_resources_values() API.
+     * Used by get_resources_values API.
      * 
      * @param registration_record - Registration record for set operation
      * @param inout_get_operations vector of structures that provide all input and 
@@ -433,6 +420,30 @@ protected:
     bool validate_get_resources_input_params(
         RegistrationRecord_ptr registration_record,
         std::vector<ResourceGetOperation>& inout_get_operations);
+
+    /**
+     * @brief Set value of one resource
+     * Used by set_resources_values API
+     * 
+     * @param registration_record - Registration record
+     * @param resource_data - Resource data to be used in set operation
+     * 
+     * @return CloudConnectStatus - 
+     *      CloudConnectStatus::ERR_INTERNAL_ERROR - In case set value in Mbed client failed
+     *      CloudConnectStatus::STATUS_SUCCESS - In case of successful set resource data operation
+     */
+    CloudConnectStatus set_resource_value(const RegistrationRecord_ptr registration_record,
+                                          const ResourceData resource_data);
+
+    /**
+     * @brief Get value of one resource
+     * Used by get_resources_values API
+     * 
+     * @param registration_record - Registration record
+     * @param resource_data - Resource data to be used in get operation
+     */
+    void get_resource_value(const RegistrationRecord_ptr registration_record,
+                            ResourceData& resource_data);
 
 
     /**
