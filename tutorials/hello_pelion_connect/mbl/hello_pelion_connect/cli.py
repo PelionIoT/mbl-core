@@ -71,7 +71,7 @@ def _main():
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    logger = logging.getLogger("mbl-app-cloud-connect")
+    logger = logging.getLogger("hello-pelion-connect")
     logger.debug("Command line arguments:{}".format(args))
 
     app = ccapp.HelloPelionConnect()

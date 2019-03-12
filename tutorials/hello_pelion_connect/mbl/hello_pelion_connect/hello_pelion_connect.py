@@ -32,7 +32,7 @@ PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Cloud/Connect1"
 class HelloPelionConnect:
     """Hello Pelion Connect application main class."""
 
-    logger = logging.getLogger("mbl-app-cloud-connect")
+    logger = logging.getLogger("hello-pelion-connect")
 
     def setup(self):
         """Set up connection to D-Bus."""
@@ -95,7 +95,7 @@ class HelloPelionConnect:
             reg_reply = self.cc_object.RegisterResources(json_data)
         except GLib.GError as glib_err:
             self.logger.error(
-                "Pelion Connect RegisterResources method call failed. Error: {}!".format(
+                "Pelion Connect RegisterResources failed. Error: {}!".format(
                     glib_err
                 )
             )
