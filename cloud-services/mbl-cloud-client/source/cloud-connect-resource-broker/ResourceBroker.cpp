@@ -422,7 +422,7 @@ ResourceBroker::register_resources(const IpcConnection& source,
                                    const std::string& app_resource_definition)
 {
     TR_DEBUG_ENTER;
-    
+
     std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
                                                         std::string());
 
@@ -482,7 +482,7 @@ ResourceBroker::register_resources(const IpcConnection& source,
 }
 
 CloudConnectStatus ResourceBroker::deregister_resources(const IpcConnection& /*source*/,
-                                              const std::string& /*access_token*/)
+                                                        const std::string& /*access_token*/)
 {
 
     TR_DEBUG_ENTER;
@@ -490,18 +490,19 @@ CloudConnectStatus ResourceBroker::deregister_resources(const IpcConnection& /*s
 }
 
 CloudConnectStatus ResourceBroker::add_resource_instances(const IpcConnection& /*source*/,
-                                                const std::string& /*unused*/,
-                                                const std::string& /*unused*/,
-                                                const std::vector<uint16_t>& /*unused*/)
+                                                          const std::string& /*unused*/,
+                                                          const std::string& /*unused*/,
+                                                          const std::vector<uint16_t>& /*unused*/)
 {
     TR_DEBUG_ENTER;
     return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
 
-CloudConnectStatus ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
-                                                   const std::string& /*unused*/,
-                                                   const std::string& /*unused*/,
-                                                   const std::vector<uint16_t>& /*unused*/)
+CloudConnectStatus
+ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
+                                          const std::string& /*unused*/,
+                                          const std::string& /*unused*/,
+                                          const std::vector<uint16_t>& /*unused*/)
 {
     TR_DEBUG_ENTER;
     return CloudConnectStatus::ERR_NOT_SUPPORTED;

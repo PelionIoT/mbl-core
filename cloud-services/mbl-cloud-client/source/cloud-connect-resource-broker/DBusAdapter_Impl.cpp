@@ -826,7 +826,7 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
     }
 
     // call register_resources resource broker API and handle output
-    std::pair<CloudConnectStatus, std::string> register_resources_ret_pair = 
+    std::pair<CloudConnectStatus, std::string> register_resources_ret_pair =
         ccrb_.register_resources(IpcConnection(sender), app_resource_definition);
 
     if (is_CloudConnectStatus_error(register_resources_ret_pair.first)) {
@@ -840,12 +840,11 @@ int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus
 
     // register_resources succeeded. Send method-reply to the D-Bus connection that
     // requested register_resources invocation.
-    return handle_resource_broker_async_method_success(
-        m,
-        ret_error,
-        "us",
-        register_resources_ret_pair.first,
-        register_resources_ret_pair.second.c_str());
+    return handle_resource_broker_async_method_success(m,
+                                                       ret_error,
+                                                       "us",
+                                                       register_resources_ret_pair.first,
+                                                       register_resources_ret_pair.second.c_str());
 }
 
 int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error)
@@ -864,7 +863,7 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
     }
 
     // call deregister_resources resource broker APi and handle output
-    CloudConnectStatus cc_dereg_status = 
+    CloudConnectStatus cc_dereg_status =
         ccrb_.deregister_resources(IpcConnection(sender), access_token);
 
     if (is_CloudConnectStatus_error(cc_dereg_status)) {

@@ -17,8 +17,8 @@
 
 #include "RegistrationRecord.h"
 #include "CloudConnectTrace.h"
-#include "mbed-cloud-client/MbedCloudClient.h"
 #include "ResourceDefinitionParser.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 
 #include <algorithm>
 
