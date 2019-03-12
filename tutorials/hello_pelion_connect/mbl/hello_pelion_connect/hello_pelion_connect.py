@@ -48,24 +48,31 @@ class HelloPelionConnect:
         ] = DBUS_MBL_PELION_CONNECT_BUS_ADDRESS
 
         # get the session bus
-        self.bus = SessionBus()
-
         try:
-            # connect to the bus
+            self.bus = SessionBus()
+        except GLib.GError as glib_err:
+            self.logger.error(
+                "Couldn't get Pelion Connect D-Bus bus. Error: {}!".format(
+                    glib_err
+                )
+            )
+            raise glib_err
+
+        # connect to the bus
+        try:
             self.cc_object = self.bus.get(
                 PELION_CONNECT_DBUS_NAME,
                 object_path=PELION_CONNECT_DBUS_OBJECT_PATH,
             )
-        except GLib.GError:
+        except GLib.GError as glib_err:
             self.logger.error(
-                "Connection to the D-Bus {} object {} failed!".format(
-                    PELION_CONNECT_DBUS_NAME, PELION_CONNECT_DBUS_OBJECT_PATH
+                "Couldn't connect to D-Bus {} object {}. Error: {}!".format(
+                    PELION_CONNECT_DBUS_NAME,
+                    PELION_CONNECT_DBUS_OBJECT_PATH,
+                    glib_err,
                 )
             )
-
-        assert self.cc_object, "Couldn't get {} D-Bus object".format(
-            PELION_CONNECT_DBUS_OBJECT_PATH
-        )
+            raise glib_err
 
         self.logger.info(
             "Successfully connected to the D-Bus {} object {}...".format(
@@ -84,14 +91,16 @@ class HelloPelionConnect:
         with open(json_file_path, "r") as json_file:
             json_data = json_file.read()
 
-        result = self.cc_object.RegisterResources(json_data)
-
-        assert (
-            result[0] == 0
-        ), "RegisterResources method call returned wrong value: {}".format(
-            result[0]
-        )
+        try:
+            reg_reply = self.cc_object.RegisterResources(json_data)
+        except GLib.GError as glib_err:
+            self.logger.error(
+                "Pelion Connect RegisterResources method call failed. Error: {}!".format(
+                    glib_err
+                )
+            )
+            raise glib_err
 
         self.logger.info(
-            "RegisterResources method call returned: {}".format(result)
+            "RegisterResources method call returned: {}".format(reg_reply)
         )
