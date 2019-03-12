@@ -19,8 +19,8 @@
 #ifndef ResourceDefinitionParser_h_
 #define ResourceDefinitionParser_h_
 
-#include "m2minterface.h"
 #include "MblError.h"
+#include "mbed-client/m2minterface.h"
 
 #include <string>
 
