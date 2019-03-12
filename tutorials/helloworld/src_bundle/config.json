@@ -98,16 +98,6 @@
 			]
 		},
 		{
-			"destination": "/dev/mqueue",
-			"type": "mqueue",
-			"source": "mqueue",
-			"options": [
-				"nosuid",
-				"noexec",
-				"nodev"
-			]
-		},
-		{
 			"destination": "/sys",
 			"type": "sysfs",
 			"source": "sysfs",
