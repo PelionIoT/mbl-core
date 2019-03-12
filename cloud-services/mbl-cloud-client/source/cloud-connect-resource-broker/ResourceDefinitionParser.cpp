@@ -440,6 +440,10 @@ ResourceDefinitionParser::build_object_list(const std::string& application_resou
 
         // Set strict mode
         builder.strictMode(&json_settings); // Init json_settings with strict mode values
+
+        // avoid failing on extra white space 
+        json_settings["failIfExtra"] = false;
+
         builder.settings_ = json_settings;
         Json::CharReader* reader = builder.newCharReader();
         Json::Value root;

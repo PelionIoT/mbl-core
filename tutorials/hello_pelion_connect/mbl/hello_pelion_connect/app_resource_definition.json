@@ -1,0 +1,15 @@
+{
+    "1" : {
+            "11" : {
+                    "111" :
+                        {
+                            "mode" : "static",
+                            "resource_type" : "reset_button",
+                            "type" : "string",
+                            "value": "string_val",
+                            "operations" : ["get"],
+                            "multiple_instance" : false
+                        }
+                   }
+          }
+}
