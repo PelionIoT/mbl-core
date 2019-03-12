@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Hello-world mbl application connectivity to Pelion Connect."""
+"""Hello-world Pelion Connect application."""
 
 import os
 import sys

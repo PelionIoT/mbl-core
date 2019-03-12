@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Hello-world mbl application CLI."""
+"""Hello-world Pelion Connect application CLI."""
 
 import argparse
 import logging
