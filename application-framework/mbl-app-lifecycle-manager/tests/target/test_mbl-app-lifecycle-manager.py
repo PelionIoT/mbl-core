@@ -21,7 +21,7 @@ MBL_APP_LIFECYCLE_MANAGER = "mbl-app-lifecycle-manager"
 APP_PKG = os.path.join(
     os.sep,
     "scratch",
-    "app-lifecycle-manager-test-package_1.0_armv7vet2hf-neon.ipk",
+    "app-lifecycle-manager-test-package_1.0_any.ipk",
 )
 
 
