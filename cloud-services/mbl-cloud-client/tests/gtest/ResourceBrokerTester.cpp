@@ -189,6 +189,7 @@ void ResourceBrokerTester::get_resources_values_test(
     
     CloudConnectStatus out_status;
     mbl::MblError status = resource_broker_.get_resources_values(
+        mbl::IpcConnection("source1"),
         access_token,
         inout_get_operations,
         out_status);

@@ -144,12 +144,11 @@ TEST_P(ResourceBrokerGetResourceTest, get_resources_values)
     const GetResourcesValueEntry &test_data = get_resources_values_entry_vector[(size_t)GetParam()];
 
     ResourceBrokerTester resource_broker_tester;
-    const uintptr_t ipc_conn_handle = 0;
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        ipc_conn_handle,
+        mbl::IpcConnection("source1"),
         test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,

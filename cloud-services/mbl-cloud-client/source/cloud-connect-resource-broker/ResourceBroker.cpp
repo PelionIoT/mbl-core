@@ -92,7 +92,6 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
             return Error::SystemCallFailed;
         }
     }
-    }
     else
     {
         // init_sem_ was signalled

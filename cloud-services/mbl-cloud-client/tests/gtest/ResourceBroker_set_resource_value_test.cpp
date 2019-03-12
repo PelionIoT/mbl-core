@@ -116,7 +116,7 @@ TEST_P(ResourceBrokerGetM2MResourceTest, get_m2m_resource)
     std::string out_access_token;
 
     resource_broker_tester.register_resources_test(
-        mbl::IpcConnection("source1"),        
+        mbl::IpcConnection("source1"),     
         test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
@@ -135,7 +135,6 @@ TEST_P(ResourceBrokerGetM2MResourceTest, get_m2m_resource)
 // Set resource value tests
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        ipc_conn_handle,
 struct SetResourcesValueEntry{
      // Register resources
     const std::string application_resource_definition;
@@ -157,7 +156,7 @@ const static std::vector<SetResourcesValueEntry> set_resources_values_entry_vect
         mbl::ResourceData("/8888/11/111", "my_test_string"), // res 1
         mbl::ResourceData("/8888/11/112", 556677), // res 2
         CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
-        ipc_conn_handle,
+        // Expected set resource data
         CloudConnectStatus::STATUS_SUCCESS, // res 1
         CloudConnectStatus::STATUS_SUCCESS, // res 2
     },
@@ -192,7 +191,6 @@ const static std::vector<SetResourcesValueEntry> set_resources_values_entry_vect
         // Set resource data
         mbl::ResourceData("8888/11/111", "string_value"), // path should start with "/"
         mbl::ResourceData("/8888/11", 555), // path not 3 level depth
-        ipc_conn_handle,
         CloudConnectStatus::STATUS_SUCCESS, // expected set resource_status
         // Expected set resource data
         CloudConnectStatus::ERR_INVALID_RESOURCE_PATH, // res 1
