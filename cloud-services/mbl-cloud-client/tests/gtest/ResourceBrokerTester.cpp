@@ -168,15 +168,72 @@ void ResourceBrokerTester::set_resources_values_test(
         std::string path = in_out_itr.input_data_.get_path();
 
         found_path = false;
-        CloudConnectStatus expected_status = CloudConnectStatus::ERR_FIRST;
         for (auto expected_itr : expected_inout_set_operations) {
                 if(path == expected_itr.input_data_.get_path()) {
-                    expected_status = expected_itr.output_status_;
+                    ASSERT_TRUE(expected_itr.output_status_ == in_out_itr.output_status_);
                     found_path = true;
                     break;
                 }
         }
         ASSERT_TRUE(found_path);
-        ASSERT_TRUE(expected_status == in_out_itr.output_status_);
+    }
+}
+
+void ResourceBrokerTester::get_resources_values_test(
+    const std::string& access_token,
+    std::vector<mbl::ResourceGetOperation>& inout_get_operations,
+    const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
+    const CloudConnectStatus expected_out_status)
+{
+    TR_DEBUG("Enter");
+    
+    CloudConnectStatus out_status;
+    mbl::MblError status = resource_broker_.get_resources_values(
+        mbl::IpcConnection("source1"),
+        access_token,
+        inout_get_operations,
+        out_status);
+    
+    ASSERT_TRUE(mbl::MblError::None == status);
+    ASSERT_TRUE(expected_out_status == out_status);
+
+    if(CloudConnectStatus::STATUS_SUCCESS != out_status) {
+        return; // Nothing left to check
+    }
+
+    // Compare expected_out_status to out_status
+    bool found_path = false;
+    for (auto in_out_itr : inout_get_operations) {
+        std::string path = in_out_itr.inout_data_.get_path();
+
+        found_path = false;
+        for (auto expected_itr : expected_inout_get_operations) {
+                if(path == expected_itr.inout_data_.get_path()) {
+                    
+                    found_path = true; // Will verify later that we found a resource
+
+                    ASSERT_TRUE(expected_itr.output_status_ == in_out_itr.output_status_);
+                    if(CloudConnectStatus::STATUS_SUCCESS != expected_itr.output_status_) {
+                        continue; // Expected failed to get this resource value, continue...
+                    }
+
+                    ResourceDataType expected_data_type = expected_itr.inout_data_.get_data_type();
+
+                    ASSERT_TRUE(expected_data_type == in_out_itr.inout_data_.get_data_type());
+                    if(expected_data_type == ResourceDataType::STRING) {
+                        std::string expected_value_string = 
+                            expected_itr.inout_data_.get_value_string();
+                        ASSERT_TRUE(expected_value_string 
+                            == in_out_itr.inout_data_.get_value_string());
+                    } else {
+                        int64_t expected_value_integer = 
+                            expected_itr.inout_data_.get_value_integer();
+                        ASSERT_TRUE(expected_value_integer 
+                            == in_out_itr.inout_data_.get_value_integer());
+                    }
+                    break;
+                }
+        }
+        ASSERT_TRUE(found_path);
     }
 }
