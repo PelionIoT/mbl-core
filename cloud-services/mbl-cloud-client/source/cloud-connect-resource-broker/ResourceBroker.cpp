@@ -86,17 +86,11 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
             TR_ERRNO_F("sem_timedwait", ETIMEDOUT, "Timeout ocurred!");
             return Error::IpcTimeout;
         }
-        else
-        {
-            TR_ERRNO("sem_timedwait", errno);
-            return Error::SystemCallFailed;
-        }
+        TR_ERRNO("sem_timedwait", errno);
+        return Error::SystemCallFailed;
     }
-    else
-    {
-        // init_sem_ was signalled
-        TR_INFO("Resource Broker initializations finished successfully");
-    }
+    // init_sem_ was signalled
+    TR_INFO("Resource Broker initializations finished successfully");
 
     // thread was created
     return Error::None;
