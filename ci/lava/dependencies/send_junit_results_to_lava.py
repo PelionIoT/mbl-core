@@ -47,7 +47,12 @@ def CreateLavaOutputText(testcase):
         result = "pass"
 
     return "{}{}::{} {}{}{}".format(
-        lava_signal, name, testcase.name, result_str, result, terminator
+        lava_signal,
+        name,
+        testcase.name.replace(" ", "_"),
+        result_str,
+        result,
+        terminator,
     )
 
 
