@@ -15,12 +15,11 @@ from enum import Enum
 from pydbus import SessionBus
 from gi.repository import GLib
 
-# tell D-Bus binding (gd-bus) not to search the bus address
-# on the X display (X11) environment
+# Prevent D-Bus binding to search the bus address
+# on the X Window (X11) environment
 DISPLAY = "0"
 
-# tell D-Bus binding (gd-bus) what is the bus address
-# (which is unix socket path)
+# Configure the Cloud Connect D-Bus address
 DBUS_MBL_PELION_CONNECT_BUS_ADDRESS = (
     "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 )

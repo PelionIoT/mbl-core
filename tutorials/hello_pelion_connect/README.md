@@ -1,10 +1,10 @@
 # Pelion Connect hello-world application
 
-The Pelion Connect hello-world application may run in a Python3 virtual environment. This application demonstrates different Pelion Connect D-Bus API methods invocation. Demonstrated methods:
-1. RegisterRequests - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.  
+The Pelion Connect hello-world application may run in a Python3 virtual environment on a device. This application demonstrates different Pelion Connect D-Bus API methods invocation. Demonstrated methods:
+1. RegisterRequests - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.
 
 ## Prerequisites   
-1. Make sure the device has an internet connection.
+1. Make sure the device has an Internet connection.
 
 1. Make sure you have active Device Management Portal account. For more information see [this page][account-management].
 
@@ -13,7 +13,7 @@ The Pelion Connect hello-world application may run in a Python3 virtual environm
 1. Make sure your device has Update Resources file. For more information see [this page][update-resources-file].
 
 ## Setting up Pelion Connect hello-world application
-To set up the virtual environment, perform the following steps:
+To set up the Python virtual environment, perform the following steps:
 
 1. Copy application subtree `<mbl-core>/tutorials/hello_pelion_connect`
    to the device under the `/scratch` partition.
@@ -23,7 +23,7 @@ To set up the virtual environment, perform the following steps:
     cd /scratch/hello_pelion_connect
    ```
    
-1. Create a virtual environment:
+1. Create a Python virtual environment:
    ```shell
    python3 -m venv my_venv
    ```
@@ -58,11 +58,6 @@ On the successful operation, expect that resources provided in the application r
 
 ### Status failure 
 If during the application execution any error has occurred, an execution will be aborted and the error will be printed to the device's standard error output. 
-
-## Exit virtual environment:
-   ```shell
-   deactivate
-   ```
 
 [account-management]: https://cloud.mbed.com/docs/current/account-management/users.html
 [provisioning-process]: https://cloud.mbed.com/docs/v1.2/provisioning-process/provisioning-development.html
