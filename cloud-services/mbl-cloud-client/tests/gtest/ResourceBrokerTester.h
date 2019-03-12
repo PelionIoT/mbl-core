@@ -54,7 +54,6 @@ public:
      *        (via app_resource_definition_json) set of resources. 
      *        Note: This parameter is valid, if MblError return error code 
      *        was Error::None.  
-     * @param expected_error_status is the expected error status returned by ResourceBroker
      * @param expected_cloud_connect_status is the expected cloud connect status returned by ResourceBroker
      */
     void register_resources_test(
@@ -62,7 +61,6 @@ public:
         const std::string& app_resource_definition,
         CloudConnectStatus& out_status,
         std::string& out_access_token,
-        mbl::MblError expected_error_status,
         CloudConnectStatus expected_cloud_connect_status);
 
     /**

@@ -59,24 +59,23 @@ void ResourceBrokerTester::register_update()
     // Currently does nothing, in future test we might want to add more code here
 }
 
-void ResourceBrokerTester::register_resources_test(
+void
+ResourceBrokerTester::register_resources_test(
     const mbl::IpcConnection &source,
     const std::string& app_resource_definition,
     CloudConnectStatus& out_status,
     std::string& out_access_token,
-    mbl::MblError expected_error_status,
     CloudConnectStatus expected_cloud_connect_status)
 {
     TR_DEBUG_ENTER;
 
-    mbl::MblError status = resource_broker_.register_resources(
-        source, 
-        app_resource_definition,
-        out_status,
-        out_access_token);
+    std::pair<CloudConnectStatus, std::string> ret_pair = 
+        resource_broker_.register_resources(source, app_resource_definition);
 
-    ASSERT_TRUE(expected_error_status == status); // Check return code from the function
-    ASSERT_TRUE(expected_cloud_connect_status == out_status); // Check cloud connect expected status
+    // Check cloud connect expected status
+    ASSERT_TRUE(expected_cloud_connect_status == ret_pair.first);
+    out_status = ret_pair.first;
+    out_access_token = ret_pair.second;
 }
 
 void ResourceBrokerTester::mbed_client_register_update_callback_test(
@@ -148,14 +147,12 @@ void ResourceBrokerTester::set_resources_values_test(
 {
     TR_DEBUG_ENTER;
     
-    CloudConnectStatus out_status;
-    mbl::MblError status = resource_broker_.set_resources_values(
-        mbl::IpcConnection("source1"),
-        access_token,
-        inout_set_operations,
-        out_status);
+    CloudConnectStatus out_status = 
+        resource_broker_.set_resources_values(
+            mbl::IpcConnection("source1"),
+            access_token,
+            inout_set_operations);
     
-    ASSERT_TRUE(mbl::MblError::None == status);
     ASSERT_TRUE(expected_out_status == out_status);
 
     if(CloudConnectStatus::STATUS_SUCCESS != out_status) {
@@ -187,14 +184,11 @@ void ResourceBrokerTester::get_resources_values_test(
 {
     TR_DEBUG("Enter");
     
-    CloudConnectStatus out_status;
-    mbl::MblError status = resource_broker_.get_resources_values(
-        mbl::IpcConnection("source1"),
-        access_token,
-        inout_get_operations,
-        out_status);
+    CloudConnectStatus out_status =
+        resource_broker_.get_resources_values(mbl::IpcConnection("source1"),
+                                              access_token,
+                                              inout_get_operations);
     
-    ASSERT_TRUE(mbl::MblError::None == status);
     ASSERT_TRUE(expected_out_status == out_status);
 
     if(CloudConnectStatus::STATUS_SUCCESS != out_status) {

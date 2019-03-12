@@ -52,7 +52,6 @@ TEST(Resource_Broker_Positive, registration_success)
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, // expected error status
         CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
     );
 
@@ -74,7 +73,7 @@ TEST(Resource_Broker_Positive, registration_success)
  * 6. ApplicationEndpoint notify the Resource Broker that registration FAILED
  * 7. Resource Broker notifys DbusAdapter that registration was FAILED
  */
-TEST(Resource_Broker_Negative, parsing_succedded_registration_failed)
+TEST(Resource_Broker_Negative, parsing_succeeded_registration_failed)
 {
     GTEST_LOG_START_TEST;
 
@@ -90,7 +89,6 @@ TEST(Resource_Broker_Negative, parsing_succedded_registration_failed)
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 
@@ -122,7 +120,6 @@ TEST(Resource_Broker_Negative, invalid_app_resource_definition_1)
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION //expected cloud connect status
     );
 }
@@ -145,7 +142,6 @@ TEST(Resource_Broker_Negative, already_registered)
         application_resource_definition_1,
         cloud_connect_out_status,
         out_access_token_1,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 
@@ -165,7 +161,6 @@ TEST(Resource_Broker_Negative, already_registered)
         application_resource_definition_2,
         cloud_connect_out_status,
         out_access_token_2,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::ERR_ALREADY_REGISTERED //expected cloud connect status
     );    
 }
@@ -187,7 +182,6 @@ TEST(Resource_Broker_Negative, registration_in_progress)
         application_resource_definition_1,
         cloud_connect_out_status,
         out_access_token_1,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 
@@ -203,7 +197,6 @@ TEST(Resource_Broker_Negative, registration_in_progress)
         application_resource_definition_2,
         cloud_connect_out_status,
         out_access_token_2,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS //expected cloud connect status
     );
 
@@ -232,7 +225,6 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded)
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 
@@ -247,7 +239,6 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded)
         application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, //expected error status
         CloudConnectStatus::STATUS_SUCCESS //expected cloud connect status
     );
 

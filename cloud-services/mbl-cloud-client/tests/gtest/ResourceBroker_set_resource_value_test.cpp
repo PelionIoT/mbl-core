@@ -120,7 +120,6 @@ TEST_P(ResourceBrokerGetM2MResourceTest, get_m2m_resource)
         test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, // expected error status
         CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
     );
 
@@ -235,7 +234,6 @@ TEST_P(ResourceBrokerSetResourceTest, set_resources_values)
         test_data.application_resource_definition,
         cloud_connect_out_status,
         out_access_token,
-        mbl::MblError::None, // expected error status
         CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
     );
 
