@@ -115,7 +115,12 @@ public:
      *          resource.
      *        Note: This parameter is valid, if MblError return error code 
      *        was Error::None.  
-     * @param expected_inout_set_operations - expected inout_set operation
+     * @param expected_inout_set_operations - expected inout_set operation vector that contains
+     *        the same resources as in inout_set_operations vector, and it includes the expected
+     *        cloud connect status for comparison.
+     *        Note: the order of the resources in this vector should be exactly in the same order as 
+     *        in inout_set_operations, and the same number of items or the test will fail.
+     * 
      * @param expected_out_status cloud connect operation status for operations like 
      *        access_token validity, access permissions to the resources, and so on. 
      *        fills corresponding value to the output_status in inout_set_operations.
@@ -150,7 +155,11 @@ public:
      *          Use inout_data.value only if the output_status has SUCCESS value. 
      *        Note: This parameter is valid, if MblError return error code 
      *        was Error::None.  
-     * @param expected_inout_get_operations - expected inout_get operation
+     * @param expected_inout_get_operations - expected inout_get operation vector that contains
+     *        the same resources as in inout_get_operations vector, and it includes the expected
+     *        resource values / cloud connect status for comparison.
+     *        Note: the order of the resources in this vector should be exactly in the same order as 
+     *        in inout_get_operations, and the same number of items or the test will fail.
      * @param expected_out_status cloud connect operation status for operations like 
      *        access_token validity, access permissions to the resources, and so on. 
      *        fills corresponding value to the output_status in inout_set_operations.
