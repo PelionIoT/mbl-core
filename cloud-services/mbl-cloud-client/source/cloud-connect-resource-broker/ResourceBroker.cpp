@@ -504,7 +504,7 @@ ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
 
 CloudConnectStatus
 ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration_record,
-                                       ResourceData resource_data)
+                                       const ResourceData& resource_data)
 {
     TR_DEBUG_ENTER;
 
@@ -553,11 +553,7 @@ bool ResourceBroker::validate_set_resources_input_params(
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_set_operations) {
-
-        ResourceSetOperation set_operation = itr;
-        const ResourceData input_data = set_operation.input_data_;
-
-        itr.output_status_ = validate_resource_data(registration_record, input_data);
+        itr.output_status_ = validate_resource_data(registration_record, itr.input_data_);
         if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
             status = false;
         }
@@ -639,25 +635,20 @@ ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
 
     // Go over all resources, set values and update out status
     for (auto& itr : inout_set_operations) {
-        ResourceSetOperation set_operation = itr;
-        itr.output_status_ = set_resource_value(registration_record, set_operation.input_data_);
+        itr.output_status_ = set_resource_value(registration_record, itr.input_data_);
     }
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
 bool ResourceBroker::validate_get_resources_input_params(
-    RegistrationRecord_ptr registration_record,
+    const RegistrationRecord_ptr registration_record,
     std::vector<ResourceGetOperation>& inout_get_operations)
 {
     TR_DEBUG_ENTER;
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_get_operations) {
-
-        ResourceGetOperation get_operation = itr;
-        ResourceData inout_data = get_operation.inout_data_;
-        const std::string path = inout_data.get_path();
-        itr.output_status_ = validate_resource_data(registration_record, inout_data);
+        itr.output_status_ = validate_resource_data(registration_record, itr.inout_data_);
         if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
             status = false;
         }

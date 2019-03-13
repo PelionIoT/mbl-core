@@ -321,7 +321,7 @@ protected:
      *      CloudConnectStatus::STATUS_SUCCESS - In case of valid resource data
      */
     CloudConnectStatus validate_resource_data(const RegistrationRecord_ptr registration_record,
-                                              ResourceData resource_data);
+                                              const ResourceData& resource_data);
 
     /**
      * @brief Validate set operation param and update each resource output status.
