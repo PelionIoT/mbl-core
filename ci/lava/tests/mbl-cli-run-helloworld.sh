@@ -32,11 +32,11 @@ else
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
     # Now copy the package and python checker script to the DUT
-    $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar /home/root
+    $mbl_command put /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar /home/root
     $mbl_command put ./ci/lava/dependencies/check_container.py /home/root
 
     # Now install the package - this should cause it to run
-    $mbl_command shell "mbl-app-update-manager /home/root/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+    $mbl_command shell "mbl-app-update-manager /home/root/user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar"
 
     # Check it is executing as expected
     $mbl_command shell "python3 /home/root/check_container.py user-sample-app-package"
@@ -61,7 +61,7 @@ else
 
     # Attempt to cleanup after the run
     $mbl_command shell "mbl-app-manager remove user-sample-app-package /home/app/user-sample-app-package"
-    $mbl_command shell "rm /home/root/user-sample-app-package_1.0_armv7vet2hf-neon.ipk.tar"
+    $mbl_command shell "rm /home/root/user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar"
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
 fi
