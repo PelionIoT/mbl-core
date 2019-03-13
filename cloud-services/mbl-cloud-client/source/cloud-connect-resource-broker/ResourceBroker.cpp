@@ -692,7 +692,8 @@ void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registratio
         TR_INFO("Value of resource: %s (type: string) is: %s", path.c_str(), value.c_str());
         break;
     }
-    default: // Already did a validity check so we can't be here...
+    default:
+        assert(0); // Already did a validity check so we can't be here...
         break;
     }
 }

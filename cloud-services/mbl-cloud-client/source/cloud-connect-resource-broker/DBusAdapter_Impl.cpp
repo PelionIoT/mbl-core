@@ -853,7 +853,7 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
     assert(m);
 
     const char* sender = sd_bus_message_get_sender(m);
-    TR_INFO("Starting to process DergisterResources method call from sender %s", sender);
+    TR_INFO("Starting to process DeregisterResources method call from sender %s", sender);
 
     std::string access_token;
     int r = verify_signature_and_get_string_argument(m, ret_error, access_token);

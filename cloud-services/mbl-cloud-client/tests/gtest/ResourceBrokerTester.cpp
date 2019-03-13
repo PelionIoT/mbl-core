@@ -214,18 +214,31 @@ void ResourceBrokerTester::get_resources_values_test(
                     ResourceDataType expected_data_type = expected_itr.inout_data_.get_data_type();
 
                     ASSERT_TRUE(expected_data_type == in_out_itr.inout_data_.get_data_type());
-                    if(expected_data_type == ResourceDataType::STRING) {
+                    switch(expected_data_type) 
+                    {
+                    case ResourceDataType::STRING:
+                    {
                         std::string expected_value_string = 
                             expected_itr.inout_data_.get_value_string();
                         ASSERT_TRUE(expected_value_string 
                             == in_out_itr.inout_data_.get_value_string());
-                    } else {
+                        break;
+                    }
+                    case ResourceDataType::INTEGER:
+                    {
                         int64_t expected_value_integer = 
                             expected_itr.inout_data_.get_value_integer();
                         ASSERT_TRUE(expected_value_integer 
                             == in_out_itr.inout_data_.get_value_integer());
+                        break;
                     }
-                    break;
+                    default:
+                    {
+                        ASSERT_TRUE(false); // Always fail as we only support integer and strings
+                        break;
+                    }
+                    }
+
                 }
         }
         ASSERT_TRUE(found_path);
