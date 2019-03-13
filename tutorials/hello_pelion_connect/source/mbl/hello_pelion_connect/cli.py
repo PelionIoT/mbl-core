@@ -59,6 +59,23 @@ def get_argument_parser():
         ),
     )
 
+    # check if DBUS_SESSION_BUS_ADDRESS set in environment
+    dbus_session_bus_address = os.environ.get("DBUS_SESSION_BUS_ADDRESS")
+    if dbus_session_bus_address is None:
+        # no such variable in environment, use default
+        dbus_session_bus_address = (
+            "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
+        )
+
+    parser.add_argument(
+        "-a",
+        "--pelion-connect-dbus-address",
+        help="Pelion connect dbus address",
+        metavar="DBUS_SESSION_BUS_ADDRESS",
+        action="store",
+        default=dbus_session_bus_address,
+    )
+
     return parser
 
 
@@ -77,7 +94,7 @@ def _main():
     app = ccapp.HelloPelionConnect()
 
     logger.info("Call Hello Pelion Connect application setup")
-    app.setup()
+    app.setup(args.pelion_connect_dbus_address)
 
     logger.info("Call Hello Pelion Connect application register_resources")
     app.register_resources(args.app_resource_definition_file)
