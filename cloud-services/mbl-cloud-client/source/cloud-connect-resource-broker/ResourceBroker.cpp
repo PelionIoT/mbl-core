@@ -17,6 +17,12 @@
 namespace mbl
 {
 
+static void* get_dummy_network_interface()
+{
+    static uint32_t network = 0xFFFFFFFF;
+    return &network;
+}
+
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker()
     : init_sem_initialized_(false), cloud_client_(nullptr), registration_in_progress_(false)
@@ -186,6 +192,11 @@ MblError ResourceBroker::init()
     // Register Cloud client callback:
     regsiter_callback_handlers();
 
+    const MblError setup_status = mbed_cloud_client_setup();
+    if (Error::None != setup_status) {
+        status.set(setup_status);
+    }
+
     //////////////////////////////////////////////////////////////////
     // PAY ATTENTION: This should be the last action in this function!
     //////////////////////////////////////////////////////////////////
@@ -274,9 +285,6 @@ void* ResourceBroker::ccrb_main(void* ccrb)
     pthread_exit(reinterpret_cast<void*>(int_run_status)); // NOLINT
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Callback functions that are being called by Mbed client
-////////////////////////////////////////////////////////////////////////////////////////////////////
 ResourceBroker::RegistrationRecord_ptr
 ResourceBroker::get_registration_record(const std::string& access_token)
 {
@@ -306,7 +314,60 @@ void ResourceBroker::regsiter_callback_handlers()
         cloud_client_->on_registration_updated(this,
                                                &ResourceBroker::handle_registration_updated_cb);
         cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
+
+        cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
+        cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
     }
+}
+
+MblError ResourceBroker::mbed_cloud_client_setup()
+{
+    TR_DEBUG_ENTER;
+
+    // Add empty ObjectList which will be used to register the device for the first time
+    M2MObjectList objs;
+    cloud_client_->add_objects(objs);    
+
+    const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
+    if (!setup_ok) {
+        TR_ERR("Client setup failed");
+        return Error::ConnectUnknownError;
+    }
+
+    return Error::None;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Callback functions that are being called by Mbed client
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ResourceBroker::handle_client_registered()
+{
+    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // s_mutex isn't locked.
+
+    TR_INFO("Client registered");
+
+    const ConnectorClientEndpointInfo* const endpoint = cloud_client_->endpoint_info();
+    if (endpoint) 
+    {
+        TR_INFO("Endpoint Name: %s", endpoint->endpoint_name.c_str());
+        TR_INFO("Device Id: %s", endpoint->internal_endpoint_name.c_str());
+    }
+    else
+    {
+        TR_WARN("Failed to get endpoint info");
+    }
+}
+
+void ResourceBroker::handle_client_unregistered()
+{
+    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // s_mutex isn't locked.
+
+    TR_WARN("Client unregistered");
+
+    // TODO: signal mbl client that we it should exit loop    
 }
 
 void ResourceBroker::handle_registration_updated_cb()

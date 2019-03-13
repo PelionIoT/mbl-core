@@ -44,11 +44,11 @@ extern "C" void mbl_shutdown_handler(int signal)
     g_shutdown_signal = signal;
 }
 
-static void* get_dummy_network_interface()
-{
-    static uint32_t network = 0xFFFFFFFF;
-    return &network;
-}
+// static void* get_dummy_network_interface()
+// {
+//     static uint32_t network = 0xFFFFFFFF;
+//     return &network;
+// }
 
 namespace mbl
 {
@@ -105,12 +105,12 @@ MblError MblCloudClient::run()
     // Add empty ObjectList which will be used to register the device for the
     // first time
     // in cloud_client_setup()
-    s_instance->add_resources();
+    //s_instance->add_resources();
 
-    const MblError ccs_err = s_instance->cloud_client_setup();
-    if (ccs_err != Error::None) {
-        return ccs_err;
-    }
+    // const MblError ccs_err = s_instance->cloud_client_setup();
+    // if (ccs_err != Error::None) {
+    //     return ccs_err;
+    // }
 
     // start running CCRB module
     const MblError ccrb_start_err =
@@ -118,6 +118,9 @@ MblError MblCloudClient::run()
     if (Error::None != ccrb_start_err) {
         tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
         return ccrb_start_err;
+    } else {
+        MblScopedLock l(s_mutex);
+        s_instance->state_ = State_CalledRegister;
     }
 
     time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
@@ -157,36 +160,36 @@ MblError MblCloudClient::run()
 
 void MblCloudClient::register_handlers()
 {
-    cloud_client_->on_registered(&MblCloudClient::handle_client_registered);
-    cloud_client_->on_unregistered(&MblCloudClient::handle_client_unregistered);
-    cloud_client_->on_error(&MblCloudClient::handle_error);
+    //cloud_client_->on_registered(&MblCloudClient::handle_client_registered);
+    //cloud_client_->on_unregistered(&MblCloudClient::handle_client_unregistered);
+    //cloud_client_->on_error(&MblCloudClient::handle_error);
     cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
     cloud_client_->set_update_authorize_handler(&handle_authorize);
 }
 
-void MblCloudClient::add_resources()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    M2MObjectList objs;
-    cloud_client_->add_objects(objs);
-}
+// void MblCloudClient::add_resources()
+// {
+//     tr_debug("%s", __PRETTY_FUNCTION__);
+//     M2MObjectList objs;
+//     cloud_client_->add_objects(objs);
+// }
 
-MblError MblCloudClient::cloud_client_setup()
-{
-    tr_debug("%s", __PRETTY_FUNCTION__);
-    {
-        MblScopedLock l(s_mutex);
-        state_ = State_CalledRegister;
-    }
+// MblError MblCloudClient::cloud_client_setup()
+// {
+//     tr_debug("%s", __PRETTY_FUNCTION__);
+//     {
+//         MblScopedLock l(s_mutex);
+//         state_ = State_CalledRegister;
+//     }
 
-    const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
-    if (!setup_ok) {
-        tr_err("Client setup failed");
-        return Error::ConnectUnknownError;
-    }
+//     const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
+//     if (!setup_ok) {
+//         tr_err("Client setup failed");
+//         return Error::ConnectUnknownError;
+//     }
 
-    return Error::None;
-}
+//     return Error::None;
+// }
 
 void MblCloudClient::handle_client_registered()
 {

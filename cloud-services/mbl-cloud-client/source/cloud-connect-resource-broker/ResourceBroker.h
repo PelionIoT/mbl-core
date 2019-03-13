@@ -290,6 +290,15 @@ protected:
      */
     void regsiter_callback_handlers();
 
+    // TODO: add documentation
+    MblError mbed_cloud_client_setup();
+
+    // TODO: add documentation
+    void handle_client_registered();
+
+    // TODO: add documentation
+    void handle_client_unregistered();
+
     /**
      * @brief - Registration update callback.
      * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
