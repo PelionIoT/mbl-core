@@ -308,7 +308,7 @@ def _main():
             package_description="This is a valid ipk1 description.\n"
             "Expecting to successfully installed.",
             package_version="1.0",
-            package_architecture="armv7vet2hf-neon",
+            package_architecture="any",
             package_files=package_files,
             return_code_install=0,
             return_code_remove=0,
@@ -326,7 +326,7 @@ def _main():
             package_description="This is a valid ipk2 description.\n"
             "Expecting to successfully installed.",
             package_version="2.0",
-            package_architecture="armv7vet2hf-neon",
+            package_architecture="any",
             package_files=package_files,
             return_code_install=0,
             return_code_remove=0,
@@ -340,7 +340,7 @@ def _main():
             package_name="invalid-ipk1",
             package_description="Invalid ipk1 file (missing package name).",
             package_version="2.0",
-            package_architecture="armv7vet2hf-neon",
+            package_architecture="any",
             package_files=package_files,
             return_code_install=1,
             # Expect removal failure because no attempt to install the app
