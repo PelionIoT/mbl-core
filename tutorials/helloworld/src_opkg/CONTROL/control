@@ -5,4 +5,3 @@ Maintainer: Mbed Linux OS team <mbed-linux-team@arm.com>
 Section: base
 Priority: optional
 Description: This package includes user sample "Hello world" application.
-
