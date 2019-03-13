@@ -86,17 +86,11 @@ MblError ResourceBroker::start(MbedCloudClient* cloud_client)
             TR_ERRNO_F("sem_timedwait", ETIMEDOUT, "Timeout ocurred!");
             return Error::IpcTimeout;
         }
-        else
-        {
-            TR_ERRNO("sem_timedwait", errno);
-            return Error::SystemCallFailed;
-        }
+        TR_ERRNO("sem_timedwait", errno);
+        return Error::SystemCallFailed;
     }
-    else
-    {
-        // init_sem_ was signalled
-        TR_INFO("Resource Broker initializations finished successfully");
-    }
+    // init_sem_ was signalled
+    TR_INFO("Resource Broker initializations finished successfully");
 
     // thread was created
     return Error::None;
@@ -417,18 +411,20 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-MblError ResourceBroker::register_resources(const IpcConnection& source,
-                                            const std::string& app_resource_definition_json,
-                                            CloudConnectStatus& out_status,
-                                            std::string& out_access_token)
+std::pair<CloudConnectStatus, std::string>
+ResourceBroker::register_resources(const IpcConnection& source,
+                                   const std::string& app_resource_definition)
 {
     TR_DEBUG_ENTER;
+
+    std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
+                                                        std::string());
 
     if (registration_in_progress_.load()) {
         // We only allow one registration request at a time.
         TR_ERR("Registration is already in progress.");
-        out_status = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
-        return Error::None;
+        ret_pair.first = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
+        return ret_pair;
     }
 
     // Above check makes sure there is no registration in progress.
@@ -437,81 +433,78 @@ MblError ResourceBroker::register_resources(const IpcConnection& source,
     if (!registration_records_.empty()) {
         // Currently support only ONE application
         TR_ERR("Only one registration is allowed.");
-        out_status = CloudConnectStatus::ERR_ALREADY_REGISTERED;
-        return Error::None;
+        ret_pair.first = CloudConnectStatus::ERR_ALREADY_REGISTERED;
+        return ret_pair;
     }
 
     // Create and init registration record:
-    // parse app_resource_definition_json and create unique access token
+    // parse app_resource_definition and create unique access token
     RegistrationRecord_ptr registration_record = std::make_shared<RegistrationRecord>(source);
-    const MblError init_status = registration_record->init(app_resource_definition_json);
+    const MblError init_status = registration_record->init(app_resource_definition);
     if (Error::None != init_status) {
         TR_ERR("registration_record->init failed with error: %s", MblError_to_str(init_status));
         if (Error::CCRBInvalidJson == init_status) {
-            out_status = CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
-            return Error::None;
+            ret_pair.first = CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
+            return ret_pair;
         }
-        return init_status;
+        ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
+        return ret_pair;
     }
 
-    auto ret_pair = ipc_adapter_->generate_access_token();
-    if (Error::None != ret_pair.first) {
-        TR_ERR("Generate access token failed with error: %s", MblError_to_str(ret_pair.first));
-        return ret_pair.first;
+    auto ret_pair_generate_access_token = ipc_adapter_->generate_access_token();
+    if (Error::None != ret_pair_generate_access_token.first) {
+        TR_ERR("Generate access token failed");
+        ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
+        return ret_pair;
     }
 
     // Set atomic flag for registration in progress
     registration_in_progress_.store(true);
 
-    out_access_token = ret_pair.second;
-    in_progress_access_token_ = ret_pair.second;
+    // Fill ret_pair with generated access token
+    ret_pair.second = ret_pair_generate_access_token.second;
+    in_progress_access_token_ = ret_pair_generate_access_token.second;
 
-    registration_records_[out_access_token] = registration_record; // Add registration_record to map
+    // Add registration_record to map
+    registration_records_[in_progress_access_token_] = registration_record;
 
     // Call Mbed cloud client to start registration update
     add_objects_func_(registration_record->get_m2m_object_list());
     register_update_func_();
 
-    out_status = CloudConnectStatus::STATUS_SUCCESS;
-
-    return Error::None;
+    return ret_pair;
 }
 
-MblError ResourceBroker::deregister_resources(const IpcConnection& /*source*/,
-                                              const std::string& /*access_token*/,
-                                              CloudConnectStatus& /*out_status*/)
+CloudConnectStatus ResourceBroker::deregister_resources(const IpcConnection& /*source*/,
+                                                        const std::string& /*access_token*/)
 {
 
     TR_DEBUG_ENTER;
-    // empty for now
-    return Error::CCRBNotSupported;
+    return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
 
-MblError ResourceBroker::add_resource_instances(const IpcConnection& /*source*/,
-                                                const std::string& /*unused*/,
-                                                const std::string& /*unused*/,
-                                                const std::vector<uint16_t>& /*unused*/,
-                                                CloudConnectStatus& /*unused*/)
+CloudConnectStatus ResourceBroker::add_resource_instances(const IpcConnection& /*source*/,
+                                                          const std::string& /*unused*/,
+                                                          const std::string& /*unused*/,
+                                                          const std::vector<uint16_t>& /*unused*/)
 {
     TR_DEBUG_ENTER;
-    // empty for now
-    return Error::None;
+    return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
 
-MblError ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
-                                                   const std::string& /*unused*/,
-                                                   const std::string& /*unused*/,
-                                                   const std::vector<uint16_t>& /*unused*/,
-                                                   CloudConnectStatus& /*unused*/)
+CloudConnectStatus
+ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
+                                          const std::string& /*unused*/,
+                                          const std::string& /*unused*/,
+                                          const std::vector<uint16_t>& /*unused*/)
 {
     TR_DEBUG_ENTER;
-    // empty for now
-    return Error::None;
+    return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
 
 CloudConnectStatus
 ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration_record,
-                                       ResourceData resource_data)
+                                       const ResourceData& resource_data)
 {
     TR_DEBUG_ENTER;
 
@@ -560,11 +553,7 @@ bool ResourceBroker::validate_set_resources_input_params(
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_set_operations) {
-
-        ResourceSetOperation set_operation = itr;
-        const ResourceData input_data = set_operation.input_data_;
-
-        itr.output_status_ = validate_resource_data(registration_record, input_data);
+        itr.output_status_ = validate_resource_data(registration_record, itr.input_data_);
         if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
             status = false;
         }
@@ -622,19 +611,17 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
-MblError
+CloudConnectStatus
 ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
                                      const std::string& access_token,
-                                     std::vector<ResourceSetOperation>& inout_set_operations,
-                                     CloudConnectStatus& out_status)
+                                     std::vector<ResourceSetOperation>& inout_set_operations)
 {
     TR_DEBUG("access_token: %s", access_token.c_str());
 
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
-        out_status = CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
-        return Error::None;
+        return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 
     // Validate all set operations and update their statuses. This is done preior to actual
@@ -643,32 +630,25 @@ ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
     if (!validate_set_resources_input_params(registration_record, inout_set_operations)) {
         TR_ERR("validate_set_resources_input_params (access_token: %s) failed",
                access_token.c_str());
-        out_status = STATUS_SUCCESS;
-        return Error::None;
+        return CloudConnectStatus::STATUS_SUCCESS;
     }
 
     // Go over all resources, set values and update out status
     for (auto& itr : inout_set_operations) {
-        ResourceSetOperation set_operation = itr;
-        itr.output_status_ = set_resource_value(registration_record, set_operation.input_data_);
+        itr.output_status_ = set_resource_value(registration_record, itr.input_data_);
     }
-    out_status = CloudConnectStatus::STATUS_SUCCESS;
-    return Error::None;
+    return CloudConnectStatus::STATUS_SUCCESS;
 }
 
 bool ResourceBroker::validate_get_resources_input_params(
-    RegistrationRecord_ptr registration_record,
+    const RegistrationRecord_ptr registration_record,
     std::vector<ResourceGetOperation>& inout_get_operations)
 {
     TR_DEBUG_ENTER;
     bool status = true;
     // Go over all resources in the vector, check for validity and update out status
     for (auto& itr : inout_get_operations) {
-
-        ResourceGetOperation get_operation = itr;
-        ResourceData inout_data = get_operation.inout_data_;
-        const std::string path = inout_data.get_path();
-        itr.output_status_ = validate_resource_data(registration_record, inout_data);
+        itr.output_status_ = validate_resource_data(registration_record, itr.inout_data_);
         if (CloudConnectStatus::STATUS_SUCCESS != itr.output_status_) {
             status = false;
         }
@@ -676,11 +656,43 @@ bool ResourceBroker::validate_get_resources_input_params(
     return status;
 }
 
-MblError
+void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registration_record,
+                                        ResourceData& resource_data)
+{
+    TR_DEBUG_ENTER;
+
+    const std::string path = resource_data.get_path();
+
+    // No need to check ret_pair as we already did a validity check and we know it exists
+    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    M2MResource* m2m_resource = ret_pair.second;
+
+    switch (resource_data.get_data_type())
+    {
+    case ResourceDataType::INTEGER:
+    {
+        int64_t value = m2m_resource->get_value_int();
+        resource_data.set_value(value);
+        TR_INFO("Value of resource: %s (type: integer) is: %" PRId64, path.c_str(), value);
+        break;
+    }
+    case ResourceDataType::STRING:
+    {
+        std::string value = m2m_resource->get_value_string().c_str();
+        resource_data.set_value(value);
+        TR_INFO("Value of resource: %s (type: string) is: %s", path.c_str(), value.c_str());
+        break;
+    }
+    default:
+        assert(0); // Already did a validity check so we can't be here...
+        break;
+    }
+}
+
+CloudConnectStatus
 ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
                                      const std::string& access_token,
-                                     std::vector<ResourceGetOperation>& inout_get_operations,
-                                     CloudConnectStatus& out_status)
+                                     std::vector<ResourceGetOperation>& inout_get_operations)
 {
     TR_DEBUG_ENTER;
 
@@ -689,8 +701,7 @@ ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
-        out_status = CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
-        return Error::None;
+        return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 
     // Validate all get operations and update their statuses. This is done preior to actual
@@ -699,12 +710,14 @@ ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
     if (!validate_get_resources_input_params(registration_record, inout_get_operations)) {
         TR_ERR("validate_get_resources_input_params (access_token: %s) failed",
                access_token.c_str());
-        out_status = STATUS_SUCCESS;
-        return Error::None;
+        return CloudConnectStatus::STATUS_SUCCESS;
     }
 
-    // IMPLEMENTATION IN PROGRESS
-    return Error::None;
+    // Go over all resources, get values and update out status
+    for (auto& itr : inout_get_operations) {
+        get_resource_value(registration_record, itr.inout_data_);
+    }
+    return CloudConnectStatus::STATUS_SUCCESS;
 }
 
 void ResourceBroker::notify_connection_closed(const IpcConnection& /*source*/)
