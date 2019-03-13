@@ -299,6 +299,9 @@ protected:
     // TODO: add documentation
     void handle_client_unregistered();
 
+    // TODO: add documentation
+    static MblError periodic_keepalive_callback(sd_event_source* s, const Event* ev);
+
     /**
      * @brief - Registration update callback.
      * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.

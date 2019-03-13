@@ -197,6 +197,23 @@ MblError ResourceBroker::init()
         status.set(setup_status);
     }
 
+    // Set keep alive event
+    Event::EventData event_data = {0};
+    event_data.user_data = this;
+    std::pair<MblError, uint64_t> ret_pair = 
+        ipc_adapter_->send_event_periodic(event_data,
+                                          sizeof(event_data.user_data),
+                                          Event::EventDataType::USER_DATA_TYPE,
+                                          ResourceBroker::periodic_keepalive_callback,
+                                          10000, // period_millisec,
+                                          "Mbed cloud client keep-alive");
+    if(Error::None != ret_pair.first) {
+        TR_ERR("send_event_periodic keep-alive failed with error %s",
+            MblError_to_str(ret_pair.first));
+        return ret_pair.first;
+    }
+    TR_DEBUG("Successfully send_event_periodic keep-alive.");
+
     //////////////////////////////////////////////////////////////////
     // PAY ATTENTION: This should be the last action in this function!
     //////////////////////////////////////////////////////////////////
@@ -210,6 +227,21 @@ MblError ResourceBroker::init()
 
     return status.get();
 }
+
+MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
+{
+    TR_DEBUG_ENTER;
+
+    UNUSED(s);
+    assert(ev);
+
+    // TODO: check if registration is in progress, if yes - do nothing
+    ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ev->get_data().user_data);
+    this_ccrb->cloud_client_->register_update();
+
+    return Error::None;
+}
+
 
 MblError ResourceBroker::deinit()
 {
