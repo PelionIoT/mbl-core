@@ -24,8 +24,8 @@ chmod +x ./build-armv7
 
 # Get the image and put it into a tar file
 cd release/ipk/ || exit
-tar -cvf user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar user-sample-app-package_1.0_armv7vet2hf-any.ipk
+tar -cvf user-sample-app-package_1.0_any.ipk.tar user-sample-app-package_1.0_any.ipk
 
 # Copy the tar file to the home directory. This makes ii available for subsequent test steps.
-cp user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar /home/ubuntu/user-sample-app-package_1.0_armv7vet2hf-any.ipk.tar
+cp user-sample-app-package_1.0_any.ipk.tar /home/ubuntu/user-sample-app-package_1.0_any.ipk.tar
 
