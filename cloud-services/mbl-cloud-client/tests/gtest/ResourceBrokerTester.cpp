@@ -59,24 +59,23 @@ void ResourceBrokerTester::register_update()
     // Currently does nothing, in future test we might want to add more code here
 }
 
-void ResourceBrokerTester::register_resources_test(
+void
+ResourceBrokerTester::register_resources_test(
     const mbl::IpcConnection &source,
     const std::string& app_resource_definition,
     CloudConnectStatus& out_status,
     std::string& out_access_token,
-    mbl::MblError expected_error_status,
     CloudConnectStatus expected_cloud_connect_status)
 {
     TR_DEBUG_ENTER;
 
-    mbl::MblError status = resource_broker_.register_resources(
-        source, 
-        app_resource_definition,
-        out_status,
-        out_access_token);
+    std::pair<CloudConnectStatus, std::string> ret_pair = 
+        resource_broker_.register_resources(source, app_resource_definition);
 
-    ASSERT_TRUE(expected_error_status == status); // Check return code from the function
-    ASSERT_TRUE(expected_cloud_connect_status == out_status); // Check cloud connect expected status
+    // Check cloud connect expected status
+    ASSERT_TRUE(expected_cloud_connect_status == ret_pair.first);
+    out_status = ret_pair.first;
+    out_access_token = ret_pair.second;
 }
 
 void ResourceBrokerTester::mbed_client_register_update_callback_test(
@@ -148,35 +147,92 @@ void ResourceBrokerTester::set_resources_values_test(
 {
     TR_DEBUG_ENTER;
     
-    CloudConnectStatus out_status;
-    mbl::MblError status = resource_broker_.set_resources_values(
-        mbl::IpcConnection("source1"),
-        access_token,
-        inout_set_operations,
-        out_status);
+    CloudConnectStatus out_status = 
+        resource_broker_.set_resources_values(
+            mbl::IpcConnection("source1"),
+            access_token,
+            inout_set_operations);
     
-    ASSERT_TRUE(mbl::MblError::None == status);
     ASSERT_TRUE(expected_out_status == out_status);
 
     if(CloudConnectStatus::STATUS_SUCCESS != out_status) {
         return; // Nothing left to check
     }
 
+    // Note: both vectors should be with the same size and items order or test will fail.
+    ASSERT_TRUE(expected_inout_set_operations.size() == inout_set_operations.size());
+    
     // Compare expected_out_status to out_status
-    bool found_path = false;
+    auto expected_itr = expected_inout_set_operations.begin();
     for (auto in_out_itr : inout_set_operations) {
         std::string path = in_out_itr.input_data_.get_path();
+        ASSERT_TRUE(path == expected_itr->input_data_.get_path());
+        ASSERT_TRUE(expected_itr->output_status_ == in_out_itr.output_status_);
+        std::advance(expected_itr, 1); // Move to next item
+    }
+}
 
-        found_path = false;
-        CloudConnectStatus expected_status = CloudConnectStatus::ERR_FIRST;
-        for (auto expected_itr : expected_inout_set_operations) {
-                if(path == expected_itr.input_data_.get_path()) {
-                    expected_status = expected_itr.output_status_;
-                    found_path = true;
-                    break;
-                }
+void ResourceBrokerTester::get_resources_values_test(
+    const std::string& access_token,
+    std::vector<mbl::ResourceGetOperation>& inout_get_operations,
+    const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
+    const CloudConnectStatus expected_out_status)
+{
+    TR_DEBUG("Enter");
+    
+    CloudConnectStatus out_status =
+        resource_broker_.get_resources_values(mbl::IpcConnection("source1"),
+                                              access_token,
+                                              inout_get_operations);
+    
+    ASSERT_TRUE(expected_out_status == out_status);
+
+    if(CloudConnectStatus::STATUS_SUCCESS != out_status) {
+        return; // Nothing left to check
+    }
+
+    // Note: both vectors should be with the same size and items order or test will fail.
+    ASSERT_TRUE(expected_inout_get_operations.size() == inout_get_operations.size());
+    
+    // Compare expected_out_status to out_status
+    auto expected_itr = expected_inout_get_operations.begin();
+    for (auto in_out_itr : inout_get_operations) {
+        std::string path = in_out_itr.inout_data_.get_path();
+        ASSERT_TRUE(path == expected_itr->inout_data_.get_path());
+
+        ASSERT_TRUE(expected_itr->output_status_ == in_out_itr.output_status_);
+        if(CloudConnectStatus::STATUS_SUCCESS != expected_itr->output_status_) {
+            std::advance(expected_itr, 1); // Move to next item
+            continue; // Expected failed to get this resource value, continue...
         }
-        ASSERT_TRUE(found_path);
-        ASSERT_TRUE(expected_status == in_out_itr.output_status_);
+
+        ResourceDataType expected_data_type = expected_itr->inout_data_.get_data_type();
+
+        ASSERT_TRUE(expected_data_type == in_out_itr.inout_data_.get_data_type());
+        switch(expected_data_type) 
+        {
+        case ResourceDataType::STRING:
+        {
+            std::string expected_value_string = 
+                expected_itr->inout_data_.get_value_string();
+            ASSERT_TRUE(expected_value_string 
+                == in_out_itr.inout_data_.get_value_string());
+            break;
+        }
+        case ResourceDataType::INTEGER:
+        {
+            int64_t expected_value_integer = 
+                expected_itr->inout_data_.get_value_integer();
+            ASSERT_TRUE(expected_value_integer 
+                == in_out_itr.inout_data_.get_value_integer());
+            break;
+        }
+        default:
+        {
+            ASSERT_TRUE(false); // Always fail as we only support integer and strings
+            break;
+        }
+        }
+        std::advance(expected_itr, 1); // Move to next item
     }
 }

@@ -36,6 +36,7 @@ enum CloudConnectStatus {
     ERR_INVALID_RESOURCE_PATH                       = 0x1005,
     ERR_RESOURCE_NOT_FOUND                          = 0x1006,
     ERR_INVALID_RESOURCE_TYPE                       = 0x1007,
+    ERR_NOT_SUPPORTED                               = 0x1008,
 };
  
 typedef enum CloudConnectStatus CloudConnectStatus;
@@ -57,6 +58,7 @@ static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
 #define CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH "mbed.Cloud.Connect.Error.InvalidResourcePath"
 #define CLOUD_CONNECT_ERR_RESOURCE_NOT_FOUND "mbed.Cloud.Connect.Error.ResourceNotFound"
 #define CLOUD_CONNECT_ERR_INVALID_RESOURCE_TYPE "mbed.Cloud.Connect.Error.InvalidResourceType"
+#define CLOUD_CONNECT_ERR_NOT_SUPPORTED "mbed.Cloud.Connect.Error.NotSupported"
 
 /** 
  * @brief Returns corresponding D-Bus format error. 

@@ -31,63 +31,35 @@ struct AdapterParameterizedData {
  
 class MessageReplyTest_ResourceBroker: public ResourceBroker {
 
-private:
-    MblError set_failure_parameters(
-        const std::string & input,
-        CloudConnectStatus & output_status)
-    {
-        if(input == "Set_Success_Return_Error")
-        {
-            output_status = STATUS_SUCCESS;
-            return Error::DBA_IllegalState;
-        }
-
-        if(input == "Set_Error_Return_Error")
-        {
-            output_status = ERR_INTERNAL_ERROR;
-            return Error::DBA_IllegalState;
-        }
-
-        if(input == "Set_Error_Return_Success")
-        {
-            output_status = ERR_INTERNAL_ERROR;
-            return Error::None;
-        }
-
-        return Error::None;
-    }
-
 public:
-    MblError register_resources(
+    std::pair<CloudConnectStatus, std::string> register_resources(
         const mbl::IpcConnection & /*unused*/, 
-        const std::string & json,
-        CloudConnectStatus & status,
-        std::string & token) override
+        const std::string & json) override
     {
-        TR_DEBUG_ENTER;    
-        if(json == "Set_Success_Return_Success")
+        TR_DEBUG_ENTER;
+        std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
+                                                        std::string());
+        if(json == "Return_Success")
         {
-            token = std::string(json) + std::string("_token");
-            status = STATUS_SUCCESS;
-            return Error::None;
+            ret_pair.second = std::string(json) + std::string("_token");
+            return ret_pair;
         }
 
-        return set_failure_parameters(json, status);
+        ret_pair.first = CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
+        return ret_pair;
     }
 
-    MblError deregister_resources(
+    CloudConnectStatus deregister_resources(
             const mbl::IpcConnection & /*unused*/, 
-            const std::string & token,
-            CloudConnectStatus & status) override
+            const std::string & token) override
     {
         TR_DEBUG_ENTER;    
-        if(token == "Set_Success_Return_Success")
+        if(token == "Return_Success")
         {
-            status = STATUS_SUCCESS;
-            return Error::None;
+            return STATUS_SUCCESS;
         }
 
-        return set_failure_parameters(token, status);
+        return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 };
 
@@ -106,32 +78,19 @@ const static std::vector<RegisterResources_entry> RegisterResources_test_array =
 
     // string input                
     {
-        "Set_Success_Return_Success",        // input_json_data
+        "Return_Success",                    // input_json_data
         STATUS_SUCCESS, /* not relevant */   // expected_status
-        "Set_Success_Return_Success_token",  // expected_access_token
+        "Return_Success_token",              // expected_access_token
         "" /* not relevant */                // expected_sd_bus_error_name
     },
 
     {
-        "Set_Error_Return_Error",            // input_json_data
-        ERR_FIRST,    /* not relevant */   // expected_status
+        "Return_Error",                      // input_json_data
+        ERR_FIRST,      /* not relevant */   // expected_status
         "",       /* not relevant */         // expected_access_token             
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
+        CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION     // expected_sd_bus_error_name
     },                             
 
-    {
-        "Set_Success_Return_Error",          // input_json_data
-        ERR_FIRST,    /* not relevant */   // expected_status
-        "",      /* not relevant */          // expected_access_token
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
-    },
-
-    {
-        "Set_Error_Return_Success",          // input_json_data
-        ERR_FIRST,    /* not relevant */   // expected_status
-        "",      /* not relevant */          // expected_access_token
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR             // expected_sd_bus_error_name
-    }
 };
 
 static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread, void *user_data)
@@ -248,28 +207,17 @@ const static std::vector<DeregisterResources_entry> DeregisterResources_test_arr
 
     // string input                
     {
-        "Set_Success_Return_Success",        // input_token_data
+        "Return_Success",                    // input_token_data
         STATUS_SUCCESS, /* not relevant */   // expected_status
         "" /* not relevant */                // expected_sd_bus_error_name
     },
 
     {
-        "Set_Error_Return_Error",            // input_token_data
-        ERR_FIRST,    /* not relevant */   // expected_status
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
+        "Return_Error",                      // input_token_data
+        ERR_FIRST,    /* not relevant */     // expected_status
+        CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN     // expected_sd_bus_error_name
     },                             
 
-    {
-        "Set_Success_Return_Error",          // input_token_data
-        ERR_FIRST,    /* not relevant */   // expected_status
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR     // expected_sd_bus_error_name
-    },
-
-    {
-        "Set_Error_Return_Success",          // input_token_data
-        ERR_FIRST,    /* not relevant */   // expected_status
-        CLOUD_CONNECT_ERR_INTERNAL_ERROR             // expected_sd_bus_error_name
-    }
 };
 
 static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thread, void *user_data)
