@@ -19,11 +19,12 @@
 #include <set>
 #include <string>
 
-// sd-bus vtable object, implements the com.mbed.Cloud.Connect1 interface
+
+// sd-bus vtable object, implements the com.mbed.Pelion1.Connect interface
 // Keep those definitions here for testing
-#define DBUS_CLOUD_SERVICE_NAME                         "com.mbed.Cloud"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME               "com.mbed.Cloud.Connect1"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH                  "/com/mbed/Cloud/Connect1"
+#define DBUS_CLOUD_SERVICE_NAME                         "com.mbed.Pelion1"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME               "com.mbed.Pelion1.Connect"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH                  "/com/mbed/Pelion1/Connect"
 
 #define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME          "RegisterResources"
 #define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME        "DeregisterResources"
@@ -358,6 +359,19 @@ private:
      * called sd_bus functions in case of failure
      */
     int bus_track_sender(const char * bus_name);
+
+    /**
+     * @brief receives the current sender unique connection ID. 
+     * Decide if adapter should continue to process the arrived message. If false is returned, 
+     * reply with relevant CloudConnectStatus .See returned values for more info.
+     * 
+     * @param source - a valid unique connection ID of the sender
+     * @return true -  If this connection unique ID is already tracked or there is no tracked ID - 
+     * continue in calling function
+     * @return false  - if already exist a tracked connection which is not the input connection - 
+     * do not continue processing the message
+     */
+    bool bus_enforce_single_connection(std::string& source);
 
     // sd-bus bus connection handle
     sd_bus* connection_handle_ = nullptr;

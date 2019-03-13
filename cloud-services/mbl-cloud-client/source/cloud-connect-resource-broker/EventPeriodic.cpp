@@ -65,7 +65,7 @@ int EventPeriodic::immediate_event_handler(sd_event_source* s,
     // http://man7.org/linux/man-pages/man2/clock_gettime.2.html
     int r = sd_event_now(ev->event_loop_handle_, CLOCK_MONOTONIC, &when_to_expire_microseconds);
     if (r < 0) {
-        TR_ERR("sd_event_add_defer failed with error r=%d (%s)", r, strerror(r));
+        TR_ERR("sd_event_add_defer failed with error r=%d (%s)", r, strerror(-r));
         return r;
     }
     // Event loop iteration has not run yet - this is not an error
@@ -90,7 +90,7 @@ int EventPeriodic::immediate_event_handler(sd_event_source* s,
     if (r < 0) {
         TR_ERR("sd_event_source_set_time failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return r;
     }
@@ -99,7 +99,7 @@ int EventPeriodic::immediate_event_handler(sd_event_source* s,
     if (r < 0) {
         TR_ERR("sd_event_source_set_enabled failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return r;
     }
@@ -126,7 +126,7 @@ int EventPeriodic::send()
     // clock sources refer http://man7.org/linux/man-pages/man2/clock_gettime.2.html
     int r = sd_event_now(event_loop_handle_, CLOCK_MONOTONIC, &when_to_expire_microseconds);
     if (r < 0) {
-        TR_ERR("sd_event_now failed with error r=%d (%s)", r, strerror(r));
+        TR_ERR("sd_event_now failed with error r=%d (%s)", r, strerror(-r));
         return r;
     }
     // Event loop iteration has not run yet - this is not an error
@@ -155,7 +155,7 @@ int EventPeriodic::send()
                           (void*) this);
 
     if (r < 0) {
-        TR_ERR("sd_event_add_time failed with error r=%d (%s)", r, strerror(r));
+        TR_ERR("sd_event_add_time failed with error r=%d (%s)", r, strerror(-r));
         return r;
     }
 

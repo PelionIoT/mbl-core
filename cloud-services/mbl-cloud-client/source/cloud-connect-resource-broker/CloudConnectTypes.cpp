@@ -81,6 +81,11 @@ const char* CloudConnectStatus_to_str(const CloudConnectStatus status)
         SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INVALID_APPLICATION_RESOURCES_DEFINITION);
         SWITCH_RETURN_STRINGIFIED_VALUE(ERR_REGISTRATION_ALREADY_IN_PROGRESS);
         SWITCH_RETURN_STRINGIFIED_VALUE(ERR_ALREADY_REGISTERED);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INVALID_RESOURCE_PATH);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_RESOURCE_NOT_FOUND);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INVALID_RESOURCE_TYPE);
+        SWITCH_RETURN_STRINGIFIED_VALUE(ERR_INVALID_ACCESS_TOKEN);
 
     default: return "Unknown CloudConnectStatus value";
     }
@@ -90,18 +95,21 @@ const char* CloudConnectStatus_to_readable_str(const CloudConnectStatus status)
 {
     switch (status)
     {
-    case STATUS_SUCCESS: return "Status success";
-    case ERR_INTERNAL_ERROR: return "Internal error in Cloud Connect infrastructure";
+    case STATUS_SUCCESS: return "Status success.";
+    case ERR_INTERNAL_ERROR: return "Internal error in Cloud Connect infrastructure.";
     case ERR_INVALID_APPLICATION_RESOURCES_DEFINITION:
-        return "Invalid application resource definition";
-    case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "Registration already in progress";
-    case ERR_ALREADY_REGISTERED: return "Already registered";
-    case ERR_INVALID_ACCESS_TOKEN: return "Invalid access token";
-    case ERR_INVALID_RESOURCE_PATH: return "Invalid resource path";
-    case ERR_RESOURCE_NOT_FOUND: return "Resource not found";
-    case ERR_INVALID_RESOURCE_TYPE: return "Invalid resource type";
+        return "Invalid application resource definition.";
+    case ERR_REGISTRATION_ALREADY_IN_PROGRESS: return "Registration already in progress.";
+    case ERR_ALREADY_REGISTERED: return "Already registered.";
+    case ERR_INVALID_ACCESS_TOKEN: return "Invalid access token.";
+    case ERR_INVALID_RESOURCE_PATH: return "Invalid resource path.";
+    case ERR_RESOURCE_NOT_FOUND: return "Resource not found.";
+    case ERR_INVALID_RESOURCE_TYPE: return "Invalid resource type.";
+    case ERR_NOT_SUPPORTED: return "Not supported.";
+    case ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED:
+        return "No more connetions allowed to work simultaneously.";
 
-    default: return "Unknown Cloud Connect Status or Error";
+    default: return "Unknown Cloud Connect Status or Error.";
     }
 }
 
@@ -117,6 +125,8 @@ const char* CloudConnectStatus_error_to_DBus_format_str(const CloudConnectStatus
         RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_RESOURCE_PATH);
         RETURN_DBUS_FORMAT_ERROR(ERR_RESOURCE_NOT_FOUND);
         RETURN_DBUS_FORMAT_ERROR(ERR_INVALID_RESOURCE_TYPE);
+        RETURN_DBUS_FORMAT_ERROR(ERR_NOT_SUPPORTED);
+        RETURN_DBUS_FORMAT_ERROR(ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED);
 
     default: return "Unknown CloudConnectStatus value";
     }

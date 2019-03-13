@@ -36,7 +36,7 @@ MblError EventManager::init()
     if (r < 0) {
         TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -107,7 +107,7 @@ std::pair<MblError, uint64_t> EventManager::send_event_immediate(Event::EventDat
     TR_DEBUG_ENTER;
 
     if (!validate_common_event_parameters(data_type, data_length)) {
-        std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
+        return std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
     }
     // create the event
     std::unique_ptr<Event> ev(new EventImmediate(
@@ -137,7 +137,7 @@ std::pair<MblError, uint64_t> EventManager::send_event_periodic(Event::EventData
     TR_DEBUG_ENTER;
 
     if (!validate_periodic_event_parameters(data_type, data_length, period_millisec)) {
-        std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
+        return std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
     }
 
     // create the event
