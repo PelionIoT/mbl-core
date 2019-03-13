@@ -159,20 +159,16 @@ void ResourceBrokerTester::set_resources_values_test(
         return; // Nothing left to check
     }
 
+    // Note: both vectors should be with the same size and items order or test will fail.
+    ASSERT_TRUE(expected_inout_set_operations.size() == inout_set_operations.size());
+    
     // Compare expected_out_status to out_status
-    bool found_path = false;
+    auto expected_itr = expected_inout_set_operations.begin();
     for (auto in_out_itr : inout_set_operations) {
         std::string path = in_out_itr.input_data_.get_path();
-
-        found_path = false;
-        for (auto expected_itr : expected_inout_set_operations) {
-                if(path == expected_itr.input_data_.get_path()) {
-                    ASSERT_TRUE(expected_itr.output_status_ == in_out_itr.output_status_);
-                    found_path = true;
-                    break;
-                }
-        }
-        ASSERT_TRUE(found_path);
+        ASSERT_TRUE(path == expected_itr->input_data_.get_path());
+        ASSERT_TRUE(expected_itr->output_status_ == in_out_itr.output_status_);
+        std::advance(expected_itr, 1); // Move to next item
     }
 }
 
@@ -195,52 +191,48 @@ void ResourceBrokerTester::get_resources_values_test(
         return; // Nothing left to check
     }
 
+    // Note: both vectors should be with the same size and items order or test will fail.
+    ASSERT_TRUE(expected_inout_get_operations.size() == inout_get_operations.size());
+    
     // Compare expected_out_status to out_status
-    bool found_path = false;
+    auto expected_itr = expected_inout_get_operations.begin();
     for (auto in_out_itr : inout_get_operations) {
         std::string path = in_out_itr.inout_data_.get_path();
+        ASSERT_TRUE(path == expected_itr->inout_data_.get_path());
 
-        found_path = false;
-        for (auto expected_itr : expected_inout_get_operations) {
-                if(path == expected_itr.inout_data_.get_path()) {
-                    
-                    found_path = true; // Will verify later that we found a resource
-
-                    ASSERT_TRUE(expected_itr.output_status_ == in_out_itr.output_status_);
-                    if(CloudConnectStatus::STATUS_SUCCESS != expected_itr.output_status_) {
-                        continue; // Expected failed to get this resource value, continue...
-                    }
-
-                    ResourceDataType expected_data_type = expected_itr.inout_data_.get_data_type();
-
-                    ASSERT_TRUE(expected_data_type == in_out_itr.inout_data_.get_data_type());
-                    switch(expected_data_type) 
-                    {
-                    case ResourceDataType::STRING:
-                    {
-                        std::string expected_value_string = 
-                            expected_itr.inout_data_.get_value_string();
-                        ASSERT_TRUE(expected_value_string 
-                            == in_out_itr.inout_data_.get_value_string());
-                        break;
-                    }
-                    case ResourceDataType::INTEGER:
-                    {
-                        int64_t expected_value_integer = 
-                            expected_itr.inout_data_.get_value_integer();
-                        ASSERT_TRUE(expected_value_integer 
-                            == in_out_itr.inout_data_.get_value_integer());
-                        break;
-                    }
-                    default:
-                    {
-                        ASSERT_TRUE(false); // Always fail as we only support integer and strings
-                        break;
-                    }
-                    }
-
-                }
+        ASSERT_TRUE(expected_itr->output_status_ == in_out_itr.output_status_);
+        if(CloudConnectStatus::STATUS_SUCCESS != expected_itr->output_status_) {
+            std::advance(expected_itr, 1); // Move to next item
+            continue; // Expected failed to get this resource value, continue...
         }
-        ASSERT_TRUE(found_path);
+
+        ResourceDataType expected_data_type = expected_itr->inout_data_.get_data_type();
+
+        ASSERT_TRUE(expected_data_type == in_out_itr.inout_data_.get_data_type());
+        switch(expected_data_type) 
+        {
+        case ResourceDataType::STRING:
+        {
+            std::string expected_value_string = 
+                expected_itr->inout_data_.get_value_string();
+            ASSERT_TRUE(expected_value_string 
+                == in_out_itr.inout_data_.get_value_string());
+            break;
+        }
+        case ResourceDataType::INTEGER:
+        {
+            int64_t expected_value_integer = 
+                expected_itr->inout_data_.get_value_integer();
+            ASSERT_TRUE(expected_value_integer 
+                == in_out_itr.inout_data_.get_value_integer());
+            break;
+        }
+        default:
+        {
+            ASSERT_TRUE(false); // Always fail as we only support integer and strings
+            break;
+        }
+        }
+        std::advance(expected_itr, 1); // Move to next item
     }
 }
