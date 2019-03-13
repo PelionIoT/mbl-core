@@ -71,7 +71,7 @@ int EventImmediate::send()
     if (r < 0) {
         TR_ERR("sd_event_add_defer failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return r;
     }

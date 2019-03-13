@@ -47,6 +47,12 @@ static constexpr sd_bus_error_map cloud_connect_dbus_errors[] = {
     SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_REGISTRATION_ALREADY_IN_PROGRESS,
                      ERR_REGISTRATION_ALREADY_IN_PROGRESS),
     SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_ALREADY_REGISTERED, ERR_ALREADY_REGISTERED),
+    SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH, ERR_INVALID_RESOURCE_PATH),
+    SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_RESOURCE_NOT_FOUND, ERR_RESOURCE_NOT_FOUND),
+    SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_INVALID_RESOURCE_TYPE, ERR_INVALID_RESOURCE_TYPE),
+    SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN, ERR_INVALID_ACCESS_TOKEN),
+    SD_BUS_ERROR_MAP(CLOUD_CONNECT_ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED,
+                     ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED),
 
     // must be always the last
     SD_BUS_ERROR_MAP_END};
@@ -68,7 +74,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_open_user failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -81,7 +87,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_attach_event failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -102,7 +108,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_add_object_vtable failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -118,7 +124,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_get_unique_name failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -131,7 +137,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_request_name failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusRequestNameFailed));
         return MblError::DBA_SdBusRequestNameFailed;
     }
@@ -143,7 +149,7 @@ MblError DBusAdapterImpl::bus_init()
     if (r < 0) {
         TR_ERR("sd_bus_error_add_map failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdBusCallFailure));
         return MblError::DBA_SdBusCallFailure;
     }
@@ -216,7 +222,7 @@ int DBusAdapterImpl::bus_track_sender(const char* bus_name)
         sd_bus_track* track = nullptr;
         int r = sd_bus_track_new(connection_handle_, &track, disconnected_bus_name_callback, this);
         if (r < 0) {
-            TR_ERR("sd_bus_track_new failed with error r=%d (%s)", r, strerror(r));
+            TR_ERR("sd_bus_track_new failed with error r=%d (%s)", r, strerror(-r));
             return r;
         }
 
@@ -232,7 +238,7 @@ int DBusAdapterImpl::bus_track_sender(const char* bus_name)
             return -EFAULT;
         }
         if (r < 0) {
-            TR_ERR("sd_bus_track_add_name failed with error r=%d (%s)", r, strerror(r));
+            TR_ERR("sd_bus_track_add_name failed with error r=%d (%s)", r, strerror(-r));
             return r;
         }
 
@@ -273,7 +279,7 @@ MblError DBusAdapterImpl::event_loop_init()
     if (r < 0) {
         TR_ERR("sd_event_default failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -296,7 +302,7 @@ MblError DBusAdapterImpl::event_loop_init()
     if (r < 0) {
         TR_ERR("sd_event_add_io failed with error r=%d (%s) - returning %s",
                r,
-               strerror(r),
+               strerror(-r),
                MblError_to_str(MblError::DBA_SdEventCallFailure));
         return MblError::DBA_SdEventCallFailure;
     }
@@ -331,7 +337,7 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     // Send myself an exit request
     int r = sd_event_exit(event_loop_handle_, (int) stop_status);
     if (r < 0) {
-        TR_ERR("sd_event_exit failed with error r=%d (%s)", r, strerror(r));
+        TR_ERR("sd_event_exit failed with error r=%d (%s)", r, strerror(-r));
     }
     else
     {
@@ -475,7 +481,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
                 MblError_to_str(payload.exit_.stop_status));
         int r = event_loop_request_stop(payload.exit_.stop_status);
         if (r < 0) {
-            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)", strerror(r), r);
+            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)", strerror(-r), r);
             return r;
         }
         break;
@@ -505,6 +511,31 @@ int DBusAdapterImpl::incoming_mailbox_message_callback(sd_event_source* s,
     return adapter_impl->incoming_mailbox_message_callback_impl(s, fd, revents);
 }
 
+// TODO - This is a first stage enforcement function - allow a single connection to interact with
+// our service. to be remove later on.
+bool DBusAdapterImpl::bus_enforce_single_connection(std::string& source)
+{
+    TR_DEBUG_ENTER;
+
+    if (connections_tracker_.empty()) {
+        // no connection is tracked - continue processing arriving message
+        return true;
+    }
+
+    if (connections_tracker_.find(source.c_str()) != connections_tracker_.end()) {
+        // this sender is tracked, and is the only allowed connection until disconnection - continue
+        // processing arriving message
+        return true;
+    }
+
+    // If we are here, some unique connection ID is tracked already and it is not the sender -
+    // reply with error and return false to caller to stop processing
+    TR_ERR("Message from source=%s cannot be processed! Only a single connection is allowed!",
+           source.c_str());
+
+    return false;
+}
+
 int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
                                                    void* userdata,
                                                    sd_bus_error* ret_error)
@@ -513,6 +544,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     assert(userdata);
     assert(m);
     assert(ret_error);
+    *ret_error = SD_BUS_ERROR_NULL;
 
     // TODO: For all failues here, might need to send an error reply ONLY if the message is of
     // kind method_call (can check that) check what is done in other implementations
@@ -590,7 +622,25 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         "Received message of type %s from sender %s", message_type_to_str(type), sender.c_str());
 
     // Add sender to tracked connections (if not tracked already).
+
+    // TODO - At this stage of development, we allow only a single connection to communicate with
+    // our service at any specific time. We believe that multiple connections will probably work,
+    // but this hasn't been tested probably yet
     DBusAdapterImpl* impl = static_cast<DBusAdapterImpl*>(userdata);
+    if (!impl->bus_enforce_single_connection(sender)) {
+        CloudConnectStatus status = ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED;
+        TR_ERR("Only single connection allowed! (%s is not the active connection)"
+               " returning to sender CloudConnectStatus=%s",
+               sender.c_str(),
+               CloudConnectStatus_to_str(status));
+
+        r = sd_bus_error_set_const(ret_error,
+                                   CloudConnectStatus_error_to_DBus_format_str(status),
+                                   CloudConnectStatus_to_readable_str(status));
+        assert(-status == r);
+        return r;
+    }
+
     r = impl->bus_track_sender(sender.c_str());
     if (r < 0) {
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "bus_track_sender");
@@ -770,10 +820,12 @@ int DBusAdapterImpl::handle_resource_broker_method_failure(MblError mbl_status,
     // set custom error to sd_bus_error structure.
     // sd_bus_error_set_const translates DBus format error string to negative integer
     // and returns it's value(in this case -status_to_send)
-    return sd_bus_error_set_const(
+    int r = sd_bus_error_set_const(
         ret_error,
         CloudConnectStatus_error_to_DBus_format_str(status_to_send), // sd_bus_error.name
         CloudConnectStatus_to_readable_str(status_to_send));         // sd_bus_error.message
+    assert(-status_to_send == r);
+    return r;
 }
 
 int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
@@ -853,6 +905,7 @@ int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_b
     assert(m);
 
     const char* sender = sd_bus_message_get_sender(m);
+
     TR_INFO("Starting to process DeregisterResources method call from sender %s", sender);
 
     std::string access_token;
@@ -891,7 +944,9 @@ std::pair<MblError, std::string> DBusAdapterImpl::generate_access_token()
         return ret_pair;
     }
 
-    char buffer[SD_ID_128_UNIQUE_ID_LEN] = {0};
+    // Add a char for NULL termination
+    char buffer[SD_ID_128_UNIQUE_ID_LEN + 1] = {0};
+
     ret_pair.second = sd_id128_to_string(id128, buffer);
     return ret_pair;
 }
@@ -1061,7 +1116,7 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
         if (r < 0) {
             status = MblError::DBA_SdEventExitRequestFailure;
             TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
-                   strerror(r),
+                   strerror(-r),
                    r,
                    MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
             // continue
@@ -1248,4 +1303,4 @@ std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_periodic(Event::EventD
         data, data_length, data_type, callback, period_millisec, description);
 }
 
-} // namespace mbl {
+} // namespace mbl
