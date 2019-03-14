@@ -12,15 +12,15 @@ To demonstrate Pelion Connect D-Bus service methods' invocation from the contain
 # Structure
 
 `<mbl-core>/tutorials/hello_pelion_connect` directory which contains the following software:
-- hello-pelion-connect application sources. The source code of the application is located in the folder `source`. hello-pelion-connect application description please see in this [readme file][hello-pelion-connect-readme].
-- Docker stuff (shell scripts and the Docker file) for the containerized hello-pelion-connect application IPK creation. Shell scripts are located in the root folder (`<mbl-core>/tutorials/hello_pelion_connect`). `Dockerfile` is located in the folder `cc-env`. 
-- OPKG configuration which is required for IPK generation. OPKG configuration is located in `src_opkg` folder.  
-- OCI container configuration which defines properties of the container in which the hello-pelion-connect application will run on the device. The OCI container configuration is located in the `src_bundle` folder.    
+- hello-pelion-connect application sources. The source code of the application is located in the `source` folder . For hello-pelion-connect application description please see this [readme file][hello-pelion-connect-readme].
+- Docker environment (shell scripts and the Dockerfile) for the containerized hello-pelion-connect application IPK creation. Shell scripts are located in the `<mbl-core>/tutorials/hello_pelion_connect` folder. Dockerfile is located in the `cc-env` folder.
+- OPKG configuration file which is required for IPK generation. OPKG configuration file is located under `src_opkg` folder.
+- OCI container configuration file is located under `src_bundle` folder.    
 
 
-## Create hello-pelion-connect IPK
+## Create hello-pelion-connect IPK on a PC
 
-The hello-pelion-connect application is created inside the Docker container. This Docker container contains all the necessary tools that are required for the application creation (and therefore the required tools are not prerequisites of the user PC). 
+The hello-pelion-connect application is created inside the Docker container on a PC. The Docker container contains all the necessary tools that are required for the application creation. 
 
 The Docker container is built and run by the main script `container_create_hello_pelion_connect.sh`. This script is the main script which is used for the hello-pelion-connect application IPK creation. The resulting IPK contains the containerized hello-pelion-connect application. 
 
@@ -36,19 +36,27 @@ To clean the previously created artifacts run
 container_create_hello_pelion_connect.sh clean
 ```
 
-## Install hello-pelion-connect IPK
+## Install and start hello-pelion-connect in OCI container on the device
 
 Install the application IPK on the device, using one of the following ways:
 
  * [Send the application using over-the-air firmware update with the Pelion Device Management][over-the-air-firmware-update].
  * [Flash the application over USB with mbl-cli][mbl-cli-flash].
 
-## Run hello-pelion-connect in OCI container
-After the application IPK has been successfully installed on the device, expect to have the `/home/app/hello-pelion-connect/` folder on the device. This folder contains containerized (in OCI container) hello-pelion-connect application.
+After the application IPK has been successfully installed on the device, expect to have the `/home/app/hello-pelion-connect/` folder on the device.  This folder contains containerized (in OCI container) hello-pelion-connect application. Also, put attention, that after the installation, the hello-pelion-connect application has been started as part of the installation procedure.  
 
-To run hello-pelion-connect application inside the OCi container, navigate to the `/home/app/hello-pelion-connect/` folder and run
-```runc run <oci_container_id>```
--  `<oci_container_id>` is an arbitrary value, for example 123
+Note: during the device reboot, if the hello-pelion-connect was installed, it will be started automatically during the boot sequence.
+
+### Restart hello-pelion-connect
+In order to restart the hello-pelion-connect application, kill the current hello-pelion-connect OCI container, and start the new one: 
+
+```
+# kill the current container run
+mbl-app-lifecycle-manager -k hello-pelion-connect
+
+# start new container run
+mbl-app-lifecycle-manager --run-container hello-pelion-connect --application-id hello-pelion-connect --verbose
+```
 
 ## Analyzing result
 ### Status success 

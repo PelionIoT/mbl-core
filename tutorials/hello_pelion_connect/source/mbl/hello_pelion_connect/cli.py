@@ -59,21 +59,18 @@ def get_argument_parser():
         ),
     )
 
-    # check if DBUS_SESSION_BUS_ADDRESS set in environment
-    dbus_session_bus_address = os.environ.get("DBUS_SESSION_BUS_ADDRESS")
-    if dbus_session_bus_address is None:
-        # no such variable in environment, use default
-        dbus_session_bus_address = (
-            "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
-        )
-
     parser.add_argument(
         "-a",
         "--pelion-connect-dbus-address",
         help="Pelion connect dbus address",
         metavar="DBUS_SESSION_BUS_ADDRESS",
         action="store",
-        default=dbus_session_bus_address,
+        # check if DBUS_SESSION_BUS_ADDRESS set in environment,
+        # and if not, use default
+        default=os.environ.get(
+            "DBUS_SESSION_BUS_ADDRESS",
+            "unix:path=/var/run/dbus/mbl_cloud_bus_socket",
+        ),
     )
 
     return parser

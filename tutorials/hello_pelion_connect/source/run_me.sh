@@ -4,15 +4,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# This script run inside the container. 
-# It runs hello pelion connect application in the virtual environment.
+# This script run inside the OCI container on a device. It runs Hello Pelion 
+# Connect application in the Python virtual environment.
 
 set -e
 
 APP_NAME="hello_pelion_connect"
 DEST_FOLDER="/tmp"
-# The container requires to be installed in a folder with read/write permissions on the device. 
-# Because of this, create a folder in a read/write folder /tmp/
+
+# The application should be installed into a writable folder using the Python
+# virtual environment. In the OCI container the /tmp/ folder has a write 
+# permissions.
 echo "Coping hello pelion connect application code to ${DEST_FOLDER}..."  
 mkdir ${DEST_FOLDER}/${APP_NAME}
 
