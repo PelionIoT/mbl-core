@@ -9,7 +9,7 @@
 # POST_CHECK) and the image_url of the wic file.
 #
 # Set the local variables:
-# $test_stage contaons the stage
+# $test_stage contains the stage
 # $rootfs_image is the image name with the "wic.gz" replaced by "tar.xz"
 #
 
