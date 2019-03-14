@@ -392,7 +392,7 @@ MblError ResourceBroker::mbed_cloud_client_setup()
 
     const bool setup_ok = mbed_client_setup_func_(get_dummy_network_interface());
     if (!setup_ok) {
-        TR_ERR("Client setup failed");
+        TR_ERR("Mbed cloud client setup failed");
         return Error::ConnectUnknownError;
     }
 

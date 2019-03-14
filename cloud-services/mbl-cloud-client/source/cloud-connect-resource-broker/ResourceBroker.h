@@ -290,28 +290,46 @@ protected:
      */
     void regsiter_callback_handlers();
 
-    // TODO: add documentation
+    /**
+     * @brief Setup mbed cloud client and register the device for the first time.
+     * 
+     * @return MblError -
+     *                  Error::ConnectUnknownError is case of failure
+     *                  Error::None in case of success
+     */
     MblError mbed_cloud_client_setup();
 
-    // TODO: add documentation
+    /**
+     * @brief Device registered callback.
+     * Called by Mbed cloud client to indicate that device is registered.
+     */
     void handle_client_registered();
 
-    // TODO: add documentation
+    /**
+     * @brief Device unregistered callback.
+     * Called by Mbed cloud client to indicate that device is no longer registered.
+     */
     void handle_client_unregistered();
 
-    // TODO: add documentation
+    /**
+     * @brief Periodic keepalive callback to notify Mbed cloud client that device is alive
+     * 
+     * @param s - event source
+     * @param ev - event data
+     * @return Error::None in case of success
+     */
     static MblError periodic_keepalive_callback(sd_event_source* s, const Event* ev);
 
     /**
      * @brief - Registration update callback.
-     * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
+     * Called by Mbed cloud client to indicate last mbed-cloud-client registration update was successful.
      * 
      */
     void handle_registration_updated_cb();
 
     /**
      * @brief - Error callback function
-     * Called by Mdeb Cloud Client to indicate last mbed-cloud-client operation failure
+     * Called by Mbed Cloud Client to indicate last mbed-cloud-client operation failure
      * 
      * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
      */
@@ -412,10 +430,10 @@ protected:
     void get_resource_value(const RegistrationRecord_ptr registration_record,
                             ResourceData& resource_data);
 
-    // TODO: add description
-    // Set function pointers to point to mbed_client functions
-    // In gtest our friend test class will override these pointers to get all the
-    // calls
+    /**
+     * @brief Set mbed cloud client function pointers.
+     * In case of tests we will use it to set mbed cloud client function pointers to mock class.
+     */
     void init_mbed_cloud_client_function_pointers();
 
     /**
