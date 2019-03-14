@@ -1,6 +1,6 @@
 # Purpose
 
-To demonstrate Pelion Connect D-Bus service methods' invocation from the containerized application which runs on the device. Demonstrated methods:
+The purpose of the hello-pelion-connect sample application is to demonstrate Pelion Connect D-Bus service methods' invocation from the containerized application which runs on the device. Demonstrated methods:
 1. RegisterResources - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.
 
 # Prerequisites
@@ -27,11 +27,11 @@ The Docker container is built and run by the main script `container_create_hello
 During the build, the Docker container runs `container_entry_point.sh` which sets the user id and user name to those of the user.
 After that, `create_sample_application.sh` creates IPK package using OPKG tools.
 
-To create hello-pelion-connect application navigate to the `<mbl-core>/tutorials/hello_pelion_connect` folder, and run ```container_create_hello_pelion_connect.sh```.
+To create hello-pelion-connect application navigate to the `<mbl-core>/tutorials/hello_pelion_connect` folder, and run the following command: ```container_create_hello_pelion_connect.sh```.
 
 Creation script product is the IPK package `ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk` containing containerized hello-pelion-connect application.
 
-To clean the previously created artifacts run
+To clean the previously created artifacts run the following command:
 ```
 container_create_hello_pelion_connect.sh clean
 ```
