@@ -20,8 +20,8 @@ from gi.repository import GLib
 DISPLAY = "0"
 
 # Pelion connect D-Bus properties
-PELION_CONNECT_DBUS_NAME = "com.mbed.Cloud"
-PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Cloud/Connect1"
+PELION_CONNECT_DBUS_NAME = "com.mbed.Pelion1"
+PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Pelion1/Connect"
 
 
 class HelloPelionConnect:
