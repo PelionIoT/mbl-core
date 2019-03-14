@@ -91,6 +91,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     SD_BUS_METHOD(
         "RegisterResources", "s", "us", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
 
+    // TODO: This signal is disabled for now
     // com.mbed.Pelion1.Connect.RegisterResourcesStatus
     //
     // As a Signal :
@@ -106,7 +107,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL("RegisterResourcesStatus", "u", 0),
+    // SD_BUS_SIGNAL("RegisterResourcesStatus", "u", 0),
 
     // TODO: This method call is disabled for now - upper layer does not support it as expected.
     // com.mbed.Pelion1.Connect.DeregisterResources
@@ -161,6 +162,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // TBD
     // SD_BUS_SIGNAL("DeregisterResourcesStatus", "u", 0),
 
+    // TODO: This method call is disabled for now
     // com.mbed.Pelion1.Connect.AddResourceInstances
     //
     // As a Method :
@@ -194,12 +196,13 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("AddResourceInstances",
-                  "ssaq",
-                  "u",
-                  incoming_bus_message_callback,
-                  SD_BUS_VTABLE_UNPRIVILEGED),
+    // SD_BUS_METHOD("AddResourceInstances",
+    //               "ssaq",
+    //               "u",
+    //               incoming_bus_message_callback,
+    //               SD_BUS_VTABLE_UNPRIVILEGED),
 
+    // TODO: This signal is disabled for now
     // com.mbed.Pelion1.Connect.AddResourceInstancesStatus
     //
     // As a Signal :
@@ -215,8 +218,9 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL("AddResourceInstancesStatus", "u", 0),
+    // SD_BUS_SIGNAL("AddResourceInstancesStatus", "u", 0),
 
+    // TODO: This method call is disabled for now
     // com.mbed.Pelion1.Connect.RemoveResourceInstances
     //
     // As a Method :
@@ -251,12 +255,13 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("RemoveResourceInstances",
-                  "ssaq",
-                  "u",
-                  incoming_bus_message_callback,
-                  SD_BUS_VTABLE_UNPRIVILEGED),
+    // SD_BUS_METHOD("RemoveResourceInstances",
+    //               "ssaq",
+    //               "u",
+    //               incoming_bus_message_callback,
+    //               SD_BUS_VTABLE_UNPRIVILEGED),
 
+    // TODO: This signal is disabled for now
     // com.mbed.Pelion1.Connect.RemoveResourceInstancesStatus
     //
     // As a Signal :
@@ -272,7 +277,7 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_SIGNAL("RemoveResourceInstancesStatus", "u", 0),
+    // SD_BUS_SIGNAL("RemoveResourceInstancesStatus", "u", 0),
 
     // com.mbed.Pelion1.Connect.SetResourcesValues
     //

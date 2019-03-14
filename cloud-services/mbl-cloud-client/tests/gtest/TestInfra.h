@@ -20,6 +20,7 @@
     if (a != b) return MblError::DBA_InvalidValue
 
 enum TestResult {
+    TEST_FAILED,
     TEST_SUCCESS,
     TEST_FAILED_EXPECTED_RESULT_MISMATCH = -1,
     TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED = -2,

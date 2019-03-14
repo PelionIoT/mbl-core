@@ -52,14 +52,28 @@ public:
      * @param name - name ot request
      * @return int - as in sd_bus_request_name()
      */
-    int bus_request_name(const char* name);
+    int bus_request_name(const char* name) const;
 
     /**
      * @brief return d-bus connection handle
      * 
      * @return sd_bus * d-bus connection handle
      */
-    sd_bus *get_connection_handle() const;
+    sd_bus * get_connection_handle() const { return connection_handle_; }
+
+    /**
+     * @brief Get the unique connection id
+     * 
+     * @return std::string of the unique connection id
+     */
+    std::string get_unique_connection_id() const { return unique_name_; }
+
+    /**
+     * @brief disconnect from bus and set connection_handle_ to nullptr
+     * If already disconnected, do nothing
+     * 
+     */
+    void disconnect();
 
   private:
     int start();   
@@ -77,6 +91,7 @@ public:
 
     // The thread bus connection handle
     sd_bus* connection_handle_;
+    std::string unique_name_;
 };
 
 #endif //#ifndef _TestInfraAppThread_h_
