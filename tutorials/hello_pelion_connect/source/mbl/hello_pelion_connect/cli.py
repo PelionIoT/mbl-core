@@ -65,12 +65,11 @@ def get_argument_parser():
         help="Pelion connect dbus address",
         metavar="DBUS_SESSION_BUS_ADDRESS",
         action="store",
-
-        # use DBUS_SESSION_BUS_ADDRESS environment variable as a default, 
-        # and if it is not set, use custom default
+        # use DBUS_SESSION_BUS_ADDRESS environment variable
+        # as a default if exists
         default=os.environ.get(
             "DBUS_SESSION_BUS_ADDRESS",
-            "unix:path=/var/run/dbus/mbl_cloud_bus_socket", # custom default
+            "unix:path=/var/run/dbus/mbl_cloud_bus_socket",
         ),
     )
 
