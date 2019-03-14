@@ -232,6 +232,12 @@ public:
         connection_id_(connection_id) 
         {};
 
+    // Operator comparison
+    bool operator== (const IpcConnection & ipc_connection)
+    {
+        return (connection_id_ == ipc_connection.connection_id_);
+    }
+
     // getters
     inline const std::string& get_connection_id() const { return connection_id_; }
 

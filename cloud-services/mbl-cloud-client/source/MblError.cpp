@@ -73,6 +73,9 @@ const char* MblError_to_str(const MblError error)
     case Error::CCRBGenerateUniqueIdFailed: return "CCRBGenerateUniqueIdFailed";
     case Error::CCRBInvalidResourcePath: return "CCRBInvalidResourcePath";
     case Error::CCRBResourceNotFound: return "CCRBResourceNotFound";
+    case Error::CCRBConnectionNotFound: return "CCRBConnectionNotFound";
+    case Error::CCRBNoValidConnection: return "CCRBNoValidConnection";
+
     case Error::DBA_IllegalState: return "DBA_IllegalState";
     case Error::DBA_InvalidValue: return "DBA_InvalidValue";
     case Error::DBA_ForbiddenCall: return "DBA_ForbiddenCall";

@@ -121,7 +121,7 @@ protected:
      *                application in all APIs that access to the provided set of resources.
      */
     virtual std::pair<CloudConnectStatus, std::string> 
-    register_resources(const IpcConnection & source, 
+    register_resources(IpcConnection source, 
                        const std::string &app_resource_definition);
 
     /**
@@ -140,7 +140,7 @@ protected:
      *         sending deregistration request to the Cloud, and so on.
      */
     virtual CloudConnectStatus deregister_resources(
-        const IpcConnection & source, 
+        IpcConnection source, 
         const std::string &access_token);
 
     /**
@@ -165,7 +165,7 @@ protected:
      *         sending deregistration request to the Cloud, and so on.
      */
     virtual CloudConnectStatus add_resource_instances(
-        const IpcConnection & source, 
+        IpcConnection source, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
@@ -192,7 +192,7 @@ protected:
      *         sending deregistration request to the Cloud, and so on.
      */
     virtual CloudConnectStatus remove_resource_instances(
-        const IpcConnection & source, 
+        IpcConnection source, 
         const std::string &access_token, 
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
@@ -223,7 +223,7 @@ protected:
      *         sending deregistration request to the Cloud, and so on.
      */
     virtual CloudConnectStatus set_resources_values(
-        const IpcConnection & source,
+        IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations);
 
@@ -256,7 +256,7 @@ protected:
      *         sending deregistration request to the Cloud, and so on.
      */
     virtual CloudConnectStatus get_resources_values(
-        const IpcConnection & source,
+        IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceGetOperation> &inout_get_operations);
 
@@ -267,7 +267,7 @@ protected:
      * 
      * @param source - connection which has been closed
      */    
-    virtual void notify_connection_closed(const IpcConnection & source);
+    virtual void notify_connection_closed(IpcConnection source);
 
     /**
      * @brief CCRB thread main function.

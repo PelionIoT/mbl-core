@@ -337,7 +337,7 @@ void ResourceBroker::handle_registration_updated_cb()
         // Send the response to adapter:
         CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
         const MblError status = ipc_adapter_->update_registration_status(
-            registration_record->get_connection(), reg_status);
+            registration_record->get_registration_source(), reg_status);
         if (Error::None != status) {
             TR_ERR("update_registration_status failed with error: %s", MblError_to_str(status));
         }
@@ -378,17 +378,12 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
         }
 
         // Send the response to adapter:
-        if (registration_record->is_registered()) {
-            // TODO: add call to update_deregistration_status when deregister is implemented
-            TR_ERR("Registration record (access_token: %s) is already registered.",
-                   in_progress_access_token_.c_str());
-        }
-        else
+        if (!registration_record->is_registered()) 
         {
             // Registration record is not registered yet, which means the error is for register
             // request
             const MblError status = ipc_adapter_->update_registration_status(
-                registration_record->get_connection(), CloudConnectStatus::ERR_INTERNAL_ERROR);
+                registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
             if (Error::None != status) {
                 TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
                        MblError_to_str(status));
@@ -398,6 +393,12 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
                      in_progress_access_token_.c_str());
             auto itr = registration_records_.find(in_progress_access_token_);
             registration_records_.erase(itr); // Erase registration record as regitsration failed
+        }
+        else
+        {
+            // TODO: add call to update_deregistration_status when deregister is implemented
+            TR_ERR("Registration record (access_token: %s) is already registered.",
+                   in_progress_access_token_.c_str());
         }
         // Mark that registration is finished (using atomic flag) (even if it was failed)
         registration_in_progress_.store(false);
@@ -412,7 +413,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<CloudConnectStatus, std::string>
-ResourceBroker::register_resources(const IpcConnection& source,
+ResourceBroker::register_resources(IpcConnection source,
                                    const std::string& app_resource_definition)
 {
     TR_DEBUG_ENTER;
@@ -475,7 +476,7 @@ ResourceBroker::register_resources(const IpcConnection& source,
     return ret_pair;
 }
 
-CloudConnectStatus ResourceBroker::deregister_resources(const IpcConnection& /*source*/,
+CloudConnectStatus ResourceBroker::deregister_resources(IpcConnection /*source*/,
                                                         const std::string& /*access_token*/)
 {
 
@@ -483,7 +484,7 @@ CloudConnectStatus ResourceBroker::deregister_resources(const IpcConnection& /*s
     return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
 
-CloudConnectStatus ResourceBroker::add_resource_instances(const IpcConnection& /*source*/,
+CloudConnectStatus ResourceBroker::add_resource_instances(IpcConnection /*source*/,
                                                           const std::string& /*unused*/,
                                                           const std::string& /*unused*/,
                                                           const std::vector<uint16_t>& /*unused*/)
@@ -493,7 +494,7 @@ CloudConnectStatus ResourceBroker::add_resource_instances(const IpcConnection& /
 }
 
 CloudConnectStatus
-ResourceBroker::remove_resource_instances(const IpcConnection& /*source*/,
+ResourceBroker::remove_resource_instances(IpcConnection /*source*/,
                                           const std::string& /*unused*/,
                                           const std::string& /*unused*/,
                                           const std::vector<uint16_t>& /*unused*/)
@@ -612,7 +613,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
 }
 
 CloudConnectStatus
-ResourceBroker::set_resources_values(const IpcConnection& /*source*/,
+ResourceBroker::set_resources_values(IpcConnection /*source*/,
                                      const std::string& access_token,
                                      std::vector<ResourceSetOperation>& inout_set_operations)
 {
@@ -690,7 +691,7 @@ void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registratio
 }
 
 CloudConnectStatus
-ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
+ResourceBroker::get_resources_values(IpcConnection /*source*/,
                                      const std::string& access_token,
                                      std::vector<ResourceGetOperation>& inout_get_operations)
 {
@@ -720,10 +721,22 @@ ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
-void ResourceBroker::notify_connection_closed(const IpcConnection& /*source*/)
+void ResourceBroker::notify_connection_closed(IpcConnection /*source*/)
 {
     TR_DEBUG_ENTER;
-    TR_ERR("!!!THIS FUNCTION MUST BE IMPLEMENTED!!!");
+
+    if (registration_in_progress_.load()) {
+        TR_WARN("Connection closed during registration (access token: %s)",
+            in_progress_access_token_.c_str());
+    }
+
+    registration_in_progress_.store(false);
+
+    TR_DEBUG("Erase registration record (access_token: %s)",
+                in_progress_access_token_.c_str());
+    auto itr = registration_records_.find(in_progress_access_token_);
+    registration_records_.erase(itr); // Erase registration record as regitsration failed
+
 }
 
 } // namespace mbl
