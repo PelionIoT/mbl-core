@@ -1205,7 +1205,7 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     //        return MblError::DBA_SdBusCallFailure;
     //    }
 
-    tr_debug("Signal %s was successfully emitted to %s", signal_name, signal_dest);
+    TR_DEBUG("Signal %s was successfully emitted to %s", signal_name, signal_dest);
 
     return MblError::None;
 }
