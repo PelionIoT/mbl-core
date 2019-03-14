@@ -267,7 +267,7 @@ protected:
      * 
      * @param source - connection which has been closed
      */    
-    void notify_connection_closed(const IpcConnection & source);
+    virtual void notify_connection_closed(const IpcConnection & source);
 
     /**
      * @brief CCRB thread main function.

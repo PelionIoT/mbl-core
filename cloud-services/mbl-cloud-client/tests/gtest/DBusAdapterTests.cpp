@@ -939,7 +939,7 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
  * call succeed. Check also that length of generated token is SD_ID_128_UNIQUE_ID_LEN
  * 
  */
-TEST(DBusAdapter_AccessTokenGenerating, check_non_repeating)
+TEST(DBusAdapter, AccessTokenGenerating_check_non_repeating)
 {
     const ssize_t NUM_ITERATIONS = 100000;
     ResourceBroker broker;
@@ -958,8 +958,7 @@ TEST(DBusAdapter_AccessTokenGenerating, check_non_repeating)
     }
 }
 
-
-TEST(DBusAdapterValidate1, max_allowed_connections_enforced_unitest)
+TEST(DBusAdapter, enforce_single_connection_unit_test)
 {   
     ResourceBroker broker;    
     DBusAdapter adapter(broker);    

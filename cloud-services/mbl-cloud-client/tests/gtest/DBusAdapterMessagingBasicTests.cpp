@@ -311,14 +311,11 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 //     ASSERT_EQ(adapter.deinit(), MblError::None);
 // }
 
-
 /////////////////////////////////////////////////////////////////////////////
 // DBusAdapter Validate maximal allowed connections enforced
 /////////////////////////////////////////////////////////////////////////////
 
-
-
-class ResourceBrokerMock : public ResourceBroker
+class ResourceBrokerMock1 : public ResourceBroker
 {
 public:
     virtual std::pair<CloudConnectStatus, std::string> 
@@ -340,7 +337,7 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(
     DBusAdapter *adapter = static_cast<DBusAdapter*>(userdata);
 
     // Call on already active connection handle. The RegisterResources callback to CCRB 
-    // is overwritten above by ResourceBrokerMock::register_resources
+    // is overwritten above by ResourceBrokerMock1::register_resources
     int r = sd_bus_call_method(
                     app_thread->get_connection_handle(),
                     DBUS_CLOUD_SERVICE_NAME,
@@ -407,10 +404,10 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(
     return 0;
 }
 
-TEST(DBusAdapterValidate2, max_allowed_connections_enforced)
+TEST(DBusAdapter, enforce_single_connection_single_app_2_connections)
 {
     GTEST_LOG_START_TEST;    
-    ResourceBrokerMock ccrb;
+    ResourceBrokerMock1 ccrb;
     DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);        
 
@@ -428,4 +425,175 @@ TEST(DBusAdapterValidate2, max_allowed_connections_enforced)
     ASSERT_EQ(app_thread.join(&retval), 0);
     ASSERT_EQ((uintptr_t)retval, MblError::None);
     ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// DBusAdapter validate disconnection noification sent to CCRB
+/////////////////////////////////////////////////////////////////////////////
+
+/**
+ * @brief Fixture class  which holds a callback and 2 statics vars used by the test
+ *
+ */
+class DBusAdapaterFixture : public ::testing::Test
+{
+public:
+    void SetUp() override
+    {
+        TR_DEBUG_ENTER;
+        ASSERT_EQ(sem_init(&semaphore_, 0, 0), 0);
+    }
+
+    void TearDown() override
+    {
+        TR_DEBUG_ENTER;
+        ASSERT_EQ(sem_destroy(&semaphore_), 0);
+    }
+
+    static int AppThreadCb_validate_client_disconnection_notification(
+        AppThread *app_thread,
+        void * userdata);
+        
+    // The active connection id, used in order to save traditional IPC mechanisms. The time of set
+    // is always distinct from the time of get.
+    static std::string active_connection_id_;   
+
+    // test result - true for success, false for failure.
+    static TestResult test_result_;
+
+    // a semaphore to synchronize between 2 threads - after disconnecting, the client thread
+    // will wait till semaphore is raised
+    static sem_t semaphore_;
+};
+std::string DBusAdapaterFixture::active_connection_id_ = "";
+TestResult DBusAdapaterFixture::test_result_ = TEST_FAILED;
+sem_t DBusAdapaterFixture::semaphore_;
+
+// Overrides CCRB notify_connection_closed and register_resources
+class ResourceBrokerMock2 : public ResourceBroker
+{
+public:
+    // Chckes that the reported closed source connection is equal to the actual unique connection id
+    // as set by the application created thread before  calling RegisterResources
+    void notify_connection_closed(const IpcConnection& source) override
+    {
+        TR_DEBUG_ENTER;
+
+        if (source.get_connection_id() == DBusAdapaterFixture::active_connection_id_){
+            //test succuss! set true
+            DBusAdapaterFixture::test_result_ = TEST_SUCCESS;            
+        }
+        else {
+            //if test fail, test_result_ is already false. just log the failure.
+            TR_ERR("source connection id=%s is not equal to active_connection_id_=%s",
+                source.get_connection_id().c_str(),
+                DBusAdapaterFixture::active_connection_id_.c_str());
+        }
+
+        //post on semaphore
+        int r = sem_post(&DBusAdapaterFixture::semaphore_);
+        if (r != 0) {
+            TR_ERR("sem_post failed with r=%d (%s)", errno, strerror(errno));
+        }
+    }
+
+    virtual std::pair<CloudConnectStatus, std::string> 
+    register_resources(const IpcConnection & , 
+                       const std::string &) override
+    {
+        TR_DEBUG_ENTER; 
+        // dummy success
+        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "");        
+    }
+};
+
+// This callback is the AppThreat callback:
+// 1) Sets the active connection id to fixture (global)
+// 2) Calls RegisterResources
+// 3) disconnect from bus
+// 4) wait for service to signal on semaphore (this is a test feature) that disconnection has been 
+// notified. Service check on mocked callback that expected (set) active connection is the one 
+// which is being notified for disconnection
+// 5) send stop to service to finish test with the test result.
+int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
+    AppThread *app_thread,
+    void * userdata)
+{
+    sd_bus_message *m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    sd_bus_error bus_error = SD_BUS_ERROR_NULL;
+    DBusAdapter *adapter = static_cast<DBusAdapter*>(userdata);
+
+    // Before sending any message, set our unique connection ID.
+    // This is validated in CCRB mocked callback notify_connection_closed
+    active_connection_id_.assign(app_thread->get_unique_connection_id());
+    assert(active_connection_id_.length() > 1);
+
+    // Call RegisterResources. The register_resources call to CCRB 
+    // is overwritten above by ResourceBrokerMock2::register_resources
+    int r = sd_bus_call_method(
+                    app_thread->get_connection_handle(),
+                    DBUS_CLOUD_SERVICE_NAME,
+                    DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                    DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                    "RegisterResources",
+                    &bus_error,
+                    &m_reply,
+                    "s",
+                    "resources_definition_file_1");
+    if (r < 0) {
+        TR_ERR("sd_bus_call_method failed with r=%d (%s)", r, strerror(-r));
+        adapter->stop(MblError::None);
+        pthread_exit(reinterpret_cast<void *>(-r));
+    }
+
+    // disconnect. This should invoke ccrb callback notify_connection_closed on server
+    app_thread->disconnect();
+
+    // we must wait here to allow adapter to process the disconnection
+    // this is a test, use sem_wait and not sem_timedwait to simplify code
+    r = sem_wait(&DBusAdapaterFixture::semaphore_);
+    if (r != 0) {
+        TR_ERR("sd_bus_call_method failed with r=%d (%s)", errno, strerror(errno));
+        adapter->stop(MblError::None);
+        pthread_exit(reinterpret_cast<void *>(-errno));
+    }
+
+    // we stop adapter event loop from this thread instead of having one more additional thread    
+    MblError status = adapter->stop(MblError::None);
+    if(MblError::None != status){
+        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));        
+         pthread_exit(reinterpret_cast<void *>(-1002));
+    }
+
+    return 0;
+}
+
+TEST(DBusAdapter, validate_client_disconnection_notification)
+{
+    GTEST_LOG_START_TEST;    
+    ResourceBrokerMock2 ccrb;
+    DBusAdapter adapter(ccrb);
+    ASSERT_EQ(adapter.init(), MblError::None);        
+
+    // Start an application thread which will register to service, then close the connection.
+    // the CCRB API notify_connection_closed is overriden. It validates that a disconnect
+    // notification is sent by DBA.
+    AppThread app_thread(
+        DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification, 
+        &adapter);
+    ASSERT_EQ(app_thread.create(), 0);
+
+    // run the adapter
+    MblError stop_status;
+    ASSERT_EQ(adapter.run(stop_status), MblError::None);
+
+    //check that  actual test on client succeeded and deinit adapter
+    void *retval = nullptr;
+    ASSERT_EQ(app_thread.join(&retval), 0);
+    ASSERT_EQ((uintptr_t)retval, MblError::None);
+    ASSERT_EQ(adapter.deinit(), MblError::None);
+
+    //check final test result
+    ASSERT_EQ(DBusAdapaterFixture::test_result_, TEST_SUCCESS);
 }
