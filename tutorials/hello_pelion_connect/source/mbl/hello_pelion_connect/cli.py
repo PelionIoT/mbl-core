@@ -59,6 +59,20 @@ def get_argument_parser():
         ),
     )
 
+    parser.add_argument(
+        "-a",
+        "--pelion-connect-dbus-address",
+        help="Pelion connect dbus address",
+        metavar="DBUS_SESSION_BUS_ADDRESS",
+        action="store",
+        # use DBUS_SESSION_BUS_ADDRESS environment variable
+        # as a default if exists
+        default=os.environ.get(
+            "DBUS_SESSION_BUS_ADDRESS",
+            "unix:path=/var/run/dbus/mbl_cloud_bus_socket",
+        ),
+    )
+
     return parser
 
 
@@ -77,7 +91,7 @@ def _main():
     app = ccapp.HelloPelionConnect()
 
     logger.info("Call Hello Pelion Connect application setup")
-    app.setup()
+    app.setup(args.pelion_connect_dbus_address)
 
     logger.info("Call Hello Pelion Connect application register_resources")
     app.register_resources(args.app_resource_definition_file)

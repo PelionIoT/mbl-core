@@ -19,13 +19,9 @@ from gi.repository import GLib
 # on the X Window (X11) environment
 DISPLAY = "0"
 
-# Configure the Cloud Connect D-Bus address
-DBUS_MBL_PELION_CONNECT_BUS_ADDRESS = (
-    "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
-)
-
-PELION_CONNECT_DBUS_NAME = "com.mbed.Cloud"
-PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Cloud/Connect1"
+# Pelion connect D-Bus properties
+PELION_CONNECT_DBUS_NAME = "com.mbed.Pelion1"
+PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Pelion1/Connect"
 
 
 class HelloPelionConnect:
@@ -33,7 +29,7 @@ class HelloPelionConnect:
 
     logger = logging.getLogger("hello-pelion-connect")
 
-    def setup(self):
+    def setup(self, dbus_session_bus_address):
         """Set up connection to D-Bus."""
         self.logger.info(
             "Connecting to D-Bus {} D-Bus object {}...".format(
@@ -42,9 +38,7 @@ class HelloPelionConnect:
         )
 
         os.environ["DISPLAY"] = DISPLAY
-        os.environ[
-            "DBUS_SESSION_BUS_ADDRESS"
-        ] = DBUS_MBL_PELION_CONNECT_BUS_ADDRESS
+        os.environ["DBUS_SESSION_BUS_ADDRESS"] = dbus_session_bus_address
 
         # get the session bus
         try:
@@ -79,19 +73,21 @@ class HelloPelionConnect:
             )
         )
 
-    def register_resources(self, json_file_path):
+    def register_resources(self, app_resource_definition_file_path):
         """Register resources method."""
         self.logger.info(
             "Calling RegisterResources with json file path = {}".format(
-                json_file_path
+                app_resource_definition_file_path
             )
         )
 
-        with open(json_file_path, "r") as json_file:
-            json_data = json_file.read()
+        with open(app_resource_definition_file_path, "r") as app_file:
+            app_resource_definition_data = app_file.read()
 
         try:
-            reg_reply = self.cc_object.RegisterResources(json_data)
+            reg_reply = self.cc_object.RegisterResources(
+                app_resource_definition_data
+            )
         except GLib.GError as glib_err:
             self.logger.error(
                 "Pelion Connect RegisterResources failed. Error: {}!".format(
