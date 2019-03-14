@@ -723,8 +723,7 @@ ResourceBroker::get_resources_values(const IpcConnection& /*source*/,
 void ResourceBroker::notify_connection_closed(const IpcConnection& /*source*/)
 {
     TR_DEBUG_ENTER;
-    // TODO:implement
-    assert(0);
+    TR_ERR("!!!THIS FUNCTION MUST BE IMPLEMENTED!!!");
 }
 
 } // namespace mbl
