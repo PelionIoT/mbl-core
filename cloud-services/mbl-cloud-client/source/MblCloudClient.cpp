@@ -28,27 +28,14 @@
 #include <csignal>
 #include <unistd.h>
 
-#include MBED_CLOUD_CLIENT_USER_CONFIG_FILE
-
 #define TRACE_GROUP "mbl"
 
 static volatile sig_atomic_t g_shutdown_signal = 0;
-
-// Period between re-registrations with the LWM2M server.
-// MBED_CLOUD_CLIENT_LIFETIME is how long we should stay registered after each
-// re-registration
-static const int g_reregister_period_s = MBED_CLOUD_CLIENT_LIFETIME / 2;
 
 extern "C" void mbl_shutdown_handler(int signal)
 {
     g_shutdown_signal = signal;
 }
-
-// static void* get_dummy_network_interface()
-// {
-//     static uint32_t network = 0xFFFFFFFF;
-//     return &network;
-// }
 
 namespace mbl
 {
@@ -85,12 +72,14 @@ MblCloudClient::~MblCloudClient()
     // 2. Close and delete the MbedCloudClient. This must be done before
     // stopping the mbed event loop, otherwise MbedCloudClient's dtor might
     // wait on a mutex that will never be released by the event loop.
+    tr_info("~MblCloudClient close mbed client");
     assert(cloud_client_);
     cloud_client_->close();
     delete cloud_client_;
 
     // 3. Stop the mbed event loop thread (which was started in
     // MbedCloudClient's ctor).
+    tr_info("~MblCloudClient Stop the mbed event loop thread");
     ns_event_loop_thread_stop();
 }
 
@@ -101,16 +90,6 @@ MblError MblCloudClient::run()
     assert(s_instance);
 
     s_instance->register_handlers();
-
-    // Add empty ObjectList which will be used to register the device for the
-    // first time
-    // in cloud_client_setup()
-    //s_instance->add_resources();
-
-    // const MblError ccs_err = s_instance->cloud_client_setup();
-    // if (ccs_err != Error::None) {
-    //     return ccs_err;
-    // }
 
     // start running CCRB module
     const MblError ccrb_start_err =
@@ -123,7 +102,7 @@ MblError MblCloudClient::run()
         s_instance->state_ = State_CalledRegister;
     }
 
-    time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
+    //time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {
         if (g_shutdown_signal) {
             tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
@@ -145,13 +124,6 @@ MblError MblCloudClient::run()
             }
         }
 
-        const time_t time_s = get_monotonic_time_s();
-        if (time_s >= next_registration_s) {
-            tr_debug("Updating registration with LWM2M server");
-            s_instance->cloud_client_->register_update();
-            next_registration_s = time_s + g_reregister_period_s;
-        }
-
         sleep(1);
     }
 
@@ -160,61 +132,8 @@ MblError MblCloudClient::run()
 
 void MblCloudClient::register_handlers()
 {
-    //cloud_client_->on_registered(&MblCloudClient::handle_client_registered);
-    //cloud_client_->on_unregistered(&MblCloudClient::handle_client_unregistered);
-    //cloud_client_->on_error(&MblCloudClient::handle_error);
     cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
     cloud_client_->set_update_authorize_handler(&handle_authorize);
-}
-
-// void MblCloudClient::add_resources()
-// {
-//     tr_debug("%s", __PRETTY_FUNCTION__);
-//     M2MObjectList objs;
-//     cloud_client_->add_objects(objs);
-// }
-
-// MblError MblCloudClient::cloud_client_setup()
-// {
-//     tr_debug("%s", __PRETTY_FUNCTION__);
-//     {
-//         MblScopedLock l(s_mutex);
-//         state_ = State_CalledRegister;
-//     }
-
-//     const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
-//     if (!setup_ok) {
-//         tr_err("Client setup failed");
-//         return Error::ConnectUnknownError;
-//     }
-
-//     return Error::None;
-// }
-
-void MblCloudClient::handle_client_registered()
-{
-    // Called by the mbed event loop - *s_instance can be destroyed whenever
-    // s_mutex isn't locked.
-
-    tr_info("Client registered");
-
-    MblScopedLock l(s_mutex);
-
-    if (!s_instance) {
-        return;
-    }
-
-    s_instance->state_ = State_Registered;
-
-    const ConnectorClientEndpointInfo* const endpoint = s_instance->cloud_client_->endpoint_info();
-    if (endpoint) {
-        tr_info("Endpoint Name: %s", endpoint->endpoint_name.c_str());
-        tr_info("Device Id: %s", endpoint->internal_endpoint_name.c_str());
-    }
-    else
-    {
-        tr_warn("Failed to get endpoint info");
-    }
 }
 
 void MblCloudClient::handle_client_unregistered()

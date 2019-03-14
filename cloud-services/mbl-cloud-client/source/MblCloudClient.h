@@ -62,10 +62,7 @@ private:
     MblCloudClient& operator=(const MblCloudClient& other);
 
     void register_handlers();
-    void add_resources();
-    MblError cloud_client_setup();
 
-    static void handle_client_registered();
     static void handle_client_unregistered();
     static void handle_error(int error_code);
     static void handle_authorize(int32_t request);

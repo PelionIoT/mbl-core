@@ -7,12 +7,19 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
+#include "mbed_cloud_client_user_config.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 
 #include <cassert>
 #include <time.h>
 
 #define TRACE_GROUP "ccrb"
+
+// Period between re-registrations with the LWM2M server.
+// MBED_CLOUD_CLIENT_LIFETIME is how long we should stay registered after each
+// re-registration (keepalive)
+static const int g_keepalive_period_miliseconds = 3000;/*(MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;*/
+
 
 namespace mbl
 {
@@ -197,7 +204,7 @@ MblError ResourceBroker::init()
         status.set(setup_status);
     }
 
-    // Set keep alive event
+    // Set keepalive periodic event
     Event::EventData event_data = {0};
     event_data.user_data = this;
     std::pair<MblError, uint64_t> ret_pair = 
@@ -205,7 +212,7 @@ MblError ResourceBroker::init()
                                           sizeof(event_data.user_data),
                                           Event::EventDataType::USER_DATA_TYPE,
                                           ResourceBroker::periodic_keepalive_callback,
-                                          10000, // period_millisec,
+                                          g_keepalive_period_miliseconds,
                                           "Mbed cloud client keep-alive");
     if(Error::None != ret_pair.first) {
         TR_ERR("send_event_periodic keep-alive failed with error %s",
@@ -235,8 +242,10 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     UNUSED(s);
     assert(ev);
 
+    TR_DEBUG("%s event", ev->get_description().c_str());
     // TODO: check if registration is in progress, if yes - do nothing
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ev->get_data().user_data);
+    TR_DEBUG("Call cloud_client_->register_update");
     this_ccrb->cloud_client_->register_update();
 
     return Error::None;
