@@ -32,8 +32,17 @@ class ResourceBrokerTester {
 
 public:
     
-    ResourceBrokerTester();
+    /**
+     * @brief C'tor
+     * 
+     * @param use_mock_dbus_adapter - if true - init ResourceAdapter's debus_ipc to mock ipc
+     */
+    ResourceBrokerTester(bool use_mock_dbus_adapter = true);
+
     ~ResourceBrokerTester();
+
+
+    void init_mbed_cloud_client_function_pointers();
 
     /**
      * @brief Call ResourceBroker register_resources API
@@ -172,6 +181,13 @@ public:
         std::vector<mbl::ResourceGetOperation>& inout_get_operations,
         const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
         const CloudConnectStatus expected_out_status);
+		
+    /**
+     * @brief Call ResourceBroker start and then stop functions several times
+     * 
+     * @param times to call ResourceBroker start and then stop functions
+     */
+    void resourceBroker_start_stop_test(size_t times);		
 
     /**
      * @brief Test that ResourceBroker track IPC connections as expected
@@ -206,7 +222,7 @@ private:
      * @param object_list - Objects that contain information about the
      * client attempting to register to the LWM2M server.
      */
-    void add_objects(const M2MObjectList& object_list);
+    void mbed_client_mock_add_objects(const M2MObjectList& object_list);
 
     /**
      * \brief Mock Mbed client function that sends a registration update message to the Cloud.
@@ -214,7 +230,18 @@ private:
      * This function is used tp override the function pointer in ResourceBroker so the call will be sent 
      * to this class instead of to Mbed cloud client.
      */
-    void register_update();
+    void mbed_client_mock_register_update();
+
+    /**
+     * \brief Mock Mbed client setup function.
+     * 
+     * This function is used tp override the function pointer in ResourceBroker so the call will be sent 
+     * to this class instead of to Mbed cloud client.
+     * 
+     * @param object_list - Objects that contain information about the
+     * @return true always
+     */
+    bool mbed_client_mock_setup(void* network);
 
     /**
      * @brief ResourceBroker module to be tested

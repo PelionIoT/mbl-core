@@ -412,6 +412,11 @@ protected:
     void get_resource_value(const RegistrationRecord_ptr registration_record,
                             ResourceData& resource_data);
 
+    // TODO: add description
+    // Set function pointers to point to mbed_client functions
+    // In gtest our friend test class will override these pointers to get all the
+    // calls
+    void init_mbed_cloud_client_function_pointers();
 
     /**
      * @brief Return registration record using acceess token
@@ -450,7 +455,7 @@ protected:
 
     MbedCloudClient* cloud_client_;
 
-    // Atomic boolean to signal that rgistration is in progress
+    // Atomic boolean to signal that registration is in progress
     // Use to limit only one allowed registration at a time
     // This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
     std::atomic_bool registration_in_progress_;
@@ -458,15 +463,26 @@ protected:
     // Access token of the current operation against Mbed client
     std::string in_progress_access_token_;
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Mbed client function pointers
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // This function pointer will be used in init() to set mbed cloud client function pointers.
+    // In case of tests we will use it to set mbed cloud client function pointers to mock class
+    std::function<void()> init_mbed_cloud_client_function_pointers_func_;
+
     // register_update function pointer
     // Mbl cloud client use it to point to Mbed cloud client register_update API
     // Gtests will use it to point to mock function
-    std::function<void()> register_update_func_;
+    std::function<void()> mbed_client_register_update_func_;
     
     // add_objects function pointer
     // Mbl cloud client use it to point to Mbed cloud client add_objects API
     // Gtests will use it to point to mock function
-    std::function<void(const M2MObjectList& object_list)> add_objects_func_;
+    std::function<void(const M2MObjectList& object_list)> mbed_client_add_objects_func_;
+
+    std::function<bool(void*)> mbed_client_setup_func_;
+    ////////////////////////////////////////////////////////////////////////////////////////////////    
 };
 
 } // namespace mbl

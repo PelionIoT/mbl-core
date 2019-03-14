@@ -298,25 +298,18 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded)
         CloudConnectStatus::STATUS_SUCCESS);    
 }
 
-void ResourceBroker_start_stop(size_t times) {
-
-    mbl::ResourceBroker resource_broker;
-    for( size_t i = 0; i < times; ++i){
-        ASSERT_EQ(mbl::Error::None, resource_broker.start(nullptr));
-        ASSERT_EQ(mbl::Error::None, resource_broker.stop());
-    }
-}
-
 TEST(Resource_Broker_Positive, start_stop_20_times) {
 
     GTEST_LOG_START_TEST;
-    ResourceBroker_start_stop(20);
+    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
+    resource_broker_tester.resourceBroker_start_stop_test(20);
 }
 
 TEST(Resource_Broker_Positive, start_stop) {
 
     GTEST_LOG_START_TEST;
-    ResourceBroker_start_stop(1);
+    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
+    resource_broker_tester.resourceBroker_start_stop_test(1);
 }
 
 /**

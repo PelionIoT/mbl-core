@@ -24,22 +24,23 @@
 
 #define TRACE_GROUP "ccrb-res-broker-tester"
 
-ResourceBrokerTester::ResourceBrokerTester()
+ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
 {
     TR_DEBUG_ENTER;
 
-    // Set Resource Broker function pointers to point to this class instead of to Mbed Client
-    // This replaces what resource_broker_.init() usually does so dont call it...
-    resource_broker_.register_update_func_ = 
-        std::bind(&ResourceBrokerTester::register_update, this);
-    resource_broker_.add_objects_func_ = 
-        std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::add_objects),
-            this,
-            std::placeholders::_1);
+    // Set resource adapter function pointer that in some tests will be called as part of 
+    // ResourceBroker::init() API.
+    resource_broker_.init_mbed_cloud_client_function_pointers_func_ =
+        std::bind(&ResourceBrokerTester::init_mbed_cloud_client_function_pointers, this);
 
-    // Init resource broker ipc to be DBusAdapterMock:
-    resource_broker_.ipc_adapter_ = 
-        std::make_unique<DBusAdapterMock>(resource_broker_);
+    // Call it explicitly here
+    init_mbed_cloud_client_function_pointers();
+
+    if(use_mock_dbus_adapter) {
+        // Init resource broker ipc to be DBusAdapterMock:
+        resource_broker_.ipc_adapter_ = 
+            std::make_unique<DBusAdapterMock>(resource_broker_);
+    }
 }
 
 ResourceBrokerTester::~ResourceBrokerTester()
@@ -47,13 +48,36 @@ ResourceBrokerTester::~ResourceBrokerTester()
     TR_DEBUG_ENTER;
 }
 
-void ResourceBrokerTester::add_objects(const M2MObjectList& /*object_list*/)
+void ResourceBrokerTester::init_mbed_cloud_client_function_pointers()
+{
+    // Set Resource Broker function pointers to point to this class instead of to Mbed Client
+    // This replaces what resource_broker_.init() usually does so dont call it...
+    resource_broker_.mbed_client_register_update_func_ = 
+        std::bind(&ResourceBrokerTester::mbed_client_mock_register_update, this);
+    resource_broker_.mbed_client_add_objects_func_ = 
+        std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::mbed_client_mock_add_objects),
+            this,
+            std::placeholders::_1);
+    resource_broker_.mbed_client_setup_func_ =
+        std::bind(static_cast<bool(ResourceBrokerTester::*)(void*)>(&ResourceBrokerTester::mbed_client_mock_setup),
+            this,
+            std::placeholders::_1);
+}
+
+bool ResourceBrokerTester::mbed_client_mock_setup(void*)
+{
+    TR_DEBUG_ENTER;
+    // Currently does nothing, in future test we might want to add more code here
+    return true;
+}
+
+void ResourceBrokerTester::mbed_client_mock_add_objects(const M2MObjectList& /*object_list*/)
 {
     TR_DEBUG_ENTER;
     // Currently does nothing, in future test we might want to add more code here
 }
 
-void ResourceBrokerTester::register_update()
+void ResourceBrokerTester::mbed_client_mock_register_update()
 {
     TR_DEBUG_ENTER;
     // Currently does nothing, in future test we might want to add more code here
@@ -234,6 +258,14 @@ void ResourceBrokerTester::get_resources_values_test(
         }
         }
         std::advance(expected_itr, 1); // Move to next item
+    }
+}
+
+void ResourceBrokerTester::resourceBroker_start_stop_test(size_t times)
+{
+     for( size_t i = 0; i < times; ++i){
+        ASSERT_EQ(mbl::Error::None, resource_broker_.start(nullptr));
+        ASSERT_EQ(mbl::Error::None, resource_broker_.stop());
     }
 }
 

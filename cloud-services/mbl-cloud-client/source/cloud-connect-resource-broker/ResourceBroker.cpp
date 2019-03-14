@@ -16,9 +16,9 @@
 #define TRACE_GROUP "ccrb"
 
 // Period between re-registrations with the LWM2M server.
-// MBED_CLOUD_CLIENT_LIFETIME is how long we should stay registered after each
+// MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
 // re-registration (keepalive)
-static const int g_keepalive_period_miliseconds = 3000;/*(MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;*/
+static const int g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
 
 
 namespace mbl
@@ -35,6 +35,11 @@ ResourceBroker::ResourceBroker()
     : init_sem_initialized_(false), cloud_client_(nullptr), registration_in_progress_(false)
 {
     TR_DEBUG_ENTER;
+
+    // This function pointer will be used in init() to set mbed cloud client function pointers.
+    // In case of tests we will use it to set mbed cloud client function pointers to mock class
+    init_mbed_cloud_client_function_pointers_func_ =
+        std::bind(&ResourceBroker::init_mbed_cloud_client_function_pointers, this);
 }
 
 ResourceBroker::~ResourceBroker()
@@ -172,6 +177,26 @@ MblError ResourceBroker::stop()
     return ret_value.get();
 }
 
+void ResourceBroker::init_mbed_cloud_client_function_pointers()
+{
+    TR_DEBUG_ENTER;
+    
+    assert (nullptr != cloud_client_);
+
+    mbed_client_add_objects_func_ = std::bind(
+        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
+        cloud_client_,
+        std::placeholders::_1);
+
+    mbed_client_register_update_func_ = 
+        std::bind(&MbedCloudClient::register_update, cloud_client_);        
+
+    mbed_client_setup_func_ = std::bind(
+        static_cast<bool (MbedCloudClient::*)(void*)>(&MbedCloudClient::setup),
+        cloud_client_,
+        std::placeholders::_1);
+}
+
 MblError ResourceBroker::init()
 {
     TR_DEBUG_ENTER;
@@ -190,11 +215,7 @@ MblError ResourceBroker::init()
     // Set function pointers to point to mbed_client functions
     // In gtest our friend test class will override these pointers to get all the
     // calls
-    register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
-    add_objects_func_ = std::bind(
-        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
-        cloud_client_,
-        std::placeholders::_1);
+    init_mbed_cloud_client_function_pointers_func_();
 
     // Register Cloud client callback:
     regsiter_callback_handlers();
@@ -367,9 +388,9 @@ MblError ResourceBroker::mbed_cloud_client_setup()
 
     // Add empty ObjectList which will be used to register the device for the first time
     M2MObjectList objs;
-    cloud_client_->add_objects(objs);    
+    mbed_client_add_objects_func_(objs);
 
-    const bool setup_ok = cloud_client_->setup(get_dummy_network_interface());
+    const bool setup_ok = mbed_client_setup_func_(get_dummy_network_interface());
     if (!setup_ok) {
         TR_ERR("Client setup failed");
         return Error::ConnectUnknownError;
@@ -571,8 +592,8 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     registration_records_[in_progress_access_token_] = registration_record;
 
     // Call Mbed cloud client to start registration update
-    add_objects_func_(registration_record->get_m2m_object_list());
-    register_update_func_();
+    mbed_client_add_objects_func_(registration_record->get_m2m_object_list());
+    mbed_client_register_update_func_();
 
     return ret_pair;
 }
