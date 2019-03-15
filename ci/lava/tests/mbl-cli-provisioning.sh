@@ -43,7 +43,7 @@ else
 
     $mbl_command get-pelion-status
 
-    $mbl_command -c pd-lavatest anupdatecert -p /tmp/update-resources/update_default_resources.c
+    $mbl_command provision-pelion -c pd-lavatest anupdatecert -p /tmp/update-resources/update_default_resources.c
 
     $mbl_command get-pelion-status
 
