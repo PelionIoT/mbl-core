@@ -16,7 +16,7 @@ execdir="$(readlink -e "$(dirname "$0")")"
 # Navigate to the sub-project directory
 cd "${execdir}/../../../tutorials/helloworld" || exit
 
-# Get the architecture type
+# Get the architecture type. Possible values are: armv7, arm64
 arm_arch=$1
 
 # Build dockcross cross compiler
@@ -31,11 +31,10 @@ chmod +x "./build-${arm_arch}"
 # Build the hello world sample app
 "./build-${arm_arch}" make release
 
-
 # Navigate to the location of the IPK
 cd "${execdir}/../../../tutorials/helloworld/release/ipk" || exit
 # Get the image and put it into a tar file
 tar -cvf user-sample-app-package_1.0_any.ipk.tar user-sample-app-package_1.0_any.ipk
 
-# Copy the tar file to the home directory. This makes ii available for subsequent test steps.
+# Copy the tar file to the /tmp directory this makes it available for subsequent test steps.
 cp user-sample-app-package_1.0_any.ipk.tar /tmp/user-sample-app-package_1.0_any.ipk.tar
