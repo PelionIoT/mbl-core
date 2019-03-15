@@ -41,11 +41,11 @@ else
 
     mbl-cli save-api-key ahdskjhdakhkjas
 
-    mbl_command get-pelion-status
+    $mbl_command get-pelion-status
 
-    mbl_command -c pd-lavatest anupdatecert -p /tmp/update-resources/update_default_resources.c
+    $mbl_command -c pd-lavatest anupdatecert -p /tmp/update-resources/update_default_resources.c
 
-    mbl_command get-pelion-status
+    $mbl_command get-pelion-status
 
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=pass>"
 
