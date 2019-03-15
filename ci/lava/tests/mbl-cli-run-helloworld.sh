@@ -32,7 +32,7 @@ else
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
     # Now copy the package and python checker script to the DUT
-    $mbl_command put /home/ubuntu/user-sample-app-package_1.0_any.ipk.tar /home/root
+    $mbl_command put /tmp/user-sample-app-package_1.0_any.ipk.tar /home/root
     $mbl_command put ./ci/lava/dependencies/check_container.py /home/root
 
     # Now install the package - this should cause it to run
@@ -44,13 +44,13 @@ else
     # Extract the log file from the device. Note that the parsing of the log
     # file could be done on the DUT but doing it this way tests the mbl-cli get
     # functionality.
-    $mbl_command get /var/log/app/user-sample-app-package.log /home/ubuntu/
+    $mbl_command get /var/log/app/user-sample-app-package.log /tmp/
 
     # Echo it to the test run
-    cat /home/ubuntu/user-sample-app-package.log
+    cat /tmp/user-sample-app-package.log
 
     # Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
-    count_hello_world=$(grep -c "Hello, world" /home/ubuntu/user-sample-app-package.log)
+    count_hello_world=$(grep -c "Hello, world" /tmp/user-sample-app-package.log)
     if [ "$count_hello_world" = 10 ]
     then
         echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
