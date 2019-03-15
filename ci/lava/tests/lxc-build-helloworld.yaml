@@ -7,10 +7,15 @@ metadata:
     name: Build Hello World Test
     description: "Build Hello World in an LXC container"
 
+params:
+    # arm_arch: specifies the architecture of the UUT (armv7 or arm64)
+    #
+    arm_arch:
+
 run:
     steps:
         # The tutorial is cloned as root, but we build it as user "ubuntu".
         # Give the directory write permisions so that the images can be written
         - chmod a+w tutorials/helloworld
         # Build the Hello World sample app.
-        - su ubuntu -c ./ci/lava/tests/lxc-build-helloworld.sh
+        - su ubuntu -c ./ci/lava/tests/lxc-build-helloworld.sh $arm_arch
