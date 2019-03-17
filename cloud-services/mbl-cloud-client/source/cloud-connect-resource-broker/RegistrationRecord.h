@@ -57,8 +57,22 @@ public:
      */
     MblError init(const std::string& application_resource_definition);
 
-    // TODO: add description
-    MblError update_ipc_connection(IpcConnection &source, bool closed);
+    /**
+     * @brief Track IPC connections
+     * If a new IPC connection is presented - add to connections vector
+     * If IPC connection is closed - remove from vector
+     * 
+     * @param source - Source IPC connection to add or remove
+     * @param closed - Source IPC connection is closed (need to remove)
+     * @return MblError -
+     *              Error::CCRBConnectionNotFound - In case source IPC connection is closed but
+     *                                              is not found in connection vector
+     *              Error::CCRBNoValidConnection - In case connection vector is empty after remove
+     *                                             of source connection. This will signal CCRB to 
+     *                                             erase this instance of RegistrationRecord.
+     *              Error::None - in case of success
+     */
+    MblError track_ipc_connection(IpcConnection &source, bool closed);
 
     /**
      * @brief Get resource by its path

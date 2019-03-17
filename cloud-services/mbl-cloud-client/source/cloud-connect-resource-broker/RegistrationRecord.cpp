@@ -42,7 +42,7 @@ RegistrationRecord::RegistrationRecord(IpcConnection registration_source)
     : registration_source_(registration_source), registered_(false)
 {
     TR_DEBUG_ENTER;
-    update_ipc_connection(registration_source_, false); // Add to ipc connections
+    track_ipc_connection(registration_source_, false); // Add to ipc connections
 }
 
 RegistrationRecord::~RegistrationRecord()
@@ -67,14 +67,14 @@ MblError RegistrationRecord::init(const std::string& application_resource_defini
     return Error::None;
 }
 
-MblError RegistrationRecord::update_ipc_connection(IpcConnection &source, bool closed)
+MblError RegistrationRecord::track_ipc_connection(IpcConnection &source, bool closed)
 {
     TR_DEBUG_ENTER;
 
     // Search for source connection in ipc_connections_
     auto itr = std::find(ipc_connections_.begin(), ipc_connections_.end(), source);
 
-    if (itr == ipc_connections_.end()) {
+    if (itr == ipc_connections_.end()) { // Ipc connection is not in the vector
         if(closed) {
             TR_ERR("Ipc connection not found");
             return Error::CCRBConnectionNotFound;

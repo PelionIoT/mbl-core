@@ -17,7 +17,9 @@
 
 #include <gtest/gtest.h>
 #include "RegistrationRecordTester.h"
+#include "RegistrationRecord.h"
 #include "CloudConnectTrace.h"
+#include "CloudConnectTypes.h"
 #include "TestInfra.h"
 
 #define TRACE_GROUP "ccrb-set_res_value-test"
@@ -140,3 +142,30 @@ TEST_P(RegistrationRecordTest, get_resource_identifiers)
         test_data.expected_resource_instance_name);
 }
 
+/**
+ * @brief Test track_ipc_connection API return values
+ * 
+ */
+TEST(RegistrationRecord, track_ipc_connection_test) 
+{
+    mbl::IpcConnection source_1("source_1"), source_2("source_2"), source_not_used("not_used");
+    mbl::RegistrationRecord registration_record(source_1);
+    mbl::MblError status = registration_record.track_ipc_connection(source_1, false);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // Add new ipc connection
+    status = registration_record.track_ipc_connection(source_2, false);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // source_1 is closed
+    status = registration_record.track_ipc_connection(source_1, true);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // source_not_used is closed
+    status = registration_record.track_ipc_connection(source_not_used, true);
+    ASSERT_TRUE(mbl::MblError::CCRBConnectionNotFound == status);
+
+    // source_2 is closed
+    status = registration_record.track_ipc_connection(source_2, true);
+    ASSERT_TRUE(mbl::MblError::CCRBNoValidConnection == status);
+}
