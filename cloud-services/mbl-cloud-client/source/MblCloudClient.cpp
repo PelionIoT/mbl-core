@@ -18,7 +18,6 @@
 #include "MblCloudClient.h"
 
 #include "MblScopedLock.h"
-#include "monotonic_time.h"
 #include "update_handlers.h"
 
 #include "mbed-trace/mbed_trace.h"
@@ -102,7 +101,6 @@ MblError MblCloudClient::run()
         s_instance->state_ = State_CalledRegister;
     }
 
-    //time_t next_registration_s = get_monotonic_time_s() + g_reregister_period_s;
     for (;;) {
         if (g_shutdown_signal) {
             tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));

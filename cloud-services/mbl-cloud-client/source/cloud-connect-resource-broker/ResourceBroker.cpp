@@ -264,8 +264,16 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     assert(ev);
 
     TR_DEBUG("%s event", ev->get_description().c_str());
-    // TODO: check if registration is in progress, if yes - do nothing
+    
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ev->get_data().user_data);
+
+    // Check if registration is in progress, if yes - do nothing as registration will act as
+    // keep alive
+    if (this_ccrb->registration_in_progress_.load()) {
+        TR_DEBUG("Registration is in progress - no need to call Mbed cloud client for keepalive.");
+        return Error::None;
+    }
+
     TR_DEBUG("Call cloud_client_->register_update");
     this_ccrb->cloud_client_->register_update();
 
@@ -302,12 +310,9 @@ MblError ResourceBroker::run()
     MblError status = ipc_adapter_->run(stop_status);
     if (Error::None != status) {
         TR_ERR("ipc::run failed with error %s", MblError_to_str(status));
+        return status;
     }
-    else
-    {
-        TR_ERR("ipc::run stopped with status %s", MblError_to_str(stop_status));
-    }
-
+    TR_DEBUG("ipc::run successfully stopped");
     return status;
 }
 
