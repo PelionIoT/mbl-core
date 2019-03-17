@@ -236,3 +236,45 @@ void ResourceBrokerTester::get_resources_values_test(
         std::advance(expected_itr, 1); // Move to next item
     }
 }
+
+void ResourceBrokerTester::notify_connection_closed_test_multiple_reg_records()
+{
+    mbl::IpcConnection source_1("source1"), source_2("source2"), source_3("source3");
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record_1 = 
+        std::make_shared<mbl::RegistrationRecord>(source_1);
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record_2 = 
+        std::make_shared<mbl::RegistrationRecord>(source_2);
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record_3 = 
+        std::make_shared<mbl::RegistrationRecord>(source_3);
+    // Add registration records to map
+    resource_broker_.registration_records_["registration_record_1"] = registration_record_1;
+    resource_broker_.registration_records_["registration_record_2"] = registration_record_2;
+    resource_broker_.registration_records_["registration_record_3"] = registration_record_3;
+
+    // Add source 1 and source 2 to both registration_records
+    registration_record_1->track_ipc_connection(source_2, false); // Now track source_1 and 2
+    registration_record_2->track_ipc_connection(source_1, false); // Now track source_1 and 2
+
+    // Verify we have 3 registration records
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 3);
+
+    // Verify we not have 2 registration records as registration record 3 is erased
+    resource_broker_.notify_connection_closed(source_3);
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 2);
+
+    // Mark source_1 resource as closed
+    resource_broker_.notify_connection_closed(source_1);
+
+    // Verify number of registration records is still 2
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 2);
+
+    // Mark source_1 resource as closed
+    resource_broker_.notify_connection_closed(source_2);
+
+    ASSERT_TRUE(resource_broker_.registration_records_.empty());
+}
+
+void ResourceBrokerTester::notify_connection_closed(mbl::IpcConnection source) 
+{
+    resource_broker_.notify_connection_closed(source);
+}

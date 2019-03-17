@@ -613,7 +613,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
 }
 
 CloudConnectStatus
-ResourceBroker::set_resources_values(IpcConnection /*source*/,
+ResourceBroker::set_resources_values(IpcConnection source,
                                      const std::string& access_token,
                                      std::vector<ResourceSetOperation>& inout_set_operations)
 {
@@ -623,6 +623,12 @@ ResourceBroker::set_resources_values(IpcConnection /*source*/,
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+    }
+
+    const MblError status = registration_record->track_ipc_connection(source, false);
+    if(MblError::None != status) {
+        TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
 
     // Validate all set operations and update their statuses. This is done preior to actual
@@ -691,7 +697,7 @@ void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registratio
 }
 
 CloudConnectStatus
-ResourceBroker::get_resources_values(IpcConnection /*source*/,
+ResourceBroker::get_resources_values(IpcConnection source,
                                      const std::string& access_token,
                                      std::vector<ResourceGetOperation>& inout_get_operations)
 {
@@ -703,6 +709,12 @@ ResourceBroker::get_resources_values(IpcConnection /*source*/,
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+    }
+
+    const MblError status = registration_record->track_ipc_connection(source, false);
+    if(MblError::None != status) {
+        TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
 
     // Validate all get operations and update their statuses. This is done preior to actual
@@ -721,7 +733,7 @@ ResourceBroker::get_resources_values(IpcConnection /*source*/,
     return CloudConnectStatus::STATUS_SUCCESS;
 }
 
-void ResourceBroker::notify_connection_closed(IpcConnection /*source*/)
+void ResourceBroker::notify_connection_closed(IpcConnection source)
 {
     TR_DEBUG_ENTER;
 
@@ -730,13 +742,25 @@ void ResourceBroker::notify_connection_closed(IpcConnection /*source*/)
             in_progress_access_token_.c_str());
     }
 
+    // TODO: Currently we support only one application so setting registration_in_progress_ to false
+    // is ok. this will have to be changed when supported multiple applications
+
+    // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
 
-    TR_DEBUG("Erase registration record (access_token: %s)",
-                in_progress_access_token_.c_str());
-    auto itr = registration_records_.find(in_progress_access_token_);
-    registration_records_.erase(itr); // Erase registration record as regitsration failed
-
+    // Iterate all registration records
+    for (auto& itr : registration_records_)
+    {
+        // Call track_ipc_connection, and in case registration record does not have any other 
+        // ipc connections - erase from registration_records_
+        const MblError status = itr.second->track_ipc_connection(source, true);
+        if(Error::CCRBNoValidConnection == status) {
+            // Registration record does not have any more valid connections - erase from map
+            TR_DEBUG("Erase registration record (access_token: %s)", itr.first.c_str());
+            auto erase_itr = registration_records_.find(itr.first);
+            registration_records_.erase(erase_itr); // No need to check validity of erase_itr...
+        }
+    }  
 }
 
 } // namespace mbl

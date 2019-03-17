@@ -30,12 +30,10 @@
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. Application resource definition is parsed by ApplicationEndpoint class
- * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
- * 4. Resource Broker calls Mbed cloud client to register the resources
- * 5. Mbed cloud client calls ApplicationEndpoint's REGISTER callback upon SUCCESSFUL registration
- * 6. ApplicationEndpoint notify the Resource Broker that registration was SUCCESSFUL
- * 7. Resource Broker notifies DbusAdapter that registration was SUCCESSFUL
+ * 2. Application resource definition is parsed by RegistrationRecord class
+ * 3. Resource Broker calls Mbed cloud client to register the resources
+ * 4. Mbed cloud client calls ccrb REGISTER callback upon SUCCESSFUL registration
+ * 5. Resource Broker notifies DbusAdapter that registration was SUCCESSFUL
  */
 TEST(Resource_Broker_Positive, registration_success) 
 {
@@ -62,21 +60,73 @@ TEST(Resource_Broker_Positive, registration_success)
 }
 
 /**
+ * @brief Test that when registered application close its connection - it can be registered again
+ * 
+ * The tested scenario is:
+ * 1. Resource Broker is called for register_resources() API
+ * 2. Application resource definition is parsed by RegistrationRecord class
+ * 3. Resource Broker calls Mbed cloud client to register the resources
+ * 4. Mbed cloud client calls ccrb REGISTER callback upon SUCCESSFUL registration
+ * 5. Resource Broker notifies DbusAdapter that registration was SUCCESSFUL
+ * 6. Application closes its connection
+ * 7. Application is able to register again (steps 1-5 are verified again)
+ */
+TEST(Resource_Broker_Positive, registration_success_after_connection_close) 
+{
+    GTEST_LOG_START_TEST;
+
+    ResourceBrokerTester resource_broker_tester;
+    const std::string application_resource_definition = 
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    mbl::IpcConnection ipc_connection_1("source1");
+
+    std::string out_access_token_1;
+    resource_broker_tester.register_resources_test(
+        ipc_connection_1,
+        application_resource_definition,
+        cloud_connect_out_status,
+        out_access_token_1,
+        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.mbed_client_register_update_callback_test(
+        out_access_token_1,
+        CloudConnectStatus::STATUS_SUCCESS);
+
+    resource_broker_tester.notify_connection_closed(ipc_connection_1);
+
+    std::string out_access_token_2;
+    mbl::IpcConnection ipc_connection_2("source2");
+    resource_broker_tester.register_resources_test(
+        ipc_connection_2,
+        application_resource_definition,
+        cloud_connect_out_status,
+        out_access_token_2,
+        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.mbed_client_register_update_callback_test(
+        out_access_token_2,
+        CloudConnectStatus::STATUS_SUCCESS);
+}
+
+
+/**
  * @brief This test failed registration
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. Application resource definition is parsed by ApplicationEndpoint class
- * 3. Resource Broker registers ApplicationEndpoint's callbacks so Mbed client will call them
- * 4. Resource Broker calls Mbed cloud client to register the resources
- * 5. Mbed cloud client calls ApplicationEndpoint's ERROR callbacks upon FAILED registration
- * 6. ApplicationEndpoint notify the Resource Broker that registration FAILED
- * 7. Resource Broker notifys DbusAdapter that registration was FAILED
+ * 2. Application resource definition is parsed by RegistrationRecord class
+ * 3. Resource Broker calls Mbed cloud client to register the resources
+ * 4. Mbed cloud client calls ccrb ERROR callbacks upon FAILED registration
+ * 5. Resource Broker notify DbusAdapter that registration was FAILED
  */
 TEST(Resource_Broker_Negative, parsing_succeeded_registration_failed)
 {
     GTEST_LOG_START_TEST;
-
     
     ResourceBrokerTester resource_broker_tester;
     const std::string application_resource_definition =
@@ -103,7 +153,7 @@ TEST(Resource_Broker_Negative, parsing_succeeded_registration_failed)
  * 
  * The tested scenario is:
  * 1. Resource Broker is called for register_resources() API
- * 2. Application resource definition is parsed by ApplicationEndpoint class but FAIL due to invalid JSON
+ * 2. Application resource definition is parsed by RegistrationRecord class but FAIL due to invalid JSON
  * 3. Resource Broker return the FAILED registration cloud client status to the adapter
  */
 TEST(Resource_Broker_Negative, invalid_app_resource_definition_1) 
@@ -267,4 +317,23 @@ TEST(Resource_Broker_Positive, start_stop) {
 
     GTEST_LOG_START_TEST;
     ResourceBroker_start_stop(1);
+}
+
+/**
+ * @brief Test that ResourceBroker track IPC connections as expected
+ * ResourceBroker uses 3 registration records:
+ * 1. Registration record 1 with IPC connections: source_1 and source_2
+ * 2. Registration record 2 with IPC connections: source_2 and source_1
+ * 3. Registration record 3 with IPC connections: source_3
+ * 
+ * Close connection source_3 and make sure ResourceBroker erased registration record 3 as it
+ * does not have any valid connections anymore
+ * Close connection source_1 - Broker have 2 registration records
+ * Close connection source_2 - Broker have no registration records.
+ */
+TEST(Resource_Broker_Positive, notify_connection_closed_multiple_reg_records_3_connections) 
+{
+    GTEST_LOG_START_TEST;
+    ResourceBrokerTester resource_broker_tester;
+    resource_broker_tester.notify_connection_closed_test_multiple_reg_records();
 }
