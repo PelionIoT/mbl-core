@@ -1158,57 +1158,60 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
  * Need to add relevant gtests. See: IOTMBL-1691
  */
 MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
-    const IpcConnection& destination_to_update,
+    const IpcConnection& /*unused*/,
     const char* signal_name,
     const CloudConnectStatus status)
 {
     TR_DEBUG_ENTER;
     assert(signal_name);
-
-    if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
-        TR_ERR("Unexpected state (expected %s), returning error %s",
-               state_.to_string(),
-               MblError_to_str(MblError::DBA_IllegalState));
-        return MblError::DBA_IllegalState;
-    }
-
-    sd_bus_message* m_signal = nullptr;
-    sd_bus_object_cleaner<sd_bus_message> signal_cleaner(m_signal, sd_bus_message_unref);
-
-    int r = sd_bus_message_new_signal(connection_handle_,
-                                      &m_signal,
-                                      DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                                      DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                                      signal_name);
-    if (r < 0) {
-        TR_ERRNO_F("sd_bus_message_new_signal", r, "(signal name=%s)", signal_name);
-        return MblError::DBA_SdBusCallFailure;
-    }
-
-    // set destination of signal message
-    const char* signal_dest = destination_to_update.get_connection_id().c_str();
-    r = sd_bus_message_set_destination(m_signal, signal_dest);
-    if (r < 0) {
-        TR_ERRNO_F("sd_bus_message_set_destination", r, "(signal destination=%s)", signal_dest);
-        return MblError::DBA_SdBusCallFailure;
-    }
-
-    // append status
-    r = sd_bus_message_append(m_signal, "u", status);
-    if (r < 0) {
-        TR_ERRNO_F("sd_bus_message_append", r, "(signal types = %s)", "u");
-        return MblError::DBA_SdBusCallFailure;
-    }
+    TR_DEBUG("signal_name = %s, status = %s", signal_name, CloudConnectStatus_to_str(status));
 
     // Temporary disable sending of the signal to the destination application before we have
     // IOTMBL-1691 done. In order to send signals to the application just enable this code:
+    // if (state_.is_not_equal(DBusAdapterState::RUNNING)) {
+    //     TR_ERR("Unexpected state (expected %s), returning error %s",
+    //            state_.to_string(),
+    //            MblError_to_str(MblError::DBA_IllegalState));
+    //     return MblError::DBA_IllegalState;
+    // }
+
+    // sd_bus_message* m_signal = nullptr;
+    // sd_bus_object_cleaner<sd_bus_message> signal_cleaner(m_signal, sd_bus_message_unref);
+
+    // int r = sd_bus_message_new_signal(connection_handle_,
+    //                                   &m_signal,
+    //                                 DBUS_CLOUD_CONNECT_OBJECT_PATH,
+    //                                   DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+    //                                   signal_name);
+    // if (r < 0) {
+    //     TR_ERRNO_F("sd_bus_message_new_signal", r, "(signal name=%s)", signal_name);
+    //     return MblError::DBA_SdBusCallFailure;
+    // }
+
+    // set destination of signal message
+    
+    // const char* signal_dest = destination_to_update.get_connection_id().c_str();
+    
+    // r = sd_bus_message_set_destination(m_signal, signal_dest);
+    // if (r < 0) {
+    //     TR_ERRNO_F("sd_bus_message_set_destination", r, "(signal destination=%s)", signal_dest);
+    //     return MblError::DBA_SdBusCallFailure;
+    // }
+
+    // append status
+    // r = sd_bus_message_append(m_signal, "u", status);
+    // if (r < 0) {
+    //     TR_ERRNO_F("sd_bus_message_append", r, "(signal types = %s)", "u");
+    //     return MblError::DBA_SdBusCallFailure;
+    // }
+
     //    r = sd_bus_send(connection_handle_, m_signal, nullptr);
     //    if (r < 0) {
     //        TR_ERRNO_F("sd_bus_send", r, "(signal destination=%s)", signal_dest);
     //        return MblError::DBA_SdBusCallFailure;
     //    }
 
-    TR_DEBUG("Signal %s was successfully emitted to %s", signal_name, signal_dest);
+    // TR_DEBUG("Signal %s was successfully emitted to %s", signal_name, signal_dest);
 
     return MblError::None;
 }
