@@ -72,7 +72,7 @@ public:
      *                                             erase this instance of RegistrationRecord.
      *              Error::None - in case of success
      */
-    MblError track_ipc_connection(IpcConnection &source, bool closed);
+    MblError track_ipc_connection(IpcConnection source, bool closed);
 
     /**
      * @brief Get resource by its path

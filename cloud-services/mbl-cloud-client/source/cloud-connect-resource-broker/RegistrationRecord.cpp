@@ -67,7 +67,7 @@ MblError RegistrationRecord::init(const std::string& application_resource_defini
     return Error::None;
 }
 
-MblError RegistrationRecord::track_ipc_connection(IpcConnection &source, bool closed)
+MblError RegistrationRecord::track_ipc_connection(IpcConnection source, bool closed)
 {
     TR_DEBUG_ENTER;
 
@@ -75,7 +75,7 @@ MblError RegistrationRecord::track_ipc_connection(IpcConnection &source, bool cl
     auto itr = std::find(ipc_connections_.begin(), ipc_connections_.end(), source);
 
     if (itr == ipc_connections_.end()) { // Ipc connection is not in the vector
-        if(closed) {
+        if (closed) {
             TR_ERR("Ipc connection not found");
             return Error::CCRBConnectionNotFound;
         }
@@ -84,18 +84,17 @@ MblError RegistrationRecord::track_ipc_connection(IpcConnection &source, bool cl
         return Error::None;
     }
 
-    if(closed) {
+    if (closed) {
         ipc_connections_.erase(itr);
-        if(ipc_connections_.empty()) {
+        if (ipc_connections_.empty()) {
             TR_DEBUG("Ipc connection list is empty");
             return Error::CCRBNoValidConnection; // This will signal CCRB to erase this instance
         }
         return Error::None;
     }
-    
+
     return Error::None; // Nothing to do - connection already exist in ipc connection vector
 }
-
 
 MblError RegistrationRecord::get_resource_identifiers(const std::string& path,
                                                       std::string& out_object_name,

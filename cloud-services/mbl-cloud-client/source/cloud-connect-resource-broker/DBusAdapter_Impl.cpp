@@ -187,7 +187,7 @@ int DBusAdapterImpl::disconnected_bus_name_callback_impl(sd_bus_track* track)
     std::string disconnected_bus_name = iter->first;
     connections_tracker_.erase(iter);
 
-    //unref track object
+    // unref track object
     sd_bus_track_unref(track);
 
     TR_INFO("bus name=%s disconnected! Informing CCRB!", disconnected_bus_name.c_str());

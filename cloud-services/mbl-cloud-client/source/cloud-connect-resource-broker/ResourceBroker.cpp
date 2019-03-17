@@ -378,12 +378,12 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
         }
 
         // Send the response to adapter:
-        if (!registration_record->is_registered()) 
-        {
+        if (!registration_record->is_registered()) {
             // Registration record is not registered yet, which means the error is for register
             // request
             const MblError status = ipc_adapter_->update_registration_status(
-                registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
+                registration_record->get_registration_source(),
+                CloudConnectStatus::ERR_INTERNAL_ERROR);
             if (Error::None != status) {
                 TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
                        MblError_to_str(status));
@@ -413,8 +413,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<CloudConnectStatus, std::string>
-ResourceBroker::register_resources(IpcConnection source,
-                                   const std::string& app_resource_definition)
+ResourceBroker::register_resources(IpcConnection source, const std::string& app_resource_definition)
 {
     TR_DEBUG_ENTER;
 
@@ -626,7 +625,7 @@ ResourceBroker::set_resources_values(IpcConnection source,
     }
 
     const MblError status = registration_record->track_ipc_connection(source, false);
-    if(MblError::None != status) {
+    if (MblError::None != status) {
         TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
@@ -712,7 +711,7 @@ ResourceBroker::get_resources_values(IpcConnection source,
     }
 
     const MblError status = registration_record->track_ipc_connection(source, false);
-    if(MblError::None != status) {
+    if (MblError::None != status) {
         TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
@@ -739,7 +738,7 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
 
     if (registration_in_progress_.load()) {
         TR_WARN("Connection closed during registration (access token: %s)",
-            in_progress_access_token_.c_str());
+                in_progress_access_token_.c_str());
     }
 
     // TODO: Currently we support only one application so setting registration_in_progress_ to false
@@ -749,18 +748,18 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
     registration_in_progress_.store(false);
 
     // Iterate all registration records
-    for (auto& itr : registration_records_)
-    {
-        // Call track_ipc_connection, and in case registration record does not have any other 
+    // (Several RegistrationRecords may track the same IPC connection)
+    for (auto& itr : registration_records_) {
+        // Call track_ipc_connection, and in case registration record does not have any other
         // ipc connections - erase from registration_records_
         const MblError status = itr.second->track_ipc_connection(source, true);
-        if(Error::CCRBNoValidConnection == status) {
+        if (Error::CCRBNoValidConnection == status) {
             // Registration record does not have any more valid connections - erase from map
             TR_DEBUG("Erase registration record (access_token: %s)", itr.first.c_str());
             auto erase_itr = registration_records_.find(itr.first);
             registration_records_.erase(erase_itr); // No need to check validity of erase_itr...
         }
-    }  
+    }
 }
 
 } // namespace mbl
