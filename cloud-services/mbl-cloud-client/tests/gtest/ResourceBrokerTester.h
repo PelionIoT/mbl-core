@@ -188,7 +188,7 @@ public:
     void notify_connection_closed_test_multiple_reg_records();
 
     /**
-     * @brief Calls resource broker member notify_connection_closed() API
+     * @brief Call resource_broker_.notify_connection_closed() API
      * 
      * @param source - connection which has been closed
      */
