@@ -42,7 +42,7 @@ friend ::RegistrationRecordTester;
 
 public:
 
-    RegistrationRecord(IpcConnection registration_source);
+    RegistrationRecord(IpcConnection& registration_source);
     ~RegistrationRecord();
 
     /**

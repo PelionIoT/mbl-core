@@ -38,7 +38,7 @@ static uint8_t RESOURCE_INSTANCE_INDEX = 3;
 namespace mbl
 {
 
-RegistrationRecord::RegistrationRecord(IpcConnection registration_source)
+RegistrationRecord::RegistrationRecord(IpcConnection& registration_source)
     : registration_source_(registration_source), registered_(false)
 {
     TR_DEBUG_ENTER;

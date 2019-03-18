@@ -624,8 +624,8 @@ ResourceBroker::set_resources_values(IpcConnection source,
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 
-    const MblError status = registration_record->track_ipc_connection(source,
-        RegistrationRecord::TrackOperation::ADD);
+    const MblError status =
+        registration_record->track_ipc_connection(source, RegistrationRecord::TrackOperation::ADD);
     if (MblError::None != status) {
         TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
@@ -711,9 +711,8 @@ ResourceBroker::get_resources_values(IpcConnection source,
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 
-    const MblError status = registration_record->track_ipc_connection(source,
-        RegistrationRecord::TrackOperation::ADD
-    );
+    const MblError status =
+        registration_record->track_ipc_connection(source, RegistrationRecord::TrackOperation::ADD);
     if (MblError::None != status) {
         TR_ERR("track_ipc_connection failed with error: %s", MblError_to_str(status));
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
@@ -754,17 +753,18 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
     while (itr != registration_records_.end()) {
         // Call track_ipc_connection, and in case registration record does not have any other
         // ipc connections - erase from registration_records_
-        const MblError status = itr->second->track_ipc_connection(source, 
-            RegistrationRecord::TrackOperation::REMOVE);
+        const MblError status =
+            itr->second->track_ipc_connection(source, RegistrationRecord::TrackOperation::REMOVE);
         if (Error::CCRBNoValidConnection == status) {
             // Registration record does not have any more valid connections - erase from map
             TR_DEBUG("Erase registration record (access_token: %s)", itr->first.c_str());
             itr = registration_records_.erase(itr); // supported since C++11
-        } else {
+        }
+        else
+        {
             itr++;
         }
     }
-
 }
 
 } // namespace mbl
