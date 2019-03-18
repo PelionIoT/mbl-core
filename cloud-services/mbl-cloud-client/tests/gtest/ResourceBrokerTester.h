@@ -173,6 +173,27 @@ public:
         const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
         const CloudConnectStatus expected_out_status);
 
+    /**
+     * @brief Test that ResourceBroker track IPC connections as expected
+     * ResourceBroker uses 3 registration records:
+     * 1. Registration record 1 with IPC connections: source_1 and source_2
+     * 2. Registration record 2 with IPC connections: source_2 and source_1
+     * 3. Registration record 3 with IPC connections: source_3
+     * 
+     * Close connection source_3 and make sure ResourceBroker erased registration record 3 as it
+     * does not have any valid connections anymore
+     * Close connection source_1 - Broker have 2 registration records
+     * Close connection source_2 - Broker have no registration records.
+     */
+    void notify_connection_closed_test_multiple_reg_records();
+
+    /**
+     * @brief Call resource_broker_.notify_connection_closed() API
+     * 
+     * @param source - connection which has been closed
+     */
+    void notify_connection_closed(mbl::IpcConnection source);
+
 private:
 
     /**

@@ -17,7 +17,9 @@
 
 #include <gtest/gtest.h>
 #include "RegistrationRecordTester.h"
+#include "RegistrationRecord.h"
 #include "CloudConnectTrace.h"
+#include "CloudConnectTypes.h"
 #include "TestInfra.h"
 
 #define TRACE_GROUP "ccrb-set_res_value-test"
@@ -121,7 +123,7 @@ INSTANTIATE_TEST_CASE_P(RegistrationRecordParameterizedTest,
 
 /**
  * @brief This parameterized test check get resource identifiers using valid / invalid paths
- * 
+ * Resource identifiers are object name, object instance id, resource name and resource instance id.
  */
 TEST_P(RegistrationRecordTest, get_resource_identifiers)
 {
@@ -140,3 +142,40 @@ TEST_P(RegistrationRecordTest, get_resource_identifiers)
         test_data.expected_resource_instance_name);
 }
 
+/**
+ * @brief Test track_ipc_connection API return values:
+ *              Error::CCRBConnectionNotFound - In case source IPC connection is closed but
+ *                                              not found in connection vector.
+ *              Error::CCRBNoValidConnection -  In case connection vector is empty after remove
+ *                                              of source connection. This will signal CCRB to 
+ *                                              erase this instance of RegistrationRecord.
+ *              Error::None - in case of success
+ */
+TEST(RegistrationRecord, track_ipc_connection_test) 
+{
+    mbl::IpcConnection source_1("source_1"), source_2("source_2"), source_not_used("not_used");
+    mbl::RegistrationRecord registration_record(source_1);
+    mbl::MblError status = registration_record.track_ipc_connection(source_1,
+        mbl::RegistrationRecord::TrackOperation::ADD);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // Add new ipc connection
+    status = registration_record.track_ipc_connection(source_2,
+        mbl::RegistrationRecord::TrackOperation::ADD);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // source_1 is closed
+    status = registration_record.track_ipc_connection(source_1,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
+    ASSERT_TRUE(mbl::MblError::None == status);
+
+    // source_not_used is closed
+    status = registration_record.track_ipc_connection(source_not_used,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
+    ASSERT_TRUE(mbl::MblError::CCRBConnectionNotFound == status);
+
+    // source_2 is closed
+    status = registration_record.track_ipc_connection(source_2,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
+    ASSERT_TRUE(mbl::MblError::CCRBNoValidConnection == status);
+}

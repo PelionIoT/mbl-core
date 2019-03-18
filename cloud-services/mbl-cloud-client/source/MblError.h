@@ -81,6 +81,8 @@ enum Type {
     CCRBGenerateUniqueIdFailed          = 0x0406,
     CCRBInvalidResourcePath             = 0x0407,
     CCRBResourceNotFound                = 0x0408,
+    CCRBConnectionNotFound              = 0x0409,
+    CCRBNoValidConnection               = 0x0410,
 		
     // DBA (D-Bus Adapter) errors
     DBA_IllegalState                    = 0x0500,

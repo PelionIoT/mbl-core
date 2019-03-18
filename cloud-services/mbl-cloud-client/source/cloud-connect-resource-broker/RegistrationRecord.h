@@ -21,7 +21,6 @@
 
 #include "MblError.h"
 #include "CloudConnectTypes.h"
-
 #include <map>
 #include <string>
 #include <memory>
@@ -31,8 +30,6 @@ class RegistrationRecordTester;
 
 namespace mbl {
 
-typedef std::function<void(const uintptr_t, const std::string&)> app_register_update_finished_func;
-typedef std::function<void(const uintptr_t, const std::string&, const MblError)> app_error_func;
 
 /**
  * @brief This class represent an Application endpoint, holds M2M resources, access token and more.
@@ -45,7 +42,7 @@ friend ::RegistrationRecordTester;
 
 public:
 
-    RegistrationRecord(const IpcConnection &source);
+    RegistrationRecord(IpcConnection& registration_source);
     ~RegistrationRecord();
 
     /**
@@ -59,6 +56,32 @@ public:
      *      Error::CCRBGenerateUniqueIdFailed - In case unique access token creation failed
      */
     MblError init(const std::string& application_resource_definition);
+
+    /**
+     * @brief Track operation - add or remove IPC connection
+     * 
+     */
+    enum class TrackOperation { 
+        ADD,
+        REMOVE 
+    };
+
+    /**
+     * @brief Track IPC connection
+     * If a new IPC connection is presented - add to connections vector
+     * If IPC connection is closed - remove from connections vector
+     * 
+     * @param source - Source IPC connection
+     * @param op - ADD add IPC connection or REMOVE IPC connection
+     * @return MblError -
+     *              Error::CCRBConnectionNotFound - In case source IPC connection is closed but
+     *                                              not found in connection vector.
+     *              Error::CCRBNoValidConnection - In case connection vector is empty after remove
+     *                                             of source connection. This will signal CCRB to 
+     *                                             erase this instance of RegistrationRecord.
+     *              Error::None - in case of success
+     */
+    MblError track_ipc_connection(IpcConnection source, TrackOperation op);
 
     /**
      * @brief Get resource by its path
@@ -82,11 +105,11 @@ public:
     inline void set_registered(bool registered) {registered_ = registered;}
 
     /**
-     * @brief Return ipc request handle
+     * @brief Return registration ipc connection
      * 
      * @return ipc request handle
      */
-    const IpcConnection& get_connection() const { return source_; }
+    const IpcConnection& get_registration_source() const { return registration_source_; }
 
     /**
      * @brief Return registered status
@@ -123,7 +146,8 @@ private:
                                       std::string& out_resource_name,
                                       std::string& out_resource_instance_name);
 
-    const IpcConnection & source_;
+    IpcConnection registration_source_;
+    std::vector<IpcConnection> ipc_connections_;
     bool registered_;
 
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
