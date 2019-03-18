@@ -750,20 +750,21 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
     // Mark that registration is finished (using atomic flag)
     registration_in_progress_.store(false);
 
-    // Iterate all registration records
-    // (Several RegistrationRecords may track the same IPC connection)
-    for (auto& itr : registration_records_) {
+    auto itr = registration_records_.begin();
+    while (itr != registration_records_.end()) {
         // Call track_ipc_connection, and in case registration record does not have any other
         // ipc connections - erase from registration_records_
-        const MblError status = itr.second->track_ipc_connection(source, 
+        const MblError status = itr->second->track_ipc_connection(source, 
             RegistrationRecord::TrackOperation::REMOVE);
         if (Error::CCRBNoValidConnection == status) {
             // Registration record does not have any more valid connections - erase from map
-            TR_DEBUG("Erase registration record (access_token: %s)", itr.first.c_str());
-            auto erase_itr = registration_records_.find(itr.first);
-            registration_records_.erase(erase_itr); // No need to check validity of erase_itr...
+            TR_DEBUG("Erase registration record (access_token: %s)", itr->first.c_str());
+            itr = registration_records_.erase(itr); // supported since C++11
+        } else {
+            itr++;
         }
     }
+
 }
 
 } // namespace mbl

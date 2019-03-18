@@ -123,7 +123,7 @@ INSTANTIATE_TEST_CASE_P(RegistrationRecordParameterizedTest,
 
 /**
  * @brief This parameterized test check get resource identifiers using valid / invalid paths
- * 
+ * Resource identifiers are object name, object instance id, resource name and resource instance id.
  */
 TEST_P(RegistrationRecordTest, get_resource_identifiers)
 {
@@ -143,8 +143,13 @@ TEST_P(RegistrationRecordTest, get_resource_identifiers)
 }
 
 /**
- * @brief Test track_ipc_connection API return values
- * 
+ * @brief Test track_ipc_connection API return values:
+ *              Error::CCRBConnectionNotFound - In case source IPC connection is closed but
+ *                                              not found in connection vector.
+ *              Error::CCRBNoValidConnection -  In case connection vector is empty after remove
+ *                                              of source connection. This will signal CCRB to 
+ *                                              erase this instance of RegistrationRecord.
+ *              Error::None - in case of success
  */
 TEST(RegistrationRecord, track_ipc_connection_test) 
 {
