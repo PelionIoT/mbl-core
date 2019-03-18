@@ -58,12 +58,21 @@ public:
     MblError init(const std::string& application_resource_definition);
 
     /**
+     * @brief Track operation - add or remove IPC connection
+     * 
+     */
+    enum class TrackOperation { 
+        ADD,
+        REMOVE 
+    };
+
+    /**
      * @brief Track IPC connection
      * If a new IPC connection is presented - add to connections vector
      * If IPC connection is closed - remove from connections vector
      * 
      * @param source - Source IPC connection
-     * @param closed - Source IPC connection is closed (if true - remove, if false - add)
+     * @param op - ADD add IPC connection or REMOVE IPC connection
      * @return MblError -
      *              Error::CCRBConnectionNotFound - In case source IPC connection is closed but
      *                                              not found in connection vector.
@@ -72,7 +81,7 @@ public:
      *                                             erase this instance of RegistrationRecord.
      *              Error::None - in case of success
      */
-    MblError track_ipc_connection(IpcConnection source, bool closed);
+    MblError track_ipc_connection(IpcConnection source, TrackOperation op);
 
     /**
      * @brief Get resource by its path

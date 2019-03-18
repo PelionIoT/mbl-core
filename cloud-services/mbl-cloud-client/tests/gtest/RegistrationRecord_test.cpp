@@ -150,22 +150,27 @@ TEST(RegistrationRecord, track_ipc_connection_test)
 {
     mbl::IpcConnection source_1("source_1"), source_2("source_2"), source_not_used("not_used");
     mbl::RegistrationRecord registration_record(source_1);
-    mbl::MblError status = registration_record.track_ipc_connection(source_1, false);
+    mbl::MblError status = registration_record.track_ipc_connection(source_1,
+        mbl::RegistrationRecord::TrackOperation::ADD);
     ASSERT_TRUE(mbl::MblError::None == status);
 
     // Add new ipc connection
-    status = registration_record.track_ipc_connection(source_2, false);
+    status = registration_record.track_ipc_connection(source_2,
+        mbl::RegistrationRecord::TrackOperation::ADD);
     ASSERT_TRUE(mbl::MblError::None == status);
 
     // source_1 is closed
-    status = registration_record.track_ipc_connection(source_1, true);
+    status = registration_record.track_ipc_connection(source_1,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
     ASSERT_TRUE(mbl::MblError::None == status);
 
     // source_not_used is closed
-    status = registration_record.track_ipc_connection(source_not_used, true);
+    status = registration_record.track_ipc_connection(source_not_used,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
     ASSERT_TRUE(mbl::MblError::CCRBConnectionNotFound == status);
 
     // source_2 is closed
-    status = registration_record.track_ipc_connection(source_2, true);
+    status = registration_record.track_ipc_connection(source_2,
+        mbl::RegistrationRecord::TrackOperation::REMOVE);
     ASSERT_TRUE(mbl::MblError::CCRBNoValidConnection == status);
 }

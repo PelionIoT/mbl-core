@@ -252,8 +252,8 @@ void ResourceBrokerTester::notify_connection_closed_test_multiple_reg_records()
     resource_broker_.registration_records_["registration_record_3"] = registration_record_3;
 
     // Add source 1 and source 2 to both registration_records
-    registration_record_1->track_ipc_connection(source_2, false); // Now track source_1 and 2
-    registration_record_2->track_ipc_connection(source_1, false); // Now track source_1 and 2
+    registration_record_1->track_ipc_connection(source_2, mbl::RegistrationRecord::TrackOperation::ADD); // Now track source_1 and 2
+    registration_record_2->track_ipc_connection(source_1, mbl::RegistrationRecord::TrackOperation::ADD); // Now track source_1 and 2
 
     // Verify we have 3 registration records
     ASSERT_TRUE(resource_broker_.registration_records_.size() == 3);
