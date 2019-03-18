@@ -29,7 +29,10 @@ then
 else
 
 
+    pip install --upgrade pip
+
     pip3 install manifest-tool
+
     mkdir /tmp/update-resources
     cd /tmp/update-resources
 
