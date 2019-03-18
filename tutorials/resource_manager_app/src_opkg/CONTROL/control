@@ -1,8 +1,0 @@
-Package: lwm2m-resource-manager-sample-app
-Version: 1.0
-Architecture: armv7vet2hf-neon
-Maintainer: Mbed Linux OS team <mbed-linux-team@arm.com>
-Section: base
-Priority: optional
-Description: This package includes python user resource manager application.
-
