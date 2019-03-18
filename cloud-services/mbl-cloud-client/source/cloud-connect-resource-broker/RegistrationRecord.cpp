@@ -38,10 +38,11 @@ static uint8_t RESOURCE_INSTANCE_INDEX = 3;
 namespace mbl
 {
 
-RegistrationRecord::RegistrationRecord(const IpcConnection& source)
-    : source_(source), registered_(false)
+RegistrationRecord::RegistrationRecord(IpcConnection& registration_source)
+    : registration_source_(registration_source), registered_(false)
 {
     TR_DEBUG_ENTER;
+    track_ipc_connection(registration_source_, TrackOperation::ADD); // Add to ipc connections
 }
 
 RegistrationRecord::~RegistrationRecord()
@@ -64,6 +65,35 @@ MblError RegistrationRecord::init(const std::string& application_resource_defini
 
     m2m_object_list_ = ret_pair.second;
     return Error::None;
+}
+
+MblError RegistrationRecord::track_ipc_connection(IpcConnection source, TrackOperation op)
+{
+    TR_DEBUG_ENTER;
+
+    // Search for source connection in ipc_connections_
+    auto itr = std::find(ipc_connections_.begin(), ipc_connections_.end(), source);
+
+    if (itr == ipc_connections_.end()) { // Ipc connection is not in the vector
+        if (TrackOperation::REMOVE == op) {
+            TR_ERR("Ipc connection not found");
+            return Error::CCRBConnectionNotFound;
+        }
+        // Add new ipc connection
+        ipc_connections_.push_back(source);
+        return Error::None;
+    }
+
+    if (TrackOperation::REMOVE == op) {
+        ipc_connections_.erase(itr);
+        if (ipc_connections_.empty()) {
+            TR_DEBUG("Ipc connection list is empty");
+            return Error::CCRBNoValidConnection; // This will signal CCRB to erase this instance
+        }
+        return Error::None;
+    }
+
+    return Error::None; // Nothing to do - connection already exist in ipc connection vector
 }
 
 MblError RegistrationRecord::get_resource_identifiers(const std::string& path,

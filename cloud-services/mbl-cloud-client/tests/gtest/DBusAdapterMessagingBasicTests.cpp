@@ -35,7 +35,7 @@ class MessageReplyTest_ResourceBroker: public ResourceBroker {
 
 public:
     std::pair<CloudConnectStatus, std::string> register_resources(
-        const mbl::IpcConnection & /*unused*/, 
+        mbl::IpcConnection /*unused*/, 
         const std::string & json) override
     {
         TR_DEBUG_ENTER;
@@ -52,7 +52,7 @@ public:
     }
 
     CloudConnectStatus deregister_resources(
-            const mbl::IpcConnection & /*unused*/, 
+            mbl::IpcConnection /*unused*/, 
             const std::string & token) override
     {
         TR_DEBUG_ENTER;    
@@ -319,7 +319,7 @@ class ResourceBrokerMock1 : public ResourceBroker
 {
 public:
     virtual std::pair<CloudConnectStatus, std::string> 
-    register_resources(const IpcConnection & , 
+    register_resources(IpcConnection , 
                        const std::string &) override
     {
         TR_DEBUG_ENTER; 
@@ -475,7 +475,7 @@ class ResourceBrokerMock2 : public ResourceBroker
 public:
     // Chckes that the reported closed source connection is equal to the actual unique connection id
     // as set by the application created thread before  calling RegisterResources
-    void notify_connection_closed(const IpcConnection& source) override
+    void notify_connection_closed(IpcConnection source) override
     {
         TR_DEBUG_ENTER;
 
@@ -498,7 +498,7 @@ public:
     }
 
     virtual std::pair<CloudConnectStatus, std::string> 
-    register_resources(const IpcConnection & , 
+    register_resources(IpcConnection , 
                        const std::string &) override
     {
         TR_DEBUG_ENTER; 
