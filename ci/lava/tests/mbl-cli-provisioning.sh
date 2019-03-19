@@ -28,8 +28,6 @@ then
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=fail>"
 else
 
-set -x
-
     # Install the manifest-tool. This needs a newer version of pip, so get that
     # as well.
     pip3 -qqq install --upgrade pip
@@ -84,7 +82,7 @@ set -x
         cat /tmp/get-pelion-status
     fi
 
-    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resource.c >& /tmp/provision-pelion
+    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resources.c >& /tmp/provision-pelion
 
     pelion_provisioned_ok=$(grep -c "Provisioning process completed without error." /tmp/provision-pelion)
     if [ $pelion_provisioned_ok -eq 1 ]
