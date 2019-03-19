@@ -51,7 +51,7 @@ set -x
     mbl-cli save-api-key $api_key
 
     printf "Check to see the key is installed correctly\n"
-    key_found=grep -c $api_key ~/.mbl-store/user/config.json
+    key_found=$(grep -c $api_key ~/.mbl-store/user/config.json)
 
     if [ $key_found -eq 1 ]
     then
@@ -62,20 +62,51 @@ set -x
 
 
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
-    invalid_rejected_ok=grep -c "API key not recognised by Pelion Device Management." ~/.mbl-store/user/config.json
+    invalid_rejected_ok=$(grep -c "API key not recognised by Pelion Device Management." /tmp/invalid_key)
 
     if [ $invalid_rejected_ok -eq 1 ]
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=fail>\n"
+        cat /tmp/invalid_key
     fi
 
-    $mbl_command get-pelion-status
+    $mbl_command get-pelion-status >& /tmp/get-pelion-status
 
-    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resources.c
+    pelion_not_ok=$(grep -c "Your device is not correctly configured for Pelion Device Management." /tmp/get-pelion-status)
 
-    $mbl_command get-pelion-status
+    if [ $pelion_not_ok -eq 1 ]
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-not-configured RESULT=pass>\n"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-not-configured RESULT=fail>\n"
+        cat /tmp/get-pelion-status
+    fi
+
+    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resource.c >& /tmp/provision-pelion
+
+    pelion_provisioned_ok=$(grep -c "Provisioning process completed without error." /tmp/provision-pelion)
+    if [ $pelion_provisioned_ok -eq 1 ]
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-provisioned RESULT=pass>\n"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-provisioned RESULT=fail>\n"
+        cat /tmp/provision-pelion
+    fi
+
+    $mbl_command get-pelion-status >& /tmp/get-pelion-status
+
+    pelion_ok=$(grep -c "Device is configured correctly. You can connect to Pelion Cloud!" /tmp/get-pelion-status)
+
+    if [ $pelion_ok -eq 1 ]
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-configured RESULT=pass>\n"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-configured RESULT=fail>\n"
+        cat /tmp/get-pelion-status
+    fi
+
 
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=pass>"
 
