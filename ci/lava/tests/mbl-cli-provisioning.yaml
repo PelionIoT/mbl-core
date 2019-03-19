@@ -5,7 +5,7 @@
 metadata:
     format: "Lava-Test Test Definition 1.0"
     name: Run mbl-cli provisioning test
-    description: "Run the helloworld application on the target using mbl-cli"
+    description: "Run the Pelion provisioning tests"
 
 run:
     steps:
