@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Run the hello world test and confirm it is functioning correctly
+# Run the Pelion provisioning tests and confirm they are functioning correctly
 
 # Find the address of the first device found by the mbl-cli. This will only
 # work correctly if there is a point to point connection between lxc and target.
