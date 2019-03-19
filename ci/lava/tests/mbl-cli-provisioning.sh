@@ -47,17 +47,17 @@ set -x
 
     # Deal with API keys.
 
-    print "Try to save the api key.\n"
+    printf "Try to save the api key.\n"
     mbl-cli save-api-key $api_key
 
-    print "Check to see the key is installed correctly\n"
-    key_found=grep -c $key ~/.mbl-store/user/config.json
+    printf "Check to see the key is installed correctly\n"
+    key_found=grep -c $api_key ~/.mbl-store/user/config.json
 
     if [ $key_found -eq 1 ]
     then
-        print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=pass>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=pass>\n"
     else
-        print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=fail>\n"
     fi
 
 
@@ -66,9 +66,9 @@ set -x
 
     if [ $invalid_rejected_ok -eq 1 ]
     then
-        print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
     else
-        print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=fail>\n"
     fi
 
     $mbl_command get-pelion-status
