@@ -160,7 +160,7 @@ void* MailBoxTestFixture::reader_thread_start(void* mailbox)
         ret_pair.second.unpack_data<MailboxMsg_Raw>(rcv_data);
 
         // validate type, length actual data received
-        if ((ret_pair.second.get_data_type_name() != "MailboxMsg_Raw") ||
+        if ((ret_pair.second.get_data_type_name() != typeid(MailboxMsg_Raw).name()) ||
             (ret_pair.second.get_data_len() != 1) ||
             (rcv_data.bytes[0] != ch))
         {
@@ -218,8 +218,8 @@ TEST_F(MailBoxTestFixture, send_rcv_raw_message_multi_thread)
             pthread_create(&writer_tid, NULL, MailBoxTestFixture::writer_thread_start, &mailbox),
             0);
 
-        // wait 5ms to allow writer to write something.
-        ASSERT_EQ(usleep(5 * 1000), 0);
+        // wait 10 ms to allow writer to write something.
+        ASSERT_EQ(usleep(10 * 1000), 0);
         ASSERT_EQ(
             pthread_create(&reader_tid, NULL, MailBoxTestFixture::reader_thread_start, &mailbox),
             0);
