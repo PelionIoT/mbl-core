@@ -105,19 +105,19 @@ TEST_F(MailBoxTestFixture, send_rcv_msg_single_thread)
     ASSERT_EQ(mailbox.init(), 0);
 
     // generate / send / receive & compare MsgRaw::MAX_SIZE times
-    for (auto i = 1; i < MailboxMsg::MsgPayload::MsgRaw::MAX_SIZE; i++) {
-        MailboxMsg::MsgPayload send_payload;
+    for (size_t i = 1; i < sizeof(MailboxMsg_Raw); i++) {
+        MailboxMsg_Raw send_payload;
         std::string random_str;
 
         // generate a random binary string of size i
         memset(&send_payload, 0, sizeof(send_payload));
-        generate_random_binary_string(random_str, i);
+        generate_random_binary_string(random_str, static_cast<int>(i));
 
-        // copy string to the send_payload rae message part
-        strncpy((char*) send_payload.raw_.bytes, random_str.c_str(), random_str.length());
+        // copy string to send_payload
+        strncpy((char*) send_payload.bytes, random_str.c_str(), random_str.length());
 
         // create and send the message
-        MailboxMsg msg_to_send(MailboxMsg::MsgType::RAW_DATA, send_payload, random_str.length());
+        MailboxMsg msg_to_send(send_payload, random_str.length());
         ASSERT_EQ(mailbox.send_msg(msg_to_send), 0);
 
         // receive the message into a pair
@@ -127,12 +127,13 @@ TEST_F(MailBoxTestFixture, send_rcv_msg_single_thread)
         ASSERT_EQ(ret_pair.first, MblError::None);
 
         // check that sent data equal received data
-        ASSERT_EQ(
-            memcmp(&msg_to_send.get_payload(), &ret_pair.second.get_payload(), random_str.length()),
-            0);
+        MailboxMsg_Raw rcv_payload;
+        ret_pair.second.unpack_data<MailboxMsg_Raw>(rcv_payload);
+
+        ASSERT_EQ(memcmp(&send_payload, &rcv_payload, random_str.length()), 0);
 
         // validate length
-        ASSERT_EQ(msg_to_send.get_payload_len(), ret_pair.second.get_payload_len());
+        ASSERT_EQ(msg_to_send.get_data_len(), ret_pair.second.get_data_len());
 
         // validate sequence number
         ASSERT_EQ(msg_to_send.get_sequence_num(), ret_pair.second.get_sequence_num());
@@ -155,10 +156,13 @@ void* MailBoxTestFixture::reader_thread_start(void* mailbox)
             pthread_exit((void*) -1003);
         }
 
+        MailboxMsg_Raw rcv_data;
+        ret_pair.second.unpack_data<MailboxMsg_Raw>(rcv_data);
+
         // validate type, length actual data received
-        if ((ret_pair.second.get_type() != MailboxMsg::MsgType::RAW_DATA) ||
-            (ret_pair.second.get_payload_len() != 1) ||
-            (ret_pair.second.get_payload().raw_.bytes[0] != ch))
+        if ((ret_pair.second.get_data_type_name() != "MailboxMsg_Raw") ||
+            (ret_pair.second.get_data_len() != 1) ||
+            (rcv_data.bytes[0] != ch))
         {
             pthread_exit((void*) -1004);
         }
@@ -179,12 +183,12 @@ void* MailBoxTestFixture::writer_thread_start(void* mailbox)
     TR_DEBUG_ENTER;
     assert(mailbox);
     Mailbox* mailbox_in_ = static_cast<Mailbox*>(mailbox);
-    MailboxMsg::MsgPayload payload;
+    MailboxMsg_Raw data;
 
     for (char ch = 'A'; ch < 'Z' + 1; ++ch) {
         // fill payload and send message
-        payload.raw_.bytes[0] = ch;
-        MailboxMsg write_msg(MailboxMsg::MsgType::RAW_DATA, payload, 1);
+        data.bytes[0] = ch;
+        MailboxMsg write_msg(data, 1);
         if (mailbox_in_->send_msg(write_msg) != 0) {
             pthread_exit((void*) -1);
         }
@@ -567,10 +571,7 @@ void* DBusAdapeterTestFixture1::mbl_cloud_client_thread(void* adapter_)
     TR_DEBUG_ENTER;
     assert(adapter_);
     DBusAdapter* adapter = static_cast<DBusAdapter*>(adapter_);
-    MblError status = MblError::Unknown;
-    ;
-    MblError stop_status = MblError::Unknown;
-    ;
+    MblError status = MblError::Unknown;    
 
     status = adapter->init();
     if (status != MblError::None) {
@@ -583,6 +584,7 @@ void* DBusAdapeterTestFixture1::mbl_cloud_client_thread(void* adapter_)
     }
 
     // start run - enter loop, wait for exit request
+    MblError stop_status = MblError::Unknown;
     status = adapter->run(stop_status);
     if (status != MblError::None) {
         pthread_exit((void*) status);

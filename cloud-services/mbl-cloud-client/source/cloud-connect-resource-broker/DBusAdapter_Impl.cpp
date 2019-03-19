@@ -8,6 +8,7 @@
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter.h"
+
 #include "DBusAdapter.hpp"
 #include "DBusService.h"
 #include "MailboxMsg.h"
@@ -463,41 +464,40 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     }
 
     // Process message
-    MailboxMsg& msg = ret_pair.second;
-    switch (msg.get_type())
-    {
-    case mbl::MailboxMsg::MsgType::EXIT:
-    {
+    MailboxMsg & msg = ret_pair.second;
+    auto data_type_name = msg.get_data_type_name();
+    if (data_type_name == typeid(MailboxMsg_Exit).name()){
         // EXIT message
 
         // validate length (sanity check)
-        if (msg.get_payload_len() != sizeof(mbl::MailboxMsg::MsgPayload::MsgExit)) {
-            TR_ERR("Unexpected EXIT message length %zu (expected %zu), returning error=%s",
-                   msg.get_payload_len(),
-                   sizeof(mbl::MailboxMsg::MsgType::EXIT),
-                   MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
+        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) {
+            TR_ERR("Unexpected %s message length %zu (expected %zu), returning error=%s",
+                    data_type_name.c_str(),
+                    msg.get_data_len(),
+                    sizeof(MailboxMsg_Exit),
+                    MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
             return (-EBADMSG);
         }
 
         // External thread request to stop event loop
-        auto& payload = msg.get_payload();
-        TR_INFO("receive message EXIT : sending stop request to event loop with stop status=%s",
-                MblError_to_str(payload.exit_.stop_status));
-        int r = event_loop_request_stop(payload.exit_.stop_status);
+        MailboxMsg_Exit message_exit;
+        msg.unpack_data<MailboxMsg_Exit>(message_exit);
+        TR_INFO("receive message %s : sending stop request to event loop with stop status=%s",
+               data_type_name.c_str(),
+               MblError_to_str(message_exit.stop_status));
+        int r = event_loop_request_stop(message_exit.stop_status);
         if (r < 0) {
             TR_ERR("event_loop_request_stop() failed with error %s (r=%d)", strerror(-r), r);
             return r;
         }
-        break;
     }
-    case mbl::MailboxMsg::MsgType::RAW_DATA:
+    else if (data_type_name == typeid(MailboxMsg_Raw).name()){
         // (used for testing) - ignore
-        break;
-
-    default:
+        TR_INFO("receive message %s.. (ignoring)..", data_type_name.c_str());
+    }
+    else {
         // This should never happen
-        TR_ERR("Unexpected MsgType.. Ignoring..");
-        break;
+        TR_ERR("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
     }
 
     return 0; // success
@@ -1135,9 +1135,10 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
         // This section is for external threads exit requests - send EXIT message to mailbox_in_
         // Thread shouldn't block here, but we still supply a maximum timeout of
         // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
-        MailboxMsg::MsgPayload payload;
-        payload.exit_.stop_status = stop_status;
-        MailboxMsg msg(MailboxMsg::MsgType::EXIT, payload, sizeof(payload.exit_));
+        MailboxMsg_Exit message_exit;
+        message_exit.stop_status = stop_status;
+
+        MailboxMsg msg = MailboxMsg(message_exit, sizeof(message_exit));
 
         status = mailbox_in_.send_msg(msg);
         if (status != MblError::None) {

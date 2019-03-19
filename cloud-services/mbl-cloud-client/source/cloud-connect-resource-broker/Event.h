@@ -149,7 +149,7 @@ protected:
         assert(data_length_ <= sizeof(data)); // don't assert by type, just avoid corruption
         assert(event_loop_handle_);
 
-        pack_data(data);
+        pack_data<T>(data);
 
         static uint64_t id = 1;
         id_ = id++;
