@@ -20,16 +20,15 @@
 
 static volatile sig_atomic_t g_shutdown_signal = 0;
 
-extern "C" void mbl_shutdown_handler(int signal)
-{
-    g_shutdown_signal = signal;
-}
-
 // Period between re-registrations with the LWM2M server.
 // MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
 // re-registration (keepalive)
 static const int g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
 
+extern "C" void mbl_shutdown_handler(int signal) //////////////////////////////////////////////////////////// RENAME
+{
+    g_shutdown_signal = signal;
+}
 
 namespace mbl
 {
@@ -40,53 +39,33 @@ static void* get_dummy_network_interface()
     return &network;
 }
 
-ResourceBroker* ResourceBroker::s_instance = 0;
+ResourceBroker* ResourceBroker::s_ccrb_instance = nullptr;
 MblMutex ResourceBroker::s_mutex;
-
-ResourceBroker::InstanceScoper::InstanceScoper()
-{
-    TR_DEBUG_ENTER;
-    assert(!s_instance);
-    s_instance = new ResourceBroker;
-}
-
-ResourceBroker::InstanceScoper::~InstanceScoper()
-{
-    TR_DEBUG_ENTER;
-    assert(s_instance);
-    delete s_instance;
-}
 
 MblError ResourceBroker::main()
 {
     TR_DEBUG_ENTER;
-    InstanceScoper scoper;
-    assert(s_instance);
+    ResourceBroker resource_broker;
+    assert(s_ccrb_instance);
 
     // start running CCRB module <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<change start to smtn else
 
-    s_instance->cloud_client_ = new MbedCloudClient();
+    s_ccrb_instance->cloud_client_ = new MbedCloudClient(); // MOVE TO INIT
 
-    const MblError ccrb_start_err = s_instance->start();
+    const MblError ccrb_start_err = resource_broker.start();
     if (Error::None != ccrb_start_err) {
         tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
         return ccrb_start_err;
     }
-    
-    {
-        MblScopedLock l(s_mutex);
-        s_instance->state_ = State_CalledRegister;
-    }
-
     TR_INFO("ResourceBroker started successfully");
 
     for (;;) {
-        
+
         if (g_shutdown_signal) {
             tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
 
             // stop running CCRB module
-            const MblError ccrb_stop_err = s_instance->stop();
+            const MblError ccrb_stop_err = resource_broker.stop();
             if (Error::None != ccrb_stop_err) {
                 tr_err("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
                 return ccrb_stop_err;
@@ -95,11 +74,8 @@ MblError ResourceBroker::main()
             return Error::ShutdownRequested;
         }
 
-        {
-            MblScopedLock l(s_mutex);
-            if (s_instance->state_ == State_Unregistered) {
-                return Error::DeviceUnregistered;
-            }
+        if (State_DeviceUnregistered == resource_broker.state_.load()) {
+            return Error::DeviceUnregistered;
         }
 
         sleep(1);
@@ -113,10 +89,11 @@ MblError ResourceBroker::main()
 ResourceBroker::ResourceBroker()
 : init_sem_initialized_(false), 
   cloud_client_(nullptr),
-  state_(State_Unregistered),
-  registration_in_progress_(false)  
+  state_(State_DeviceUnregistered)
 {
     TR_DEBUG_ENTER;
+
+    s_ccrb_instance = this;
 
     // This function pointer will be used in init() to set mbed cloud client function pointers.
     // In case of tests we will use it to set mbed cloud client function pointers to mock class
@@ -128,12 +105,11 @@ ResourceBroker::~ResourceBroker()
 {
     TR_DEBUG_ENTER;
 
-    // 1. Set s_instance to 0 so that callbacks no longer try to access this
+    // 1. Set s_ccrb_instance to 0 so that callbacks no longer try to access this
     // object
     {
         MblScopedLock l(s_mutex);
-        //assert(s_instance); /////////////////////////////////////////////////////////////////////////////////// NEED THAT?
-        s_instance = 0;
+        s_ccrb_instance = nullptr;
     }
 
     // 2. Close and delete the MbedCloudClient. This must be done before
@@ -159,7 +135,7 @@ MblError ResourceBroker::start()
 
     TR_DEBUG_ENTER;
 
-    assert(s_instance);
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////assert(s_ccrb_instance);
 
     // initialize init semaphore
     int ret = sem_init(&init_sem_,
@@ -335,6 +311,7 @@ MblError ResourceBroker::init()
     // Register Cloud client callback:
     register_callback_handlers();
 
+    // This must come after register_callback_handlers() is called
     const MblError setup_status = mbed_cloud_client_setup();
     if (Error::None != setup_status) {
         status.set(setup_status);
@@ -382,12 +359,18 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ev->get_data().user_data);
 
-    // Check if registration is in progress, if yes - do nothing as registration will act as
-    // keep alive
-    if (this_ccrb->registration_in_progress_.load()) {
-        TR_DEBUG("Registration is in progress - no need to call Mbed cloud client for keepalive.");
+    // Check if application registration update is in progress
+    // if yes - do nothing as registration will act as keep alive
+    if (State_AppRegisterUpdateInProgress == this_ccrb->state_.load()) {
+        TR_DEBUG("Application registration update is in progress- no need for keepalive.");
         return Error::None;
     }
+
+    // Keep alive is only needed when device is registered
+    if (State_DeviceRegistered != this_ccrb->state_.load()) {
+        TR_DEBUG("Device is not registered.");
+        return Error::None;
+    }    
 
     TR_DEBUG("Call cloud_client_->register_update");
     this_ccrb->mbed_client_register_update_func_();
@@ -486,22 +469,15 @@ void ResourceBroker::register_callback_handlers()
 {
     TR_DEBUG_ENTER;
 
-    // Resource broker will now get Mbed cloud client callbacks on the following
-    // cases:
-    // 1. Registration update
-    // 2. Error occurred
-
     if (nullptr != cloud_client_) {
         // GTest unit test might set cloud_client_ member to nullptr
+        cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered); // rename all cb functions///////////////////////////////////////////////
+        cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
         cloud_client_->on_registration_updated(this,
                                                &ResourceBroker::handle_registration_updated_cb);
-        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
-
-        cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
-        cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
-
         cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
         cloud_client_->set_update_authorize_handler(&handle_authorize);
+        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);        
     }
 }
 
@@ -512,6 +488,8 @@ MblError ResourceBroker::mbed_cloud_client_setup()
     // Add empty ObjectList which will be used to register the device for the first time
     M2MObjectList objs;
     mbed_client_add_objects_func_(objs);
+
+    state_.store(State_DeviceRegistrationInProgress);
 
     const bool setup_ok = mbed_client_setup_func_(get_dummy_network_interface());
     if (!setup_ok) {
@@ -530,8 +508,10 @@ void ResourceBroker::handle_client_registered()
 {
     TR_DEBUG_ENTER;
 
-    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // Called by the mbed event loop - *s_ccrb_instance can be destroyed whenever
     // s_mutex isn't locked.
+
+    state_.store(State_DeviceRegistered);
 
     TR_INFO("Client registered");
 
@@ -551,15 +531,15 @@ void ResourceBroker::handle_client_unregistered()
 {
     TR_DEBUG_ENTER;
 
-    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // Called by the mbed event loop - *s_ccrb_instance can be destroyed whenever
     // s_mutex isn't locked.
 
     {
         MblScopedLock l(s_mutex);
-        if (!s_instance) {
+        if (!s_ccrb_instance) {
             return;
         }
-        s_instance->state_ = State_Unregistered;
+        state_.store(State_DeviceUnregistered); ////////////////////////////////////////////////////// when should we use s_ccrb_instance
     }
 
     TR_WARN("Client unregistered");
@@ -569,14 +549,14 @@ void ResourceBroker::handle_authorize(const int32_t request)
 {
     TR_DEBUG_ENTER;
 
-    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // Called by the mbed event loop - *s_ccrb_instance can be destroyed whenever
     // s_mutex isn't locked.
 
     if (update_handlers::handle_authorize(request)) {
         MblScopedLock l(s_mutex);
 
-        if (s_instance) {
-            s_instance->cloud_client_->update_authorize(request);
+        if (s_ccrb_instance) {
+            s_ccrb_instance->cloud_client_->update_authorize(request);
         }
     }
 }
@@ -589,16 +569,17 @@ void ResourceBroker::handle_registration_updated_cb()
     // TODO: need to handle cases when mbed client does not call any callback
     // during registration - IOTMBL-1700
 
-    if (registration_in_progress_.load()) {
+    if (State_AppRegisterUpdateInProgress == state_.load()) {
 
         RegistrationRecord_ptr registration_record =
             get_registration_record(in_progress_access_token_);
+
         if (nullptr == registration_record) {
             // Could not found registration record
             TR_ERR("Registration record (access_token: %s) does not exist.",
                    in_progress_access_token_.c_str());
             // Mark that registration is finished (using atomic flag), even if it was failed
-            registration_in_progress_.store(false);
+            state_.store(State_DeviceRegistered);
             return;
         }
 
@@ -615,8 +596,8 @@ void ResourceBroker::handle_registration_updated_cb()
             TR_ERR("update_registration_status failed with error: %s", MblError_to_str(status));
         }
 
-        // Mark that registration is finished (using atomic flag)
-        registration_in_progress_.store(false);
+        // Application registration is finished - mode to registered state (using atomic enum)
+        state_.store(State_DeviceRegistered);
     }
     else
     {
@@ -635,8 +616,8 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
     TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
     TR_ERR("Error details: %s", mbed_client_error_description_func_());
 
-    // If registration is in progress - update adapter
-    if (registration_in_progress_.load()) {
+    // If application register update is in progress - update adapter
+    if (State_AppRegisterUpdateInProgress == state_.load()) {
 
         TR_DEBUG("Registration (access_token: %s) failed.", in_progress_access_token_.c_str());
 
@@ -646,8 +627,8 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
             // Could not found registration record
             TR_ERR("Registration record (access_token: %s) does not exist.",
                    in_progress_access_token_.c_str());
-            // Mark that registration is finished (using atomic flag), even if it was failed
-            registration_in_progress_.store(false);
+            // Application registration failed - mode to registered state (using atomic enum)
+            state_.store(State_DeviceRegistered);
             return;
         }
 
@@ -674,8 +655,8 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
             TR_ERR("Registration record (access_token: %s) is already registered.",
                    in_progress_access_token_.c_str());
         }
-        // Mark that registration is finished (using atomic flag) (even if it was failed)
-        registration_in_progress_.store(false);
+        // Application registration failed - mode to registered state (using atomic enum)
+        state_.store(State_DeviceRegistered);
     }
     else
     {
@@ -694,10 +675,18 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
                                                         std::string());
 
-    if (registration_in_progress_.load()) {
-        // We only allow one registration request at a time.
+    // Check if application register update is in progress
+    if (State_AppRegisterUpdateInProgress == state_.load()) {
+        // We only allow one register update request at a time.
         TR_ERR("Registration is already in progress.");
         ret_pair.first = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
+        return ret_pair;
+    }
+
+    if (State_DeviceRegistered != state_.load()) {
+        // We only allow one register update request at a time.
+        TR_ERR("Device is not registered.");
+        ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
         return ret_pair;
     }
 
@@ -732,8 +721,8 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
         return ret_pair;
     }
 
-    // Set atomic flag for registration in progress
-    registration_in_progress_.store(true);
+    // Set atomic flag for application register update in progress
+    state_.store(State_AppRegisterUpdateInProgress);
 
     // Fill ret_pair with generated access token
     ret_pair.second = ret_pair_generate_access_token.second;
@@ -892,6 +881,13 @@ ResourceBroker::set_resources_values(IpcConnection source,
 {
     TR_DEBUG("access_token: %s", access_token.c_str());
 
+    // It is allowed to set resource value only after device is registered
+    State state = state_.load();
+    if (State_DeviceRegistered != state && State_AppRegisterUpdateInProgress != state) {
+        TR_ERR("Device is not registered.");
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
+    }
+
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
@@ -979,6 +975,13 @@ ResourceBroker::get_resources_values(IpcConnection source,
 
     TR_DEBUG("access_token: %s", access_token.c_str());
 
+    // It is allowed to set resource value only after device is registered
+    State state = state_.load();
+    if (State_DeviceRegistered != state && State_AppRegisterUpdateInProgress != state) {
+        TR_ERR("Device is not registered.");
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
+    }    
+
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
         TR_ERR("Registration record (access_token: %s) does not exist.", access_token.c_str());
@@ -1012,16 +1015,15 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
 {
     TR_DEBUG_ENTER;
 
-    if (registration_in_progress_.load()) {
+    if (State_AppRegisterUpdateInProgress == state_.load()) {
         TR_WARN("Connection closed during registration (access token: %s)",
                 in_progress_access_token_.c_str());
+        // Mark that registration is finished (using atomic flag)
+        state_.store(State_DeviceRegistered);
     }
 
     // TODO: Currently we support only one application so setting registration_in_progress_ to false
     // is ok. this will have to be changed when supported multiple applications
-
-    // Mark that registration is finished (using atomic flag)
-    registration_in_progress_.store(false);
 
     auto itr = registration_records_.begin();
     while (itr != registration_records_.end()) {

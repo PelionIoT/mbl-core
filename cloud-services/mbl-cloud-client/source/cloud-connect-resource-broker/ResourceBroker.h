@@ -42,7 +42,7 @@ friend DBusAdapterImpl;
 public:
 
     // Only InstanceScoper can create or destroy objects
-    ResourceBroker(); //TODO: move to private
+    ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////
     virtual ~ResourceBroker(); //TODO: move to private
 
     //TODO: description
@@ -84,7 +84,7 @@ public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Starts asynchronous registration request of the resource set 
+     * @brief Start asynchronous registration request of the resource set 
      * in the Cloud.  
      * This function parses the input json file, and creates resource objects 
      * from it. Created objects pends for the registration to the Cloud. 
@@ -106,7 +106,7 @@ public:
                        const std::string &app_resource_definition);
 
     /**
-     * @brief Starts asynchronous deregistration request of the resource set 
+     * @brief Start asynchronous deregistration request of the resource set 
      * from the Cloud.  
      * This function starts deregistration procedure of all resources that are
      * "owned" by access_token. CCRB will send the final status of the 
@@ -125,7 +125,7 @@ public:
         const std::string &access_token);
 
     /**
-     * @brief Starts resource instances addition asynchronous request to 
+     * @brief Start resource instances addition asynchronous request to 
      * the Cloud.  
      * This function starts resource instances addition procedure of all 
      * resources instances that are provided in resource_instance_ids. 
@@ -152,7 +152,7 @@ public:
         const std::vector<uint16_t> &resource_instance_ids);
 
     /**
-     * @brief Starts resource instances remove asynchronous request 
+     * @brief Start resource instances remove asynchronous request 
      * from the Cloud.  
      * This function starts resource instances remove procedure of all 
      * resources instances that are provided in resource_instance_ids. 
@@ -244,21 +244,6 @@ public:
 
 protected:
 
-    //TODO: need this?
-    enum State
-    {
-        State_Unregistered,
-        State_CalledRegister,
-        State_Registered
-    };
-
-    //TODO: description
-    struct InstanceScoper
-    {
-        InstanceScoper();
-        ~InstanceScoper();
-    };
-
     /**
      * @brief Initializes CCRB instance.
      * 
@@ -268,7 +253,7 @@ protected:
     virtual MblError init();
 
     /**
-     * @brief Deinitializes CCRB instance.
+     * @brief Deinitialize CCRB instance.
      * 
      * @return MblError returns value Error::None if function succeeded, 
      *         or error code otherwise.
@@ -276,7 +261,7 @@ protected:
     virtual MblError deinit();
 
     /**
-     * @brief Runs CCRB event-loop.
+     * @brief Run CCRB event-loop.
      * 
      * @return MblError returns value Error::None if function succeeded, 
      *         or error code otherwise.
@@ -309,7 +294,13 @@ protected:
 
     /**
      * @brief Register callback function that will be called directly by Mbed cloud client
-     * 
+     * Register the following Mbed cloud client callbacks:
+     * 1. Callback function for successful register device
+     * 2. Callback function for successful un-register device
+     * 3. Callback function for successful registration update (application resources registration)
+     * 5. Callback function for monitoring download progress
+     * 5. Callback function for authorizing firmware downloads and reboots
+     * 6. Callback function for occurred error in the above scenarios
      */
     void register_callback_handlers();
 
@@ -500,18 +491,24 @@ protected:
     // Mbed cloud client
     MbedCloudClient* cloud_client_;
     
-    //TODO: need that?
-    State state_;
-
     //TODO: description
-    static ResourceBroker* s_instance;
+    static ResourceBroker* s_ccrb_instance;
     static MblMutex s_mutex;
 
+    //TODO: description
+    enum State
+    {
+        State_DeviceUnregistered,
+        State_DeviceRegistrationInProgress,
+        State_DeviceRegistered,
+        State_AppRegisterUpdateInProgress,
+    };
 
-    // Atomic boolean to signal that registration is in progress
-    // Use to limit only one allowed registration at a time
-    // This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
-    std::atomic_bool registration_in_progress_;
+    /**
+     * @brief Atomic enum to signal which state we are in
+     * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
+     */
+    std::atomic<State> state_;
 
     // Access token of the current operation against Mbed client
     std::string in_progress_access_token_;

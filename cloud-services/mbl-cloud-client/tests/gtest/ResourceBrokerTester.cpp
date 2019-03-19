@@ -28,19 +28,22 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
 {
     TR_DEBUG_ENTER;
 
-    resource_broker_.s_instance = new mbl::ResourceBroker();
+    //resource_broker_.s_ccrb_instance = new mbl::ResourceBroker();
     
     // Set resource adapter function pointer that in some tests will be called as part of 
     // ResourceBroker::init() API.
-    resource_broker_.s_instance->init_mbed_cloud_client_function_pointers_func_ =
+    resource_broker_.init_mbed_cloud_client_function_pointers_func_ =
         std::bind(&ResourceBrokerTester::init_mbed_cloud_client_function_pointers, this);
 
     // Call it explicitly here
     init_mbed_cloud_client_function_pointers();
 
+    // Mark device as registered to Pelion
+    resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceRegistered);
+
     if(use_mock_dbus_adapter) {
         // Init resource broker ipc to be DBusAdapterMock:
-        resource_broker_.s_instance->ipc_adapter_ = 
+        resource_broker_.ipc_adapter_ = 
             std::make_unique<DBusAdapterMock>(resource_broker_);
     }
     
@@ -49,31 +52,30 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
 ResourceBrokerTester::~ResourceBrokerTester()
 {
     TR_DEBUG_ENTER;
-    delete resource_broker_.s_instance;
 }
 
 void ResourceBrokerTester::init_mbed_cloud_client_function_pointers()
 {
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what resource_broker_.init() usually does so dont call it...
-    resource_broker_.s_instance->mbed_client_register_update_func_ = 
+    resource_broker_.mbed_client_register_update_func_ = 
         std::bind(&ResourceBrokerTester::mbed_client_mock_register_update, this);
-    resource_broker_.s_instance->mbed_client_add_objects_func_ = 
+    resource_broker_.mbed_client_add_objects_func_ = 
         std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::mbed_client_mock_add_objects),
             this,
             std::placeholders::_1);
-    resource_broker_.s_instance->mbed_client_setup_func_ =
+    resource_broker_.mbed_client_setup_func_ =
         std::bind(static_cast<bool(ResourceBrokerTester::*)(void*)>(&ResourceBrokerTester::mbed_client_mock_setup),
             this,
             std::placeholders::_1);
 
-    resource_broker_.s_instance->mbed_client_endpoint_info_func_ = std::bind(
+    resource_broker_.mbed_client_endpoint_info_func_ = std::bind(
         static_cast<const ConnectorClientEndpointInfo*(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mbed_client_mock_endpoint_info),
         this);
 
-    resource_broker_.s_instance->mbed_client_close_func_ = std::bind(&ResourceBrokerTester::mbed_client_mock_close, this);
+    resource_broker_.mbed_client_close_func_ = std::bind(&ResourceBrokerTester::mbed_client_mock_close, this);
 
-    resource_broker_.s_instance->mbed_client_error_description_func_ = std::bind(
+    resource_broker_.mbed_client_error_description_func_ = std::bind(
         static_cast<const char *(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mbed_client_mock_error_description),
         this);
 }
@@ -85,7 +87,8 @@ const char * ResourceBrokerTester::mbed_client_mock_error_description() const
 
 void ResourceBrokerTester::mbed_client_mock_close()
 {
-
+    // Make device as un-registered to Pelion
+    resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceUnregistered);
 }
 
 const ConnectorClientEndpointInfo* ResourceBrokerTester::mbed_client_mock_endpoint_info() const
@@ -123,12 +126,18 @@ ResourceBrokerTester::register_resources_test(
     TR_DEBUG_ENTER;
 
     std::pair<CloudConnectStatus, std::string> ret_pair = 
-        resource_broker_.s_instance->register_resources(source, app_resource_definition);
+        resource_broker_.register_resources(source, app_resource_definition);
 
     // Check cloud connect expected status
     ASSERT_TRUE(expected_cloud_connect_status == ret_pair.first);
     out_status = ret_pair.first;
     out_access_token = ret_pair.second;
+
+    // In case of success - check internal state is correct
+    if(CloudConnectStatus::STATUS_SUCCESS == expected_cloud_connect_status) {
+        mbl::ResourceBroker::State state = resource_broker_.state_.load();
+        ASSERT_TRUE(mbl::ResourceBroker::State_AppRegisterUpdateInProgress == state);
+    }
 }
 
 void ResourceBrokerTester::mbed_client_register_update_callback_test(
@@ -137,8 +146,8 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
 {
     TR_DEBUG_ENTER;
 
-    auto itr = resource_broker_.s_instance->registration_records_.find(access_token);
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.end() !=
+    auto itr = resource_broker_.registration_records_.find(access_token);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() !=
         itr);
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
@@ -149,7 +158,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         // Check registration success flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration was successful",
             access_token.c_str());
-        resource_broker_.s_instance->handle_registration_updated_cb();
+        resource_broker_.handle_registration_updated_cb();
         
         // Make sure registration record is marked as registered
         ASSERT_TRUE(registration_record->is_registered());
@@ -158,16 +167,20 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         TR_DEBUG("Notify resource broker (access_token: %s) that registration failed",
             access_token.c_str());
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        resource_broker_.s_instance->handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
+        resource_broker_.handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
     }
 
     DBusAdapterMock& dbus_adapter_tester = 
-        *(static_cast<DBusAdapterMock*>(resource_broker_.s_instance->ipc_adapter_.get()));
+        *(static_cast<DBusAdapterMock*>(resource_broker_.ipc_adapter_.get()));
     // Verify that resource broker called the adapter (both for success and failure)
     ASSERT_TRUE(dbus_adapter_tester.is_update_registration_called());
     // Verify adapter got the right call from resource broker
     ASSERT_TRUE(dbus_adapter_expected_status == 
         dbus_adapter_tester.get_register_cloud_connect_status());
+
+    // Verify internal state is back to registered
+    mbl::ResourceBroker::State state = resource_broker_.state_.load();
+    ASSERT_TRUE(mbl::ResourceBroker::State_DeviceRegistered == state);
 }
 
 void ResourceBrokerTester::get_m2m_resource_test(
@@ -177,8 +190,8 @@ void ResourceBrokerTester::get_m2m_resource_test(
 {
     TR_DEBUG_ENTER;
 
-    auto itr = resource_broker_.s_instance->registration_records_.find(access_token);
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.end() !=
+    auto itr = resource_broker_.registration_records_.find(access_token);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() !=
         itr);
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
@@ -201,7 +214,7 @@ void ResourceBrokerTester::set_resources_values_test(
     TR_DEBUG_ENTER;
     
     CloudConnectStatus out_status = 
-        resource_broker_.s_instance->set_resources_values(
+        resource_broker_.set_resources_values(
             mbl::IpcConnection("source1"),
             access_token,
             inout_set_operations);
@@ -234,9 +247,10 @@ void ResourceBrokerTester::get_resources_values_test(
     TR_DEBUG("Enter");
     
     CloudConnectStatus out_status =
-        resource_broker_.s_instance->get_resources_values(mbl::IpcConnection("source1"),
-                                              access_token,
-                                              inout_get_operations);
+        resource_broker_.get_resources_values(
+            mbl::IpcConnection("source1"),
+            access_token,
+            inout_get_operations);
     
     ASSERT_TRUE(expected_out_status == out_status);
 
@@ -293,8 +307,8 @@ void ResourceBrokerTester::get_resources_values_test(
 void ResourceBrokerTester::resourceBroker_start_stop_test(size_t times)
 {
      for( size_t i = 0; i < times; ++i){
-        ASSERT_EQ(mbl::Error::None, resource_broker_.s_instance->start());
-        ASSERT_EQ(mbl::Error::None, resource_broker_.s_instance->stop());
+        ASSERT_EQ(mbl::Error::None, resource_broker_.start());
+        ASSERT_EQ(mbl::Error::None, resource_broker_.stop());
     }
 }
 
@@ -308,9 +322,9 @@ void ResourceBrokerTester::notify_connection_closed_test_multiple_reg_records()
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record_3 = 
         std::make_shared<mbl::RegistrationRecord>(source_3);
     // Add registration records to map
-    resource_broker_.s_instance->registration_records_["registration_record_1"] = registration_record_1;
-    resource_broker_.s_instance->registration_records_["registration_record_2"] = registration_record_2;
-    resource_broker_.s_instance->registration_records_["registration_record_3"] = registration_record_3;
+    resource_broker_.registration_records_["registration_record_1"] = registration_record_1;
+    resource_broker_.registration_records_["registration_record_2"] = registration_record_2;
+    resource_broker_.registration_records_["registration_record_3"] = registration_record_3;
 
     // Add source 1 and source 2 to both registration_records
     registration_record_1->track_ipc_connection(source_2,
@@ -319,25 +333,25 @@ void ResourceBrokerTester::notify_connection_closed_test_multiple_reg_records()
         mbl::RegistrationRecord::TrackOperation::ADD); // Now track source_1 and 2
 
     // Verify we have 3 registration records
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.size() == 3);
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 3);
 
     // Verify we not have 2 registration records as registration record 3 is erased
-    resource_broker_.s_instance->notify_connection_closed(source_3);
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.size() == 2);
+    resource_broker_.notify_connection_closed(source_3);
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 2);
 
     // Mark source_1 resource as closed
-    resource_broker_.s_instance->notify_connection_closed(source_1);
+    resource_broker_.notify_connection_closed(source_1);
 
     // Verify number of registration records is still 2
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.size() == 2);
+    ASSERT_TRUE(resource_broker_.registration_records_.size() == 2);
 
     // Mark source_1 resource as closed
-    resource_broker_.s_instance->notify_connection_closed(source_2);
+    resource_broker_.notify_connection_closed(source_2);
 
-    ASSERT_TRUE(resource_broker_.s_instance->registration_records_.empty());
+    ASSERT_TRUE(resource_broker_.registration_records_.empty());
 }
 
 void ResourceBrokerTester::notify_connection_closed(mbl::IpcConnection source) 
 {
-    resource_broker_.s_instance->notify_connection_closed(source);
+    resource_broker_.notify_connection_closed(source);
 }
