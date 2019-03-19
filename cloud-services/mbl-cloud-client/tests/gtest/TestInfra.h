@@ -25,7 +25,7 @@ enum TestResult {
     TEST_FAILED_EXPECTED_RESULT_MISMATCH = -1,
     TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED = -2,
     TEST_FAILED_ADAPTER_METHOD_FAILED = -3,
-    
+    TEST_FAILED_INVALID_TEST_PARAMETERS = -4, // invalid test input
 };
 typedef enum TestResult TestResult;
 

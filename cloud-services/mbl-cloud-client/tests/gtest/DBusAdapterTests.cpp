@@ -8,6 +8,7 @@
 #include "DBusAdapter.hpp"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
+#include "DBusCloudConnectNames.h"
 #include "DBusAdapter_Impl.h"
 #include "DBusService.h"
 #include "Event.h"

@@ -19,59 +19,10 @@
 #include <set>
 #include <string>
 
-// sd-bus vtable object, implements the com.mbed.Pelion1.Connect interface
-// Keep those definitions here for testing
-#define DBUS_CLOUD_SERVICE_NAME "com.mbed.Pelion1"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME "com.mbed.Pelion1.Connect"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH "/com/mbed/Pelion1/Connect"
-
-#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME "RegisterResources"
-#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME "DeregisterResources"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME "AddResourceInstances"
-#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_METHOD_NAME "RemoveResourceInstances"
-
-#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME "RegisterResourcesStatus"
-#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME "DeregisterResourcesStatus"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME "AddResourceInstancesStatus"
-#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME "RemoveResourceInstancesStatus"
-
 #define SD_ID_128_UNIQUE_ID_LEN 32
 
 namespace mbl
 {
-
-/**
- * @brief sd-bus objects resource manager class.
- * s-dbus objects requires resource management, as described on this link:
- * https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
- * This class implements basic resource management logic.
- *
- * @tparam T sd-bus object (like sd_bus_message)
- */
-template <class T>
-class sd_bus_object_cleaner
-{
-public:
-    /**
-     * @brief Construct a new sd objects cleaner for the provided sd-bus specific object type.
-     *
-     * @param object_to_clean address of the sd-bus object.
-     * @param func cleaning function, that gets address of the sd-bus object.
-     *        Typical cleaning functions described on this link:
-     *        https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
-     *        This clean function will be called in destructor of the object.
-     */
-    sd_bus_object_cleaner(T* object_to_clean, std::function<void(T*)> func)
-        : object_(object_to_clean), clean_func_(func)
-    {
-    }
-
-    ~sd_bus_object_cleaner() { clean_func_(object_); }
-
-private:
-    T* object_;
-    std::function<void(T*)> clean_func_;
-};
 
 /**
  * @brief DBusAdapter Implementation class
@@ -154,108 +105,6 @@ private:
      */
     static int
     incoming_bus_message_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error);
-
-    /**
-     * @brief Handles ResourceBroker method failure.
-     * Fills ret_error according to mbl_status and cc_status returned
-     * from ResourceBroker method. ret_error returned to sd-bus event loop, and that
-     * causes sending reply-error to to the application.
-     *
-     * @param mbl_status MblError error code tha was returned from ResourceBroker method.
-     * @param cc_status Cloud Connect error code tha was returned from ResourceBroker method.
-     * @param method_name ResourceBroker method name that failed.
-     * @param ret_error sd-bus error description place-holder that is filled with
-     *                  appropriate error.
-     * @return int Cloud Connect error (always negative value). The value returned is the
-     *             negative value of input cc_status, or ERR_INTERNAL_ERROR.
-     */
-    int handle_resource_broker_method_failure(MblError mbl_status,
-                                              CloudConnectStatus cc_status,
-                                              const char* method_name,
-                                              sd_bus_error* ret_error);
-
-    /**
-     * @brief Sends D-Bus method reply to the application, from which the message
-     * (m_to_reply_on) received.
-     * This function serves different types of replies, that corresponds to
-     * the different application requests.
-     *
-     * @param m_to_reply_on message to reply on.
-     * @param ret_error sd-bus error description place-holder that is filled in the
-     *                  case of an error.
-     * @param types_format sd-bus types format string.
-     *                     Currently, valid arguments are "u" and "us".
-     * @param status that should be sent in the message reply.
-     * @param access_token access token that should be sent when replying to the
-     *                     RegisterResources request. Relevant only when types_format = "us".
-     *                     When types_format = "u", access_token is null.
-     * @return int sd-bus error number in the case of failure in sending method reply,
-     *         or 0 in case of success.
-     */
-    int method_reply_on_message(sd_bus_message* m_to_reply_on,
-                                sd_bus_error* ret_error,
-                                const char* types_format,
-                                CloudConnectStatus status,
-                                const char* access_token = nullptr);
-
-    /**
-     * @brief Handles all asynchronous ResourceBroker methods invocations that were
-     * finished succesfully. Currently there are 4: RegisterResourcesStatus,
-     * DeregisterResourcesStatus, AddResourceInstancesStatus, RemoveResourceInstancesStatus.
-     * Sends method reply to the application.
-     *
-     * @param m_to_reply_on message to reply on.
-     * @param ret_error sd-bus error description place-holder that is filled in the
-     *                  case of an error.
-     * @param types_format sd-bus types format string.
-     *                     Currently, valid arguments are "u" and "us".
-     * @param status that should be sent in the message reply.
-     * @param access_token access token that should be sent when replying to the
-     *                     RegisterResources request. Relevant only when types_format = "us".
-     *                     When types_format = "u", access_token is null.
-     * @return int sd-bus error number in the case of failure,
-     *         or 0 in case of success.
-     */
-    int handle_resource_broker_async_method_success(sd_bus_message* m_to_reply_on,
-                                                    sd_bus_error* ret_error,
-                                                    const char* types_format,
-                                                    CloudConnectStatus status,
-                                                    const char* access_token = nullptr);
-
-    /**
-     * @brief Verifies that the signature of the method (that is encapsulated
-     * in the message m) is string, and reads the string that was sent.
-     * Should be used when handing RegisterResources and DeregisterResources.
-     *
-     * @param m message that encapsulates method invocation whose signature is verified.
-     * @param ret_error sd-bus error description place-holder that is filled in the
-     *                  case of an error.
-     * @param out_string output string that was read from the message.
-     * @return int sd-bus error number of the error,
-     *         or 0 in case of success.
-     */
-    int verify_signature_and_get_string_argument(sd_bus_message* m,
-                                                 sd_bus_error* ret_error,
-                                                 std::string& out_string);
-
-    /**
-     * @brief Process incoming RegisterResources message.
-     * Parse JSON file and passes it to ResourceBroker.
-     * TODO: Validates that sender published agreed D-Bus API.
-     * Receives an answer from ResourceBroker and accordingly,
-     * sends back method reply / error reply to sender.
-     * see parameter description above ("Callback and handler functions")
-     */
-    int process_message_RegisterResources(sd_bus_message* m, sd_bus_error* ret_error);
-
-    /**
-     * @brief Process incoming DeregisterResources message.
-     * Reads access_token from the incoming message, and passes it to ResourceBroker.
-     * Receives an answer from ResourceBroker and accordingly,
-     * sends back method reply / error reply to sender.
-     * see parameter description above ("Callback and handler functions")
-     */
-    int process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error);
 
     /**
      * @brief handles incoming mailbox message sent by an external thread - the actual
@@ -477,6 +326,12 @@ private:
     pthread_t initializer_thread_id_;
 
 public:
+    /*
+    == Getters ==
+    */
+    inline sd_bus* get_connection_handle() { return connection_handle_; }
+    inline ResourceBroker& get_ccrb() { return ccrb_; }
+
     /*
     == API Implementation ==
     */

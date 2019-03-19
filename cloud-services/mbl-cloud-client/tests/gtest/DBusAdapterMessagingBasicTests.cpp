@@ -5,14 +5,16 @@
  */
 
 #include "DBusAdapter.h"
+#include "CloudConnectTrace.h"
+#include "DBusAdapterCommon.h"
+#include "DBusCloudConnectNames.h"
 #include "DBusAdapter_Impl.h"
+#include "MbedCloudClient.h"
 #include "MblError.h"
 #include "ResourceBroker.h"
-#include "TestInfraAppThread.h"
 #include "TestInfra.h"
+#include "TestInfraAppThread.h"
 #include "TestInfra_DBusAdapterTester.h"
-#include "CloudConnectTrace.h"
-#include "MbedCloudClient.h"
 
 #include <gtest/gtest.h>
 #include <semaphore.h>
@@ -21,28 +23,34 @@
 
 using namespace mbl;
 
+// string value used in Set/Get resources values tests
+static const std::string string_value = "string_value";
+// int64_t value used in Set/Get resources values tests
+static const int64_t int64_value = 0xF;
 
-struct AdapterParameterizedData {
+struct AdapterParameterizedData
+{
 
     AdapterParameterizedData(DBusAdapter& adapater, size_t test_array_index)
-    : adapater_(adapater), test_array_index_(test_array_index) {}
+        : adapater_(adapater), test_array_index_(test_array_index)
+    {
+    }
 
     DBusAdapter& adapater_;
     size_t test_array_index_;
 };
- 
-class MessageReplyTest_ResourceBroker: public ResourceBroker {
+
+class MessageReplyTest_ResourceBroker : public ResourceBroker
+{
 
 public:
-    std::pair<CloudConnectStatus, std::string> register_resources(
-        mbl::IpcConnection /*unused*/, 
-        const std::string & json) override
+    std::pair<CloudConnectStatus, std::string> register_resources(mbl::IpcConnection /*unused*/,
+                                                                  const std::string& json) override
     {
         TR_DEBUG_ENTER;
         std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
-                                                        std::string());
-        if(json == "Return_Success")
-        {
+                                                            std::string());
+        if (json == "Return_Success") {
             ret_pair.second = std::string(json) + std::string("_token");
             return ret_pair;
         }
@@ -51,17 +59,81 @@ public:
         return ret_pair;
     }
 
-    CloudConnectStatus deregister_resources(
-            mbl::IpcConnection /*unused*/, 
-            const std::string & token) override
+    CloudConnectStatus deregister_resources(mbl::IpcConnection /*unused*/,
+                                            const std::string& token) override
     {
-        TR_DEBUG_ENTER;    
-        if(token == "Return_Success")
-        {
+        TR_DEBUG_ENTER;
+        if (token == "Return_Success") {
             return STATUS_SUCCESS;
         }
 
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+    }
+
+    CloudConnectStatus set_resources_values(const IpcConnection& /*unused*/,
+                                            const std::string& token,
+                                            std::vector<ResourceSetOperation>& inout_set_operations)
+    {
+        CloudConnectStatus resource_ret_status = STATUS_SUCCESS;
+
+        if (token == "Return_invalid_access_token") {
+            return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+        }
+        else if (token == "Return_invalid_resource_path")
+        {
+            resource_ret_status = CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
+        }
+        else if (token != "Return_Success")
+        {
+            return CloudConnectStatus::ERR_INTERNAL_ERROR;
+        }
+
+        for (auto& i : inout_set_operations) {
+            i.output_status_ = resource_ret_status;
+        }
+
+        return STATUS_SUCCESS;
+    }
+
+    CloudConnectStatus get_resources_values(const IpcConnection& /*unused*/,
+                                            const std::string& token,
+                                            std::vector<ResourceGetOperation>& inout_get_operations)
+    {
+        TR_DEBUG_ENTER;
+
+        CloudConnectStatus ret_status = STATUS_SUCCESS;
+        CloudConnectStatus resource_ret_status = STATUS_SUCCESS;
+
+        if (token == "Return_invalid_access_token") {
+            return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
+        }
+        else if (token == "Return_invalid_resource_path")
+        {
+            resource_ret_status = CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
+        }
+        else if (token != "Return_Success")
+        {
+            return CloudConnectStatus::ERR_INTERNAL_ERROR;
+        }
+
+        for (auto& i : inout_get_operations) {
+            if (i.inout_data_.get_data_type() == ResourceDataType::STRING) {
+                i.inout_data_.set_value(string_value);
+            }
+            else if (i.inout_data_.get_data_type() == ResourceDataType::INTEGER)
+            {
+                i.inout_data_.set_value(int64_value);
+            }
+            else
+            { // invalid resource type - return
+                i.output_status_ = CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
+                return ret_status;
+            }
+
+            i.output_status_ = resource_ret_status;
+        }
+
+        return STATUS_SUCCESS;
     }
 };
 
@@ -69,99 +141,94 @@ public:
 // RegisterResources test
 /////////////////////////////////////////////////////////////////////////////
 
-struct RegisterResources_entry{
-    const char *input_json_data;
-    CloudConnectStatus expected_status;
-    const char *expected_access_token;
-    const char *expected_sd_bus_error_name;
+struct RegisterResources_entry
+{
+    const char* input_json_data;
+    const char* expected_access_token;
+    const char* expected_sd_bus_error_name;
 };
 
 const static std::vector<RegisterResources_entry> RegisterResources_test_array = {
 
-    // string input                
+    // string input
     {
-        "Return_Success",                    // input_json_data
-        STATUS_SUCCESS, /* not relevant */   // expected_status
-        "Return_Success_token",              // expected_access_token
-        "" /* not relevant */                // expected_sd_bus_error_name
+        "Return_Success",       // input_json_data
+        "Return_Success_token", // expected_access_token
+        "" /* not relevant */   // expected_sd_bus_error_name
     },
 
     {
-        "Return_Error",                      // input_json_data
-        ERR_FIRST,      /* not relevant */   // expected_status
-        "",       /* not relevant */         // expected_access_token             
-        CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION     // expected_sd_bus_error_name
-    },                             
-
+        "Return_Error", // input_json_data
+        "",
+        /* not relevant */                                         // expected_access_token
+        CLOUD_CONNECT_ERR_INVALID_APPLICATION_RESOURCES_DEFINITION // expected_sd_bus_error_name
+    },
 };
 
-static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread, void *user_data)
+static int AppThreadCb_validate_adapter_register_resources(AppThread* app_thread, void* user_data)
 {
     TR_DEBUG_ENTER;
     assert(app_thread);
     assert(user_data);
-    
-    AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-    const RegisterResources_entry &test_data = RegisterResources_test_array[adapter_param_data->test_array_index_];
 
-    sd_bus_message *m_reply = nullptr;
-    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    AdapterParameterizedData* adapter_param_data =
+        static_cast<AdapterParameterizedData*>(user_data);
+    const RegisterResources_entry& test_data =
+        RegisterResources_test_array[adapter_param_data->test_array_index_];
+
+    sd_bus_message* m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
 
     sd_bus_error error = SD_BUS_ERROR_NULL;
-    sd_bus_object_cleaner<sd_bus_error> error_cleaner (&error, sd_bus_error_free);
+    sd_bus_object_cleaner<sd_bus_error> error_cleaner(&error, sd_bus_error_free);
 
     int test_result = TEST_SUCCESS;
-    int r = sd_bus_call_method(
-                    app_thread->get_connection_handle(),
-                    DBUS_CLOUD_SERVICE_NAME,
-                    DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                    DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                    "RegisterResources",
-                    &error,
-                    &m_reply,
-                    "s",
-                    test_data.input_json_data);
+    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_REGISTER_RESOURCES_METHOD_NAME,
+                               &error,
+                               &m_reply,
+                               "s",
+                               test_data.input_json_data);
 
     if (r < 0) {
         // message reply error gotten
         // compare to expected errors
-        if(0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
-            TR_ERR("Actual error(%s) != Expected error(%s)", 
-                error.name, test_data.expected_sd_bus_error_name);
+        if (0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
+            TR_ERR("Actual error(%s) != Expected error(%s)",
+                   error.name,
+                   test_data.expected_sd_bus_error_name);
             set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
         }
-    }else {
+    }
+    else
+    {
         // method reply gotten
-        // read status and access_token
-        uint32_t out_status = ERR_INTERNAL_ERROR;
+        // read access_token
         const char* out_access_token = nullptr;
-        r = sd_bus_message_read(m_reply, "us", &out_status, &out_access_token);
+        r = sd_bus_message_read(m_reply, "s", &out_access_token);
         if (r < 0) {
             TR_ERR("sd_bus_message_read failed(err=%d)", r);
             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
-        } else {
-            // compare to expected 
-            if(0 != strcmp(out_access_token, test_data.expected_access_token))
-            {
-                TR_ERR("Actual access_token(%s) != Expected access_token(%s)", 
-                    out_access_token, test_data.expected_access_token);
-                set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
-            }
-            
-            if(test_data.expected_status != out_status)
-            {
-                TR_ERR("Actual status(%d) != Expected status(%d)", 
-                    out_status, test_data.expected_status);
+        }
+        else
+        {
+            // compare to expected
+            if (0 != strcmp(out_access_token, test_data.expected_access_token)) {
+                TR_ERR("Actual access_token(%s) != Expected access_token(%s)",
+                       out_access_token,
+                       test_data.expected_access_token);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
         }
     }
 
     // we stop adapter event loop from this thread instead of having one more additional thread
-    DBusAdapter &adapter = adapter_param_data->adapater_;
+    DBusAdapter& adapter = adapter_param_data->adapater_;
     MblError adapter_finish_status = adapter.stop(MblError::None);
-    if(MblError::None != adapter_finish_status)
-    {
+    if (MblError::None != adapter_finish_status) {
         TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
@@ -169,18 +236,20 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread *app_thread
     return test_result;
 }
 
-class ValidateRegisterResources : public testing::TestWithParam<int>{};
+class ValidateRegisterResources : public testing::TestWithParam<int>
+{
+};
 INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
                         ValidateRegisterResources,
-                        ::testing::Range(0, (int)RegisterResources_test_array.size(), 1));
+                        ::testing::Range(0, (int) RegisterResources_test_array.size(), 1));
 TEST_P(ValidateRegisterResources, BasicMethodReply)
 {
-    GTEST_LOG_START_TEST;    
+    GTEST_LOG_START_TEST;
     MessageReplyTest_ResourceBroker ccrb;
     DBusAdapter adapter(ccrb);
-    ASSERT_EQ(adapter.init(), MblError::None);        
+    ASSERT_EQ(adapter.init(), MblError::None);
 
-    AdapterParameterizedData userdata(adapter, (size_t)GetParam());
+    AdapterParameterizedData userdata(adapter, (size_t) GetParam());
 
     AppThread app_thread(AppThreadCb_validate_adapter_register_resources, &userdata);
     ASSERT_EQ(app_thread.create(), 0);
@@ -188,9 +257,9 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
     MblError stop_status;
     ASSERT_EQ(adapter.run(stop_status), MblError::None);
 
-    void *retval = nullptr;
+    void* retval = nullptr;
     ASSERT_EQ(app_thread.join(&retval), 0);
-    ASSERT_EQ((uintptr_t)retval, TEST_SUCCESS);
+    ASSERT_EQ((uintptr_t) retval, TEST_SUCCESS);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 /////////////////////////////////////////////////////////////////////////////
@@ -205,7 +274,7 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 
 // const static std::vector<DeregisterResources_entry> DeregisterResources_test_array = {
 
-//     // string input                
+//     // string input
 //     {
 //         "Return_Success",                    // input_token_data
 //         STATUS_SUCCESS, /* not relevant */   // expected_status
@@ -216,18 +285,21 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 //         "Return_Error",                      // input_token_data
 //         ERR_FIRST,    /* not relevant */     // expected_status
 //         CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN     // expected_sd_bus_error_name
-//     },                             
+//     },
 
 // };
 
-// static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thread, void *user_data)
+// static int AppThreadCb_validate_adapter_deregister_resources(AppThread *app_thread, void
+// *user_data)
 // {
 //     TR_DEBUG_ENTER;
 //     assert(app_thread);
 //     assert(user_data);
-    
-//     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData *>(user_data);
-//     const DeregisterResources_entry &test_data = DeregisterResources_test_array[adapter_param_data->test_array_index_];
+
+//     AdapterParameterizedData *adapter_param_data = static_cast<AdapterParameterizedData
+//     *>(user_data);
+//     const DeregisterResources_entry &test_data =
+//     DeregisterResources_test_array[adapter_param_data->test_array_index_];
 
 //     sd_bus_message *m_reply = nullptr;
 //     sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
@@ -251,7 +323,7 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 //         // message reply error gotten
 //         // compare to expected errors
 //         if(0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
-//             TR_ERR("Actual error(%s) != Expected error(%s)", 
+//             TR_ERR("Actual error(%s) != Expected error(%s)",
 //                 error.name, test_data.expected_sd_bus_error_name);
 //             set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
 //         }
@@ -264,10 +336,10 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 //             TR_ERR("sd_bus_message_read failed(err=%d)", r);
 //             set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
 //         } else {
-//             // compare to expected 
+//             // compare to expected
 //             if(test_data.expected_status != out_status)
 //             {
-//                 TR_ERR("Actual status(%d) != Expected status(%d)", 
+//                 TR_ERR("Actual status(%d) != Expected status(%d)",
 //                     out_status, test_data.expected_status);
 //                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
 //             }
@@ -292,10 +364,10 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 //                         ::testing::Range(0, (int)DeregisterResources_test_array.size(), 1));
 // TEST_P(ValidateDeregisterResources, BasicMethodReply)
 // {
-//     GTEST_LOG_START_TEST;    
+//     GTEST_LOG_START_TEST;
 //     MessageReplyTest_ResourceBroker ccrb;
 //     DBusAdapter adapter(ccrb);
-//     ASSERT_EQ(adapter.init(), MblError::None);        
+//     ASSERT_EQ(adapter.init(), MblError::None);
 
 //     AdapterParameterizedData userdata(adapter, (size_t)GetParam());
 
@@ -318,86 +390,83 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 class ResourceBrokerMock1 : public ResourceBroker
 {
 public:
-    virtual std::pair<CloudConnectStatus, std::string> 
-    register_resources(IpcConnection , 
-                       const std::string &) override
+    virtual std::pair<CloudConnectStatus, std::string>
+    register_resources(IpcConnection, const std::string&) override
     {
-        TR_DEBUG_ENTER; 
-        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "");        
+        TR_DEBUG_ENTER;
+        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "token");
     }
 };
 
-static int AppThreadCb_validate_max_allowed_connections_enforced(
-    AppThread *app_thread,
-    void * userdata)
+static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_thread,
+                                                                 void* userdata)
 {
-    sd_bus_message *m_reply = nullptr;
-    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    sd_bus_message* m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
     sd_bus_error bus_error = SD_BUS_ERROR_NULL;
-    DBusAdapter *adapter = static_cast<DBusAdapter*>(userdata);
+    DBusAdapter* adapter = static_cast<DBusAdapter*>(userdata);
 
-    // Call on already active connection handle. The RegisterResources callback to CCRB 
+    // Call on already active connection handle. The RegisterResources callback to CCRB
     // is overwritten above by ResourceBrokerMock1::register_resources
-    int r = sd_bus_call_method(
-                    app_thread->get_connection_handle(),
-                    DBUS_CLOUD_SERVICE_NAME,
-                    DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                    DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                    "RegisterResources",
-                    &bus_error,
-                    &m_reply,
-                    "s",
-                    "resources_definition_file_1");
+    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_REGISTER_RESOURCES_METHOD_NAME,
+                               &bus_error,
+                               &m_reply,
+                               "s",
+                               "resources_definition_file_1");
     if (r < 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", r, strerror(-r));
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-r));
+        pthread_exit(reinterpret_cast<void*>(-r));
     }
 
     // Open new connection handle and send RegisterResources again
     // This time we expect it to fail with error ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED
     sd_bus_error_free(&bus_error);
     bus_error = SD_BUS_ERROR_NULL;
-    sd_bus * second_connection_handle = nullptr;
-    sd_bus_object_cleaner<sd_bus> connection_cleaner (second_connection_handle, sd_bus_unref);    
+    sd_bus* second_connection_handle = nullptr;
+    sd_bus_object_cleaner<sd_bus> connection_cleaner(second_connection_handle, sd_bus_unref);
     r = sd_bus_open_user(&second_connection_handle);
-    if (r < 0){
+    if (r < 0) {
         TR_ERR("sd_bus_open_user failed with r=%d (%s)", r, strerror(-r));
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-r));
+        pthread_exit(reinterpret_cast<void*>(-r));
     }
-    if (nullptr == second_connection_handle){
+    if (nullptr == second_connection_handle) {
         TR_ERR("sd_bus_open_user failed (second_connection_handle is NULL)");
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-1000));
+        pthread_exit(reinterpret_cast<void*>(-1000));
     }
 
-    r = sd_bus_call_method(
-                    second_connection_handle,
-                    DBUS_CLOUD_SERVICE_NAME,
-                    DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                    DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                    "RegisterResources",
-                    &bus_error,
-                    &m_reply,
-                    "s",
-                    "resources_definition_file_2");
+    r = sd_bus_call_method(second_connection_handle,
+                           DBUS_CLOUD_SERVICE_NAME,
+                           DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                           DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                           DBUS_CC_REGISTER_RESOURCES_METHOD_NAME,
+                           &bus_error,
+                           &m_reply,
+                           "s",
+                           "resources_definition_file_2");
     // We expect a failure with specific error code (check error code and exact error name)
     bool b1 = r != CloudConnectStatus::ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED;
     bool b2 = !strcmp(CLOUD_CONNECT_ERR_NUM_ALLOWED_CONNECTIONS_EXCEEDED, bus_error.name);
-    if (!b1 || !b2)        
-    {
+    if (!b1 || !b2) {
         TR_ERR("unexpected error code r=%d (%s) or invalid error name=%s",
-            r , strerror(-r), bus_error.name);
+               r,
+               strerror(-r),
+               bus_error.name);
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-1001));
+        pthread_exit(reinterpret_cast<void*>(-1001));
     }
 
-    // we stop adapter event loop from this thread instead of having one more additional thread    
+    // we stop adapter event loop from this thread instead of having one more additional thread
     MblError status = adapter->stop(MblError::None);
-    if(MblError::None != status){
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));        
-         pthread_exit(reinterpret_cast<void *>(-1002));
+    if (MblError::None != status) {
+        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
     sd_bus_unref(second_connection_handle);
@@ -406,10 +475,10 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(
 
 TEST(DBusAdapter, enforce_single_connection_single_app_2_connections)
 {
-    GTEST_LOG_START_TEST;    
+    GTEST_LOG_START_TEST;
     ResourceBrokerMock1 ccrb;
     DBusAdapter adapter(ccrb);
-    ASSERT_EQ(adapter.init(), MblError::None);        
+    ASSERT_EQ(adapter.init(), MblError::None);
 
     // Start an application thread which simulates 2 connections.
     // First connection registers succesfully. Second connetion try to register and fails.
@@ -420,10 +489,10 @@ TEST(DBusAdapter, enforce_single_connection_single_app_2_connections)
     MblError stop_status;
     ASSERT_EQ(adapter.run(stop_status), MblError::None);
 
-    //check that  actual test on client succeeded and deinit adapter
-    void *retval = nullptr;
+    // check that  actual test on client succeeded and deinit adapter
+    void* retval = nullptr;
     ASSERT_EQ(app_thread.join(&retval), 0);
-    ASSERT_EQ((uintptr_t)retval, MblError::None);
+    ASSERT_EQ((uintptr_t) retval, MblError::None);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
@@ -450,13 +519,12 @@ public:
         ASSERT_EQ(sem_destroy(&semaphore_), 0);
     }
 
-    static int AppThreadCb_validate_client_disconnection_notification(
-        AppThread *app_thread,
-        void * userdata);
-        
+    static int AppThreadCb_validate_client_disconnection_notification(AppThread* app_thread,
+                                                                      void* userdata);
+
     // The active connection id, used in order to save traditional IPC mechanisms. The time of set
     // is always distinct from the time of get.
-    static std::string active_connection_id_;   
+    static std::string active_connection_id_;
 
     // test result - true for success, false for failure.
     static TestResult test_result_;
@@ -479,31 +547,31 @@ public:
     {
         TR_DEBUG_ENTER;
 
-        if (source.get_connection_id() == DBusAdapaterFixture::active_connection_id_){
-            //test succuss! set true
-            DBusAdapaterFixture::test_result_ = TEST_SUCCESS;            
+        if (source.get_connection_id() == DBusAdapaterFixture::active_connection_id_) {
+            // test succuss! set true
+            DBusAdapaterFixture::test_result_ = TEST_SUCCESS;
         }
-        else {
-            //if test fail, test_result_ is already false. just log the failure.
+        else
+        {
+            // if test fail, test_result_ is already false. just log the failure.
             TR_ERR("source connection id=%s is not equal to active_connection_id_=%s",
-                source.get_connection_id().c_str(),
-                DBusAdapaterFixture::active_connection_id_.c_str());
+                   source.get_connection_id().c_str(),
+                   DBusAdapaterFixture::active_connection_id_.c_str());
         }
 
-        //post on semaphore
+        // post on semaphore
         int r = sem_post(&DBusAdapaterFixture::semaphore_);
         if (r != 0) {
             TR_ERR("sem_post failed with r=%d (%s)", errno, strerror(errno));
         }
     }
 
-    virtual std::pair<CloudConnectStatus, std::string> 
-    register_resources(IpcConnection , 
-                       const std::string &) override
+    virtual std::pair<CloudConnectStatus, std::string>
+    register_resources(IpcConnection, const std::string&) override
     {
-        TR_DEBUG_ENTER; 
+        TR_DEBUG_ENTER;
         // dummy success
-        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "");        
+        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "token");
     }
 };
 
@@ -511,40 +579,38 @@ public:
 // 1) Sets the active connection id to fixture (global)
 // 2) Calls RegisterResources
 // 3) disconnect from bus
-// 4) wait for service to signal on semaphore (this is a test feature) that disconnection has been 
-// notified. Service check on mocked callback that expected (set) active connection is the one 
+// 4) wait for service to signal on semaphore (this is a test feature) that disconnection has been
+// notified. Service check on mocked callback that expected (set) active connection is the one
 // which is being notified for disconnection
 // 5) send stop to service to finish test with the test result.
 int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
-    AppThread *app_thread,
-    void * userdata)
+    AppThread* app_thread, void* userdata)
 {
-    sd_bus_message *m_reply = nullptr;
-    sd_bus_object_cleaner<sd_bus_message> reply_cleaner (m_reply, sd_bus_message_unref);
+    sd_bus_message* m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
     sd_bus_error bus_error = SD_BUS_ERROR_NULL;
-    DBusAdapter *adapter = static_cast<DBusAdapter*>(userdata);
+    DBusAdapter* adapter = static_cast<DBusAdapter*>(userdata);
 
     // Before sending any message, set our unique connection ID.
     // This is validated in CCRB mocked callback notify_connection_closed
     active_connection_id_.assign(app_thread->get_unique_connection_id());
     assert(active_connection_id_.length() > 1);
 
-    // Call RegisterResources. The register_resources call to CCRB 
+    // Call RegisterResources. The register_resources call to CCRB
     // is overwritten above by ResourceBrokerMock2::register_resources
-    int r = sd_bus_call_method(
-                    app_thread->get_connection_handle(),
-                    DBUS_CLOUD_SERVICE_NAME,
-                    DBUS_CLOUD_CONNECT_OBJECT_PATH,
-                    DBUS_CLOUD_CONNECT_INTERFACE_NAME,
-                    "RegisterResources",
-                    &bus_error,
-                    &m_reply,
-                    "s",
-                    "resources_definition_file_1");
+    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_REGISTER_RESOURCES_METHOD_NAME,
+                               &bus_error,
+                               &m_reply,
+                               "s",
+                               "resources_definition_file_1");
     if (r < 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", r, strerror(-r));
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-r));
+        pthread_exit(reinterpret_cast<void*>(-r));
     }
 
     // disconnect. This should invoke ccrb callback notify_connection_closed on server
@@ -556,14 +622,14 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
     if (r != 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", errno, strerror(errno));
         adapter->stop(MblError::None);
-        pthread_exit(reinterpret_cast<void *>(-errno));
+        pthread_exit(reinterpret_cast<void*>(-errno));
     }
 
-    // we stop adapter event loop from this thread instead of having one more additional thread    
+    // we stop adapter event loop from this thread instead of having one more additional thread
     MblError status = adapter->stop(MblError::None);
-    if(MblError::None != status){
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));        
-         pthread_exit(reinterpret_cast<void *>(-1002));
+    if (MblError::None != status) {
+        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
     return 0;
@@ -571,29 +637,403 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
 
 TEST(DBusAdapter, validate_client_disconnection_notification)
 {
-    GTEST_LOG_START_TEST;    
+    GTEST_LOG_START_TEST;
     ResourceBrokerMock2 ccrb;
     DBusAdapter adapter(ccrb);
-    ASSERT_EQ(adapter.init(), MblError::None);        
+    ASSERT_EQ(adapter.init(), MblError::None);
 
     // Start an application thread which will register to service, then close the connection.
     // the CCRB API notify_connection_closed is overriden. It validates that a disconnect
     // notification is sent by DBA.
     AppThread app_thread(
-        DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification, 
-        &adapter);
+        DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification, &adapter);
     ASSERT_EQ(app_thread.create(), 0);
 
     // run the adapter
     MblError stop_status;
     ASSERT_EQ(adapter.run(stop_status), MblError::None);
 
-    //check that  actual test on client succeeded and deinit adapter
-    void *retval = nullptr;
+    // check that  actual test on client succeeded and deinit adapter
+    void* retval = nullptr;
     ASSERT_EQ(app_thread.join(&retval), 0);
-    ASSERT_EQ((uintptr_t)retval, MblError::None);
+    ASSERT_EQ((uintptr_t) retval, MblError::None);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 
-    //check final test result
+    // check final test result
     ASSERT_EQ(DBusAdapaterFixture::test_result_, TEST_SUCCESS);
+}
+/////////////////////////////////////////////////////////////////////////////
+// SetResources test
+/////////////////////////////////////////////////////////////////////////////
+
+struct SetResourcesValues_entry
+{
+    const char* input_access_token;
+    const char* input_resource_path;
+    ResourceDataType input_format;
+    const char* input_resource_value;
+    const char* expected_sd_bus_error_name;
+};
+
+const static std::vector<SetResourcesValues_entry> SetResourcesValues_test_array = {
+
+    // string input, return success
+    {
+        "Return_Success",     // input_access_token
+        "/5555/11/111",       // input_resource_path
+        STRING,               // input_format
+        "test_value_1",       // input_resource_value
+        "" /* not relevant */ // expected_sd_bus_error_name
+    },
+    // string input, return error
+    {
+        "Return_invalid_access_token",         // input_access_token
+        "/5555/11/222",                        // input_resource_path
+        STRING,                                // input_format
+        "test_value_2",                        // input_resource_value
+        CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN // expected_sd_bus_error_name
+    },
+    // int64 input, return success
+    {
+        "Return_Success",     // input_access_token
+        "/5555/11/111",       // input_resource_path
+        INTEGER,              // input_format
+        "-10",                // input_resource_value
+        "" /* not relevant */ // expected_sd_bus_error_name
+    },
+
+    // int64 input, return error
+    {
+        "Return_invalid_resource_path",         // input_access_token
+        "/5555/11/222",                         // input_resource_path
+        INTEGER,                                // input_format
+        "100",                                  // input_resource_value
+        CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
+    }};
+
+static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thread, void* user_data)
+{
+    TR_DEBUG_ENTER;
+    assert(app_thread);
+    assert(user_data);
+
+    AdapterParameterizedData* adapter_param_data =
+        static_cast<AdapterParameterizedData*>(user_data);
+    const SetResourcesValues_entry& test_data =
+        SetResourcesValues_test_array[adapter_param_data->test_array_index_];
+
+    sd_bus_message* m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
+
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_object_cleaner<sd_bus_error> error_cleaner(&error, sd_bus_error_free);
+
+    int test_result = TEST_SUCCESS;
+    string type;
+
+    switch (test_data.input_format)
+    {
+    case STRING: type = "s"; break;
+
+    case INTEGER: type = "x"; break;
+
+    default:
+        TR_ERR("Bad test input format: unsupported resource type %d", test_data.input_format);
+        set_test_result(test_result, TEST_FAILED_INVALID_TEST_PARAMETERS);
+        return test_result;
+    }
+
+    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_SET_RESOURCES_VALUES_METHOD_NAME,
+                               &error,
+                               &m_reply,
+                               "sa(sv)",
+                               test_data.input_access_token,
+                               1, /* number of array entries */
+                               test_data.input_resource_path,
+                               type.c_str(), /* Property variant type */
+                               test_data.input_resource_value);
+
+    if (r < 0) {
+        // message reply error gotten, compare to expected errors
+        if (0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
+
+            TR_ERR("Actual error(%s) != Expected error(%s)",
+                   error.name,
+                   test_data.expected_sd_bus_error_name);
+            set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+        }
+        // check the error message
+        if (std::string(test_data.input_access_token) == "Return_invalid_resource_path") {
+
+            std::string expected_message("Set LWM2M resources failed: " +
+                                         std::string(test_data.input_resource_path) + " : " +
+                                         CloudConnectStatus_to_str(ERR_INVALID_RESOURCE_PATH));
+
+            if (error.message != expected_message) {
+                TR_ERR("Actual error message(%s) != Expected error message(%s)",
+                       error.message,
+                       expected_message.c_str());
+                set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+            }
+        }
+    }
+    else
+    {
+        // an empty method reply gotten
+        r = sd_bus_message_read(m_reply, "");
+        if (r < 0) {
+
+            TR_ERR("sd_bus_message_read failed(err=%d)", r);
+            set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+        }
+    }
+
+    // we stop adapter event loop from this thread instead of having one more additional thread
+    DBusAdapter& adapter = adapter_param_data->adapater_;
+    MblError adapter_finish_status = adapter.stop(MblError::None);
+    if (MblError::None != adapter_finish_status) {
+        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
+    }
+
+    return test_result;
+}
+
+class ValidateSetResourcesValues : public testing::TestWithParam<int>
+{
+};
+INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
+                        ValidateSetResourcesValues,
+                        ::testing::Range(0, (int) SetResourcesValues_test_array.size(), 1));
+TEST_P(ValidateSetResourcesValues, BasicMethodReply)
+{
+    GTEST_LOG_START_TEST;
+    MessageReplyTest_ResourceBroker ccrb;
+    DBusAdapter adapter(ccrb);
+    ASSERT_EQ(adapter.init(), MblError::None);
+
+    AdapterParameterizedData userdata(adapter, (size_t) GetParam());
+
+    AppThread app_thread(AppThreadCb_validate_adapter_set_resources_values, &userdata);
+    ASSERT_EQ(app_thread.create(), 0);
+
+    MblError stop_status;
+    ASSERT_EQ(adapter.run(stop_status), MblError::None);
+
+    void* retval = nullptr;
+    ASSERT_EQ(app_thread.join(&retval), 0);
+    ASSERT_EQ((uintptr_t) retval, TEST_SUCCESS);
+    ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// GetResources test
+/////////////////////////////////////////////////////////////////////////////
+
+struct GetResourcesValues_entry
+{
+    const char* input_access_token;
+    const char* input_resource_path;
+    ResourceDataType type;
+    const char* expected_sd_bus_error_name;
+};
+
+const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array = {
+
+    // string input, return success
+    {
+        "Return_Success",     // input_access_token
+        "/5555/11/111",       // input_resource_path
+        STRING,               // input_format
+        "" /* not relevant */ // expected_sd_bus_error_name
+    },
+
+    // string input, return error
+    {
+        "Return_invalid_access_token",         // input_access_token
+        "/5555/11/222",                        // input_resource_path
+        STRING,                                // input_format
+        CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN // expected_sd_bus_error_name
+    },
+
+    // uint32 input, return success
+    {
+        "Return_Success",     // input_access_token
+        "/5555/11/333",       // input_resource_path
+        INTEGER,              // input_format
+        "" /* not relevant */ // expected_sd_bus_error_name
+    },
+
+    // uint32 input, return error
+    {
+        "Return_invalid_resource_path",         // input_access_token
+        "/5555/11/444",                         // input_resource_path
+        INTEGER,                                // input_format
+        CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
+    }};
+
+static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thread, void* user_data)
+{
+    TR_DEBUG_ENTER;
+    assert(app_thread);
+    assert(user_data);
+
+    AdapterParameterizedData* adapter_param_data =
+        static_cast<AdapterParameterizedData*>(user_data);
+    const GetResourcesValues_entry& test_data =
+        GetResourcesValues_test_array[adapter_param_data->test_array_index_];
+
+    sd_bus_message* m_reply = nullptr;
+    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
+
+    sd_bus_error error = SD_BUS_ERROR_NULL;
+    sd_bus_object_cleaner<sd_bus_error> error_cleaner(&error, sd_bus_error_free);
+
+    int test_result = TEST_SUCCESS;
+
+    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_GET_RESOURCES_VALUES_METHOD_NAME,
+                               &error,
+                               &m_reply,
+                               "sa(sy)",
+                               test_data.input_access_token,
+                               1, /* number of array entries */
+                               test_data.input_resource_path,
+                               test_data.type);
+
+    if (r < 0) {
+        // message reply error gotten, compare to expected errors
+        if (0 != strcmp(error.name, test_data.expected_sd_bus_error_name)) {
+
+            TR_ERR("Actual error(%s) != Expected error(%s)",
+                   error.name,
+                   test_data.expected_sd_bus_error_name);
+            set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+        }
+        // check the error message
+        if (std::string(test_data.input_access_token) == "Return_invalid_resource_path") {
+
+            std::string expected_message("Get LWM2M resources failed: " +
+                                         std::string(test_data.input_resource_path) + " : " +
+                                         CloudConnectStatus_to_str(ERR_INVALID_RESOURCE_PATH));
+
+            if (error.message != expected_message) {
+                TR_ERR("Actual error message(%s) != Expected error message(%s)",
+                       error.message,
+                       expected_message.c_str());
+                set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+            }
+        }
+    }
+    else
+    { // method reply gotten, read data type and value
+
+        r = sd_bus_message_enter_container(m_reply, SD_BUS_TYPE_ARRAY, "(yv)");
+        if (r < 0) {
+            TR_ERR("sd_bus_message_enter_container failed(err=%d)", r);
+            set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+        }
+        r = sd_bus_message_enter_container(m_reply, SD_BUS_TYPE_STRUCT, "yv");
+        if (r < 0) {
+            TR_ERR("sd_bus_message_enter_container failed(err=%d)", r);
+            set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+        }
+        uint8_t type;
+        r = sd_bus_message_read(m_reply, "y", &type);
+        if (r < 0) {
+            TR_ERR("sd_bus_message_read failed(err=%d)", r);
+            set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+        }
+        // read the data type
+        if (type != test_data.type) {
+            TR_ERR("Unexpected data type (%d) != Expected data type(%d)", type, test_data.type);
+            set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+        }
+        // read the data variant
+        switch (type)
+        {
+        case STRING:
+        {
+            const char* value = nullptr;
+            r = sd_bus_message_read(m_reply, "v", "s", &value);
+            if (r < 0) {
+                TR_ERR("sd_bus_message_read failed(err=%d)", r);
+                set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+            }
+            if (string_value != string(value)) {
+                TR_ERR("Unexpected string value (%s) != Expected string value(%s)",
+                       value,
+                       string_value.c_str());
+                set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+            }
+            break;
+        }
+        case INTEGER:
+        {
+            int64_t value = 0;
+            r = sd_bus_message_read(m_reply, "v", "x", &value);
+            if (r < 0) {
+                TR_ERR("sd_bus_message_read failed(err=%d)", r);
+                set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
+            }
+            if (int64_value != value) {
+                TR_ERR("Unexpected integer value (%" PRIx64 ") != Expected integer value(%" PRIx64
+                       ")",
+                       value,
+                       int64_value);
+                set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+            }
+            break;
+        }
+        default:
+        {
+            TR_ERR("Unsupported data type (%d) != Expected data type(%d)", type, test_data.type);
+            set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
+        }
+        }
+    }
+
+    // we stop adapter event loop from this thread instead of having one more additional thread
+    DBusAdapter& adapter = adapter_param_data->adapater_;
+    MblError adapter_finish_status = adapter.stop(MblError::None);
+    if (MblError::None != adapter_finish_status) {
+        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
+    }
+
+    return test_result;
+}
+
+class ValidateGetResourcesValues : public testing::TestWithParam<int>
+{
+};
+INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
+                        ValidateGetResourcesValues,
+                        ::testing::Range(0, (int) GetResourcesValues_test_array.size(), 1));
+TEST_P(ValidateGetResourcesValues, BasicMethodReply)
+{
+    GTEST_LOG_START_TEST;
+    MessageReplyTest_ResourceBroker ccrb;
+    DBusAdapter adapter(ccrb);
+    ASSERT_EQ(adapter.init(), MblError::None);
+
+    AdapterParameterizedData userdata(adapter, (size_t) GetParam());
+
+    AppThread app_thread(AppThreadCb_validate_adapter_get_resources_values, &userdata);
+    ASSERT_EQ(app_thread.create(), 0);
+
+    MblError stop_status;
+    ASSERT_EQ(adapter.run(stop_status), MblError::None);
+
+    void* retval = nullptr;
+    ASSERT_EQ(app_thread.join(&retval), 0);
+    ASSERT_EQ((uintptr_t) retval, TEST_SUCCESS);
+    ASSERT_EQ(adapter.deinit(), MblError::None);
 }
