@@ -38,7 +38,7 @@ set -x
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
     certificate="$(pwd | cut -d"/" -f2)"
-    api_key=ak_1MDE1ZTcxMTg4OGM4MDI0MjBhMDEwZDA1MDAwMDAwMDA0169725e06d512dc3bb0a403000000006nOrZ6DW1Ms5Gx5W3vU5O1zsFIyrrH
+    api_key=ak_1MDE1ZTcxMTg4OGM4MDI0MjBhMDEwZDA1MDAwMDAwMDA0169725e06d512dc3bb0a403000000006nOrZ6DW1Ms5Gx5W3vU5O1zsFIyrrHAv
 
     # Run the manifest tool
     mkdir /tmp/update-resources
