@@ -30,8 +30,8 @@ else
 
     # Install the manifest-tool. This needs a newer version of pip, so get that
     # as well.
-    pip3 -qqq install --upgrade pip
-    pip3 -qqq install manifest-tool
+    #pip3 -qqq install --upgrade pip
+    pip3 install manifest-tool
 
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
