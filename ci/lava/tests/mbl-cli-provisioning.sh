@@ -34,7 +34,7 @@ set -x
 
     pip3 install manifest-tool
 
-    certificate=$(pwd) | cut -d"/" -f2
+    certificate="$(pwd | cut -d"/" -f2)"
 
     mkdir /tmp/update-resources
     cd /tmp/update-resources
