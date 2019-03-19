@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TRACE_GROUP "ccrb-mailbox"
-
 #include "Mailbox.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
@@ -17,6 +15,8 @@
 #include <cerrno>
 #include <cstdlib>
 #include <memory>
+
+#define TRACE_GROUP "ccrb-mailbox"
 
 namespace mbl
 {

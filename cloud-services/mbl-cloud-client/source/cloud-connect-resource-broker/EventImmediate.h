@@ -8,6 +8,7 @@
 #define _EventImmediate_h_
 
 #include "Event.h"
+#include "CloudConnectTrace.h"
 
 #include <string>
 
@@ -44,13 +45,22 @@ public:
      * @param event_manager_cb - callback to the event manager unmanage_event() method
      * @param description  as std::string
      */
-    EventImmediate(EventData& data,
-                   unsigned long data_length,
-                   EventDataType data_type,
-                   UserCallback user_callback,
-                   EventManagerCallback event_manager_callback,
-                   sd_event* event_loop_handle,
-                   const std::string& description);
+    template <typename T>
+    EventImmediate( T & data,
+                    unsigned long data_length,              
+                    UserCallback user_callback,
+                    EventManagerCallback event_manager_callback,
+                    sd_event* event_loop_handle,
+                    const std::string& description)
+    : Event(data,
+            data_length,
+            user_callback,
+            event_manager_callback,
+            event_loop_handle,
+            description)
+{
+    mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");     
+}
 
 private:
     /**

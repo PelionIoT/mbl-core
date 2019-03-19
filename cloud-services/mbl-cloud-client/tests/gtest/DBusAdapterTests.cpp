@@ -5,6 +5,7 @@
  */
 
 #include "DBusAdapter.h"
+#include "DBusAdapter.hpp"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter_Impl.h"
@@ -34,7 +35,7 @@
 #include <vector>
 #include <unordered_set>
 
-#define TRACE_GROUP "ccrb-dbus-gtest"
+#define TRACE_GROUP "ccrb-event"
 
 // sd_event_add_time default accuracy is 250 milliseconds. In tests we add about 10%
 // of default accuracy
@@ -238,7 +239,7 @@ class EventManagerTestFixture : public ::testing::Test
 {
 public:
     // this callback is used in the basic test with no adapter
-    static MblError basic_no_adapter_callback(sd_event_source* s, const Event* ev);
+    static MblError basic_no_adapter_callback(sd_event_source* s, Event* ev);
     // this callback is used for the periodic event in the basic test with no adapter
     static MblError basic_no_adapter_periodic_callback(sd_event_source* s, const Event* ev);
     static const int START_VAL = 10;
@@ -265,18 +266,21 @@ sd_event* EventManagerTestFixture::event_loop_handle_ = nullptr;
 uint32_t EventManagerTestFixture::iteration_ = 0;
 milliseconds EventManagerTestFixture::send_time_(0);
 
-MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, const Event* ev)
+
+MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, Event* ev)
 {
     UNUSED(s);
     TR_DEBUG_ENTER;
-    const Event::EventData& event_data = ev->get_data();
+    EventData_Raw event_data;    
     OneSetMblError result;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
+
+    ev->unpack_data<EventData_Raw>(event_data);
 
     // validate data as expected - events might arrived unordered
     // get the first byte and then check incremental order.
     // validate all values arrived using a vector
-    char start_val = event_data.raw.bytes[0];
+    char start_val = event_data.bytes[0];
     if ((start_val >= (START_VAL + NUM_ITERATIONS)) || (start_val < START_VAL)) {
         sd_event_exit(event_loop_handle_, MblError::DBA_InvalidValue);
     }
@@ -285,9 +289,9 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, 
         sd_event_exit(event_loop_handle_, MblError::DBA_InvalidValue);
     }
     event_arrive_flag[start_val - START_VAL] = false;
-    for (unsigned long i = 1; i < sizeof(event_data.raw.bytes); i++) {
+    for (unsigned long i = 1; i < sizeof(event_data.bytes); i++) {
 
-        if (event_data.raw.bytes[i] != (start_val + (int) i)) {
+        if (event_data.bytes[i] != (start_val + (int) i)) {
             sd_event_exit(event_loop_handle_, MblError::DBA_InvalidValue);
             break;
         }
@@ -320,7 +324,7 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, 
 TEST_F(EventManagerTestFixture, basic_no_adapter_event_immediate)
 {
     GTEST_LOG_START_TEST;
-    Event::EventData event_data = {0};
+    EventData_Raw event_data = { 0 };
     EventManager event_manager_;
 
     // initialize event manager
@@ -330,21 +334,19 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_immediate)
         TR_DEBUG("Start iteration %d out of %d", i, NUM_ITERATIONS);
 
         // Fill the raw data event type up to maximum with increasing values starting from START_VAL
-        std::iota(event_data.raw.bytes,
-                  event_data.raw.bytes + sizeof(event_data.raw.bytes),
+        std::iota(event_data.bytes,
+                  event_data.bytes + sizeof(event_data.bytes),
                   START_VAL + i);
 
         // send the message and enter the loop to start dispatching events
-        TR_DEBUG_POINT;
-        ASSERT_EQ(event_manager_
-                      .send_event_immediate(event_data,
-                                            sizeof(event_data.raw),
-                                            Event::EventDataType::RAW,
-                                            EventManagerTestFixture::basic_no_adapter_callback,
-                                            std::string("Test"))
-                      .first,
-                  MblError::None);
-        TR_DEBUG_POINT;
+        
+        ASSERT_EQ(event_manager_.send_event_immediate<EventData_Raw>(
+                event_data,
+                sizeof(event_data),
+                EventManagerTestFixture::basic_no_adapter_callback,
+                std::string("Test")).first, 
+            MblError::None);
+        
     }
     // not enter the loop and start dispatching events.
     ASSERT_EQ(sd_event_loop(event_loop_handle_), MblError::None);
@@ -462,7 +464,7 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
 TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
 {
     GTEST_LOG_START_TEST;
-    Event::EventData event_data = {0};
+    EventData_Raw event_data = { 0 };
     EventManager event_manager_;
     // random  100 millisec <= microseconds <= 1099 millisec
     uint64_t period_millisec = (rand() % EventPeriodic::millisec_per_sec) +
@@ -472,21 +474,18 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
     ASSERT_EQ(event_manager_.init(), MblError::None);
 
     // Fill the raw data event type up to maximum with increasing values starting from START_VAL
-    std::iota(event_data.raw.bytes, event_data.raw.bytes + sizeof(event_data.raw.bytes), START_VAL);
+    std::iota(event_data.bytes, event_data.bytes + sizeof(event_data.bytes), START_VAL);
 
     // send the message and enter the loop to start dispatching events
-    TR_DEBUG_POINT;
-    ASSERT_EQ(event_manager_
-                  .send_event_periodic(event_data,
-                                       sizeof(event_data.raw),
-                                       Event::EventDataType::RAW,
-                                       EventManagerTestFixture::basic_no_adapter_periodic_callback,
-                                       period_millisec,
-                                       std::string("Test"))
-                  .first,
+    
+    ASSERT_EQ(event_manager_.send_event_periodic<EventData_Raw> (
+                      event_data,
+                      sizeof(event_data),
+                      EventManagerTestFixture::basic_no_adapter_periodic_callback,
+                      period_millisec,
+                      std::string("Test")).first,
               MblError::None);
-    TR_DEBUG_POINT;
-
+    
     // not enter the loop and start dispatching events.
     ASSERT_EQ(sd_event_loop(event_loop_handle_), MblError::None);
 
@@ -502,10 +501,10 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
  * @brief Class fixture for all DBusAdapeter tests
  *
  */
-class DBusAdapeterTestFixture : public ::testing::Test
+class DBusAdapeterTestFixture1 : public ::testing::Test
 {
 public:
-    DBusAdapeterTestFixture() : adapter_(ccrb_), tester_(adapter_){};
+    DBusAdapeterTestFixture1() : adapter_(ccrb_), tester_(adapter_){};
 
     static int validate_service_exist(AppThread* app_thread, void* user_data);
     static void* mbl_cloud_client_thread(void* adapter);
@@ -516,13 +515,13 @@ public:
     DBusAdapter adapter_;
     TestInfra_DBusAdapterTester tester_;
 };
-sem_t DBusAdapeterTestFixture::semaphore_;
+sem_t DBusAdapeterTestFixture1::semaphore_;
 
 /**
  * @brief init / deinit DBusAdapeter 10 times
  * tester TestInfra_DBusAdapterTester is used in order to access private members
  */
-TEST_F(DBusAdapeterTestFixture, init_deinit)
+TEST_F(DBusAdapeterTestFixture1, init_deinit)
 {
     GTEST_LOG_START_TEST;
 
@@ -533,7 +532,7 @@ TEST_F(DBusAdapeterTestFixture, init_deinit)
     }
 }
 
-int DBusAdapeterTestFixture::DBusAdapeterTestFixture::event_loop_request_stop(sd_event_source* s,
+int DBusAdapeterTestFixture1::DBusAdapeterTestFixture1::event_loop_request_stop(sd_event_source* s,
                                                                               void* userdata)
 {
     UNUSED(s);
@@ -550,7 +549,7 @@ int DBusAdapeterTestFixture::DBusAdapeterTestFixture::event_loop_request_stop(sd
  * This repeats 10 times.
  *
  */
-TEST_F(DBusAdapeterTestFixture, run_stop_with_self_request)
+TEST_F(DBusAdapeterTestFixture1, run_stop_with_self_request)
 {
     GTEST_LOG_START_TEST;
     MblError stop_status = MblError::Unknown;
@@ -563,7 +562,7 @@ TEST_F(DBusAdapeterTestFixture, run_stop_with_self_request)
     }
 }
 
-void* DBusAdapeterTestFixture::mbl_cloud_client_thread(void* adapter_)
+void* DBusAdapeterTestFixture1::mbl_cloud_client_thread(void* adapter_)
 {
     TR_DEBUG_ENTER;
     assert(adapter_);
@@ -611,7 +610,7 @@ void* DBusAdapeterTestFixture::mbl_cloud_client_thread(void* adapter_)
  * loop. Then it deinit the adapter and send success.
  */
 
-TEST_F(DBusAdapeterTestFixture, run_stop_with_external_exit_msg)
+TEST_F(DBusAdapeterTestFixture1, run_stop_with_external_exit_msg)
 {
     GTEST_LOG_START_TEST;
     ResourceBroker ccrb;
@@ -639,7 +638,7 @@ TEST_F(DBusAdapeterTestFixture, run_stop_with_external_exit_msg)
     ASSERT_EQ(sem_destroy(&semaphore_), 0);
 }
 
-int DBusAdapeterTestFixture::validate_service_exist(AppThread* app_thread, void* user_data)
+int DBusAdapeterTestFixture1::validate_service_exist(AppThread* app_thread, void* user_data)
 {
     TR_DEBUG_ENTER;
     UNUSED(user_data);
@@ -653,10 +652,10 @@ int DBusAdapeterTestFixture::validate_service_exist(AppThread* app_thread, void*
  * start an AppThread to simulate a client application. Application try to request same name as the
  * adapter service, and should fail. That's validate that name already exist on the bus.
  */
-TEST_F(DBusAdapeterTestFixture, validate_service_exist)
+TEST_F(DBusAdapeterTestFixture1, validate_service_exist)
 {
     GTEST_LOG_START_TEST;
-    AppThread app_thread(DBusAdapeterTestFixture::validate_service_exist, nullptr);
+    AppThread app_thread(DBusAdapeterTestFixture1::validate_service_exist, nullptr);
     void* retval = nullptr;
 
     ASSERT_EQ(adapter_.init(), MblError::None);
@@ -677,7 +676,7 @@ class DBusAdapterWithEventImmediateTestFixture : public ::testing::Test
 public:
     static const size_t NUM_ITERATIONS = 100;
 
-    static MblError adapter_immidiate_event_callback(sd_event_source* s, const Event* ev);
+    static MblError adapter_immidiate_event_callback(sd_event_source* s, Event* ev);
 
     void SetUp() override
     {
@@ -698,13 +697,16 @@ std::set<int> DBusAdapterWithEventImmediateTestFixture::random_numbers_;
 unsigned long DBusAdapterWithEventImmediateTestFixture::callback_count_ = 1;
 
 MblError
-DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(sd_event_source* s,
-                                                                           const Event* ev)
+DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(
+    sd_event_source* s,
+    Event* ev)
 {
     TR_DEBUG_ENTER;
-    const Event::EventData& event_data = ev->get_data();
+    EventData_Raw event_data;
     MblError result = MblError::None;
     int n;
+
+    ev->unpack_data<EventData_Raw>(event_data);
 
     // get the event loop handle
     sd_event* event_loop_handle = sd_event_source_get_event(s);
@@ -714,7 +716,7 @@ DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(sd_ev
     }
 
     // every time a single integer is sent, find it in set and remove
-    memcpy(&n, event_data.raw.bytes, sizeof(n));
+    memcpy(&n, event_data.bytes, sizeof(n));
     auto iter = random_numbers_.find(n);
     if (iter == random_numbers_.end()) {
         sd_event_exit(event_loop_handle, (int) MblError::DBA_InvalidValue);
@@ -748,7 +750,7 @@ DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(sd_ev
 TEST_F(DBusAdapterWithEventImmediateTestFixture, adapter_immediate_event)
 {
     GTEST_LOG_START_TEST;
-    Event::EventData event_data = {0};
+    EventData_Raw event_data = { 0 };
     MblError stop_status;
     ResourceBroker ccrb;
     DBusAdapter adapter(ccrb);
@@ -760,13 +762,12 @@ TEST_F(DBusAdapterWithEventImmediateTestFixture, adapter_immediate_event)
     // send EventImmediateTest::NUM_ITERATIONS events with random non-repeating integers,
     // then start the loop
     for (auto& n : random_numbers_) {
-        memcpy(event_data.raw.bytes, &n, sizeof(n));
+        memcpy(event_data.bytes, &n, sizeof(n));
         ASSERT_EQ(
             tester
                 .send_event_immediate(
                     event_data,
                     sizeof(n),
-                    Event::EventDataType::RAW,
                     DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback)
                 .first,
             MblError::None);
@@ -905,7 +906,7 @@ DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback(sd_even
 TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
 {
     GTEST_LOG_START_TEST;
-    Event::EventData event_data = {DATA_VAL};
+    EventData_Raw event_data = { DATA_VAL };
     MblError stop_status;
     ResourceBroker ccrb;
     DBusAdapter adapter(ccrb);
@@ -921,7 +922,6 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
                   .send_event_periodic(
                       event_data,
                       1,
-                      Event::EventDataType::RAW,
                       DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback,
                       period_millisec)
                   .first,
@@ -983,6 +983,71 @@ TEST(DBusAdapter, enforce_single_connection_unit_test)
 
     connection_id.assign(":125");
     ASSERT_EQ(tester.bus_enforce_single_connection(connection_id), false);
+
+    ASSERT_EQ(adapter.deinit(), MblError::None);
+}
+
+
+class DBusAdapeterTestFixture2 : public ::testing::Test
+{
+public:
+    static bool immidiate_event_passed;
+    static bool periodic_event_passed;
+    static MblError basic_send_event_immidiate_callback(sd_event_source *, Event *ev);
+    static MblError basic_send_event_periodic_callback(sd_event_source *, Event *ev);
+
+    struct DBusAdapterPtr{
+        DBusAdapter *adapter;
+    } adapter_ptr;
+};
+bool DBusAdapeterTestFixture2::immidiate_event_passed = false;
+bool DBusAdapeterTestFixture2::periodic_event_passed = false;
+
+MblError DBusAdapeterTestFixture2::basic_send_event_periodic_callback(sd_event_source *, Event *ev)
+{
+    DBusAdapeterTestFixture2::DBusAdapterPtr user_data;
+    ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(user_data);
+    
+    user_data.adapter->stop(MblError::None);
+    
+    return MblError::None;
+}
+
+MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_source *, Event *ev)
+{   
+    DBusAdapeterTestFixture2::DBusAdapterPtr user_data;
+    ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(user_data);
+    
+    auto iter = user_data.adapter->send_event_periodic<DBusAdapeterTestFixture2::DBusAdapterPtr>(
+       user_data, sizeof(user_data),
+       DBusAdapeterTestFixture2::basic_send_event_periodic_callback, 250);
+    if (iter.first != MblError::None){
+        TR_ERR("send_event_periodic failed!");
+        user_data.adapter->stop(MblError::Unknown);
+        return MblError::Unknown;
+    }
+    
+    return MblError::None;
+}
+
+// Basic test- check that we can send self event and periodic event using the DBusAdapter API, and
+// a pointer to adapter as the user data
+TEST(DBusAdapter, basic_send_event)
+{
+    ResourceBroker ccrb;
+    DBusAdapter adapter(ccrb);
+    DBusAdapeterTestFixture2::DBusAdapterPtr user_data { &adapter };
+
+    ASSERT_EQ(adapter.init(), MblError::None);
+    auto iter = adapter.send_event_immediate<DBusAdapeterTestFixture2::DBusAdapterPtr>(
+            user_data, 
+            sizeof(user_data), 
+            DBusAdapeterTestFixture2::basic_send_event_immidiate_callback);
+    ASSERT_EQ(iter.first, MblError::None);
+    
+    MblError status;
+    ASSERT_EQ(adapter.run(status), MblError::None);
+    ASSERT_EQ(status, MblError::None);
 
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }

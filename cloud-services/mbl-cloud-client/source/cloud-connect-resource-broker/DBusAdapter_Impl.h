@@ -559,49 +559,68 @@ public:
         const CloudConnectStatus status);
 
     /**
- * @brief
- * Send 'deferred event' to the event loop using
- * sd_event_add_defer(). Must be called by CCRB thread only.
- * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
- * @param data - the data to be sent, must be formatted according to the data_type
- * @param data_length - length of data used, must be less than the maximum size allowed
- * @param data_type - the type of data to be sent.
- * @param callback - callback to be called when event is fired
- * @param out_event_id  - generated event id (for debug or to cancel the event)
- * @param description - optional - description for the event cause, can leave empty string or
- * not supply at all
- * @return pair - Error::None and generated event id for success, otherwise the failure reason
- * and UINTMAX_MAX
- */
-    std::pair<MblError, uint64_t> send_event_immediate(Event::EventData data,
-                                                       unsigned long data_length,
-                                                       Event::EventDataType data_type,
-                                                       Event::UserCallback callback,
-                                                       const std::string& description = "");
+     * @brief
+     * Send 'deferred event' to the event loop using
+     * sd_event_add_defer(). Must be called by CCRB thread only.
+     * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
+     * @param data - the data to be sent, must be formatted according to the data_type
+     * @param data_length - length of data used, must be less than the maximum size allowed
+     * @param data_type - the type of data to be sent.
+     * @param callback - callback to be called when event is fired
+     * @param out_event_id  - generated event id (for debug or to cancel the event)
+     * @param description - optional - description for the event cause, can leave empty string or
+     * not supply at all
+     * @return pair - Error::None and generated event id for success, otherwise the failure reason
+     * and UINTMAX_MAX
+     */
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_immediate( T & data,
+                                                    unsigned long data_length,
+                                                    Event::UserCallback callback,
+                                                    const std::string& description)
+    {
+    mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-dbus", "Enter");
+    assert(callback);
+
+    // Must be first! only CCRB initializer thread should call this function.
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+    return event_manager_.send_event_immediate(data, data_length, callback, description);
+    }
 
     /**
- * @brief
- * Send 'timed event' to the event loop using sd_event_add_time(). Must be called by CCRB
- * thread only.  CLOCK_MONOTONIC is specified for sd_event_add_time() clock parameter.
- * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_time.html#
- * @param data - the data to be sent, must be formatted according to the data_type
- * @param data_length - length of data used, must be less than the maximum size allowed
- * @param data_type - the type of data to be sent.
- * @param callback - callback to be called when event is fired
- * @param period_millisec  - period in miliseconds after which event will be sent. The event will
- * continue to be sent periodically after each period time. Minimal value for period_millisec is
- * 100 milliseconds.
- * @param description - optional - description for the event cause, can leave empty string or
- * not supply at all
- * @return pair - Error::None and generated event id for success, otherwise the failure reason
- * and UINTMAX_MAX
- */
-    std::pair<MblError, uint64_t> send_event_periodic(Event::EventData data,
-                                                      unsigned long data_length,
-                                                      Event::EventDataType data_type,
-                                                      Event::UserCallback callback,
-                                                      uint64_t period_millisec,
-                                                      const std::string& description = "");
+     * @brief
+     * Send 'timed event' to the event loop using sd_event_add_time(). Must be called by CCRB
+     * thread only.  CLOCK_MONOTONIC is specified for sd_event_add_time() clock parameter.
+     * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_time.html#
+     * @param data - the data to be sent, must be formatted according to the data_type
+     * @param data_length - length of data used, must be less than the maximum size allowed
+     * @param data_type - the type of data to be sent.
+     * @param callback - callback to be called when event is fired
+     * @param period_millisec  - period in miliseconds after which event will be sent. The event will
+     * continue to be sent periodically after each period time. Minimal value for period_millisec is
+     * 100 milliseconds.
+     * @param description - optional - description for the event cause, can leave empty string or
+     * not supply at all
+     * @return pair - Error::None and generated event id for success, otherwise the failure reason
+     * and UINTMAX_MAX
+     */
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_periodic(T & data,
+                                                                    unsigned long data_length,
+                                                                    Event::UserCallback callback,
+                                                                    uint64_t period_millisec,
+                                                                    const std::string& description)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-dbus", "Enter");
+        assert(callback);
+
+        // Must be first! only CCRB initializer thread should call this function.
+        assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+        return event_manager_.send_event_periodic(
+            data, data_length, callback, period_millisec, description);
+    }
 
     using DBusAdapterState = State::eState;
 

@@ -14,7 +14,7 @@
 
 #include <string>
 
-#define TRACE_GROUP "dbus-gtest-infra"
+#define TRACE_GROUP "ccrb-event"
 
 using namespace mbl;
 
@@ -55,29 +55,6 @@ int TestInfra_DBusAdapterTester::send_event_defer(sd_event_handler_t handler, vo
 {
     TR_DEBUG_ENTER;
     return sd_event_add_defer(adapter_.impl_->event_loop_handle_, nullptr, handler, userdata);
-}
-
-std::pair<MblError, uint64_t>
-TestInfra_DBusAdapterTester::send_event_immediate(Event::EventData data,
-                                                  unsigned long data_length,
-                                                  Event::EventDataType data_type,
-                                                  Event::UserCallback callback,
-                                                  const std::string& description)
-{
-    return adapter_.impl_->event_manager_.send_event_immediate(
-        data, data_length, data_type, callback, std::string(description));
-}
-
-std::pair<MblError, uint64_t>
-TestInfra_DBusAdapterTester::send_event_periodic(Event::EventData data,
-                                                 unsigned long data_length,
-                                                 Event::EventDataType data_type,
-                                                 Event::UserCallback callback,
-                                                 uint64_t period_millisec,
-                                                 const std::string& description)
-{
-    return adapter_.impl_->event_manager_.send_event_periodic(
-        data, data_length, data_type, callback, period_millisec, std::string(description));
 }
 
 void TestInfra_DBusAdapterTester::unref_event_source(Event* ev)

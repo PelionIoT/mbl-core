@@ -8,6 +8,9 @@
 #define _EventManager_h_
 
 #include "Event.h"
+#include "CloudConnectTrace.h"
+#include "EventImmediate.h"
+#include "EventPeriodic.h"
 
 #include <inttypes.h>
 
@@ -57,11 +60,30 @@ public:
      * @return pair - Error::None and generated event id for success, otherwise the failure reason
      * and UINTMAX_MAX
      */
-    std::pair<MblError, uint64_t> send_event_immediate(Event::EventData data,
-                                                       unsigned long data_length,
-                                                       Event::EventDataType data_type,
-                                                       Event::UserCallback callback,
-                                                       const std::string& description);
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_immediate( T & data,
+                                                        unsigned long data_length,                                                        
+                                                        Event::UserCallback callback,
+                                                        const std::string& description="")
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG,   "ccrb-event", "Enter");
+
+        // create the event
+        std::unique_ptr<Event> ev(new EventImmediate(
+            data,
+            data_length,
+            callback,
+            std::bind(
+                &EventManager::unmanage_event, this, std::placeholders::_1, std::placeholders::_2),
+            event_loop_handle_,
+            description));
+
+        uint64_t id = ev->get_id();
+
+        do_send_event(ev);
+
+        return std::make_pair(MblError::None, id);
+    }
 
     /**
     * @brief
@@ -78,13 +100,37 @@ public:
     * @param description - optional - description for the event cause, can leave empty string
     * @return pair - Error::None and generated event id for success, otherwise the failure reason
     * and UINTMAX_MAX
-    */
-    std::pair<MblError, uint64_t> send_event_periodic(Event::EventData data,
-                                                      unsigned long data_length,
-                                                      Event::EventDataType data_type,
-                                                      Event::UserCallback callback,
-                                                      uint64_t period_millisec,
-                                                      const std::string& description);
+    */    
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_periodic(  T & data,
+                                                        unsigned long data_length,
+                                                        Event::UserCallback callback,
+                                                        uint64_t period_millisec,
+                                                        const std::string& description)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
+
+        if (!validate_periodic_event_parameters(period_millisec)) {
+            return std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
+        }
+
+        // create the event
+        std::unique_ptr<Event> ev(new EventPeriodic(
+            data,
+            data_length,
+            callback,
+            std::bind(
+                &EventManager::unmanage_event, this, std::placeholders::_1, std::placeholders::_2),
+            event_loop_handle_,
+            period_millisec,
+            description));
+
+        uint64_t id = ev->get_id();
+
+        do_send_event(ev);
+
+        return std::make_pair(MblError::None, id);
+    }
 
     /**
      * @brief called by immediate_event_handler() for non periodic immediate event after on_fire()
@@ -112,8 +158,8 @@ private:
      * @param data_length - length of data used, must be less than the maximum size allowed
      * @return bool - true if parameters are valid, else false
      */
-    bool validate_common_event_parameters(Event::EventDataType data_type,
-                                          unsigned long data_length);
+    //bool validate_common_event_parameters(EventDataType data_type,
+     //                                     unsigned long data_length);
 
     /**
      * @brief called by send_event_periodic().
@@ -123,9 +169,7 @@ private:
      * @param period_millisec  - specifies the earliest time, in miliseconds, relative to the
      * @return bool - true if parameters are valid, else false
      */
-    bool validate_periodic_event_parameters(Event::EventDataType data_type,
-                                            unsigned long data_length,
-                                            uint64_t period_millisec);
+    bool validate_periodic_event_parameters(uint64_t period_millisec);
 
     // This map holds all events sent, it holds a pair of (event id, unique_ptr to event)
     std::map<uint64_t, std::unique_ptr<Event>> events_;

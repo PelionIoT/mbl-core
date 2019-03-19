@@ -17,7 +17,7 @@
 #include <gtest/gtest.h>
 #include <semaphore.h>
 
-#define TRACE_GROUP "ccrb-dbus-gtest"
+#define TRACE_GROUP "ccrb-event"
 
 using namespace mbl;
 

@@ -9,6 +9,7 @@
 
 #include "Event.h"
 #include "MblError.h"
+#include "CloudConnectTrace.h"
 
 #include <string>
 
@@ -44,14 +45,28 @@ public:
      * @param event_manager_cb - callback to the event manager unmanage_event() method
      * @param description - description as std::string
      */
-    EventPeriodic(EventData& data,
-                  unsigned long data_length,
-                  EventDataType data_type,
-                  UserCallback user_callback,
-                  EventManagerCallback event_manager_callback,
-                  sd_event* event_loop_handle,
-                  uint64_t period_millisec,
-                  const std::string& description);
+    template <typename T>
+    EventPeriodic(  T & data,
+                    unsigned long data_length,
+                    UserCallback user_callback,
+                    EventManagerCallback event_manager_callback,
+                    sd_event* event_loop_handle,
+                    uint64_t period_millisec,
+                    const std::string& description)
+        :
+        Event::Event(data,
+                    data_length,
+                    user_callback,
+                    event_manager_callback,
+                    event_loop_handle,
+                    description),
+        period_millisec_(period_millisec)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter"); 
+        
+        assert(period_millisec >= min_periodic_event_duration_millisec &&
+            period_millisec <= max_periodic_event_duration_millisec);
+    }
 
     // Getters - inline implemented
     inline uint64_t get_period_millisec() const { return period_millisec_; }

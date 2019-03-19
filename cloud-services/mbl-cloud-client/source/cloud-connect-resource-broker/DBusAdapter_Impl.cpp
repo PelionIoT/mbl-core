@@ -8,6 +8,7 @@
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter.h"
+#include "DBusAdapter.hpp"
 #include "DBusService.h"
 #include "MailboxMsg.h"
 #include "ResourceBroker.h"
@@ -1275,38 +1276,6 @@ bool DBusAdapterImpl::State::is_equal(eState state)
 bool DBusAdapterImpl::State::is_not_equal(eState state)
 {
     return (current_ != state);
-}
-
-std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_immediate(Event::EventData data,
-                                                                    unsigned long data_length,
-                                                                    Event::EventDataType data_type,
-                                                                    Event::UserCallback callback,
-                                                                    const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    assert(callback);
-
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    return event_manager_.send_event_immediate(data, data_length, data_type, callback, description);
-}
-
-std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_periodic(Event::EventData data,
-                                                                   unsigned long data_length,
-                                                                   Event::EventDataType data_type,
-                                                                   Event::UserCallback callback,
-                                                                   uint64_t period_millisec,
-                                                                   const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    assert(callback);
-
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    return event_manager_.send_event_periodic(
-        data, data_length, data_type, callback, period_millisec, description);
 }
 
 } // namespace mbl
