@@ -9,11 +9,21 @@
 #include "CloudConnectTypes.h"
 #include "mbed_cloud_client_user_config.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
+#include "ns-hal-pal/ns_event_loop.h"
 
 #include <cassert>
 #include <time.h>
+#include <csignal>
+#include <unistd.h>
 
 #define TRACE_GROUP "ccrb"
+
+static volatile sig_atomic_t g_shutdown_signal = 0;
+
+extern "C" void mbl_shutdown_handler(int signal)
+{
+    g_shutdown_signal = signal;
+}
 
 // Period between re-registrations with the LWM2M server.
 // MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
@@ -30,9 +40,81 @@ static void* get_dummy_network_interface()
     return &network;
 }
 
+ResourceBroker* ResourceBroker::s_instance = 0;
+MblMutex ResourceBroker::s_mutex;
+
+ResourceBroker::InstanceScoper::InstanceScoper()
+{
+    TR_DEBUG_ENTER;
+    assert(!s_instance);
+    s_instance = new ResourceBroker;
+}
+
+ResourceBroker::InstanceScoper::~InstanceScoper()
+{
+    TR_DEBUG_ENTER;
+    assert(s_instance);
+    delete s_instance;
+}
+
+MblError ResourceBroker::main()
+{
+    TR_DEBUG_ENTER;
+    InstanceScoper scoper;
+    assert(s_instance);
+
+    // start running CCRB module <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<change start to smtn else
+
+    s_instance->cloud_client_ = new MbedCloudClient();
+
+    const MblError ccrb_start_err = s_instance->start();
+    if (Error::None != ccrb_start_err) {
+        tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
+        return ccrb_start_err;
+    }
+    
+    {
+        MblScopedLock l(s_mutex);
+        s_instance->state_ = State_CalledRegister;
+    }
+
+    TR_INFO("ResourceBroker started successfully");
+
+    for (;;) {
+        
+        if (g_shutdown_signal) {
+            tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
+
+            // stop running CCRB module
+            const MblError ccrb_stop_err = s_instance->stop();
+            if (Error::None != ccrb_stop_err) {
+                tr_err("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
+                return ccrb_stop_err;
+            }
+
+            return Error::ShutdownRequested;
+        }
+
+        {
+            MblScopedLock l(s_mutex);
+            if (s_instance->state_ == State_Unregistered) {
+                return Error::DeviceUnregistered;
+            }
+        }
+
+        sleep(1);
+    }
+
+    return Error::Unknown;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker()
-    : init_sem_initialized_(false), cloud_client_(nullptr), registration_in_progress_(false)
+: init_sem_initialized_(false), 
+  cloud_client_(nullptr),
+  state_(State_Unregistered),
+  registration_in_progress_(false)  
 {
     TR_DEBUG_ENTER;
 
@@ -45,16 +127,39 @@ ResourceBroker::ResourceBroker()
 ResourceBroker::~ResourceBroker()
 {
     TR_DEBUG_ENTER;
+
+    // 1. Set s_instance to 0 so that callbacks no longer try to access this
+    // object
+    {
+        MblScopedLock l(s_mutex);
+        //assert(s_instance); /////////////////////////////////////////////////////////////////////////////////// NEED THAT?
+        s_instance = 0;
+    }
+
+    // 2. Close and delete the MbedCloudClient. This must be done before
+    // stopping the mbed event loop, otherwise MbedCloudClient's dtor might
+    // wait on a mutex that will never be released by the event loop.
+    TR_INFO("Close mbed client");
+
+    if(nullptr != cloud_client_) {
+        mbed_client_close_func_();
+        delete cloud_client_;
+
+        // 3. Stop the mbed event loop thread (which was started in
+        // MbedCloudClient's ctor).
+        TR_INFO("Stop the mbed event loop thread");
+        ns_event_loop_thread_stop();
+    }
 }
 
-MblError ResourceBroker::start(MbedCloudClient* cloud_client)
+MblError ResourceBroker::start()
 {
     // FIXME: This function should be refactored  in IOTMBL-1707.
     // Initialization of the semaphore and call to the sem_timedwait will be removed.
 
     TR_DEBUG_ENTER;
-    // assert(cloud_client);     // TODO: uncomment after solving PAL issues on Linux Desktop
-    cloud_client_ = cloud_client;
+
+    assert(s_instance);
 
     // initialize init semaphore
     int ret = sem_init(&init_sem_,
@@ -189,12 +294,22 @@ void ResourceBroker::init_mbed_cloud_client_function_pointers()
         std::placeholders::_1);
 
     mbed_client_register_update_func_ = 
-        std::bind(&MbedCloudClient::register_update, cloud_client_);        
+        std::bind(&MbedCloudClient::register_update, cloud_client_);
 
     mbed_client_setup_func_ = std::bind(
         static_cast<bool (MbedCloudClient::*)(void*)>(&MbedCloudClient::setup),
         cloud_client_,
         std::placeholders::_1);
+
+    mbed_client_endpoint_info_func_ = std::bind(
+        static_cast<const ConnectorClientEndpointInfo*(MbedCloudClient::*)() const>(&MbedCloudClient::endpoint_info),
+        cloud_client_);
+
+    mbed_client_close_func_ = std::bind(&MbedCloudClient::close, cloud_client_);
+
+    mbed_client_error_description_func_ = std::bind(
+        static_cast<const char *(MbedCloudClient::*)() const>(&MbedCloudClient::error_description),
+        cloud_client_);
 }
 
 MblError ResourceBroker::init()
@@ -218,7 +333,7 @@ MblError ResourceBroker::init()
     init_mbed_cloud_client_function_pointers_func_();
 
     // Register Cloud client callback:
-    regsiter_callback_handlers();
+    register_callback_handlers();
 
     const MblError setup_status = mbed_cloud_client_setup();
     if (Error::None != setup_status) {
@@ -275,7 +390,7 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     }
 
     TR_DEBUG("Call cloud_client_->register_update");
-    this_ccrb->cloud_client_->register_update();
+    this_ccrb->mbed_client_register_update_func_();
 
     return Error::None;
 }
@@ -367,7 +482,7 @@ ResourceBroker::get_registration_record(const std::string& access_token)
     return itr->second;
 }
 
-void ResourceBroker::regsiter_callback_handlers()
+void ResourceBroker::register_callback_handlers()
 {
     TR_DEBUG_ENTER;
 
@@ -384,6 +499,9 @@ void ResourceBroker::regsiter_callback_handlers()
 
         cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered);
         cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
+
+        cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
+        cloud_client_->set_update_authorize_handler(&handle_authorize);
     }
 }
 
@@ -410,12 +528,14 @@ MblError ResourceBroker::mbed_cloud_client_setup()
 
 void ResourceBroker::handle_client_registered()
 {
+    TR_DEBUG_ENTER;
+
     // Called by the mbed event loop - *s_instance can be destroyed whenever
     // s_mutex isn't locked.
 
     TR_INFO("Client registered");
 
-    const ConnectorClientEndpointInfo* const endpoint = cloud_client_->endpoint_info();
+    const ConnectorClientEndpointInfo* const endpoint = mbed_client_endpoint_info_func_();
     if (endpoint) 
     {
         TR_INFO("Endpoint Name: %s", endpoint->endpoint_name.c_str());
@@ -429,13 +549,38 @@ void ResourceBroker::handle_client_registered()
 
 void ResourceBroker::handle_client_unregistered()
 {
+    TR_DEBUG_ENTER;
+
     // Called by the mbed event loop - *s_instance can be destroyed whenever
     // s_mutex isn't locked.
 
-    TR_WARN("Client unregistered");
+    {
+        MblScopedLock l(s_mutex);
+        if (!s_instance) {
+            return;
+        }
+        s_instance->state_ = State_Unregistered;
+    }
 
-    // TODO: signal mbl client that we it should exit loop    
+    TR_WARN("Client unregistered");
 }
+
+void ResourceBroker::handle_authorize(const int32_t request)
+{
+    TR_DEBUG_ENTER;
+
+    // Called by the mbed event loop - *s_instance can be destroyed whenever
+    // s_mutex isn't locked.
+
+    if (update_handlers::handle_authorize(request)) {
+        MblScopedLock l(s_mutex);
+
+        if (s_instance) {
+            s_instance->cloud_client_->update_authorize(request);
+        }
+    }
+}
+
 
 void ResourceBroker::handle_registration_updated_cb()
 {
@@ -488,6 +633,7 @@ void ResourceBroker::handle_error_cb(const int cloud_client_code)
     const MblError mbl_code =
         CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
+    TR_ERR("Error details: %s", mbed_client_error_description_func_());
 
     // If registration is in progress - update adapter
     if (registration_in_progress_.load()) {

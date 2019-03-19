@@ -17,7 +17,8 @@
 
 #include "application_init.h"
 #include "log.h"
-#include "MblCloudClient.h"
+//#include "MblCloudClient.h"
+#include "cloud-connect-resource-broker/ResourceBroker.h"
 #include "signals.h"
 
 #include "mbed-trace/mbed_trace.h"
@@ -70,7 +71,7 @@ int main()
         return 1;
     }
 
-    const MblError run_err = MblCloudClient::run();
+    const MblError run_err = ResourceBroker::main();
 
     tr_info("Exiting application");
     return (run_err == Error::ShutdownRequested)? 0 : 1;

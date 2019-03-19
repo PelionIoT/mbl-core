@@ -17,7 +17,8 @@
 
 #include "signals.h"
 
-#include "MblCloudClient.h"
+//#include "MblCloudClient.h"
+#include "cloud-connect-resource-broker/ResourceBroker.h"
 #include "log.h"
 
 #include "mbed-trace/mbed_trace.h"

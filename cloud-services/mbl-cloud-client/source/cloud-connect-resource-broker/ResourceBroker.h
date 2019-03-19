@@ -9,6 +9,9 @@
 
 #include "DBusAdapter.h"
 #include "RegistrationRecord.h"
+#include "MblMutex.h"
+#include "MblScopedLock.h"
+#include "update_handlers.h"
 
 #include <pthread.h>
 #include <cinttypes>
@@ -18,6 +21,7 @@
 #include <atomic>
 #include <functional>
 
+extern "C" void mbl_shutdown_handler(int signal);
 
 class ResourceBrokerTester;
 namespace mbl {
@@ -36,8 +40,13 @@ friend ::ResourceBrokerTester;
 friend DBusAdapterImpl;
 
 public:
-    ResourceBroker();
-    virtual ~ResourceBroker();
+
+    // Only InstanceScoper can create or destroy objects
+    ResourceBroker(); //TODO: move to private
+    virtual ~ResourceBroker(); //TODO: move to private
+
+    //TODO: description
+    static MblError main();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // API to be used by MblCloudClient class
@@ -50,11 +59,10 @@ public:
      * 
      * Note: This function should be called before ResourceBroker::stop().  
      * 
-     * @param cloud_client - mbed cloud client
      * @return MblError returns value Error::None if function succeeded, 
      *         or Error::CCRBStartFailed otherwise. 
      */
-    virtual MblError start(MbedCloudClient* cloud_client);
+    virtual MblError start();
 
     /**
      * @brief Stops CCRB.
@@ -236,6 +244,21 @@ public:
 
 protected:
 
+    //TODO: need this?
+    enum State
+    {
+        State_Unregistered,
+        State_CalledRegister,
+        State_Registered
+    };
+
+    //TODO: description
+    struct InstanceScoper
+    {
+        InstanceScoper();
+        ~InstanceScoper();
+    };
+
     /**
      * @brief Initializes CCRB instance.
      * 
@@ -288,7 +311,7 @@ protected:
      * @brief Register callback function that will be called directly by Mbed cloud client
      * 
      */
-    void regsiter_callback_handlers();
+    void register_callback_handlers();
 
     /**
      * @brief Setup mbed cloud client and register the device for the first time.
@@ -310,6 +333,9 @@ protected:
      * Called by Mbed cloud client to indicate that device is no longer registered.
      */
     void handle_client_unregistered();
+
+    //TODO: add description
+    static void handle_authorize(int32_t request);
 
     /**
      * @brief Periodic keepalive callback to notify Mbed cloud client that device is alive
@@ -471,7 +497,16 @@ protected:
     // pointer to ipc binder instance
     std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
 
+    // Mbed cloud client
     MbedCloudClient* cloud_client_;
+    
+    //TODO: need that?
+    State state_;
+
+    //TODO: description
+    static ResourceBroker* s_instance;
+    static MblMutex s_mutex;
+
 
     // Atomic boolean to signal that registration is in progress
     // Use to limit only one allowed registration at a time
@@ -500,6 +535,10 @@ protected:
     std::function<void(const M2MObjectList& object_list)> mbed_client_add_objects_func_;
 
     std::function<bool(void*)> mbed_client_setup_func_;
+
+    std::function<const ConnectorClientEndpointInfo*()> mbed_client_endpoint_info_func_;
+    std::function<void()> mbed_client_close_func_;
+    std::function<const char *()> mbed_client_error_description_func_;
     ////////////////////////////////////////////////////////////////////////////////////////////////    
 };
 

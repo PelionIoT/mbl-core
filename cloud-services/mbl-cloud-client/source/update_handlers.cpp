@@ -17,7 +17,8 @@
 
 #include "update_handlers.h"
 
-#include "MblCloudClient.h"
+//#include "MblCloudClient.h"
+#include "mbed-cloud-client/MbedCloudClient.h"
 
 #include "mbed-trace/mbed_trace.h"
 

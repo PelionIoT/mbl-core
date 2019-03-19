@@ -21,6 +21,8 @@
 
 #include "ResourceBroker.h"
 
+class ConnectorClientEndpointInfo;
+
 /**
  * @brief This class tests ResourceBroker functionality
  * 
@@ -242,6 +244,12 @@ private:
      * @return true always
      */
     bool mbed_client_mock_setup(void* network);
+
+    const ConnectorClientEndpointInfo* mbed_client_mock_endpoint_info() const;
+
+    void mbed_client_mock_close();
+
+    const char * mbed_client_mock_error_description() const;
 
     /**
      * @brief ResourceBroker module to be tested
