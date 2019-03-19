@@ -53,7 +53,7 @@ set -x
     print "Check to see the key is installed correctly\n"
     key_found=grep -c $key ~/.mbl-store/user/config.json
 
-    if [ $key_found eq 1 ]
+    if [ $key_found -eq 1 ]
     then
         print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=pass>\n"
     else
@@ -64,7 +64,7 @@ set -x
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
     invalid_rejected_ok=grep -c "API key not recognised by Pelion Device Management." ~/.mbl-store/user/config.json
 
-    if [ $invalid_rejected_ok eq 1 ]
+    if [ $invalid_rejected_ok -eq 1 ]
     then
         print "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
     else
