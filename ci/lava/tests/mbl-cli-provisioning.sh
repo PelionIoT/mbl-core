@@ -28,10 +28,13 @@ then
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=fail>"
 else
 
+set -x
 
     pip install --upgrade pip
 
     pip3 install manifest-tool
+
+    certificate=$(pwd) | cut -d"/" -f2
 
     mkdir /tmp/update-resources
     cd /tmp/update-resources
@@ -46,7 +49,7 @@ else
 
     $mbl_command get-pelion-status
 
-    $mbl_command provision-pelion -c pd-lavatest anupdatecert -p /tmp/update-resources/update_default_resources.c
+    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resources.c
 
     $mbl_command get-pelion-status
 
