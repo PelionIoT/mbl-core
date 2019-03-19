@@ -50,8 +50,6 @@ MblError ResourceBroker::main()
 
     // start running CCRB module <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<change start to smtn else
 
-    s_ccrb_instance->cloud_client_ = new MbedCloudClient(); // MOVE TO INIT
-
     const MblError ccrb_start_err = resource_broker.start();
     if (Error::None != ccrb_start_err) {
         tr_err("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
@@ -62,9 +60,16 @@ MblError ResourceBroker::main()
     for (;;) {
 
         if (g_shutdown_signal) {
-            tr_warn("Received signal \"%s\", shutting down", strsignal(g_shutdown_signal));
 
-            // stop running CCRB module
+            tr_warn("Received signal \"%s\", Un-register device", strsignal(g_shutdown_signal));
+            // Unregister device
+            resource_broker.close_mbed_cloud_client();
+            g_shutdown_signal = false;
+        }
+
+        if (State_DeviceUnregistered == resource_broker.state_.load()) {
+
+            // Unregister device is finished - stop resource broker
             const MblError ccrb_stop_err = resource_broker.stop();
             if (Error::None != ccrb_stop_err) {
                 tr_err("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
@@ -72,10 +77,6 @@ MblError ResourceBroker::main()
             }
 
             return Error::ShutdownRequested;
-        }
-
-        if (State_DeviceUnregistered == resource_broker.state_.load()) {
-            return Error::DeviceUnregistered;
         }
 
         sleep(1);
@@ -87,7 +88,8 @@ MblError ResourceBroker::main()
 
 // Currently, this constructor is called from MblCloudClient thread.
 ResourceBroker::ResourceBroker()
-: init_sem_initialized_(false), 
+: init_sem_initialized_(false),
+  ipc_adapter_(nullptr),
   cloud_client_(nullptr),
   state_(State_DeviceUnregistered)
 {
@@ -95,10 +97,11 @@ ResourceBroker::ResourceBroker()
 
     s_ccrb_instance = this;
 
-    // This function pointer will be used in init() to set mbed cloud client function pointers.
-    // In case of tests we will use it to set mbed cloud client function pointers to mock class
-    init_mbed_cloud_client_function_pointers_func_ =
-        std::bind(&ResourceBroker::init_mbed_cloud_client_function_pointers, this);
+    // This function pointer will be used in init() to init mbed cloud client
+    // In case of tests we will use it call mock function
+    init_mbed_cloud_client_func_ = std::bind(
+        static_cast<MblError(ResourceBroker::*)()>(&ResourceBroker::init_mbed_client),
+        this);
 }
 
 ResourceBroker::~ResourceBroker()
@@ -111,21 +114,18 @@ ResourceBroker::~ResourceBroker()
         MblScopedLock l(s_mutex);
         s_ccrb_instance = nullptr;
     }
+}
 
-    // 2. Close and delete the MbedCloudClient. This must be done before
-    // stopping the mbed event loop, otherwise MbedCloudClient's dtor might
+void ResourceBroker::close_mbed_cloud_client()
+{
+    TR_DEBUG_ENTER;
+
+    // Close MbedCloudClient. 
+    // This must be done before stopping the mbed event loop, otherwise MbedCloudClient's dtor might
     // wait on a mutex that will never be released by the event loop.
     TR_INFO("Close mbed client");
 
-    if(nullptr != cloud_client_) {
-        mbed_client_close_func_();
-        delete cloud_client_;
-
-        // 3. Stop the mbed event loop thread (which was started in
-        // MbedCloudClient's ctor).
-        TR_INFO("Stop the mbed event loop thread");
-        ns_event_loop_thread_stop();
-    }
+    mbed_client_close_func_();
 }
 
 MblError ResourceBroker::start()
@@ -258,96 +258,6 @@ MblError ResourceBroker::stop()
     return ret_value.get();
 }
 
-void ResourceBroker::init_mbed_cloud_client_function_pointers()
-{
-    TR_DEBUG_ENTER;
-    
-    assert (nullptr != cloud_client_);
-
-    mbed_client_add_objects_func_ = std::bind(
-        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
-        cloud_client_,
-        std::placeholders::_1);
-
-    mbed_client_register_update_func_ = 
-        std::bind(&MbedCloudClient::register_update, cloud_client_);
-
-    mbed_client_setup_func_ = std::bind(
-        static_cast<bool (MbedCloudClient::*)(void*)>(&MbedCloudClient::setup),
-        cloud_client_,
-        std::placeholders::_1);
-
-    mbed_client_endpoint_info_func_ = std::bind(
-        static_cast<const ConnectorClientEndpointInfo*(MbedCloudClient::*)() const>(&MbedCloudClient::endpoint_info),
-        cloud_client_);
-
-    mbed_client_close_func_ = std::bind(&MbedCloudClient::close, cloud_client_);
-
-    mbed_client_error_description_func_ = std::bind(
-        static_cast<const char *(MbedCloudClient::*)() const>(&MbedCloudClient::error_description),
-        cloud_client_);
-}
-
-MblError ResourceBroker::init()
-{
-    TR_DEBUG_ENTER;
-
-    // verify that ipc_adapter_ member was not created yet
-    assert(nullptr == ipc_adapter_);
-
-    // create ipc instance and pass ccrb instance to constructor
-    ipc_adapter_ = std::make_unique<DBusAdapter>(*this);
-
-    OneSetMblError status(ipc_adapter_->init());
-    if (Error::None != status.get()) {
-        TR_ERR("ipc::init failed with error %s", status.get_status_str());
-    }
-
-    // Set function pointers to point to mbed_client functions
-    // In gtest our friend test class will override these pointers to get all the
-    // calls
-    init_mbed_cloud_client_function_pointers_func_();
-
-    // Register Cloud client callback:
-    register_callback_handlers();
-
-    // This must come after register_callback_handlers() is called
-    const MblError setup_status = mbed_cloud_client_setup();
-    if (Error::None != setup_status) {
-        status.set(setup_status);
-    }
-
-    // Set keepalive periodic event
-    Event::EventData event_data = {0};
-    event_data.user_data = this;
-    std::pair<MblError, uint64_t> ret_pair = 
-        ipc_adapter_->send_event_periodic(event_data,
-                                          sizeof(event_data.user_data),
-                                          Event::EventDataType::USER_DATA_TYPE,
-                                          ResourceBroker::periodic_keepalive_callback,
-                                          g_keepalive_period_miliseconds,
-                                          "Mbed cloud client keep-alive");
-    if(Error::None != ret_pair.first) {
-        TR_ERR("send_event_periodic keep-alive failed with error %s",
-            MblError_to_str(ret_pair.first));
-        return ret_pair.first;
-    }
-    TR_DEBUG("Successfully send_event_periodic keep-alive.");
-
-    //////////////////////////////////////////////////////////////////
-    // PAY ATTENTION: This should be the last action in this function!
-    //////////////////////////////////////////////////////////////////
-    // signal to the semaphore that initialization was finished
-    const int ret = sem_post(&init_sem_);
-    if (0 != ret) {
-        // semaphore post failed, print errno value and exit
-        TR_ERRNO("sem_post", errno);
-        status.set(Error::IpcProcedureFailed);
-    }
-
-    return status.get();
-}
-
 MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
 {
     TR_DEBUG_ENTER;
@@ -378,6 +288,110 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     return Error::None;
 }
 
+void ResourceBroker::init_mbed_cloud_client_function_pointers()
+{
+    TR_DEBUG_ENTER;
+    
+    assert (nullptr != cloud_client_);
+
+    mbed_client_add_objects_func_ = std::bind(
+        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
+        cloud_client_,
+        std::placeholders::_1);
+
+    mbed_client_register_update_func_ = 
+        std::bind(&MbedCloudClient::register_update, cloud_client_);
+
+    mbed_client_setup_func_ = std::bind(
+        static_cast<bool (MbedCloudClient::*)(void*)>(&MbedCloudClient::setup),
+        cloud_client_,
+        std::placeholders::_1);
+
+    mbed_client_endpoint_info_func_ = std::bind(
+        static_cast<const ConnectorClientEndpointInfo*(MbedCloudClient::*)() const>(&MbedCloudClient::endpoint_info),
+        cloud_client_);
+
+    mbed_client_close_func_ = std::bind(&MbedCloudClient::close, cloud_client_);
+
+    mbed_client_error_description_func_ = std::bind(
+        static_cast<const char *(MbedCloudClient::*)() const>(&MbedCloudClient::error_description),
+        cloud_client_);
+}
+
+MblError ResourceBroker::init_mbed_client()
+{
+    assert(nullptr == cloud_client_);
+
+    cloud_client_ = new MbedCloudClient();
+
+    // 1. Set function pointers to point to mbed_client functions
+    //    (In gtest our friend test class will override these pointers to get all the calls)
+    init_mbed_cloud_client_function_pointers();
+
+    // 2. Register Cloud client callback:
+    cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered); // rename all cb functions///////////////////////////////////////////////
+    cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
+    cloud_client_->on_registration_updated(this,
+                                            &ResourceBroker::handle_registration_updated_cb);
+    cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
+    cloud_client_->set_update_authorize_handler(&handle_authorize);
+    cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);        
+
+    // 3. Register Device Default Resources
+    M2MObjectList objs; // Using empty ObjectList
+    mbed_client_add_objects_func_(objs);
+    state_.store(State_DeviceRegistrationInProgress);
+    const bool setup_ok = mbed_client_setup_func_(get_dummy_network_interface());
+    if (!setup_ok) {
+        TR_ERR("Mbed cloud client setup failed");
+        return Error::ConnectUnknownError;
+    }
+
+    return Error::None;    
+}
+
+MblError ResourceBroker::init()
+{
+    TR_DEBUG_ENTER;
+
+    // verify that ipc_adapter_ member was not created yet
+    assert(nullptr == ipc_adapter_);
+
+    // create ipc instance and pass ccrb instance to constructor
+    ipc_adapter_ = std::make_unique<DBusAdapter>(*this);
+
+    const MblError ipc_adapter_init_status = ipc_adapter_->init();
+    if (Error::None != ipc_adapter_init_status) {
+        TR_ERR("ipc::init failed with error %s", MblError_to_str(ipc_adapter_init_status));
+        return ipc_adapter_init_status;
+    }
+
+    // Init Mbed cloud client
+    const MblError init_mbed_clinet_status = init_mbed_cloud_client_func_();
+    if(Error::None != init_mbed_clinet_status) {
+        TR_ERR("init_mbed_client failed with error %s", MblError_to_str(init_mbed_clinet_status));
+        return init_mbed_clinet_status;
+    }
+
+    // Set keepalive periodic event
+    Event::EventData event_data = {0};
+    event_data.user_data = this;
+    std::pair<MblError, uint64_t> ret_pair = 
+        ipc_adapter_->send_event_periodic(event_data,
+                                          sizeof(event_data.user_data),
+                                          Event::EventDataType::USER_DATA_TYPE,
+                                          ResourceBroker::periodic_keepalive_callback,
+                                          g_keepalive_period_miliseconds,
+                                          "Mbed cloud client keep-alive");
+
+    if(Error::None != ret_pair.first) {
+        TR_ERR("send_event_periodic keep-alive failed with error %s",
+            MblError_to_str(ret_pair.first));
+        return ret_pair.first;
+    }
+
+    return Error::None;
+}
 
 MblError ResourceBroker::deinit()
 {
@@ -422,32 +436,38 @@ void* ResourceBroker::ccrb_main(void* ccrb)
 
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ccrb);
 
-    const MblError init_status = this_ccrb->init();
-    if (Error::None != init_status) {
-        TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", MblError_to_str(init_status));
-        uintptr_t int_init_status = static_cast<uintptr_t>(init_status);
-        pthread_exit(reinterpret_cast<void*>(int_init_status)); // NOLINT
+    OneSetMblError status(this_ccrb->init());
+    if (Error::None != status.get()) {
+        // Not returning as we want to call deinit below
+        TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", status.get_status_str());
     }
 
-    const MblError run_status = this_ccrb->run();
-    if (Error::None != run_status) {
-        TR_ERR("CCRB::run failed with error %s. Exit CCRB thread.", MblError_to_str(run_status));
-        // continue to deinit and return status
+    // Signal to the semaphore that initialization was finished
+    const int ret = sem_post(&this_ccrb->init_sem_);
+    if (0 != ret) {
+        TR_ERRNO("semaphore post failed ", errno);
+        status.set(Error::IpcProcedureFailed); // continue to deinit and return status
+    }
+
+    // Call ccrb->run only if init succeeded
+    if (Error::None == status.get()) {
+        const MblError run_status = this_ccrb->run();
+        if (Error::None != run_status) {
+            TR_ERR("CCRB::run failed with error %s. Exit CCRB thread.", MblError_to_str(run_status));
+            status.set(run_status); // continue to deinit and return status
+        }
     }
 
     const MblError deinit_status = this_ccrb->deinit();
     if (Error::None != deinit_status) {
         TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.",
-               MblError_to_str(deinit_status));
-        uintptr_t int_deinit_status = static_cast<uintptr_t>(deinit_status);
-        pthread_exit(reinterpret_cast<void*>(int_deinit_status)); // NOLINT
+            MblError_to_str(deinit_status));
+        status.set(deinit_status);
     }
 
-    TR_INFO("CCRB thread function finished. CCRB::run status %s.", MblError_to_str(run_status));
-    uintptr_t int_run_status = static_cast<uintptr_t>(run_status);
-
-    // pthread_exit does "return"
-    pthread_exit(reinterpret_cast<void*>(int_run_status)); // NOLINT
+    TR_INFO("CCRB thread function finished with status: %s", status.get_status_str());
+    uintptr_t final_status = static_cast<uintptr_t>(status.get());
+    pthread_exit(reinterpret_cast<void*>(final_status)); // NOLINT
 }
 
 ResourceBroker::RegistrationRecord_ptr
@@ -463,41 +483,6 @@ ResourceBroker::get_registration_record(const std::string& access_token)
     }
 
     return itr->second;
-}
-
-void ResourceBroker::register_callback_handlers()
-{
-    TR_DEBUG_ENTER;
-
-    if (nullptr != cloud_client_) {
-        // GTest unit test might set cloud_client_ member to nullptr
-        cloud_client_->on_registered(this, &ResourceBroker::handle_client_registered); // rename all cb functions///////////////////////////////////////////////
-        cloud_client_->on_unregistered(this, &ResourceBroker::handle_client_unregistered);
-        cloud_client_->on_registration_updated(this,
-                                               &ResourceBroker::handle_registration_updated_cb);
-        cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
-        cloud_client_->set_update_authorize_handler(&handle_authorize);
-        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);        
-    }
-}
-
-MblError ResourceBroker::mbed_cloud_client_setup()
-{
-    TR_DEBUG_ENTER;
-
-    // Add empty ObjectList which will be used to register the device for the first time
-    M2MObjectList objs;
-    mbed_client_add_objects_func_(objs);
-
-    state_.store(State_DeviceRegistrationInProgress);
-
-    const bool setup_ok = mbed_client_setup_func_(get_dummy_network_interface());
-    if (!setup_ok) {
-        TR_ERR("Mbed cloud client setup failed");
-        return Error::ConnectUnknownError;
-    }
-
-    return Error::None;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

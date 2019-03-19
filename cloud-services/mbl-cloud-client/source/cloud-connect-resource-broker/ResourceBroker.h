@@ -244,6 +244,30 @@ public:
 
 protected:
 
+    // TODO: add description
+    void close_mbed_cloud_client();
+
+    /**
+     * @brief Setup mbed cloud client and register the device for the first time.
+     * 
+     * @return MblError -
+     *                  Error::ConnectUnknownError is case of failure
+     *                  Error::None in case of success
+     */
+
+    // TODO: add description
+    /**
+     * @brief Register callback function that will be called directly by Mbed cloud client
+     * Register the following Mbed cloud client callbacks:
+     * 1. Callback function for successful register device
+     * 2. Callback function for successful un-register device
+     * 3. Callback function for successful registration update (application resources registration)
+     * 5. Callback function for monitoring download progress
+     * 5. Callback function for authorizing firmware downloads and reboots
+     * 6. Callback function for occurred error in the above scenarios
+     */
+    MblError init_mbed_client();
+
     /**
      * @brief Initializes CCRB instance.
      * 
@@ -291,28 +315,6 @@ protected:
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback functions that are being called by Mbed client
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * @brief Register callback function that will be called directly by Mbed cloud client
-     * Register the following Mbed cloud client callbacks:
-     * 1. Callback function for successful register device
-     * 2. Callback function for successful un-register device
-     * 3. Callback function for successful registration update (application resources registration)
-     * 5. Callback function for monitoring download progress
-     * 5. Callback function for authorizing firmware downloads and reboots
-     * 6. Callback function for occurred error in the above scenarios
-     */
-    void register_callback_handlers();
-
-    /**
-     * @brief Setup mbed cloud client and register the device for the first time.
-     * 
-     * @return MblError -
-     *                  Error::ConnectUnknownError is case of failure
-     *                  Error::None in case of success
-     */
-    MblError mbed_cloud_client_setup();
-
     /**
      * @brief Device registered callback.
      * Called by Mbed cloud client to indicate that device is registered.
@@ -486,7 +488,7 @@ protected:
     std::atomic_bool init_sem_initialized_;
 
     // pointer to ipc binder instance
-    std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
+    std::unique_ptr<DBusAdapter> ipc_adapter_;
 
     // Mbed cloud client
     MbedCloudClient* cloud_client_;
@@ -517,9 +519,9 @@ protected:
     // Mbed client function pointers
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
-    // This function pointer will be used in init() to set mbed cloud client function pointers.
-    // In case of tests we will use it to set mbed cloud client function pointers to mock class
-    std::function<void()> init_mbed_cloud_client_function_pointers_func_;
+    // This function pointer will be used in init() to initialize mbed cloud client.
+    // In case of tests we will use it to call mock function
+    std::function<MblError()> init_mbed_cloud_client_func_;
 
     // register_update function pointer
     // Mbl cloud client use it to point to Mbed cloud client register_update API

@@ -43,8 +43,8 @@ public:
 
     ~ResourceBrokerTester();
 
-
-    void init_mbed_cloud_client_function_pointers();
+    //TODO: ADD DESCRIPTION
+    mbl::MblError init_mbed_cloud_client();
 
     /**
      * @brief Call ResourceBroker register_resources API

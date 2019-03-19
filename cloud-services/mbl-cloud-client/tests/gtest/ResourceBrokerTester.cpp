@@ -32,11 +32,12 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
     
     // Set resource adapter function pointer that in some tests will be called as part of 
     // ResourceBroker::init() API.
-    resource_broker_.init_mbed_cloud_client_function_pointers_func_ =
-        std::bind(&ResourceBrokerTester::init_mbed_cloud_client_function_pointers, this);
+    resource_broker_.init_mbed_cloud_client_func_ = std::bind(
+        static_cast<mbl::MblError(ResourceBrokerTester::*)()>(&ResourceBrokerTester::init_mbed_cloud_client),
+        this);
 
     // Call it explicitly here
-    init_mbed_cloud_client_function_pointers();
+    init_mbed_cloud_client();
 
     // Mark device as registered to Pelion
     resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceRegistered);
@@ -54,7 +55,7 @@ ResourceBrokerTester::~ResourceBrokerTester()
     TR_DEBUG_ENTER;
 }
 
-void ResourceBrokerTester::init_mbed_cloud_client_function_pointers()
+mbl::MblError ResourceBrokerTester::init_mbed_cloud_client()
 {
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what resource_broker_.init() usually does so dont call it...
@@ -78,6 +79,8 @@ void ResourceBrokerTester::init_mbed_cloud_client_function_pointers()
     resource_broker_.mbed_client_error_description_func_ = std::bind(
         static_cast<const char *(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mbed_client_mock_error_description),
         this);
+
+    return mbl::MblError::None;
 }
 
 const char * ResourceBrokerTester::mbed_client_mock_error_description() const
