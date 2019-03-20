@@ -37,29 +37,11 @@ else
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
     certificate="$(pwd | cut -d"/" -f2)"
-    api_key=$1
 
     # Run the manifest tool
     mkdir /tmp/update-resources
     cd /tmp/update-resources
     manifest-tool init -q -d arm.com -m dev-device
-
-    # Deal with API keys.
-
-    printf "Try to save the api key.\n"
-    mbl-cli save-api-key $api_key
-
-    printf "Check to see the key is installed correctly\n"
-    key_found=$(grep -c $api_key ~/.mbl-store/user/config.json)
-
-    if [ $key_found -eq 1 ]
-    then
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=pass>\n"
-    else
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=fail>\n"
-        overall_result="fail"
-    fi
-
 
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
     invalid_rejected_ok=$(grep -c "API key not recognised by Pelion Device Management." /tmp/invalid_key)
