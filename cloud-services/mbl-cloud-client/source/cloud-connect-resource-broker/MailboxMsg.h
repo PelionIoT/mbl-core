@@ -8,104 +8,167 @@
 #define _MailboxMsg_h_
 
 #include "DBusAdapter.h"
+#include "Serializer.hpp"
 
-#include <vector>
+#include <sstream>
 
-namespace mbl{
+namespace mbl
+{
+
+/**
+ * @brief This message type is used for an external thread to request an exit from sd-event loop
+ * of CCRB thread
+ *
+ */
+struct MailboxMsg_Exit
+{
+    // THe reason for the exit, MblError::None if stop is done in normal way
+    MblError stop_status;
+};
 
 class MailboxMsg
-{   
-//Mailbox class is strongly coupled with MailboxMsg
-friend class Mailbox;
-public:        
-    static const int MSG_PROTECTION_FIELD  = 0xFF128593;
+{
+    // Mailbox class is strongly coupled with MailboxMsg
+    friend class Mailbox;
 
-    //TODO: get rid of UKNOWN message type by design. do not allow empty messages to be 
-    // constructed.
-    /**
-     * @brief The message type
-     * 
-     */
-    enum class MsgType {
-        UNKNOWN = 0,        // temporary type assigned for empty message
-        RAW_DATA = 1,       // a generic message type (bytes)
-        EXIT = 2            // sent by an external thread to request CCRB thread to exit 
-                            // from event loop
-    };
-
-    // TODO: IOTMBL-1684 - consider improving using template / polymorphic style
-    /**
-     * @brief - Holds all possible messages as a union, and the length. The actual message type is 
-     * given by 'Mailbox::type_'. Each message is limited by size - developer should extend message 
-     * using the message macros.
-    */
-    typedef union MsgPayload_
-    {
-        struct MsgRaw {
-            static constexpr int MAX_SIZE = 100;
-            char bytes[MAX_SIZE];
-        }raw_;
-        
-        struct MsgExit 
-        {   
-            // THe reason for the exit, MblError::None if stop is done in normal way
-            MblError     stop_status;
-        }exit_;
-    }MsgPayload; 
-
+public:
+    static const int MSG_PROTECTION_FIELD = 0xFF128593;
 
     /**
-     * @brief Construct a new Mailbox Msg object - 
+     * @brief Construct a new Mailbox Msg object -
      * Used ny MailBox to construct a new message
-     * 
-     * @param type - the message type
-     * @param payload - the actual payload
-     * @param payload_len - size of payload in bytes
+     *
+     * @param data - the actual payload
+     * @param data_len - size of payload in bytes
      */
-    MailboxMsg(MsgType type, MsgPayload &payload, size_t payload_len); 
+    template <typename T>
+    MailboxMsg(T& data, size_t data_len)
+        : data_len_(data_len),
+          sequence_num_(get_next_sequence_num()),
+          protection_field_(MSG_PROTECTION_FIELD)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-mailbox", "Enter");
+
+        assert(data_len <= sizeof(T));
+        pack_data<T>(data);
+        data_type_name_.assign(typeid(T).name());
+    }
 
     /**
-     * @brief stringify function for the MsgType
-     * 
-     * @return const char* 
+     * @brief assignment operator implementation
+     *
+     * @param src_msg - the right value message to assign from
+     * @return MailboxMsg& - the message to assign to
      */
-    const char* MsgType_to_str();
+    MailboxMsg& operator=(MailboxMsg& src_msg)
+    {
+        data_len_ = src_msg.data_len_;
+        data_type_name_ = src_msg.data_type_name_;
+        protection_field_ = src_msg.protection_field_;
+        sequence_num_ = src_msg.sequence_num_;
+
+        serializer_ << src_msg.serializer_.str();
+        assert(serializer_.tellp() > 0);
+        return *this;
+    }
+
+    /**
+     * @brief Copy ctor
+     *
+     * @param src_msg - message to copy from
+     */
+    MailboxMsg(const mbl::MailboxMsg& src_msg)
+    {
+        data_len_ = src_msg.data_len_;
+        data_type_name_ = src_msg.data_type_name_;
+        protection_field_ = src_msg.protection_field_;
+        sequence_num_ = src_msg.sequence_num_;
+
+        serializer_ << src_msg.serializer_.str();
+    }
+
+    /**
+     * @brief Templated deserialization function. Fill a reference of type T by reading cytes from
+     * serializer_.
+     *
+     * @tparam T The type to fill the serialized data in. must be POD type.
+     * @return std::pair<MblError, T> - a pair with :
+     * First element - the result of the operation, SystemCallFailed for failure.
+     * Second element - relevant only on success - T unpacked by NRVO
+     * (Named Return Value Optimization)
+     */
+    template <typename T>
+    std::pair<MblError, T> unpack_data()
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
+
+        static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
+                      "None POD types are not supported with this function!");
+        return mbl::unpack_data<T>("ccrb-event", serializer_);
+    }
 
     // Getters
-    inline MsgType         get_type() { return type_; }
-    inline MsgPayload&     get_payload() { return payload_; }
-    inline size_t          get_payload_len() { return payload_len_; }
-    inline uint64_t        get_sequence_num() { return sequence_num_; }
+    inline std::string& get_data_type_name() { return data_type_name_; }
+    inline size_t get_data_len() { return data_len_; }
+    inline uint64_t get_sequence_num() { return sequence_num_; }
 
-private:         
-
+private:
     /**
      * @brief Construct a new Mailbox Msg empty object
      * To be used by mailbox only
-     * 
+     *
      */
-    MailboxMsg();  
+    MailboxMsg() : data_len_(0), sequence_num_(0), protection_field_(MSG_PROTECTION_FIELD)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-mailbox", "Enter");
+    }
 
-    // The actual data holder. use the type to determine format
-    MsgPayload  payload_;
+    /**
+  * @brief  Serialize data of type T into serializer_ (standard library  string buffer)
+  *
+  * @tparam T - The type to pack (serialize) - must be POD type.
+  * @param data - data of type T to serialize.
+  * @return MblError - SystemCallFailed on failure, else None;
+  */
+    template <typename T>
+    MblError pack_data(T const& data)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
 
-    // size in bytes for the payload - given by user and can't be more then the maximum 
+        // this only works on built in data types (PODs)
+        static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
+                      "None POD types are not supported with this function!");
+
+        data_type_name_.assign(typeid(T).name());
+        return mbl::pack_data<T>("ccrb-event", data, serializer_);
+    }
+
+    // The actual data holder (data is serialized into a standard library string buffer)
+    std::stringstream serializer_;
+
+    // size in bytes for the payload - given by user and can't be more then the maximum
     // message allowed by type
-    size_t      payload_len_;
-
-    // The message type
-    MsgType     type_;
+    size_t data_len_;
 
     // message sequence number
-    uint64_t    sequence_num_;
+    uint64_t sequence_num_;
 
-    //protection field to assert for integrity
-    long    protection_field_ = 0;
+    // protection field to assert for integrity
+    long protection_field_ = 0;
+
+    // information about the type stored
+    std::string data_type_name_;
 
     // used to auto-assign message sequence number
-    static uint64_t sequence_num_counter_;
+    // we can't initialize static members in header, so I workaround this using static member
+    // function, while the static member is define inside function
+    static uint64_t get_next_sequence_num()
+    {
+        static uint64_t sequence_num_counter_ = 1;
+        return sequence_num_counter_++;
+    };
 };
 
-}//namespace mbl
+} // namespace mbl
 
 #endif // _MailboxMsg_h_
