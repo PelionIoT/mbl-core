@@ -216,8 +216,8 @@ protected:
      *        output field: 
      *        - output_status is the status of the set operation for the corresponding 
      *          resource.
-     *        Note: This parameter is valid, if MblError return error code 
-     *        is Error::None AND if out_status is CloudConnectStatus::STATUS_SUCCESS
+     *        Note: This parameter is valid, if CloudConnectStatus return error code 
+     *        is CloudConnectStatus::STATUS_SUCCESS.
      *
      * @return cloud connect operation status for operations like access_token validity, 
      *         sending deregistration request to the Cloud, and so on.
@@ -249,8 +249,8 @@ protected:
      *          resource.
      *        - inout_data.value field is the value that was gotten from resource. 
      *          Use inout_data.value only if the output_status has SUCCESS value. 
-     *        Note: This parameter is valid, if MblError return error code 
-     *        was Error::None.  
+     *        Note: This parameter is valid, if CloudConnectStatus return error code 
+     *        is CloudConnectStatus::STATUS_SUCCESS. 
      *
      * @return cloud connect operation status for operations like access_token validity, 
      *         sending deregistration request to the Cloud, and so on.
