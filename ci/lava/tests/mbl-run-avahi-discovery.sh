@@ -8,10 +8,10 @@
 monitor_process() {
     pid=$1
     counter=$2
-    while ps -p $pid > /dev/null
+    while ps -p "$pid" > /dev/null
     do
         if [[ $counter -eq 0 ]]; then
-            kill -9 $pid
+            kill -9 "$pid"
         fi
         counter=$((counter-1))
         sleep 1
