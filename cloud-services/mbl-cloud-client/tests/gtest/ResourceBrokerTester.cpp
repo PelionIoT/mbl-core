@@ -32,12 +32,14 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
     
     // Set resource adapter function pointer that in some tests will be called as part of 
     // ResourceBroker::init() API.
-    resource_broker_.init_mbed_cloud_client_func_ = std::bind(
-        static_cast<mbl::MblError(ResourceBrokerTester::*)()>(&ResourceBrokerTester::init_mbed_cloud_client),
+    resource_broker_.init_mbed_client_func_ = std::bind(
+        static_cast<mbl::MblError(ResourceBrokerTester::*)()>(&ResourceBrokerTester::mock_init_mbed_client),
         this);
 
+    resource_broker_.deinit_mbed_client_func_ = std::bind(&ResourceBrokerTester::mock_deinit_mbed_client, this);
+
     // Call it explicitly here
-    init_mbed_cloud_client();
+    mock_init_mbed_client();
 
     // Mark device as registered to Pelion
     resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceRegistered);
@@ -46,8 +48,7 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
         // Init resource broker ipc to be DBusAdapterMock:
         resource_broker_.ipc_adapter_ = 
             std::make_unique<DBusAdapterMock>(resource_broker_);
-    }
-    
+    }    
 }
 
 ResourceBrokerTester::~ResourceBrokerTester()
@@ -55,58 +56,47 @@ ResourceBrokerTester::~ResourceBrokerTester()
     TR_DEBUG_ENTER;
 }
 
-mbl::MblError ResourceBrokerTester::init_mbed_cloud_client()
+mbl::MblError ResourceBrokerTester::mock_init_mbed_client()
 {
+    TR_DEBUG_ENTER;
+    
     // Set Resource Broker function pointers to point to this class instead of to Mbed Client
     // This replaces what resource_broker_.init() usually does so dont call it...
     resource_broker_.mbed_client_register_update_func_ = 
         std::bind(&ResourceBrokerTester::mbed_client_mock_register_update, this);
     resource_broker_.mbed_client_add_objects_func_ = 
-        std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::mbed_client_mock_add_objects),
+        std::bind(static_cast<void(ResourceBrokerTester::*)(const M2MObjectList&)>(&ResourceBrokerTester::mock_mbed_client_add_objects),
             this,
             std::placeholders::_1);
-    resource_broker_.mbed_client_setup_func_ =
-        std::bind(static_cast<bool(ResourceBrokerTester::*)(void*)>(&ResourceBrokerTester::mbed_client_mock_setup),
-            this,
-            std::placeholders::_1);
-
     resource_broker_.mbed_client_endpoint_info_func_ = std::bind(
-        static_cast<const ConnectorClientEndpointInfo*(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mbed_client_mock_endpoint_info),
+        static_cast<const ConnectorClientEndpointInfo*(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mock_mbed_client_endpoint_info),
         this);
 
-    resource_broker_.mbed_client_close_func_ = std::bind(&ResourceBrokerTester::mbed_client_mock_close, this);
-
     resource_broker_.mbed_client_error_description_func_ = std::bind(
-        static_cast<const char *(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mbed_client_mock_error_description),
+        static_cast<const char *(ResourceBrokerTester::*)() const>(&ResourceBrokerTester::mock_mbed_client_error_description),
         this);
 
     return mbl::MblError::None;
 }
 
-const char * ResourceBrokerTester::mbed_client_mock_error_description() const
+void ResourceBrokerTester::mock_deinit_mbed_client()
 {
+    TR_DEBUG_ENTER;
+}
+
+const char * ResourceBrokerTester::mock_mbed_client_error_description() const
+{
+    TR_DEBUG_ENTER;
     return "mock error description";
 }
 
-void ResourceBrokerTester::mbed_client_mock_close()
+const ConnectorClientEndpointInfo* ResourceBrokerTester::mock_mbed_client_endpoint_info() const
 {
-    // Make device as un-registered to Pelion
-    resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceUnregistered);
-}
-
-const ConnectorClientEndpointInfo* ResourceBrokerTester::mbed_client_mock_endpoint_info() const
-{
+    TR_DEBUG_ENTER;
     return nullptr;
 }
 
-bool ResourceBrokerTester::mbed_client_mock_setup(void*)
-{
-    TR_DEBUG_ENTER;
-    // Currently does nothing, in future test we might want to add more code here
-    return true;
-}
-
-void ResourceBrokerTester::mbed_client_mock_add_objects(const M2MObjectList& /*object_list*/)
+void ResourceBrokerTester::mock_mbed_client_add_objects(const M2MObjectList& /*object_list*/)
 {
     TR_DEBUG_ENTER;
     // Currently does nothing, in future test we might want to add more code here
@@ -247,7 +237,7 @@ void ResourceBrokerTester::get_resources_values_test(
     const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
     const CloudConnectStatus expected_out_status)
 {
-    TR_DEBUG("Enter");
+    TR_DEBUG_ENTER;
     
     CloudConnectStatus out_status =
         resource_broker_.get_resources_values(

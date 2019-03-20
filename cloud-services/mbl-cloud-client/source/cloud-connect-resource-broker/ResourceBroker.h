@@ -244,8 +244,10 @@ public:
 
 protected:
 
+    void deinit_mbed_client();
+
     // TODO: add description
-    void close_mbed_cloud_client();
+    void unregister_device();
 
     /**
      * @brief Setup mbed cloud client and register the device for the first time.
@@ -453,7 +455,7 @@ protected:
      * @brief Set mbed cloud client function pointers.
      * In case of tests we will use it to set mbed cloud client function pointers to mock class.
      */
-    void init_mbed_cloud_client_function_pointers();
+    void init_mbed_client_function_pointers();
 
     /**
      * @brief Return registration record using acceess token
@@ -500,6 +502,7 @@ protected:
     //TODO: description
     enum State
     {
+        State_DeviceUnregisterInProgress,
         State_DeviceUnregistered,
         State_DeviceRegistrationInProgress,
         State_DeviceRegistered,
@@ -521,7 +524,9 @@ protected:
 
     // This function pointer will be used in init() to initialize mbed cloud client.
     // In case of tests we will use it to call mock function
-    std::function<MblError()> init_mbed_cloud_client_func_;
+    std::function<MblError()> init_mbed_client_func_;
+
+    std::function<void()> deinit_mbed_client_func_;
 
     // register_update function pointer
     // Mbl cloud client use it to point to Mbed cloud client register_update API
@@ -533,10 +538,7 @@ protected:
     // Gtests will use it to point to mock function
     std::function<void(const M2MObjectList& object_list)> mbed_client_add_objects_func_;
 
-    std::function<bool(void*)> mbed_client_setup_func_;
-
     std::function<const ConnectorClientEndpointInfo*()> mbed_client_endpoint_info_func_;
-    std::function<void()> mbed_client_close_func_;
     std::function<const char *()> mbed_client_error_description_func_;
     ////////////////////////////////////////////////////////////////////////////////////////////////    
 };

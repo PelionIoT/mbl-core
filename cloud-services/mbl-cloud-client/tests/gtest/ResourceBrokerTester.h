@@ -44,8 +44,11 @@ public:
     ~ResourceBrokerTester();
 
     //TODO: ADD DESCRIPTION
-    mbl::MblError init_mbed_cloud_client();
+    mbl::MblError mock_init_mbed_client();
 
+    //TODO: ADD DESCRIPTION
+    void mock_deinit_mbed_client();
+    
     /**
      * @brief Call ResourceBroker register_resources API
      * verify expected return value and cloud connect status returned by this API
@@ -224,7 +227,7 @@ private:
      * @param object_list - Objects that contain information about the
      * client attempting to register to the LWM2M server.
      */
-    void mbed_client_mock_add_objects(const M2MObjectList& object_list);
+    void mock_mbed_client_add_objects(const M2MObjectList& object_list);
 
     /**
      * \brief Mock Mbed client function that sends a registration update message to the Cloud.
@@ -245,11 +248,9 @@ private:
      */
     bool mbed_client_mock_setup(void* network);
 
-    const ConnectorClientEndpointInfo* mbed_client_mock_endpoint_info() const;
+    const ConnectorClientEndpointInfo* mock_mbed_client_endpoint_info() const;
 
-    void mbed_client_mock_close();
-
-    const char * mbed_client_mock_error_description() const;
+    const char * mock_mbed_client_error_description() const;
 
     /**
      * @brief ResourceBroker module to be tested
