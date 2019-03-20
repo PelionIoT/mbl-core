@@ -355,7 +355,7 @@ protected:
      * 
      * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
      */
-    void handle_error_cb(const int cloud_client_code);
+    void handle_mbed_client_error(const int cloud_client_code);
 
     typedef std::shared_ptr<RegistrationRecord> RegistrationRecord_ptr;
     typedef std::map<std::string, RegistrationRecord_ptr> RegistrationRecordMap;
@@ -466,6 +466,12 @@ protected:
      */
     ResourceBroker::RegistrationRecord_ptr get_registration_record(const std::string& access_token);
 
+    //TODO: add description
+    ResourceBroker::RegistrationRecord_ptr get_registration_record_register_in_progress();
+
+    //TODO: add description
+    bool is_registration_record_register_in_progress();
+
     // Registration record map that holds records of registered / register requests
     // Used also for other application related operation
     // Modifing this map should be done carefully as it can be done in callbacks and in Broker's
@@ -502,13 +508,12 @@ protected:
     static uint32_t dummy_network_interface_;
 
     //TODO: description
-    enum State
+    enum State  //////////////////////////// RENAMEEEEEE
     {
         State_ClientUnregisterInProgress,
         State_ClientUnregistered,
         State_ClientRegisterInProgress,
-        State_ClientRegistered,
-        State_AppRegisterUpdateInProgress,
+        State_ClientRegistered
     };
 
     /**

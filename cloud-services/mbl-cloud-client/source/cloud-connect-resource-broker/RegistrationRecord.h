@@ -25,6 +25,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <atomic>
 
 class RegistrationRecordTester;
 
@@ -98,26 +99,25 @@ public:
     std::pair<MblError, M2MResource*> get_m2m_resource(const std::string& path);
 
     /**
-     * @brief Set registered status
-     * 
-     * @param registered - true if registered, false if not registered.
-     */
-    inline void set_registered(bool registered) {registered_ = registered;}
-
-    /**
      * @brief Return registration ipc connection
      * 
      * @return ipc request handle
      */
     const IpcConnection& get_registration_source() const { return registration_source_; }
 
-    /**
-     * @brief Return registered status
-     * 
-     * @return true if registered
-     * @return false if not registered
-     */
-    inline bool is_registered() const {return registered_;}
+    //TODO: description
+    enum RegistrationState
+    {
+        StateUnregistered, /////////////////////////// rename
+        StateRegistrationInProgress,
+        StateRegistered
+    };
+
+    //TODO: description
+    inline RegistrationState get_registration_state() const {return state_.load();};
+
+    //TODO: description
+    inline void set_registration_state(RegistrationState state) {state_.store(state);}
 
     /**
      * @brief Return m2m object list object
@@ -148,7 +148,12 @@ private:
 
     IpcConnection registration_source_;
     std::vector<IpcConnection> ipc_connections_;
-    bool registered_;
+
+    /**
+     * @brief Atomic enum to signal which state we are in
+     * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
+     */
+    std::atomic<RegistrationState> state_;
 
     M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
 };

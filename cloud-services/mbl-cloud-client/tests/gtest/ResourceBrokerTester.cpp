@@ -125,12 +125,6 @@ ResourceBrokerTester::register_resources_test(
     ASSERT_TRUE(expected_cloud_connect_status == ret_pair.first);
     out_status = ret_pair.first;
     out_access_token = ret_pair.second;
-
-    // In case of success - check internal state is correct
-    if(CloudConnectStatus::STATUS_SUCCESS == expected_cloud_connect_status) {
-        mbl::ResourceBroker::State state = resource_broker_.state_.load();
-        ASSERT_TRUE(mbl::ResourceBroker::State_AppRegisterUpdateInProgress == state);
-    }
 }
 
 void ResourceBrokerTester::mbed_client_register_update_callback_test(
@@ -145,22 +139,24 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
     // Make sure registration_record is not yet registered
-    ASSERT_FALSE(registration_record->is_registered());
+    ASSERT_FALSE(mbl::RegistrationRecord::StateRegistered == 
+        registration_record->get_registration_state());
 
     if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
         // Check registration success flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration was successful",
             access_token.c_str());
-        resource_broker_.handle_registration_updated_cb();
+        resource_broker_.handle_mbed_client_registration_updated();
         
         // Make sure registration record is marked as registered
-        ASSERT_TRUE(registration_record->is_registered());
+        ASSERT_TRUE(mbl::RegistrationRecord::StateRegistered == 
+            registration_record->get_registration_state());
     } else {
         // Check registration failure flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration failed",
             access_token.c_str());
         // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        resource_broker_.handle_error_cb(MbedCloudClient::ConnectInvalidParameters);
+        resource_broker_.handle_mbed_client_error(MbedCloudClient::ConnectInvalidParameters);
     }
 
     DBusAdapterMock& dbus_adapter_tester = 
