@@ -24,9 +24,11 @@ mbl_command="mbl-cli -a $dut_address"
 
 if [ -z "$dut_address" ]
 then
-    echo "ERROR - mbl-cli failed to find MBL device"
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=fail>"
+    printf "ERROR - mbl-cli failed to find MBL device\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=fail>\n"
 else
+
+    overall_result="pass"
 
     # Install the manifest-tool. This needs a newer version of pip, so get that
     # as well.
@@ -56,6 +58,7 @@ else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=add-valid-key RESULT=fail>\n"
+        overall_result="fail"
     fi
 
 
@@ -67,6 +70,7 @@ else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=fail>\n"
+        overall_result="fail"
         cat /tmp/invalid_key
     fi
 
@@ -79,6 +83,7 @@ else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-not-configured RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-not-configured RESULT=fail>\n"
+        overall_result="fail"
         cat /tmp/get-pelion-status
     fi
 
@@ -90,6 +95,7 @@ else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-provisioned RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-provisioned RESULT=fail>\n"
+        overall_result="fail"
         cat /tmp/provision-pelion
     fi
 
@@ -102,11 +108,12 @@ else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-configured RESULT=pass>\n"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-configured RESULT=fail>\n"
+        overall_result="fail"
         cat /tmp/get-pelion-status
     fi
 
 
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=pass>"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=%s>\n" $overall_result
 
 
 fi
