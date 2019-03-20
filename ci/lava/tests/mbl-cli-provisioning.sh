@@ -40,13 +40,13 @@ else
 
     # Run the manifest tool
     mkdir /tmp/update-resources
-    cd /tmp/update-resources
+    cd /tmp/update-resources || exit
     manifest-tool init -q -d arm.com -m dev-device
 
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
     invalid_rejected_ok=$(grep -c "API key not recognised by Pelion Device Management." /tmp/invalid_key)
 
-    if [ $invalid_rejected_ok -eq 1 ]
+    if [ "$invalid_rejected_ok" -eq 1 ]
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=reject-invalid-key RESULT=pass>\n"
     else
@@ -59,7 +59,7 @@ else
 
     pelion_not_ok=$(grep -c "Your device is not correctly configured for Pelion Device Management." /tmp/get-pelion-status)
 
-    if [ $pelion_not_ok -eq 1 ]
+    if [ "$pelion_not_ok" -eq 1 ]
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-not-configured RESULT=pass>\n"
     else
@@ -68,10 +68,10 @@ else
         cat /tmp/get-pelion-status
     fi
 
-    $mbl_command provision-pelion -c $certificate anupdatecert -p /tmp/update-resources/update_default_resources.c >& /tmp/provision-pelion
+    $mbl_command provision-pelion -c "$certificate" anupdatecert -p /tmp/update-resources/update_default_resources.c >& /tmp/provision-pelion
 
     pelion_provisioned_ok=$(grep -c "Provisioning process completed without error." /tmp/provision-pelion)
-    if [ $pelion_provisioned_ok -eq 1 ]
+    if [ "$pelion_provisioned_ok" -eq 1 ]
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-provisioned RESULT=pass>\n"
     else
@@ -84,7 +84,7 @@ else
 
     pelion_ok=$(grep -c "Device is configured correctly. You can connect to Pelion Cloud!" /tmp/get-pelion-status)
 
-    if [ $pelion_ok -eq 1 ]
+    if [ "$pelion_ok" -eq 1 ]
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-configured RESULT=pass>\n"
     else
