@@ -42,7 +42,7 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
     mock_init_mbed_client();
 
     // Mark device as registered to Pelion
-    resource_broker_.state_.store(mbl::ResourceBroker::State_DeviceRegistered);
+    resource_broker_.state_.store(mbl::ResourceBroker::State_ClientRegistered);
 
     if(use_mock_dbus_adapter) {
         // Init resource broker ipc to be DBusAdapterMock:
@@ -173,7 +173,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
 
     // Verify internal state is back to registered
     mbl::ResourceBroker::State state = resource_broker_.state_.load();
-    ASSERT_TRUE(mbl::ResourceBroker::State_DeviceRegistered == state);
+    ASSERT_TRUE(mbl::ResourceBroker::State_ClientRegistered == state);
 }
 
 void ResourceBrokerTester::get_m2m_resource_test(

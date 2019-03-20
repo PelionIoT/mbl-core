@@ -21,7 +21,7 @@
 #include <atomic>
 #include <functional>
 
-extern "C" void mbl_shutdown_handler(int signal);
+extern "C" void resource_broker_shutdown_handler(int signal);
 
 class ResourceBrokerTester;
 namespace mbl {
@@ -40,7 +40,7 @@ friend ::ResourceBrokerTester;
 friend DBusAdapterImpl;
 
 public:
-
+    void resource_broker_shutdown_handler(int signal);
     // Only InstanceScoper can create or destroy objects
     ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////
     virtual ~ResourceBroker(); //TODO: move to private
@@ -247,6 +247,7 @@ protected:
     void deinit_mbed_client();
 
     // TODO: add description
+    // This is done before stopping the mbed event loop
     void unregister_device();
 
     /**
@@ -321,16 +322,16 @@ protected:
      * @brief Device registered callback.
      * Called by Mbed cloud client to indicate that device is registered.
      */
-    void handle_client_registered();
+    void handle_mbed_client_registered();
 
     /**
      * @brief Device unregistered callback.
      * Called by Mbed cloud client to indicate that device is no longer registered.
      */
-    void handle_client_unregistered();
+    void handle_mbed_client_unregistered();
 
     //TODO: add description
-    static void handle_authorize(int32_t request);
+    static void handle_mbed_client_authorize(int32_t request);
 
     /**
      * @brief Periodic keepalive callback to notify Mbed cloud client that device is alive
@@ -346,7 +347,7 @@ protected:
      * Called by Mbed cloud client to indicate last mbed-cloud-client registration update was successful.
      * 
      */
-    void handle_registration_updated_cb();
+    void handle_mbed_client_registration_updated();
 
     /**
      * @brief - Error callback function
@@ -497,15 +498,16 @@ protected:
     
     //TODO: description
     static ResourceBroker* s_ccrb_instance;
-    static MblMutex s_mutex;
+
+    static uint32_t dummy_network_interface_;
 
     //TODO: description
     enum State
     {
-        State_DeviceUnregisterInProgress,
-        State_DeviceUnregistered,
-        State_DeviceRegistrationInProgress,
-        State_DeviceRegistered,
+        State_ClientUnregisterInProgress,
+        State_ClientUnregistered,
+        State_ClientRegisterInProgress,
+        State_ClientRegistered,
         State_AppRegisterUpdateInProgress,
     };
 
@@ -516,7 +518,7 @@ protected:
     std::atomic<State> state_;
 
     // Access token of the current operation against Mbed client
-    std::string in_progress_access_token_;
+    std::string reg_update_in_progress_access_token_;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Mbed client function pointers
