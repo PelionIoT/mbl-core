@@ -19,59 +19,58 @@
 #include <set>
 #include <string>
 
-
 // sd-bus vtable object, implements the com.mbed.Pelion1.Connect interface
 // Keep those definitions here for testing
-#define DBUS_CLOUD_SERVICE_NAME                         "com.mbed.Pelion1"
-#define DBUS_CLOUD_CONNECT_INTERFACE_NAME               "com.mbed.Pelion1.Connect"
-#define DBUS_CLOUD_CONNECT_OBJECT_PATH                  "/com/mbed/Pelion1/Connect"
+#define DBUS_CLOUD_SERVICE_NAME "com.mbed.Pelion1"
+#define DBUS_CLOUD_CONNECT_INTERFACE_NAME "com.mbed.Pelion1.Connect"
+#define DBUS_CLOUD_CONNECT_OBJECT_PATH "/com/mbed/Pelion1/Connect"
 
-#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME          "RegisterResources"
-#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME        "DeregisterResources"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME      "AddResourceInstances"
-#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_METHOD_NAME   "RemoveResourceInstances"
+#define DBUS_CC_REGISTER_RESOURCES_METHOD_NAME "RegisterResources"
+#define DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME "DeregisterResources"
+#define DBUS_CC_ADD_RESOURCE_INSTANCES_METHOD_NAME "AddResourceInstances"
+#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_METHOD_NAME "RemoveResourceInstances"
 
-
-#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME           "RegisterResourcesStatus"
-#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME         "DeregisterResourcesStatus"
-#define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME       "AddResourceInstancesStatus"
-#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME    "RemoveResourceInstancesStatus"
+#define DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME "RegisterResourcesStatus"
+#define DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME "DeregisterResourcesStatus"
+#define DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME "AddResourceInstancesStatus"
+#define DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME "RemoveResourceInstancesStatus"
 
 #define SD_ID_128_UNIQUE_ID_LEN 32
 
-namespace mbl {
+namespace mbl
+{
 
 /**
  * @brief sd-bus objects resource manager class.
  * s-dbus objects requires resource management, as described on this link:
  * https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
  * This class implements basic resource management logic.
- * 
+ *
  * @tparam T sd-bus object (like sd_bus_message)
  */
-template <class T> 
-class sd_bus_object_cleaner {
+template <class T>
+class sd_bus_object_cleaner
+{
 public:
-
     /**
-     * @brief Construct a new sd objects cleaner for the provided sd-bus specific object type.  
-     * 
-     * @param object_to_clean address of the sd-bus object. 
+     * @brief Construct a new sd objects cleaner for the provided sd-bus specific object type.
+     *
+     * @param object_to_clean address of the sd-bus object.
      * @param func cleaning function, that gets address of the sd-bus object.
      *        Typical cleaning functions described on this link:
      *        https://www.freedesktop.org/software/systemd/man/sd_bus_new.html#
-     *        This clean function will be called in destructor of the object. 
+     *        This clean function will be called in destructor of the object.
      */
-    sd_bus_object_cleaner(T *object_to_clean, std::function<void (T*)> func)
-    : object_(object_to_clean), clean_func_(func) {}
-    
-    ~sd_bus_object_cleaner(){
-        clean_func_(object_);
+    sd_bus_object_cleaner(T* object_to_clean, std::function<void(T*)> func)
+        : object_(object_to_clean), clean_func_(func)
+    {
     }
 
+    ~sd_bus_object_cleaner() { clean_func_(object_); }
+
 private:
-    T *object_;
-    std::function<void (T*)> clean_func_;
+    T* object_;
+    std::function<void(T*)> clean_func_;
 };
 
 /**
@@ -143,9 +142,9 @@ private:
     * @param ret_error - The sd_bus_error structure carries information about a D-Bus error
     * condition.
     * @return int - 0 on success, On failure, return a negative Linux errno-style error code.
-    *               When negative value returned, sd-bus automatically sends reply-error to the 
+    *               When negative value returned, sd-bus automatically sends reply-error to the
     *               sender of incoming message m. The information hold in the ret_error attached
-    *               tot he error. 
+    *               tot he error.
     */
 
     /**
@@ -157,113 +156,109 @@ private:
     incoming_bus_message_callback(sd_bus_message* m, void* userdata, sd_bus_error* ret_error);
 
     /**
-     * @brief Handles ResourceBroker method failure. 
+     * @brief Handles ResourceBroker method failure.
      * Fills ret_error according to mbl_status and cc_status returned
      * from ResourceBroker method. ret_error returned to sd-bus event loop, and that
-     * causes sending reply-error to to the application. 
-     * 
-     * @param mbl_status MblError error code tha was returned from ResourceBroker method. 
+     * causes sending reply-error to to the application.
+     *
+     * @param mbl_status MblError error code tha was returned from ResourceBroker method.
      * @param cc_status Cloud Connect error code tha was returned from ResourceBroker method.
-     * @param method_name ResourceBroker method name that failed. 
-     * @param ret_error sd-bus error description place-holder that is filled with 
-     *                  appropriate error. 
+     * @param method_name ResourceBroker method name that failed.
+     * @param ret_error sd-bus error description place-holder that is filled with
+     *                  appropriate error.
      * @return int Cloud Connect error (always negative value). The value returned is the
-     *             negative value of input cc_status, or ERR_INTERNAL_ERROR.    
+     *             negative value of input cc_status, or ERR_INTERNAL_ERROR.
      */
-    int handle_resource_broker_method_failure(
-        MblError mbl_status, 
-        CloudConnectStatus cc_status, 
-        const char* method_name,
-        sd_bus_error *ret_error);
+    int handle_resource_broker_method_failure(MblError mbl_status,
+                                              CloudConnectStatus cc_status,
+                                              const char* method_name,
+                                              sd_bus_error* ret_error);
 
     /**
-     * @brief Sends D-Bus method reply to the application, from which the message 
+     * @brief Sends D-Bus method reply to the application, from which the message
      * (m_to_reply_on) received.
-     * This function serves different types of replies, that corresponds to 
-     * the different application requests. 
-     * 
+     * This function serves different types of replies, that corresponds to
+     * the different application requests.
+     *
      * @param m_to_reply_on message to reply on.
      * @param ret_error sd-bus error description place-holder that is filled in the
-     *                  case of an error. 
-     * @param types_format sd-bus types format string. 
-     *                     Currently, valid arguments are "u" and "us". 
-     * @param status that should be sent in the message reply. 
-     * @param access_token access token that should be sent when replying to the 
-     *                     RegisterResources request. Relevant only when types_format = "us". 
-     *                     When types_format = "u", access_token is null.   
+     *                  case of an error.
+     * @param types_format sd-bus types format string.
+     *                     Currently, valid arguments are "u" and "us".
+     * @param status that should be sent in the message reply.
+     * @param access_token access token that should be sent when replying to the
+     *                     RegisterResources request. Relevant only when types_format = "us".
+     *                     When types_format = "u", access_token is null.
      * @return int sd-bus error number in the case of failure in sending method reply,
      *         or 0 in case of success.
      */
-    int method_reply_on_message(
-        sd_bus_message *m_to_reply_on,
-        sd_bus_error *ret_error,
-        const char *types_format,
-        CloudConnectStatus status, 
-        const char *access_token = nullptr);
+    int method_reply_on_message(sd_bus_message* m_to_reply_on,
+                                sd_bus_error* ret_error,
+                                const char* types_format,
+                                CloudConnectStatus status,
+                                const char* access_token = nullptr);
 
     /**
      * @brief Handles all asynchronous ResourceBroker methods invocations that were
-     * finished succesfully. Currently there are 4: RegisterResourcesStatus, 
+     * finished succesfully. Currently there are 4: RegisterResourcesStatus,
      * DeregisterResourcesStatus, AddResourceInstancesStatus, RemoveResourceInstancesStatus.
-     * Sends method reply to the application.  
-     * 
+     * Sends method reply to the application.
+     *
      * @param m_to_reply_on message to reply on.
      * @param ret_error sd-bus error description place-holder that is filled in the
-     *                  case of an error. 
-     * @param types_format sd-bus types format string. 
-     *                     Currently, valid arguments are "u" and "us". 
-     * @param status that should be sent in the message reply. 
-     * @param access_token access token that should be sent when replying to the 
-     *                     RegisterResources request. Relevant only when types_format = "us". 
-     *                     When types_format = "u", access_token is null.   
+     *                  case of an error.
+     * @param types_format sd-bus types format string.
+     *                     Currently, valid arguments are "u" and "us".
+     * @param status that should be sent in the message reply.
+     * @param access_token access token that should be sent when replying to the
+     *                     RegisterResources request. Relevant only when types_format = "us".
+     *                     When types_format = "u", access_token is null.
      * @return int sd-bus error number in the case of failure,
      *         or 0 in case of success.
      */
-    int handle_resource_broker_async_method_success(
-        sd_bus_message *m_to_reply_on,
-        sd_bus_error *ret_error,
-        const char *types_format,
-        CloudConnectStatus status, 
-        const char *access_token = nullptr);
+    int handle_resource_broker_async_method_success(sd_bus_message* m_to_reply_on,
+                                                    sd_bus_error* ret_error,
+                                                    const char* types_format,
+                                                    CloudConnectStatus status,
+                                                    const char* access_token = nullptr);
 
     /**
      * @brief Verifies that the signature of the method (that is encapsulated
-     * in the message m) is string, and reads the string that was sent. 
+     * in the message m) is string, and reads the string that was sent.
      * Should be used when handing RegisterResources and DeregisterResources.
-     * 
-     * @param m message that encapsulates method invocation whose signature is verified.  
+     *
+     * @param m message that encapsulates method invocation whose signature is verified.
      * @param ret_error sd-bus error description place-holder that is filled in the
      *                  case of an error.
-     * @param out_string output string that was read from the message. 
+     * @param out_string output string that was read from the message.
      * @return int sd-bus error number of the error,
      *         or 0 in case of success.
      */
-    int verify_signature_and_get_string_argument(
-            sd_bus_message *m, 
-            sd_bus_error *ret_error, 
-            std::string &out_string);
+    int verify_signature_and_get_string_argument(sd_bus_message* m,
+                                                 sd_bus_error* ret_error,
+                                                 std::string& out_string);
 
     /**
-     * @brief Process incoming RegisterResources message. 
-     * Parse JSON file and passes it to ResourceBroker. 
+     * @brief Process incoming RegisterResources message.
+     * Parse JSON file and passes it to ResourceBroker.
      * TODO: Validates that sender published agreed D-Bus API.
-     * Receives an answer from ResourceBroker and accordingly, 
+     * Receives an answer from ResourceBroker and accordingly,
      * sends back method reply / error reply to sender.
      * see parameter description above ("Callback and handler functions")
      */
     int process_message_RegisterResources(sd_bus_message* m, sd_bus_error* ret_error);
 
     /**
-     * @brief Process incoming DeregisterResources message. 
+     * @brief Process incoming DeregisterResources message.
      * Reads access_token from the incoming message, and passes it to ResourceBroker.
-     * Receives an answer from ResourceBroker and accordingly, 
+     * Receives an answer from ResourceBroker and accordingly,
      * sends back method reply / error reply to sender.
      * see parameter description above ("Callback and handler functions")
      */
     int process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error);
 
     /**
-     * @brief handles incoming mailbox message sent by an external thread - the actual 
+     * @brief handles incoming mailbox message sent by an external thread - the actual
      * implementation (as member) is done by calling incoming_mailbox_message_callback_impl
      * @param s - the sd-event IO event source
      * @param fd - the Linux anonymous pipe file descriptor used to poll&read from the mailbox
@@ -288,33 +283,30 @@ private:
      * @param revents - received events
      * @return int - 0 on success, On failure, return a negative Linux errno-style error code.
      */
-    int incoming_mailbox_message_callback_impl(
-        sd_event_source *s, 
-        int fd, 
-        uint32_t revents);  
+    int incoming_mailbox_message_callback_impl(sd_event_source* s, int fd, uint32_t revents);
 
     /**
      * @brief callback used in sd_bus_track_new in order to track a specific bus name
      * This callback is called when a name is removed from bus - that means a connection dropped.
      * For more information refer to :
-     * https://www.freedesktop.org/software/systemd/man/sd_bus_track_new.html# 
-     * 
+     * https://www.freedesktop.org/software/systemd/man/sd_bus_track_new.html#
+     *
      * @param track - track object to create
      * @param userdata - user data that has been passed when calling sd_bus_track_new
      * @return int - the result of disconnected_bus_name_callback_impl (the actual implementation)
      */
-    static int disconnected_bus_name_callback(sd_bus_track *track, void *userdata);
+    static int disconnected_bus_name_callback(sd_bus_track* track, void* userdata);
 
     /**
      * @brief This is the actual implementation when disconnected_bus_name_callback is called. see
      * disconnected_bus_name_callback for more information
-     * 
+     *
      * @param track - track object to create
      * @param userdata - user data that has been passed when calling sd_bus_track_new
-     * @return int - 0 on success, or -EBADF on failire (track object not found in 
+     * @return int - 0 on success, or -EBADF on failire (track object not found in
      * connections_tracker_ )
      */
-    int disconnected_bus_name_callback_impl(sd_bus_track *track);
+    int disconnected_bus_name_callback_impl(sd_bus_track* track);
 
     /*
     == D-Bus bus sub-module members==
@@ -331,7 +323,7 @@ private:
 
     /**
      * @brief Print connections_tracker_ to log  whenever a track object is added or removed
-     * 
+     *
      */
     void bus_track_debug();
 
@@ -341,34 +333,34 @@ private:
      * @return MblError - return MblError - Error::None for success, therwise the failure reason
      */
     MblError bus_deinit();
-    
+
     /**
-     * @brief Add a given bus name (unique connection id or known name) to the connections_tracker_ 
-     * container. If the given bus name is already in the container, nothing is done. If not, a new 
-     * sd_bus_track object is created in order for the adapter to be notified when the bus name 
-     * is disconnected. the sd_bus_track object is in non-recursive mode and support a single 
-     * connection only. No logic is done to prevent a case where a connection has gracefully 
+     * @brief Add a given bus name (unique connection id or known name) to the connections_tracker_
+     * container. If the given bus name is already in the container, nothing is done. If not, a new
+     * sd_bus_track object is created in order for the adapter to be notified when the bus name
+     * is disconnected. the sd_bus_track object is in non-recursive mode and support a single
+     * connection only. No logic is done to prevent a case where a connection has gracefully
      * deregistered - upper layer must be able to handle that case. Adapter does gurentee that only
      * connections which sent messages to its service are tracked.
      * For more info see :
      *  // https://www.freedesktop.org/software/systemd/man/sd_bus_track_add_name.html#
      * // https://www.freedesktop.org/software/systemd/man/sd_bus_track_new.html#
-     * 
+     *
      * @param bus_name - the bus name (known name or unique ID) to be tracked
-     * @return int 0 or positive for success, or C-Style negative value which is the output of the 
+     * @return int 0 or positive for success, or C-Style negative value which is the output of the
      * called sd_bus functions in case of failure
      */
-    int bus_track_sender(const char * bus_name);
+    int bus_track_sender(const char* bus_name);
 
     /**
-     * @brief receives the current sender unique connection ID. 
-     * Decide if adapter should continue to process the arrived message. If false is returned, 
+     * @brief receives the current sender unique connection ID.
+     * Decide if adapter should continue to process the arrived message. If false is returned,
      * reply with relevant CloudConnectStatus .See returned values for more info.
-     * 
+     *
      * @param source - a valid unique connection ID of the sender
-     * @return true -  If this connection unique ID is already tracked or there is no tracked ID - 
+     * @return true -  If this connection unique ID is already tracked or there is no tracked ID -
      * continue in calling function
-     * @return false  - if already exist a tracked connection which is not the input connection - 
+     * @return false  - if already exist a tracked connection which is not the input connection -
      * do not continue processing the message
      */
     bool bus_enforce_single_connection(std::string& source);
@@ -383,15 +375,14 @@ private:
     // D-Bus service known name (the service name) acquired explicitly by request
     const char* service_name_;
 
-
     // Maps a unique connection bus name into it's tracking object
-    // Each time a connection is introduced to the upper layer, this map is checked and updated 
-    // accordingly. If connection is in the map - it is tracked already, else - a new tracking 
+    // Each time a connection is introduced to the upper layer, this map is checked and updated
+    // accordingly. If connection is in the map - it is tracked already, else - a new tracking
     // object is created and the maching pair inserted to this map
     // Key : unique connection ID
     // Value : sd_bus_track* object (I chose not to use a unique pointer).
     // on dtor if there are any pairs inside
-    std::map < std::string, sd_bus_track* >  connections_tracker_;
+    std::map<std::string, sd_bus_track*> connections_tracker_;
 
     /*
    == sd-event members==
@@ -470,24 +461,24 @@ private:
     static bool is_valid_message_type(uint8_t message_type);
 
     /*
-    The incoming mailbox is used as a one-way inter-thread lock-free way of communication. 
+    The incoming mailbox is used as a one-way inter-thread lock-free way of communication.
     The inner implementation is explain in the Mailbox class.
-    The input (READ) edge of the mailbox is attached to the event loop as an IO event source 
-    (sd_event_add_io). The event loop fires and event immediately after the message pointer is 
-    written to the pipe.  
-    */    
-    Mailbox     mailbox_in_;   
+    The input (READ) edge of the mailbox is attached to the event loop as an IO event source
+    (sd_event_add_io). The event loop fires and event immediately after the message pointer is
+    written to the pipe.
+    */
+    Mailbox mailbox_in_;
 
     // An event manager to allow sending immediate/periodic events
     // TODO: clear on deinit
     EventManager event_manager_;
 
-    // The pthread_t thread ID of the initializing thread (CCRB thread) 
-    pthread_t   initializer_thread_id_;
+    // The pthread_t thread ID of the initializing thread (CCRB thread)
+    pthread_t initializer_thread_id_;
 
 public:
     /*
-    == API Implementation ==     
+    == API Implementation ==
     */
 
     /**
@@ -531,77 +522,99 @@ public:
      * @return MblError - Error::None for success running the loop, otherwise the failure reason
      */
     MblError stop(MblError stop_status);
-    
+
     /**
-     * @brief Emits signal to the destination application.  
-     * Signal notifies the application that Resource Broker asynchronous process finished with the 
-     * corresponding status. 
-     * 
-     * @param destination_to_update handle of the destination application information. 
+     * @brief Emits signal to the destination application.
+     * Signal notifies the application that Resource Broker asynchronous process finished with the
+     * corresponding status.
+     *
+     * @param destination_to_update handle of the destination application information.
      * @param ret_error sd-bus error description place-holder that is filled in the
      *                  case of an error.
-     * @param signal_name can be 4 types: 
+     * @param signal_name can be 4 types:
      *      DBUS_CC_REGISTER_RESOURCES_STATUS_SIGNAL_NAME           "RegisterResourcesStatus"
      *      DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME         "DeregisterResourcesStatus"
      *      DBUS_CC_ADD_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME       "AddResourceInstancesStatus"
      *      DBUS_CC_REMOVE_RESOURCE_INSTANCES_STATUS_SIGNAL_NAME    "RemoveResourceInstancesStatus"
      * @param status asynchronous process finish status
-     * @return MblError error number in the case of failure in emitting signal, 
+     * @return MblError error number in the case of failure in emitting signal,
      *         or Error::None in case of success.
      */
     /**
-     * TODO: The D-Bus signal functionality is tested manually and not tested by gtests. 
-     * Need to add relevant gtests. See: IOTMBL-1691 
+     * TODO: The D-Bus signal functionality is tested manually and not tested by gtests.
+     * Need to add relevant gtests. See: IOTMBL-1691
      */
-    MblError handle_resource_broker_async_process_status_update(
-        const IpcConnection & destination_to_update,
-        const char* signal_name, 
-        const CloudConnectStatus status);
+    MblError
+    handle_resource_broker_async_process_status_update(const IpcConnection& destination_to_update,
+                                                       const char* signal_name,
+                                                       const CloudConnectStatus status);
 
     /**
- * @brief
- * Send 'deferred event' to the event loop using
- * sd_event_add_defer(). Must be called by CCRB thread only.
- * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
- * @param data - the data to be sent, must be formatted according to the data_type
- * @param data_length - length of data used, must be less than the maximum size allowed
- * @param data_type - the type of data to be sent.
- * @param callback - callback to be called when event is fired
- * @param out_event_id  - generated event id (for debug or to cancel the event)
- * @param description - optional - description for the event cause, can leave empty string or
- * not supply at all
- * @return pair - Error::None and generated event id for success, otherwise the failure reason
- * and UINTMAX_MAX
- */
-    std::pair<MblError, uint64_t> send_event_immediate(Event::EventData data,
+     * @brief
+     * Send 'deferred event' to the event loop using
+     * sd_event_add_defer(). Must be called by CCRB thread only.
+     * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_defer.html#
+     * @param data - the data to be sent. This can be any Plain Old Type (POD)
+     * structure or native type.To transfer a pointer, wrap it in a struct on stuck and use the
+     * struct. Any attempt to use non-POD type will fail compilation (static_assert).
+     * @param data_length - length of data used, must be less than the maximum size allowed
+     * @param callback - callback to be called when event is fired
+     * @param out_event_id  - generated event id (for debug or to cancel the event)
+     * @param description - optional - description for the event cause, can leave empty string or
+     * not supply at all
+     * @return pair - Error::None and generated event id for success, otherwise the failure reason
+     * and UINTMAX_MAX
+     */
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_immediate(T& data,
                                                        unsigned long data_length,
-                                                       Event::EventDataType data_type,
                                                        Event::UserCallback callback,
-                                                       const std::string& description = "");
+                                                       const std::string& description)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-dbus", "Enter");
+        assert(callback);
+
+        // Must be first! only CCRB initializer thread should call this function.
+        assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+        return event_manager_.send_event_immediate(data, data_length, callback, description);
+    }
 
     /**
- * @brief
- * Send 'timed event' to the event loop using sd_event_add_time(). Must be called by CCRB
- * thread only.  CLOCK_MONOTONIC is specified for sd_event_add_time() clock parameter.
- * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_time.html#
- * @param data - the data to be sent, must be formatted according to the data_type
- * @param data_length - length of data used, must be less than the maximum size allowed
- * @param data_type - the type of data to be sent.
- * @param callback - callback to be called when event is fired
- * @param period_millisec  - period in miliseconds after which event will be sent. The event will
- * continue to be sent periodically after each period time. Minimal value for period_millisec is
- * 100 milliseconds.
- * @param description - optional - description for the event cause, can leave empty string or
- * not supply at all
- * @return pair - Error::None and generated event id for success, otherwise the failure reason
- * and UINTMAX_MAX
- */
-    std::pair<MblError, uint64_t> send_event_periodic(Event::EventData data,
+     * @brief
+     * Send 'timed event' to the event loop using sd_event_add_time(). Must be called by CCRB
+     * thread only.  CLOCK_MONOTONIC is specified for sd_event_add_time() clock parameter.
+     * For more details: https://www.freedesktop.org/software/systemd/man/sd_event_add_time.html#
+     * @param data - the data to be sent. This can be any Plain Old Type (POD)
+     * structure or native type.To transfer a pointer, wrap it in a struct on stuck and use the
+     * struct. Any attempt to use non-POD type will fail compilation (static_assert).
+     * @param data_length - length of data used, must be less than the maximum size allowed
+     * @param callback - callback to be called when event is fired
+     * @param period_millisec  - period in miliseconds after which event will be sent. The event
+     * will
+     * continue to be sent periodically after each period time. Minimal value for period_millisec is
+     * 100 milliseconds.
+     * @param description - optional - description for the event cause, can leave empty string or
+     * not supply at all
+     * @return pair - Error::None and generated event id for success, otherwise the failure reason
+     * and UINTMAX_MAX
+     */
+    template <typename T>
+    std::pair<MblError, uint64_t> send_event_periodic(T& data,
                                                       unsigned long data_length,
-                                                      Event::EventDataType data_type,
                                                       Event::UserCallback callback,
                                                       uint64_t period_millisec,
-                                                      const std::string& description = "");
+                                                      const std::string& description)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-dbus", "Enter");
+        assert(callback);
+
+        // Must be first! only CCRB initializer thread should call this function.
+        assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
+
+        return event_manager_.send_event_periodic(
+            data, data_length, callback, period_millisec, description);
+    }
 
     using DBusAdapterState = State::eState;
 

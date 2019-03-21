@@ -85,28 +85,6 @@ MblError DBusAdapter::update_deregistration_status(const IpcConnection& destinat
         destination, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
 }
 
-std::pair<MblError, uint64_t> DBusAdapter::send_event_immediate(Event::EventData data,
-                                                                unsigned long data_length,
-                                                                Event::EventDataType data_type,
-                                                                Event::UserCallback callback,
-                                                                const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    return impl_->send_event_immediate(data, data_length, data_type, callback, description);
-}
-
-std::pair<MblError, uint64_t> DBusAdapter::send_event_periodic(Event::EventData data,
-                                                               unsigned long data_length,
-                                                               Event::EventDataType data_type,
-                                                               Event::UserCallback callback,
-                                                               uint64_t period_millisec,
-                                                               const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    return impl_->send_event_periodic(
-        data, data_length, data_type, callback, period_millisec, description);
-}
-
 std::pair<MblError, std::string> DBusAdapter::generate_access_token()
 {
     TR_DEBUG_ENTER;

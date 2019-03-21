@@ -463,40 +463,42 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
 
     // Process message
     MailboxMsg& msg = ret_pair.second;
-    switch (msg.get_type())
-    {
-    case mbl::MailboxMsg::MsgType::EXIT:
-    {
+    auto data_type_name = msg.get_data_type_name();
+    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
         // EXIT message
 
-        // validate length (sanity check)
-        if (msg.get_payload_len() != sizeof(mbl::MailboxMsg::MsgPayload::MsgExit)) {
-            TR_ERR("Unexpected EXIT message length %zu (expected %zu), returning error=%s",
-                   msg.get_payload_len(),
-                   sizeof(mbl::MailboxMsg::MsgType::EXIT),
+        // validate length (sanity check).In this case the length must be equal the actual length
+        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) {
+            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu),"
+                   " returning error=%s",
+                   msg.get_data_len(),
+                   sizeof(MailboxMsg_Exit),
                    MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
             return (-EBADMSG);
         }
 
         // External thread request to stop event loop
-        auto& payload = msg.get_payload();
-        TR_INFO("receive message EXIT : sending stop request to event loop with stop status=%s",
-                MblError_to_str(payload.exit_.stop_status));
-        int r = event_loop_request_stop(payload.exit_.stop_status);
+        MblError status;
+        MailboxMsg_Exit message_exit;
+        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>();
+        TR_INFO("receive message MailboxMsg_Exit sending stop request to event loop with stop"
+                " status=%s",
+                MblError_to_str(message_exit.stop_status));
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error %s - returing -EBADMSG",
+                   MblError_to_str(status));
+            return (-EBADMSG);
+        }
+        int r = event_loop_request_stop(message_exit.stop_status);
         if (r < 0) {
             TR_ERR("event_loop_request_stop() failed with error %s (r=%d)", strerror(-r), r);
             return r;
         }
-        break;
     }
-    case mbl::MailboxMsg::MsgType::RAW_DATA:
-        // (used for testing) - ignore
-        break;
-
-    default:
+    else
+    {
         // This should never happen
-        TR_ERR("Unexpected MsgType.. Ignoring..");
-        break;
+        TR_ERR("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
     }
 
     return 0; // success
@@ -1134,9 +1136,9 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
         // This section is for external threads exit requests - send EXIT message to mailbox_in_
         // Thread shouldn't block here, but we still supply a maximum timeout of
         // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
-        MailboxMsg::MsgPayload payload;
-        payload.exit_.stop_status = stop_status;
-        MailboxMsg msg(MailboxMsg::MsgType::EXIT, payload, sizeof(payload.exit_));
+        MailboxMsg_Exit message_exit;
+        message_exit.stop_status = stop_status;
+        MailboxMsg msg(message_exit, sizeof(message_exit));
 
         status = mailbox_in_.send_msg(msg);
         if (status != MblError::None) {
@@ -1158,9 +1160,7 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
  * Need to add relevant gtests. See: IOTMBL-1691
  */
 MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
-    const IpcConnection& /*unused*/,
-    const char* signal_name,
-    const CloudConnectStatus status)
+    const IpcConnection& /*unused*/, const char* signal_name, const CloudConnectStatus status)
 {
     TR_DEBUG_ENTER;
     assert(signal_name);
@@ -1189,9 +1189,9 @@ MblError DBusAdapterImpl::handle_resource_broker_async_process_status_update(
     // }
 
     // set destination of signal message
-    
+
     // const char* signal_dest = destination_to_update.get_connection_id().c_str();
-    
+
     // r = sd_bus_message_set_destination(m_signal, signal_dest);
     // if (r < 0) {
     //     TR_ERRNO_F("sd_bus_message_set_destination", r, "(signal destination=%s)", signal_dest);
@@ -1275,38 +1275,6 @@ bool DBusAdapterImpl::State::is_equal(eState state)
 bool DBusAdapterImpl::State::is_not_equal(eState state)
 {
     return (current_ != state);
-}
-
-std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_immediate(Event::EventData data,
-                                                                    unsigned long data_length,
-                                                                    Event::EventDataType data_type,
-                                                                    Event::UserCallback callback,
-                                                                    const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    assert(callback);
-
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    return event_manager_.send_event_immediate(data, data_length, data_type, callback, description);
-}
-
-std::pair<MblError, uint64_t> DBusAdapterImpl::send_event_periodic(Event::EventData data,
-                                                                   unsigned long data_length,
-                                                                   Event::EventDataType data_type,
-                                                                   Event::UserCallback callback,
-                                                                   uint64_t period_millisec,
-                                                                   const std::string& description)
-{
-    TR_DEBUG_ENTER;
-    assert(callback);
-
-    // Must be first! only CCRB initializer thread should call this function.
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
-
-    return event_manager_.send_event_periodic(
-        data, data_length, data_type, callback, period_millisec, description);
 }
 
 } // namespace mbl

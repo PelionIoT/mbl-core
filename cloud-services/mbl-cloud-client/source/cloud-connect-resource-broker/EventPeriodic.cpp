@@ -21,30 +21,6 @@ using namespace std::chrono;
 namespace mbl
 {
 
-EventPeriodic::EventPeriodic(EventData& data,
-                             unsigned long data_length,
-                             EventDataType data_type,
-                             UserCallback user_callback,
-                             EventManagerCallback event_manager_callback,
-                             sd_event* event_loop_handle,
-                             uint64_t period_millisec,
-                             const std::string& description)
-    :
-
-      Event::Event(data,
-                   data_length,
-                   data_type,
-                   user_callback,
-                   event_manager_callback,
-                   event_loop_handle,
-                   description),
-      period_millisec_(period_millisec)
-{
-    TR_DEBUG_ENTER;
-    assert(period_millisec >= min_periodic_event_duration_millisec &&
-           period_millisec <= max_periodic_event_duration_millisec);
-}
-
 int EventPeriodic::immediate_event_handler(sd_event_source* s,
                                            uint64_t microseconds,
                                            void* userdata)
@@ -163,12 +139,11 @@ int EventPeriodic::send()
     send_time_ = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
 
     TR_DEBUG("EventPeriodic send: out_event_id=%" PRIu64 " send_time=%" PRIu64
-             " when_to_expire_microseconds=%" PRIu64 " data_length=%lu data_type=%s description=%s",
+             " when_to_expire_microseconds=%" PRIu64 " data_length=%lu description=%s",
              id_,
              send_time_.count(),
              when_to_expire_microseconds,
              data_length_,
-             Event::EventType_to_str(data_type_),
              description_.c_str());
 
     return 0;
