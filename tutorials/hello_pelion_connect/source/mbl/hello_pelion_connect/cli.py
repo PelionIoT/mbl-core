@@ -11,6 +11,8 @@ import sys
 import os
 import mbl.hello_pelion_connect.hello_pelion_connect as ccapp
 
+__version__ = "1.0.0"
+
 
 class GetValidFile(argparse.Action):
     """Utility class used in CLI argument parser scripts."""
@@ -80,12 +82,13 @@ def _main():
     parser = get_argument_parser()
     args = parser.parse_args()
     info_level = logging.DEBUG if args.verbose else logging.INFO
-
     logging.basicConfig(
         level=info_level,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
     logger = logging.getLogger("hello-pelion-connect")
+    logger.setLevel(info_level)
+    logger.info("Hello-world Pelion Connect app: {}".format(__version__))
     logger.debug("Command line arguments:{}".format(args))
 
     app = ccapp.HelloPelionConnect()
