@@ -43,6 +43,7 @@ else
     cd /tmp/update-resources || exit
     manifest-tool init -q -d arm.com -m dev-device
 
+    # Attempt to save an invalid key and check the result is as expected.
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
     invalid_rejected_ok=$(grep -c "API key not recognised by Pelion Device Management." /tmp/invalid_key)
 
@@ -55,6 +56,7 @@ else
         cat /tmp/invalid_key
     fi
 
+    # Get the Pelion status and check the result is as expected.
     $mbl_command get-pelion-status >& /tmp/get-pelion-status
 
     pelion_not_ok=$(grep -c "Your device is not correctly configured for Pelion Device Management." /tmp/get-pelion-status)
@@ -68,6 +70,7 @@ else
         cat /tmp/get-pelion-status
     fi
 
+    # Attempt to provision for Pelion and check the result is as expected.
     $mbl_command provision-pelion -c "$certificate" anupdatecert -p /tmp/update-resources/update_default_resources.c >& /tmp/provision-pelion
 
     pelion_provisioned_ok=$(grep -c "Provisioning process completed without error." /tmp/provision-pelion)
@@ -80,6 +83,7 @@ else
         cat /tmp/provision-pelion
     fi
 
+    # Get the Pelion status and check the result is as expected.
     $mbl_command get-pelion-status >& /tmp/get-pelion-status
 
     pelion_ok=$(grep -c "Device is configured correctly. You can connect to Pelion Cloud!" /tmp/get-pelion-status)

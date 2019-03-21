@@ -7,11 +7,6 @@ metadata:
     name: Run mbl-cli provisioning test
     description: "Run the Pelion provisioning tests"
 
-params:
-    # pelion_api_key: specifies the api key to use with pelion
-    #
-    pelion_api_key:
-
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-provisioning.sh $pelion_api_key
+        - ./ci/lava/tests/mbl-cli-provisioning.sh
