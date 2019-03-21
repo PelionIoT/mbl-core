@@ -30,18 +30,27 @@ else
 
     overall_result="pass"
 
-    # Install the manifest-tool. This needs a newer version of pip, so get that
-    # as well.
+    # Install the manifest-tool.
     pip3 -qqq install manifest-tool
 
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
     certificate="$(pwd | cut -d"/" -f2)"
 
-    # Run the manifest tool
+    # Run the manifest tool and check the result is as expected.
     mkdir /tmp/update-resources
     cd /tmp/update-resources || exit
-    manifest-tool init -q -d arm.com -m dev-device
+    manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
+
+    if [ "$?" -eq 0 ]
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=manifest-init RESULT=pass>\n"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=manifest-init RESULT=fail>\n"
+        overall_result="fail"
+        cat /tmp/manifest-init
+    fi
+
 
     # Attempt to save an invalid key and check the result is as expected.
     mbl-cli save-api-key invalid_key >& /tmp/invalid_key
@@ -98,6 +107,7 @@ else
     fi
 
 
+    # Output overall result
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=%s>\n" $overall_result
 
 
