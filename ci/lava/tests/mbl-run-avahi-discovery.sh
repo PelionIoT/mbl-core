@@ -4,14 +4,18 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# monitor a running process and kill it if it doesn't return before the counter reaches 0
+# Monitor a running process. Kill the process if it doesn't return before
+# the counter reaches 0.
 monitor_process() {
     pid=$1
     counter=$2
     while ps -p "$pid" > /dev/null
     do
         if [[ $counter -eq 0 ]]; then
+            # avahi has stalled. Kill it and fail the test.
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=fail>"
             kill -9 "$pid"
+            exit 255
         fi
         counter=$((counter-1))
         sleep 1
