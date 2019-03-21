@@ -27,7 +27,9 @@ PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Pelion1/Connect"
 class HelloPelionConnect:
     """Hello Pelion Connect application main class."""
 
-    logger = logging.getLogger("hello-pelion-connect")
+    def __init__(self):
+        """Construct the object."""
+        self.logger = logging.getLogger("hello-pelion-connect")
 
     def setup(self, dbus_session_bus_address):
         """Set up connection to D-Bus."""
