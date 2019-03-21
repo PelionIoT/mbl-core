@@ -58,9 +58,9 @@ CLANG_TIDY_FLAGS = (
 )
 
 CLANG_TIDY_SUPPRESS_WARNING = (
-    ","
-    "-cppcoreguidelines-pro-type-vararg,"
-    "-cppcoreguidelines-pro-bounds-array-to-pointer-decay"
+    ",-cppcoreguidelines-pro-type-vararg"
+    ",-cppcoreguidelines-pro-bounds-array-to-pointer-decay"
+    ",-clang-analyzer-alpha.deadcode.UnreachableCode"
 )
 
 
