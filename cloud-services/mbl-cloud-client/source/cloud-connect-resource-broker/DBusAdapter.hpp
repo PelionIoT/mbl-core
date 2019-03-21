@@ -10,17 +10,11 @@
 // This is header implemenation. In order not to break the Impl pattern, I had to move the tamplate
 // implementation into this hpp file. Anyone who whishes to use the template API, must include this
 // hpp as well after including DBusAdapter.h .
-#ifndef DBusAdapter_h_
-#error "DBusAdapter.h must be included!"
-#endif
-
-#include "CloudConnectExternalTypes.h"
+#include "DBusAdapter.h"
 #include "DBusAdapter_Impl.h"
-#include "Event.h"
 #include "MblError.h"
 
 #include <inttypes.h>
-#include <memory>
 #include <string>
 
 namespace mbl

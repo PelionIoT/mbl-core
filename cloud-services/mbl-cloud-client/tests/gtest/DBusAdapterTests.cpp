@@ -1012,7 +1012,6 @@ TEST(DBusAdapter, enforce_single_connection_unit_test)
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
 
-
 class DBusAdapeterTestFixture2 : public ::testing::Test
 {
 public:
@@ -1030,8 +1029,8 @@ bool DBusAdapeterTestFixture2::periodic_event_passed = false;
 
 MblError DBusAdapeterTestFixture2::basic_send_event_periodic_callback(sd_event_source *, Event *ev)
 {
-    DBusAdapeterTestFixture2::DBusAdapterPtr user_data;
-    MblError status;
+    DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
+    MblError status = MblError::None;
 
     std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
 
@@ -1042,8 +1041,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_periodic_callback(sd_event_s
 
 MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_source *, Event *ev)
 {   
-    DBusAdapeterTestFixture2::DBusAdapterPtr user_data;
-    MblError status;
+    DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
+    MblError status = MblError::None;
 
     std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
     if (status != MblError::None){
@@ -1079,7 +1078,7 @@ TEST(DBusAdapter, basic_send_event)
             DBusAdapeterTestFixture2::basic_send_event_immidiate_callback);
     ASSERT_EQ(iter.first, MblError::None);
     
-    MblError status;
+    MblError status = MblError::None;
     ASSERT_EQ(adapter.run(status), MblError::None);
     ASSERT_EQ(status, MblError::None);
 
