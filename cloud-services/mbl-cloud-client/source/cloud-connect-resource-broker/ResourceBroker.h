@@ -40,17 +40,31 @@ friend ::ResourceBrokerTester;
 friend DBusAdapterImpl;
 
 public:
+
+    /**
+     * @brief Set a shutdown termination flag
+     * Will be handled in main loop
+     * Note: This is temporary until we will move signal handling to dbus event loop
+     * 
+     * @param signal received 
+     */
     void resource_broker_shutdown_handler(int signal);
-    // Only InstanceScoper can create or destroy objects
+
     ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////
     virtual ~ResourceBroker(); //TODO: move to private
 
-    //TODO: description
+    /**
+     * @brief Main loop that create ResourceBroker, initialize and start all components
+     * When terminate signal is arrived - stop function will be called, mbed client unregister
+     * operation will start, and when unregister callback is called - deinit ResourceBroker.
+     * 
+     * @return MblError returns value Error::ShutdownRequested if function terminated due to
+     *         shutdown signal that was handled correctly, 
+     *         or Error::CCRBStartFailed in case start failed.
+     */
     static MblError main();
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // API to be used by MblCloudClient class
-    ////////////////////////////////////////////////////////////////////////////////////////////////
+protected:
 
     /**
      * @brief Starts CCRB.
@@ -68,7 +82,7 @@ public:
      * @brief Stops CCRB.
      * In details: 
      * - stops CCRB event-loop.
-     * - deinitializes CCRB instance.
+     * - deinitialize CCRB instance.
      * 
      * Note: This function should be called only after ResourceBroker::start() being called.
      *       This function should be called only from the same thread as ResourceBroker::start() 
@@ -78,6 +92,65 @@ public:
      *         or Error::CCRBStopFailed otherwise. 
      */
     virtual MblError stop();
+
+    /**
+     * @brief Create mbed client
+     * Register the following Mbed cloud client callbacks:
+     *    Callback function for successful register device
+     *    Callback function for successful un-register device
+     *    Callback function for successful registration update (application resources registration)
+     *    Callback function for monitoring download progress
+     *    Callback function for authorizing firmware downloads and rhandle_authorizeboots
+     *    Callback function for occurred error in the above scenariohandle_authorize
+     * Start mbed client register operation (register device defaulthandle_authorizeresources)
+     * Set internal state to mark that register is in progress
+     * 
+     * @return MblError - Error::ConnectUnknownError - is case mbed client register operation failed
+     *                  - Error::None in case of success
+     */
+    MblError init_mbed_client();
+
+    /**
+     * @brief Deinit mbed client
+     * Called after unregister client is finished as part of deinit operation
+     * Erase mbed client that was created in init_mbed_client()
+     * Stop the mbed event loop thread so no callbacks will be fired
+     */
+    void deinit_mbed_client();
+
+    /**
+     * @brief Unregister mbed client
+     * This will set an atomic enum state to signal main loop that unregister is started
+     * Unregister operation ends when a callback is called by mbed client.
+     * This function is called when terminate signal arrive.
+     */
+    void unregister_mbed_client();
+
+
+    /**
+     * @brief Initialize CCRB instance.
+     * Initialize mbed client using init_mbed_client() API
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError init();
+
+    /**
+     * @brief Deinitialize CCRB instance.
+     * Deinitialize mbed client using deinit_mbed_client() API
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError deinit();
+
+    /**
+     * @brief Run CCRB event-loop.
+     * 
+     * @return MblError returns value Error::None if function succeedhandle_authorizeed, 
+     *         or error code otherwise.
+     */
+    virtual MblError run();
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // API to be used by DBusAdapter class
@@ -178,7 +251,6 @@ public:
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
 
-   
     /**
      * @brief Set resources values for multiple resources. 
      *  
@@ -189,7 +261,7 @@ public:
      * @param inout_set_operations vector of structures that provide all input and 
      *        output parameters to perform setting operation. 
      *        Each entry in inout_set_operations contains:
-     * 
+     * handle_authorize
      *        input fields: 
      *        - input_data is the data that includes resources's path type and value 
      *          of the corresponding resource.
@@ -207,7 +279,6 @@ public:
         IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations);
-
 
     /**
      * @brief Get resources values from multiple resources. 
@@ -240,60 +311,6 @@ public:
         IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceGetOperation> &inout_get_operations);
-
-
-protected:
-
-    void deinit_mbed_client();
-
-    // TODO: add description
-    // This is done before stopping the mbed event loop
-    void unregister_device();
-
-    /**
-     * @brief Setup mbed cloud client and register the device for the first time.
-     * 
-     * @return MblError -
-     *                  Error::ConnectUnknownError is case of failure
-     *                  Error::None in case of success
-     */
-
-    // TODO: add description
-    /**
-     * @brief Register callback function that will be called directly by Mbed cloud client
-     * Register the following Mbed cloud client callbacks:
-     * 1. Callback function for successful register device
-     * 2. Callback function for successful un-register device
-     * 3. Callback function for successful registration update (application resources registration)
-     * 5. Callback function for monitoring download progress
-     * 5. Callback function for authorizing firmware downloads and reboots
-     * 6. Callback function for occurred error in the above scenarios
-     */
-    MblError init_mbed_client();
-
-    /**
-     * @brief Initializes CCRB instance.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError init();
-
-    /**
-     * @brief Deinitialize CCRB instance.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError deinit();
-
-    /**
-     * @brief Run CCRB event-loop.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError run();
 
     /**
      * @brief Inform CCRB that a connection has been closed
@@ -330,7 +347,15 @@ protected:
      */
     void handle_mbed_client_unregistered();
 
-    //TODO: add description
+    /**
+     * @brief Callback function for authorizing firmware downloads and reboots.
+     * Called by mbed client
+     * 
+     * @param request - Request being authorized (enum defined in MbedCloudClient.h):
+     *                  UpdateClient::RequestInvalid
+     *                  UpdateClient::RequestDownload
+     *                  UpdateClient::RequestInstall
+     */
     static void handle_mbed_client_authorize(int32_t request);
 
     /**
@@ -459,17 +484,28 @@ protected:
     void init_mbed_client_function_pointers();
 
     /**
-     * @brief Return registration record using acceess token
+     * @brief Return registration record using access token
      * 
      * @param access_token - access token arrived from ipc adapter
      * @return Registration record
      */
     ResourceBroker::RegistrationRecord_ptr get_registration_record(const std::string& access_token);
 
-    //TODO: add description
+    /**
+     * @brief Get the registration record of an application that is registering its resources.
+     * Only one application is allowed to register its resources at a time.
+     * 
+     * @return RegistrationRecord - if register of application resources is in progress
+     *         or nullptr in case no application is in progress of registering its resources.
+     */
     ResourceBroker::RegistrationRecord_ptr get_registration_record_register_in_progress();
 
-    //TODO: add description
+    /**
+     * @brief Check if register of application resources is in progress
+     * 
+     * @return true - in case register of application resources is in progress
+     * @return false - in case register of application resources is not in progress.
+     */
     bool is_registration_record_register_in_progress();
 
     // Registration record map that holds records of registered / register requests
@@ -502,13 +538,15 @@ protected:
     // Mbed cloud client
     MbedCloudClient* cloud_client_;
     
-    //TODO: description
+    // pointer to a static ResourceBroker instance to be used by callbacks
+    // initialized in ResourceBroker c'tor
     static ResourceBroker* s_ccrb_instance;
 
+    // Dummy network interface needed by cloud_client_->setup API (used only in MbedOS)
     static uint32_t dummy_network_interface_;
 
-    //TODO: description
-    enum State  //////////////////////////// RENAMEEEEEE
+    // Mbed client states
+    enum MbedClientState
     {
         State_ClientUnregisterInProgress,
         State_ClientUnregistered,
@@ -517,10 +555,10 @@ protected:
     };
 
     /**
-     * @brief Atomic enum to signal which state we are in
+     * @brief Atomic enum to signal which state mbed_client is in
      * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
      */
-    std::atomic<State> state_;
+    std::atomic<MbedClientState> mbed_client_state_;
 
     // Access token of the current operation against Mbed client
     std::string reg_update_in_progress_access_token_;

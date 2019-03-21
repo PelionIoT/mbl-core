@@ -17,7 +17,6 @@
 
 #include "TestInfra.h"
 #include "ResourceDefinitionJson.h"
-#include "MblCloudClient.h"
 #include "ResourceDefinitionParser.h"
 #include "TestInfra.h"
 

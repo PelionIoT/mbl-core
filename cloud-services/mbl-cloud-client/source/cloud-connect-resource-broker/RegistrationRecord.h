@@ -105,18 +105,26 @@ public:
      */
     const IpcConnection& get_registration_source() const { return registration_source_; }
 
-    //TODO: description
+    // Registration state
     enum RegistrationState
     {
-        StateUnregistered, /////////////////////////// rename
-        StateRegistrationInProgress,
-        StateRegistered
+        State_Unregistered,
+        State_RegistrationInProgress,
+        State_Registered
     };
 
-    //TODO: description
+    /**
+     * @brief Return registrate state
+     * 
+     * @return RegistrationState - registrate state
+     */
     inline RegistrationState get_registration_state() const {return state_.load();};
 
-    //TODO: description
+    /**
+     * @brief Set registration state
+     * 
+     * @param state  - Registration state
+     */
     inline void set_registration_state(RegistrationState state) {state_.store(state);}
 
     /**
@@ -155,7 +163,8 @@ private:
      */
     std::atomic<RegistrationState> state_;
 
-    M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
+    // Cloud client M2M object list used for registration
+    M2MObjectList m2m_object_list_; 
 };
 
 } // namespace mbl

@@ -42,7 +42,7 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
     mock_init_mbed_client();
 
     // Mark device as registered to Pelion
-    resource_broker_.state_.store(mbl::ResourceBroker::State_ClientRegistered);
+    resource_broker_.mbed_client_state_.store(mbl::ResourceBroker::State_ClientRegistered);
 
     if(use_mock_dbus_adapter) {
         // Init resource broker ipc to be DBusAdapterMock:
@@ -139,7 +139,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
     // Make sure registration_record is not yet registered
-    ASSERT_FALSE(mbl::RegistrationRecord::StateRegistered == 
+    ASSERT_FALSE(mbl::RegistrationRecord::State_Registered == 
         registration_record->get_registration_state());
 
     if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
@@ -149,7 +149,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         resource_broker_.handle_mbed_client_registration_updated();
         
         // Make sure registration record is marked as registered
-        ASSERT_TRUE(mbl::RegistrationRecord::StateRegistered == 
+        ASSERT_TRUE(mbl::RegistrationRecord::State_Registered == 
             registration_record->get_registration_state());
     } else {
         // Check registration failure flow
@@ -168,7 +168,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         dbus_adapter_tester.get_register_cloud_connect_status());
 
     // Verify internal state is back to registered
-    mbl::ResourceBroker::State state = resource_broker_.state_.load();
+    mbl::ResourceBroker::MbedClientState state = resource_broker_.mbed_client_state_.load();
     ASSERT_TRUE(mbl::ResourceBroker::State_ClientRegistered == state);
 }
 
