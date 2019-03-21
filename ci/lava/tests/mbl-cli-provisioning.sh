@@ -42,7 +42,7 @@ else
     cd /tmp/update-resources || exit
     manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
 
-    if [ "$?" -eq 0 ]
+    if $(manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init)
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=manifest-init RESULT=pass>\n"
     else
