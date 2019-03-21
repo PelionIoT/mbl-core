@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TRACE_GROUP "ccrb-mailbox"
-
 #include "Mailbox.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
@@ -17,6 +15,8 @@
 #include <cerrno>
 #include <cstdlib>
 #include <memory>
+
+#define TRACE_GROUP "ccrb-mailbox"
 
 namespace mbl
 {
@@ -221,11 +221,12 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
         // write was successful!, write to log and release the unique ptr .
         // be carefull not to dereference the unique_ptr, it might be free!
 
-        TR_INFO("Message sent via %s mailbox. sequence_num_=%" PRIu64 " payload_len_=%zu type=%s",
+        TR_INFO("Message sent via %s mailbox. sequence_num_=%" PRIu64 " padata_len_yload_len_=%zu"
+                " type=%s",
                 get_name(),
                 msg_to_send.sequence_num_,
-                msg_to_send.payload_len_,
-                msg_to_send.MsgType_to_str());
+                msg_to_send.data_len_,
+                msg_to_send.data_type_name_.c_str());
 
         // FIXME - remove later (keep for debug)
         // TR_DEBUG("Message ptr_to_write=%p", ptr_to_write);
@@ -310,11 +311,10 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
     }
     assert(MailboxMsg::MSG_PROTECTION_FIELD == msg_->protection_field_);
 
-    TR_INFO("Message received via %s mailbox.sequence_num=%" PRIu64 " payload_len_=%zu type=%s",
+    TR_INFO("Message received via %s mailbox.sequence_num=%" PRIu64 " data_len_=%zu",
             get_name(),
             msg_->sequence_num_,
-            msg_->payload_len_,
-            msg_->MsgType_to_str());
+            msg_->data_len_);
 
     // FIXME - remove later (keep for debug)
     // TR_DEBUG("msg_=%p", msg_);

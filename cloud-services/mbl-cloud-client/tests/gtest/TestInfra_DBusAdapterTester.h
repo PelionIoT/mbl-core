@@ -14,6 +14,12 @@
 typedef struct sd_event sd_event;
 typedef int (*sd_event_handler_t)(sd_event_source* s, void* userdata);
 
+
+struct EventData_Raw
+{
+    char bytes[100];
+};
+
 /**
  * @brief This calls allow test body to access private members of DBusAdapter and DBusAdapterImpl
  * Both classes declare this class as friend to allow private members access.
@@ -74,21 +80,30 @@ public:
     /**
      * @brief Invokes EventManager::send_event_immediate
      */
-    std::pair<mbl::MblError, uint64_t> send_event_immediate(mbl::Event::EventData data,
+    template <typename T>
+    std::pair<mbl::MblError, uint64_t> send_event_immediate(T & data,
                                                             unsigned long data_length,
-                                                            mbl::Event::EventDataType data_type,
                                                             mbl::Event::UserCallback callback,
-                                                            const std::string& description = "");
+                                                            const std::string& description="")
+    {
+        return adapter_.impl_->event_manager_.send_event_immediate(
+            data, data_length, callback, std::string(description));
+    }
 
     /**
      * @brief Invokes EventManager::send_event_periodic
      */
-    std::pair<mbl::MblError, uint64_t> send_event_periodic(mbl::Event::EventData data,
-                                                           unsigned long data_length,
-                                                           mbl::Event::EventDataType data_type,
-                                                           mbl::Event::UserCallback callback,
-                                                           uint64_t period_millisec,
-                                                           const std::string& description = "");
+    std::pair<mbl::MblError, uint64_t>
+    send_event_periodic(EventData_Raw & data,
+                        unsigned long data_length,
+                        mbl::Event::UserCallback callback,
+                        uint64_t period_millisec,
+                        const std::string& description="")
+    {
+        return adapter_.impl_->event_manager_.send_event_periodic(
+            data, data_length, callback, period_millisec, std::string(description));
+    }
+
 
     /**
      * @brief Calls sd_event_source_unref

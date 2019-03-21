@@ -98,88 +98,7 @@ void EventManager::do_send_event(std::unique_ptr<Event>& ev)
     events_[ev->get_id()] = std::move(ev);
 }
 
-std::pair<MblError, uint64_t> EventManager::send_event_immediate(Event::EventData data,
-                                                                 unsigned long data_length,
-                                                                 Event::EventDataType data_type,
-                                                                 Event::UserCallback callback,
-                                                                 const std::string& description)
-{
-    TR_DEBUG_ENTER;
-
-    if (!validate_common_event_parameters(data_type, data_length)) {
-        return std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
-    }
-    // create the event
-    std::unique_ptr<Event> ev(new EventImmediate(
-        data,
-        data_length,
-        data_type,
-        callback,
-        std::bind(
-            &EventManager::unmanage_event, this, std::placeholders::_1, std::placeholders::_2),
-        event_loop_handle_,
-        description));
-
-    uint64_t id = ev->get_id();
-
-    do_send_event(ev);
-
-    return std::make_pair(MblError::None, id);
-}
-
-std::pair<MblError, uint64_t> EventManager::send_event_periodic(Event::EventData data,
-                                                                unsigned long data_length,
-                                                                Event::EventDataType data_type,
-                                                                Event::UserCallback callback,
-                                                                uint64_t period_millisec,
-                                                                const std::string& description)
-{
-    TR_DEBUG_ENTER;
-
-    if (!validate_periodic_event_parameters(data_type, data_length, period_millisec)) {
-        return std::make_pair(MblError::DBA_InvalidValue, UINTMAX_MAX);
-    }
-
-    // create the event
-    std::unique_ptr<Event> ev(new EventPeriodic(
-        data,
-        data_length,
-        data_type,
-        callback,
-        std::bind(
-            &EventManager::unmanage_event, this, std::placeholders::_1, std::placeholders::_2),
-        event_loop_handle_,
-        period_millisec,
-        description));
-
-    uint64_t id = ev->get_id();
-
-    do_send_event(ev);
-
-    return std::make_pair(MblError::None, id);
-}
-
-bool EventManager::validate_common_event_parameters(Event::EventDataType data_type,
-                                                    unsigned long data_length)
-{
-    switch (data_type)
-    {
-    case Event::EventDataType::RAW:
-        if (data_length > Event::EventData::MAX_BYTES) {
-            TR_ERR(
-                "Illegal data_length of size %lu > %d", data_length, Event::EventData::MAX_BYTES);
-            return false;
-        }
-        break;
-    default: TR_ERR("Invalid data_type!"); return false;
-    }
-
-    return true;
-}
-
-bool EventManager::validate_periodic_event_parameters(Event::EventDataType data_type,
-                                                      unsigned long data_length,
-                                                      uint64_t period_millisec)
+bool EventManager::validate_periodic_event_parameters(uint64_t period_millisec)
 {
     if (period_millisec < EventPeriodic::min_periodic_event_duration_millisec ||
         period_millisec > EventPeriodic::max_periodic_event_duration_millisec)
@@ -192,7 +111,7 @@ bool EventManager::validate_periodic_event_parameters(Event::EventDataType data_
         return false;
     }
 
-    return validate_common_event_parameters(data_type, data_length);
+    return true;
 }
 
 } // namespace mbl {

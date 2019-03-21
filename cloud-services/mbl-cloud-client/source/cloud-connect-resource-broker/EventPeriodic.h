@@ -7,6 +7,7 @@
 #ifndef _EventPeriodic_h_
 #define _EventPeriodic_h_
 
+#include "CloudConnectTrace.h"
 #include "Event.h"
 #include "MblError.h"
 
@@ -36,22 +37,36 @@ public:
     /**
      * @brief Public ctor - Construct a new Periodic Event object.
      *
+     * @tparam T - the data template type
      * @param data - the data payload
-     * @param data_length - length of actual used data in bytes - can't be more than maximum allowed
+     * @param data_length - length of actual used data in bytes - can't be more than size(T)
      * by the matching type in EventData
      * @param data_type the data type
      * @param user_callback - user supplied callback to be called when event fired by event manager
      * @param event_manager_cb - callback to the event manager unmanage_event() method
      * @param description - description as std::string
      */
-    EventPeriodic(EventData& data,
+    template <typename T>
+    EventPeriodic(T& data,
                   unsigned long data_length,
-                  EventDataType data_type,
                   UserCallback user_callback,
                   EventManagerCallback event_manager_callback,
                   sd_event* event_loop_handle,
                   uint64_t period_millisec,
-                  const std::string& description);
+                  const std::string& description)
+        : Event::Event(data,
+                       data_length,
+                       user_callback,
+                       event_manager_callback,
+                       event_loop_handle,
+                       description),
+          period_millisec_(period_millisec)
+    {
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
+
+        assert(period_millisec >= min_periodic_event_duration_millisec &&
+               period_millisec <= max_periodic_event_duration_millisec);
+    }
 
     // Getters - inline implemented
     inline uint64_t get_period_millisec() const { return period_millisec_; }
