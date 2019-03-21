@@ -287,8 +287,8 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, 
 {
     UNUSED(s);
     TR_DEBUG_ENTER;
-    EventData_Raw event_data; 
-    MblError status;   
+    EventData_Raw event_data {0}; 
+    MblError status = MblError::None;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
 
     std::tie(status, event_data) = ev->unpack_data<EventData_Raw>();

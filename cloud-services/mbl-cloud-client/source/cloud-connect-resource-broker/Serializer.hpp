@@ -29,7 +29,7 @@ MblError pack_data(const char* trace_group, T const& data, std::stringstream& se
 {
     mbed_tracef(TRACE_LEVEL_DEBUG, trace_group, "Enter");
 
-    // this only works on built in data types (PODs)
+    // Static assert - make sure user will try to compile only built in data types (PODs)
     static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                   "None POD types are not supported with this function!");
 
@@ -63,6 +63,7 @@ std::pair<MblError, T> unpack_data(const char* trace_group, std::stringstream& s
 {
     mbed_tracef(TRACE_LEVEL_DEBUG, trace_group, "Enter");
 
+    // Static assert - make sure user will try to compile only built in data types (PODs)
     static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                   "None POD types are not supported with this function!");
     T data;

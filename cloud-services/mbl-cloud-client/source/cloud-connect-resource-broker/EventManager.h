@@ -152,16 +152,6 @@ private:
     void do_send_event(std::unique_ptr<Event>& ev);
 
     /**
-     * @brief called by send_event_immediate().
-     * Checks parameters validity.
-     * @param data_type - the type of data to be sent.
-     * @param data_length - length of data used, must be less than the maximum size allowed
-     * @return bool - true if parameters are valid, else false
-     */
-    // bool validate_common_event_parameters(EventDataType data_type,
-    //                                     unsigned long data_length);
-
-    /**
      * @brief called by send_event_periodic().
      * Checks parameters validity.
      * @param data_type - the type of data to be sent.

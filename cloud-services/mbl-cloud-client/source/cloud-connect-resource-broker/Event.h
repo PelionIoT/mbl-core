@@ -16,8 +16,6 @@
 #include <functional>
 #include <sstream>
 
-using namespace std::chrono;
-
 typedef struct sd_event sd_event;
 typedef struct sd_event_source sd_event_source;
 
@@ -61,6 +59,7 @@ public:
     {
         mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
 
+        // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
         return mbl::unpack_data<T>("ccrb-event", serializer_);
@@ -141,7 +140,8 @@ protected:
           user_callback_(user_callback),
           event_manager_callback_(std::move(event_manager_callback)),
           description_(std::string(description)),
-          creation_time_(duration_cast<milliseconds>(system_clock::now().time_since_epoch())),
+          creation_time_(std::chrono::duration_cast<std::chrono::milliseconds>(
+              std::chrono::system_clock::now().time_since_epoch())),
           fire_time_(0),
           send_time_(0),
           sd_event_source_(nullptr),
@@ -176,7 +176,7 @@ protected:
     {
         mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
 
-        // this only works on built in data types (PODs)
+        // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
 

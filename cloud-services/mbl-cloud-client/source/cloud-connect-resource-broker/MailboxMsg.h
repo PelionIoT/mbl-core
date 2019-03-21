@@ -32,7 +32,7 @@ class MailboxMsg
     friend class Mailbox;
 
 public:
-    static const int MSG_PROTECTION_FIELD = 0xFF128593;
+    static const long int MSG_PROTECTION_FIELD = 0xFF128593L;
 
     /**
      * @brief Construct a new Mailbox Msg object -
@@ -102,6 +102,7 @@ public:
     {
         mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
 
+        // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
         return mbl::unpack_data<T>("ccrb-event", serializer_);
@@ -135,7 +136,7 @@ private:
     {
         mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
 
-        // this only works on built in data types (PODs)
+        // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
 
@@ -154,7 +155,7 @@ private:
     uint64_t sequence_num_;
 
     // protection field to assert for integrity
-    long protection_field_ = 0;
+    long int protection_field_ = 0;
 
     // information about the type stored
     std::string data_type_name_;

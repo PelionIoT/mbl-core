@@ -14,7 +14,7 @@
 
 #define TRACE_GROUP "ccrb-event"
 
-// using namespace std::chrono;
+using namespace std::chrono;
 
 namespace mbl
 {

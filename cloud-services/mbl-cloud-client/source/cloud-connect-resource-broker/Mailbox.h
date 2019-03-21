@@ -122,7 +122,7 @@ public:
 private:
     static constexpr int READ = 0;
     static constexpr int WRITE = 1;
-    static constexpr int DBUS_MAILBOX_PROTECTION_FLAG = 0xF0F0F0F0;
+    static constexpr long int DBUS_MAILBOX_PROTECTION_FLAG = 0xF0F0F0F0L;
 
     /**
      * @brief - implements init()
@@ -141,7 +141,7 @@ private:
     std::string name_;
 
     // use to protect against corruption and mark that mailbox is initialized
-    int protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
+    long int protection_flag_ = DBUS_MAILBOX_PROTECTION_FLAG;
 
     // Store read (0) and write (1) file descriptors for the pipe
     int pipefds_[2];
