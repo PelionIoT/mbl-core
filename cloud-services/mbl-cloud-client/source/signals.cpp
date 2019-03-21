@@ -47,8 +47,14 @@ MblError signals_init()
         tr_error("Failed to set SIGINT signal handler: %s", std::strerror(errno));
         return Error::SignalsInitSigaction;
     }
-
-    ////////////// OTHER SIG?
+    if (sigaction(SIGHUP, &shutdown_sa, 0) != 0) {
+        tr_error("Failed to set SIGHUP signal handler: %s", std::strerror(errno));
+        return Error::SignalsInitSigaction;
+    }
+    if (sigaction(SIGQUIT, &shutdown_sa, 0) != 0) {
+        tr_error("Failed to set SIGQUIT signal handler: %s", std::strerror(errno));
+        return Error::SignalsInitSigaction;
+    }
 
     // Log reopen
     struct sigaction log_sa;
