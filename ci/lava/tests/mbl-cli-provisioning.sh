@@ -40,9 +40,8 @@ else
     # Run the manifest tool and check the result is as expected.
     mkdir /tmp/update-resources
     cd /tmp/update-resources || exit
-    manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
 
-    if $(manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init)
+    if manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=manifest-init RESULT=pass>\n"
     else
