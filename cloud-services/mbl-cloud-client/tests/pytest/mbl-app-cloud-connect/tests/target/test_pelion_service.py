@@ -3,9 +3,10 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Hello-world Pelion Connect application."""
+"""Pelion Connect service end to end tests."""
 
 import logging
+import os
 from pydbus import SessionBus
 from gi.repository import GLib
 import xml.etree.ElementTree as ET
@@ -13,6 +14,8 @@ import pytest
 from pytests_utils import PELION_CONNECT_DBUS_NAME
 from pytests_utils import PELION_CONNECT_DBUS_OBJECT_PATH
 from pytests_utils import PELION_CONNECT_DBUS_INTERFACE_NAME
+from pytests_utils import PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
+from pytests_utils import DISPLAY
 
 @pytest.mark.parametrize("method_name,expected_result", [
         ("RegisterResources", {"in": ["s"], "out": ["u", "s"] } ),
@@ -21,7 +24,7 @@ from pytests_utils import PELION_CONNECT_DBUS_INTERFACE_NAME
     ])
 
 class TestPelionConnectAPI:
-    """Tests Pelion Connect D-Bus API methods."""
+    """Pelion Connect D-Bus API methods test."""
 
     logger = logging.getLogger("pytest-pelion-connect")
 
@@ -38,7 +41,7 @@ class TestPelionConnectAPI:
         )
 
 #        os.environ["DISPLAY"] = DISPLAY
-#        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_CLOUD_BUS_ADDRESS
+#        os.environ["DBUS_SESSION_BUS_ADDRESS"] = PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
 
         # get the session bus
         try:
