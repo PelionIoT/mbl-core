@@ -31,7 +31,12 @@ class TestPelion:
     """Introspect test."""
 
     logger = logging.getLogger("pytest-pelion-connect")
-    
+
+
+    ###########################################################################
+    # setup() and teardown() common methods
+    ###########################################################################
+
     def setup_method(self, method):
         """Set up connection to D-Bus."""
         print(
@@ -76,6 +81,10 @@ class TestPelion:
             )
         )
 
+    ###########################################################################
+    # Introspection test
+    ###########################################################################
+
     def find_sub_element(self, parent_element, element_tag, element_attrib_name):
 
         # find all elements with tag == element_tag under the parent_element
@@ -91,17 +100,18 @@ class TestPelion:
 
     def test_introspect(self):
         """Verifies existence of the expected D-Bus methods 
-        in the Pelion Connect D-Bus interface."""
+        in the Pelion Connect D-Bus interface.
+        """
 
-        expected_dbus_method_names = [
-            "RegisterResources", 
-            "SetResourcesValues", 
-            "GetResourcesValues"
-            ]
+        expected_dbus_signatures = {
+            "RegisterResources" : {"in":["s"], "out":["u", "s"]}, 
+            "SetResourcesValues" : {"in":["s","a(syv)"], "out":["au"]}, 
+            "GetResourcesValues" : {"in":["s","a(sy)"], "out":["a(uyv)"]},
+        }
 
         print(
             "Verifying {} methods in the {} interface...".format(
-                expected_dbus_method_names,
+                expected_dbus_signatures.keys(),
                 PELION_CONNECT_DBUS_INTERFACE_NAME
             )
         )
@@ -126,13 +136,35 @@ class TestPelion:
             PELION_CONNECT_DBUS_INTERFACE_NAME
         )
 
-        for method_name in expected_dbus_method_names:
+        for method_name in expected_dbus_signatures.keys():
             # verify existence of the required methods under the Pelion interface
             method_node = self.find_sub_element(pelion_interface, "method", method_name)
 
             assert method_node is not None, "Couldn't find {} method".format(
                 method_name
             )
+
+            # verify signature of the method
+
+            # get all arg's for this method
+            args = method_node.findall("arg")
+
+            types_for_check = ["in", "out"]
+
+            # for input and output types, 
+            # collect actual types of and verify against expected 
+            for type_for_check in types_for_check:
+                actual_types = []
+                for arg in args:
+                    if arg.attrib['direction'] == type_for_check:
+                        actual_types.append(arg.attrib['type'])
+
+                assert expected_dbus_signatures[method_name][type_for_check] == actual_types, "Expected {} types {} for the method {} differs from actual types {}!".format(
+                        type_for_check,
+                        expected_dbus_signatures[method_name][type_for_check],
+                        method_name,
+                        actual_types
+                    )
 
 
 
