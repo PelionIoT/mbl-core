@@ -10,6 +10,8 @@
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed_cloud_client_user_config.h"
 #include "ns-hal-pal/ns_event_loop.h"
+#include "EventPeriodic.h" ////////////////////////////////////////// ??? need that?
+#include "DBusAdapter.hpp"
 
 #include <cassert>
 #include <csignal>
@@ -23,7 +25,7 @@ static volatile sig_atomic_t g_shutdown_signal_once = 0;
 // Period between re-registrations with the LWM2M server.
 // MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
 // re-registration (keepalive)
-static const int g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
+static const uint64_t g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
 
 // This is temporary until we will move signal handling to dbus event loop
 extern "C" void resource_broker_shutdown_handler(int signal)
@@ -249,12 +251,20 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     TR_DEBUG_ENTER;
 
     UNUSED(s);
+
     assert(ev);
+    EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
+    TR_DEBUG("%s event", periodic_ev->get_description().c_str());
 
-    TR_DEBUG("%s event", ev->get_description().c_str());
+    std::pair<MblError, EventData_Keepalive> unpack_pair = 
+        periodic_ev->unpack_data<EventData_Keepalive>();
+    if(unpack_pair.first != Error::None) {
+        TR_ERR("Unpack of periodic event failed with error %s", MblError_to_str(unpack_pair.first));
+        return unpack_pair.first;
+    }
 
-    ResourceBroker* const this_ccrb =
-        static_cast<ResourceBroker*>(ev->get_data().user_data); // NOLINT
+    ResourceBroker* const this_ccrb = unpack_pair.second.ccrb_this;
+    assert(this_ccrb);
 
     MbedClientState current_state = this_ccrb->mbed_client_state_.load();
     // Check if application registration update is in progress
@@ -359,16 +369,15 @@ MblError ResourceBroker::init()
         return init_mbed_clinet_status;
     }
 
-    // Set keepalive periodic event
-    Event::EventData event_data = {0};
-    event_data.user_data = this; // NOLINT
+    //Set keepalive periodic event
+    EventData_Keepalive event_data = { this };
     std::pair<MblError, uint64_t> ret_pair =
-        ipc_adapter_->send_event_periodic(event_data,
-                                          sizeof(event_data.user_data), // NOLINT
-                                          Event::EventDataType::USER_DATA_TYPE,
-                                          ResourceBroker::periodic_keepalive_callback,
-                                          g_keepalive_period_miliseconds,
-                                          "Mbed cloud client keep-alive");
+        ipc_adapter_->send_event_periodic<EventData_Keepalive>(
+                        event_data,
+                        sizeof(event_data),
+                        ResourceBroker::periodic_keepalive_callback,
+                        g_keepalive_period_miliseconds,
+                        std::string("Mbed cloud client keep-alive"));
 
     if (Error::None != ret_pair.first) {
         TR_ERR("send_event_periodic keep-alive failed with error %s",

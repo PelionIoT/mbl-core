@@ -359,6 +359,15 @@ protected:
     static void handle_mbed_client_authorize(int32_t request);
 
     /**
+     * @brief Keepalive periodic event data
+     * 
+     */
+    struct EventData_Keepalive
+    {
+        ResourceBroker* ccrb_this;
+    };
+
+    /**
      * @brief Periodic keepalive callback to notify Mbed cloud client that device is alive
      * 
      * @param s - event source

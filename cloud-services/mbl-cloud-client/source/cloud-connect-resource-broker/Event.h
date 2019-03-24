@@ -45,7 +45,7 @@ public:
     virtual ~Event();
 
     /**
-     * @brief Templated deserialization function. Fill a reference of type T by reading cytes from
+     * @brief Templated deserialization function. Fill a reference of type T by reading bytes from
      * serializer_.
      *
      * @tparam T The type to fill the serialized data in
