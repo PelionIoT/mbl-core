@@ -22,6 +22,7 @@ DISPLAY = "0"
 # Pelion connect D-Bus properties
 PELION_CONNECT_DBUS_NAME = "com.mbed.Pelion1"
 PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Pelion1/Connect"
+PELION_CONNECT_DBUS_INTERFACE_NAME = "com.mbed.Pelion1.Connect"
 
 
 class IntrospectTest:
@@ -73,25 +74,29 @@ class IntrospectTest:
             )
         )
 
-    def sub_element_is_exist(self, parent_element, element_tag, element_attrib_name):
+
+
+    def find_sub_element(self, parent_element, element_tag, element_attrib_name):
+
+        # find all elements with tag == element_tag under the parent_element
         elements = parent_element.findall(element_tag)
+
         for element in elements:
-            #print(element)
-            print(element.attrib['name'])
             
             if element.attrib['name'] == element_attrib_name:
+                # element with tag == element_tag is found
                 return element
 
-        # required elemnt is not found
-        raise KeyError("AAAAAAAAAAAAAAAAAAAa")
-    
-    
+        return None
 
-    def introspect_test(self, expected_dbus_api_methods):
-        """Verifies existence of the expected D-Bus methods in the Pelion Connect D-Bus interface."""
+
+    def introspect_test(self, expected_dbus_method_names):
+        """Verifies existence of the expected D-Bus methods 
+        in the Pelion Connect D-Bus interface."""
         print(
-            "Verifying {} methods...".format(
-                expected_dbus_api_methods
+            "Verifying {} methods in the {} interface...".format(
+                expected_dbus_method_names,
+                PELION_CONNECT_DBUS_INTERFACE_NAME
             )
         )
 
@@ -105,15 +110,26 @@ class IntrospectTest:
             )
             raise glib_err
 
-        print(
-            "Introspect method call returned: {}".format(introspect_reply)
-        )
-        
+        #parse json data
         root = ET.fromstring(introspect_reply)
-        
-        self.sub_element_is_exist(root, "interface", "com.mbed.Pelion1.Connect")
 
-        
+        # verify existence of the Pelion interface under the 'root'
+        pelion_interface = self.find_sub_element(root, "interface", PELION_CONNECT_DBUS_INTERFACE_NAME)
+
+        assert pelion_interface is not None, "Couldn't find {} interface".format(
+            PELION_CONNECT_DBUS_INTERFACE_NAME
+        )
+
+        for method_name in expected_dbus_method_names:
+            # verify existence of the required methods under the Pelion interface
+            method_node = self.find_sub_element(pelion_interface, "method", method_name)
+
+            assert method_node is not None, "Couldn't find {} method".format(
+                method_name
+            )
+
+
+
 print("create IntrospectTest...")
 app = IntrospectTest()
 
@@ -121,7 +137,7 @@ print("setup IntrospectTest...")
 app.setup("unix:path=/var/run/dbus/mbl_cloud_bus_socket")
 
 print("test IntrospectTest...")
-app.introspect_test(0)
+app.introspect_test(["RegisterResources", "SetResourcesValues", "GetResourcesValues"])
 
 
-# replace print to print or print
+# replace print to log.error or log.info
