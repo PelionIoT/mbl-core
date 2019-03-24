@@ -85,19 +85,6 @@ class TestPelion:
     # Introspection test
     ###########################################################################
 
-    def find_sub_element(self, parent_element, element_tag, element_attrib_name):
-
-        # find all elements with tag == element_tag under the parent_element
-        elements = parent_element.findall(element_tag)
-
-        for element in elements:
-            
-            if element.attrib['name'] == element_attrib_name:
-                # element with tag == element_tag is found
-                return element
-
-        return None
-
     def test_introspect(self):
         """Verifies existence of the expected D-Bus methods 
         in the Pelion Connect D-Bus interface.
@@ -108,6 +95,7 @@ class TestPelion:
             "SetResourcesValues" : {"in":["s","a(syv)"], "out":["au"]}, 
             "GetResourcesValues" : {"in":["s","a(sy)"], "out":["a(uyv)"]},
         }
+
 
         print(
             "Verifying {} methods in the {} interface...".format(
@@ -130,42 +118,37 @@ class TestPelion:
         root = ET.fromstring(introspect_reply)
 
         # verify existence of the Pelion interface under the 'root'
-        pelion_interface = self.find_sub_element(root, "interface", PELION_CONNECT_DBUS_INTERFACE_NAME)
-
+        pelion_interface = root.find("./interface[@name='" + PELION_CONNECT_DBUS_INTERFACE_NAME + "']")
+        
         assert pelion_interface is not None, "Couldn't find {} interface".format(
             PELION_CONNECT_DBUS_INTERFACE_NAME
         )
 
         for method_name in expected_dbus_signatures.keys():
             # verify existence of the required methods under the Pelion interface
-            method_node = self.find_sub_element(pelion_interface, "method", method_name)
+            method_node = pelion_interface.find("./method[@name='" + method_name + "']")
 
             assert method_node is not None, "Couldn't find {} method".format(
                 method_name
             )
 
             # verify signature of the method
-
-            # get all arg's for this method
-            args = method_node.findall("arg")
-
-            types_for_check = ["in", "out"]
+            directions = ["in", "out"]
 
             # for input and output types, 
             # collect actual types of and verify against expected 
-            for type_for_check in types_for_check:
-                actual_types = []
-                for arg in args:
-                    if arg.attrib['direction'] == type_for_check:
-                        actual_types.append(arg.attrib['type'])
+            for direction in directions:
+                
+                actual_types_signatures = []
+                # get all arg's signatures for this method for given direction
+                for arg_node in method_node.findall("./arg[@direction='" + direction + "']"):
+                    actual_types_signatures.append(arg_node.attrib['type'])
 
-                assert expected_dbus_signatures[method_name][type_for_check] == actual_types, "Expected {} types {} for the method {} differs from actual types {}!".format(
-                        type_for_check,
-                        expected_dbus_signatures[method_name][type_for_check],
+                assert expected_dbus_signatures[method_name][direction] == actual_types_signatures, "Expected {} types {} for the method {} differs from actual types {}!".format(
+                        direction,
+                        expected_dbus_signatures[method_name][direction],
                         method_name,
-                        actual_types
+                        actual_types_signatures
                     )
-
-
 
 # replace print to log.error or log.info
