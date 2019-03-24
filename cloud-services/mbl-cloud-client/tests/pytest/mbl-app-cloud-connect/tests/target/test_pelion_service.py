@@ -23,14 +23,16 @@ DISPLAY = "0"
 PELION_CONNECT_DBUS_NAME = "com.mbed.Pelion1"
 PELION_CONNECT_DBUS_OBJECT_PATH = "/com/mbed/Pelion1/Connect"
 PELION_CONNECT_DBUS_INTERFACE_NAME = "com.mbed.Pelion1.Connect"
+DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 
 
-class IntrospectTest:
+
+class TestPelion:
     """Introspect test."""
 
     logger = logging.getLogger("pytest-pelion-connect")
-
-    def setup(self, dbus_session_bus_address):
+    
+    def setup_method(self, method):
         """Set up connection to D-Bus."""
         print(
             "Connecting to D-Bus {} D-Bus object {}...".format(
@@ -39,7 +41,7 @@ class IntrospectTest:
         )
 
 #        os.environ["DISPLAY"] = DISPLAY
-#        os.environ["DBUS_SESSION_BUS_ADDRESS"] = dbus_session_bus_address
+#        os.environ["DBUS_SESSION_BUS_ADDRESS"] = DBUS_MBL_CLOUD_BUS_ADDRESS
 
         # get the session bus
         try:
@@ -74,8 +76,6 @@ class IntrospectTest:
             )
         )
 
-
-
     def find_sub_element(self, parent_element, element_tag, element_attrib_name):
 
         # find all elements with tag == element_tag under the parent_element
@@ -89,10 +89,16 @@ class IntrospectTest:
 
         return None
 
-
-    def introspect_test(self, expected_dbus_method_names):
+    def test_introspect(self):
         """Verifies existence of the expected D-Bus methods 
         in the Pelion Connect D-Bus interface."""
+
+        expected_dbus_method_names = [
+            "RegisterResources", 
+            "SetResourcesValues", 
+            "GetResourcesValues"
+            ]
+
         print(
             "Verifying {} methods in the {} interface...".format(
                 expected_dbus_method_names,
@@ -128,16 +134,6 @@ class IntrospectTest:
                 method_name
             )
 
-
-
-print("create IntrospectTest...")
-app = IntrospectTest()
-
-print("setup IntrospectTest...")
-app.setup("unix:path=/var/run/dbus/mbl_cloud_bus_socket")
-
-print("test IntrospectTest...")
-app.introspect_test(["RegisterResources", "SetResourcesValues", "GetResourcesValues"])
 
 
 # replace print to log.error or log.info
