@@ -14,6 +14,7 @@ import logging
 from pydbus import SessionBus
 from gi.repository import GLib
 import xml.etree.ElementTree as ET
+import pytest
 
 # Prevent D-Bus binding to search the bus address
 # on the X Window (X11) environment
@@ -26,12 +27,16 @@ PELION_CONNECT_DBUS_INTERFACE_NAME = "com.mbed.Pelion1.Connect"
 DBUS_MBL_CLOUD_BUS_ADDRESS = "unix:path=/var/run/dbus/mbl_cloud_bus_socket"
 
 
+@pytest.mark.parametrize("method_name", [
+        "RegisterResources",
+        "SetResourcesValues",
+        "GetResourcesValues"
+    ])
 
 class TestPelion:
     """Introspect test."""
 
     logger = logging.getLogger("pytest-pelion-connect")
-
 
     ###########################################################################
     # setup() and teardown() common methods
@@ -85,21 +90,30 @@ class TestPelion:
     # Introspection test
     ###########################################################################
 
-    def test_introspect(self):
+    def test_introspect(self, method_name):
         """Verifies existence of the expected D-Bus methods 
         in the Pelion Connect D-Bus interface.
         """
 
         expected_dbus_signatures = {
-            "RegisterResources" : {"in":["s"], "out":["u", "s"]}, 
-            "SetResourcesValues" : {"in":["s","a(syv)"], "out":["au"]}, 
-            "GetResourcesValues" : {"in":["s","a(sy)"], "out":["a(uyv)"]},
+
+        "RegisterResources": {
+            "in": ["s"], 
+            "out": ["u", "s"]
+            },
+        "SetResourcesValues": {
+            "in": ["s","a(syv)"], 
+            "out": ["au"]
+            }, 
+        "GetResourcesValues": {
+            "in": ["s","a(sy)"], 
+            "out": ["a(uyv)"]
+            },
         }
 
-
         print(
-            "Verifying {} methods in the {} interface...".format(
-                expected_dbus_signatures.keys(),
+            "Verifying {} method in the {} interface...".format(
+                method_name,
                 PELION_CONNECT_DBUS_INTERFACE_NAME
             )
         )
@@ -124,31 +138,30 @@ class TestPelion:
             PELION_CONNECT_DBUS_INTERFACE_NAME
         )
 
-        for method_name in expected_dbus_signatures.keys():
-            # verify existence of the required methods under the Pelion interface
-            method_node = pelion_interface.find("./method[@name='" + method_name + "']")
+        # verify existence of the required methods under the Pelion interface
+        method_node = pelion_interface.find("./method[@name='" + method_name + "']")
 
-            assert method_node is not None, "Couldn't find {} method".format(
-                method_name
-            )
+        assert method_node is not None, "Couldn't find {} method".format(
+            method_name
+        )
 
-            # verify signature of the method
-            directions = ["in", "out"]
+        # verify signature of the method
+        directions = ["in", "out"]
 
-            # for input and output types, 
-            # collect actual types of and verify against expected 
-            for direction in directions:
-                
-                actual_types_signatures = []
-                # get all arg's signatures for this method for given direction
-                for arg_node in method_node.findall("./arg[@direction='" + direction + "']"):
-                    actual_types_signatures.append(arg_node.attrib['type'])
+        # for input and output types, 
+        # collect actual types of and verify against expected 
+        for direction in directions:
+            
+            actual_types_signatures = []
+            # get all arg's signatures for this method for given direction
+            for arg_node in method_node.findall("./arg[@direction='" + direction + "']"):
+                actual_types_signatures.append(arg_node.attrib['type'])
 
-                assert expected_dbus_signatures[method_name][direction] == actual_types_signatures, "Expected {} types {} for the method {} differs from actual types {}!".format(
-                        direction,
-                        expected_dbus_signatures[method_name][direction],
-                        method_name,
-                        actual_types_signatures
-                    )
+            assert expected_dbus_signatures[method_name][direction] == actual_types_signatures, "Expected {} types {} for the method {} differs from actual types {}!".format(
+                    direction,
+                    expected_dbus_signatures[method_name][direction],
+                    method_name,
+                    actual_types_signatures
+                )
 
 # replace print to log.error or log.info
