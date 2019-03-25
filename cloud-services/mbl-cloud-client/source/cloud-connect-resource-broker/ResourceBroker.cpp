@@ -12,6 +12,7 @@
 #include "ns-hal-pal/ns_event_loop.h"
 #include "EventPeriodic.h" ////////////////////////////////////////// ??? need that?
 #include "DBusAdapter.hpp"
+#include "MailboxMsg.h"
 
 #include <cassert>
 #include <csignal>
@@ -191,15 +192,19 @@ MblError ResourceBroker::stop()
 
     assert(ipc_adapter_);
 
-    // try sending stop signal to ipc (pass no error)
-    const MblError ipc_stop_err = ipc_adapter_->stop(MblError::None);
-    if (Error::None != ipc_stop_err) {
-        TR_ERR("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
-
-        // FIXME: Currently, if ipc was not successfully signalled, we return error.
-        //        Required to add "release resources best effort" functionality.
-        return ipc_stop_err;
+    // Send EXIT message to mailbox
+    // Thread shouldn't block here, but we still supply default maximum timeout of
+    // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
+    MailboxMsg_Exit message_exit;
+    message_exit.stop_status = MblError::None;
+    MailboxMsg msg(message_exit, sizeof(message_exit));
+    const MblError status = ipc_adapter_->send_mailbox_msg(msg);
+    if (status != MblError::None) {
+        TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
+        return status;
     }
+
+    TR_INFO("Sent request to stop CCRB thread inside sd-event loop!");
 
     // about thread_status: thread_status is the variable that will contain ccrb_main status.
     // ccrb_main returns MblError type. pthread_join will assign the value returned via
@@ -246,18 +251,63 @@ MblError ResourceBroker::stop()
     return ret_value.get();
 }
 
+MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
+{
+    TR_DEBUG_ENTER;
+
+    auto data_type_name = msg.get_data_type_name();
+    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
+        // EXIT message
+
+        // validate length (sanity check).In this case the length must be equal the actual length
+        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) {
+            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu),"
+                   " returning error=%s",
+                   msg.get_data_len(),
+                   sizeof(MailboxMsg_Exit),
+                   MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
+            return Error::DBA_MailBoxInvalidMsg;//////////////////////////////////////////////////////////////////(-EBADMSG);
+        }
+
+        // External thread request to stop event loop
+        MblError status;
+        MailboxMsg_Exit message_exit;
+        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>();
+        TR_INFO("receive message MailboxMsg_Exit sending stop request to event loop with stop"
+                " status=%s",
+                MblError_to_str(message_exit.stop_status));
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error %s - returing -EBADMSG",
+                   MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;//////////////////////////////////////////////////////////////////(-EBADMSG);
+        }
+
+        const MblError ipc_stop_err = ipc_adapter_->stop(MblError::None);
+        if (Error::None != ipc_stop_err) {
+            TR_ERR("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
+            return ipc_stop_err;
+        }
+    }
+    else
+    {
+        // This should never happen
+        TR_ERR("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
+    }
+
+    return Error::None;
+}
+
 MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
 {
     TR_DEBUG_ENTER;
 
-    UNUSED(s);
+    UNUSED(s); /////////////////////////////////////////////////////////////////////////////////////////// sd_event_source_unref API???
 
     assert(ev);
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
     TR_DEBUG("%s event", periodic_ev->get_description().c_str());
 
-    std::pair<MblError, EventData_Keepalive> unpack_pair = 
-        periodic_ev->unpack_data<EventData_Keepalive>();
+    auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>();
     if(unpack_pair.first != Error::None) {
         TR_ERR("Unpack of periodic event failed with error %s", MblError_to_str(unpack_pair.first));
         return unpack_pair.first;
@@ -371,8 +421,7 @@ MblError ResourceBroker::init()
 
     //Set keepalive periodic event
     EventData_Keepalive event_data = { this };
-    std::pair<MblError, uint64_t> ret_pair =
-        ipc_adapter_->send_event_periodic<EventData_Keepalive>(
+    auto ret_pair = ipc_adapter_->send_event_periodic<EventData_Keepalive>(
                         event_data,
                         sizeof(event_data),
                         ResourceBroker::periodic_keepalive_callback,
@@ -777,8 +826,7 @@ ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration
     TR_DEBUG_ENTER;
 
     std::string resource_path = resource_data.get_path();
-    std::pair<MblError, M2MResource*> ret_pair =
-        registration_record->get_m2m_resource(resource_path);
+    auto ret_pair = registration_record->get_m2m_resource(resource_path);
     if (Error::None != ret_pair.first) {
         TR_ERR("get_m2m_resource failed with error: %s", MblError_to_str(ret_pair.first));
         return (ret_pair.first == Error::CCRBInvalidResourcePath)
@@ -838,7 +886,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
     const std::string path = resource_data.get_path();
 
     // No need to check ret_pair as we already did a validity check and we know it exists
-    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    auto ret_pair = registration_record->get_m2m_resource(path);
     M2MResource* m2m_resource = ret_pair.second;
 
     switch (resource_data.get_data_type())
@@ -945,7 +993,7 @@ void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registratio
     const std::string path = resource_data.get_path();
 
     // No need to check ret_pair as we already did a validity check and we know it exists
-    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    auto ret_pair = registration_record->get_m2m_resource(path);
     M2MResource* m2m_resource = ret_pair.second;
 
     switch (resource_data.get_data_type())

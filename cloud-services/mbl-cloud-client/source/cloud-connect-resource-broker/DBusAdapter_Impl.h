@@ -373,7 +373,8 @@ public:
      * Can be called only when the object is in DBusAdapterState::RUNNING state
      * @param stop_status - sent MblError status which should state the reason for stopping the
      * event loop (the exit code specified when invoking sd_event_exit()). If the status is
-      * MblError::None then the exit is done gracefully.
+     * MblError::None then the exit is done gracefully.
+     * Note: Allowed to be called only from internal thread (initializer thread).
      * @return MblError - Error::None for success running the loop, otherwise the failure reason
      */
     MblError stop(MblError stop_status);
@@ -470,6 +471,17 @@ public:
         return event_manager_.send_event_periodic(
             data, data_length, callback, period_millisec, description);
     }
+
+    /**
+     * @brief send a message to CCRB thread event loop by an external thread. In the normal
+     * operation, the callling thread shouldn't be blocked at all, no competitors and only a
+     * pointer is written. The thread will poll on the WRITE pipe side
+     * and exit with error if timeout occurred.
+     *
+     * @param msg - a message to be sent
+     * @return MblError - return MblError - Error::None for success, therwise the failure reason
+     */
+    MblError send_mailbox_msg(MailboxMsg& msg_to_send);
 
     using DBusAdapterState = State::eState;
 

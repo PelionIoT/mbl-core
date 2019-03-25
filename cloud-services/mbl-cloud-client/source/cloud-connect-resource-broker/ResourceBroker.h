@@ -27,6 +27,7 @@ class ResourceBrokerTester;
 namespace mbl {
 
 class IpcConnection;
+class MailboxMsg;
 
 /**
  * @brief Class implements functionality of Mbl Cloud Connect Resource 
@@ -65,6 +66,17 @@ public:
     static MblError main();
 
 protected:
+
+    /**
+     * @brief Process mailbox messages
+     * Messages are being sent to mailbox from external thread (e.g. mbed client callbacks), 
+     * and processed using this function in internal thread.
+     * This will prevent accessing data members from two threads.
+     * 
+     * @param msg - Mailbox message to proccess
+     * @return MblError - Error::None for success running the loop, otherwise the failure reason.
+     */
+    virtual MblError process_mailbox_message(MailboxMsg& msg);
 
     /**
      * @brief Starts CCRB.

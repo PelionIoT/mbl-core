@@ -18,7 +18,7 @@
 #include "MailboxMsg.h"
 #include "MblError.h"
 #include "ResourceBroker.h"
-
+#include "ResourceBrokerMockBase.h"
 #include "TestInfra.h"
 #include "TestInfraAppThread.h"
 #include "TestInfra_DBusAdapterTester.h"
@@ -520,7 +520,6 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////// DBusAdapeter ////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-
 /**
  * @brief Class fixture for all DBusAdapeter tests
  *
@@ -528,14 +527,18 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
 class DBusAdapeterTestFixture1 : public ::testing::Test
 {
 public:
-    DBusAdapeterTestFixture1() : adapter_(ccrb_), tester_(adapter_){};
+
+    DBusAdapeterTestFixture1() : adapter_(ccrb_mock_), tester_(adapter_)
+    {
+        ccrb_mock_.set_ipc_adapter(&adapter_);
+    };
 
     static int validate_service_exist(AppThread* app_thread, void* user_data);
     static void* mbl_cloud_client_thread(void* adapter);
     static int event_loop_request_stop(sd_event_source* s, void* userdata);
     static sem_t semaphore_;
 
-    ResourceBroker ccrb_;
+    ResourceBrokerMockBase ccrb_mock_;
     DBusAdapter adapter_;
     TestInfra_DBusAdapterTester tester_;
 };
@@ -635,7 +638,6 @@ void* DBusAdapeterTestFixture1::mbl_cloud_client_thread(void* adapter_)
 TEST_F(DBusAdapeterTestFixture1, run_stop_with_external_exit_msg)
 {
     GTEST_LOG_START_TEST;
-    ResourceBroker ccrb;
     pthread_t tid;
     void* retval;
 
@@ -650,7 +652,7 @@ TEST_F(DBusAdapeterTestFixture1, run_stop_with_external_exit_msg)
         ASSERT_EQ(sem_wait(&semaphore_), 0);
 
         // child is ready - request stop and join it.
-        ASSERT_EQ(adapter_.stop(MblError::None), MblError::None);
+        ASSERT_EQ(ccrb_mock_.send_adapter_stop_message(), MblError::None);
         ASSERT_EQ(pthread_join(tid, &retval), 0);
 
         // check success status
