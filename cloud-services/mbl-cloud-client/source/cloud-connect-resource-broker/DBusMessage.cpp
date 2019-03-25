@@ -117,7 +117,7 @@ int DBusCommonMessageProcessor::handle_message_process_failure(CloudConnectStatu
 {
     TR_DEBUG_ENTER;
 
-    assert(is_CloudConnectStatus_error(cc_status));
+    assert(is_cloud_connect_error(cc_status));
     assert(method_name);
     assert(ret_error);
 
@@ -175,7 +175,7 @@ int DBusRegisterResourcesMessageProcessor::process_message(sd_bus* connection_ha
     std::pair<CloudConnectStatus, std::string> register_resources_ret_pair =
         ccrb.register_resources(IpcConnection(sender), app_resource_definition);
 
-    if (is_CloudConnectStatus_error(register_resources_ret_pair.first)) {
+    if (is_cloud_connect_error(register_resources_ret_pair.first)) {
         return handle_message_process_failure(
             register_resources_ret_pair.first, "register_resources", ret_error);
     }
@@ -259,7 +259,7 @@ int DBusDeregisterResourcesMessageProcessor::process_message(sd_bus* connection_
     // call deregister_resources resource broker API and handle output
     CloudConnectStatus cc_status = ccrb.deregister_resources(IpcConnection(sender), access_token);
 
-    if (is_CloudConnectStatus_error(cc_status)) {
+    if (is_cloud_connect_error(cc_status)) {
         return handle_message_process_failure(cc_status, "deregister_resources", ret_error);
     }
 
@@ -377,7 +377,7 @@ bool DBusSetResourcesMessageProcessor::is_message_process_failure(
 {
     TR_DEBUG_ENTER;
 
-    if (is_CloudConnectStatus_error(status)) {
+    if (is_cloud_connect_error(status)) {
         return true;
     }
 
@@ -401,7 +401,7 @@ int DBusSetResourcesMessageProcessor::handle_message_process_failure(
 
     TR_INFO("Handle resource broker failure for SetResourcesValues message");
 
-    if (is_CloudConnectStatus_error(cc_status)) {
+    if (is_cloud_connect_error(cc_status)) {
 
         // we have cloud connect related error in resource broker
         TR_ERR("Set resources values failed with cloud connect error %s",
@@ -681,7 +681,7 @@ bool DBusGetResourcesMessageProcessor::is_message_process_failure(
 {
     TR_DEBUG_ENTER;
 
-    if (is_CloudConnectStatus_error(status)) {
+    if (is_cloud_connect_error(status)) {
         return true;
     }
 
@@ -703,7 +703,7 @@ int DBusGetResourcesMessageProcessor::handle_message_process_failure(
     assert(m);
     assert(ret_error);
 
-    if (is_CloudConnectStatus_error(cc_status)) {
+    if (is_cloud_connect_error(cc_status)) {
 
         // we have cloud connect related error in resource broker
         TR_ERR("Get resources values failed with cloud connect error %s",

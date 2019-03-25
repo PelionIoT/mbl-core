@@ -77,7 +77,6 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to start a registration.
     // 1            STRING  Access token.
     //
     // ==Possible Cloud Connect Status values==

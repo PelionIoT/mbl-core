@@ -46,7 +46,7 @@ static inline bool is_CloudConnectStatus_not_error(const CloudConnectStatus val)
     return val >= STATUS_SUCCESS && val < ERR_FIRST;
 }
 
-static inline bool is_CloudConnectStatus_error(const CloudConnectStatus val){
+static inline bool is_cloud_connect_error(const CloudConnectStatus val){
     return val >= ERR_FIRST;
 }
 

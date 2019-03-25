@@ -76,4 +76,4 @@ int DBusMessagesFactory::process_message(sd_bus* connection_handle,
     return 0;
 }
 
-} // namespace mbl {
+} // namespace mbl
