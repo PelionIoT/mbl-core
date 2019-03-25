@@ -134,19 +134,20 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     TR_DEBUG_ENTER;
 
     auto itr = resource_broker_.registration_records_.find(access_token);
-    ASSERT_TRUE(resource_broker_.registration_records_.end() !=
-        itr);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() != itr);
     mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
 
-    // Make sure registration_record is not yet registered
-    ASSERT_FALSE(mbl::RegistrationRecord::State_Registered == 
+    // Make sure registration_record state is register in progress
+    ASSERT_TRUE(mbl::RegistrationRecord::State_RegistrationInProgress == 
         registration_record->get_registration_state());
 
-    if(dbus_adapter_expected_status == CloudConnectStatus::STATUS_SUCCESS) {
+    if(is_CloudConnectStatus_not_error(dbus_adapter_expected_status)) {
         // Check registration success flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration was successful",
             access_token.c_str());
-        resource_broker_.handle_mbed_client_registration_updated();
+
+        // Next calls doesn't check sending and receiving of mailbox messages as this is tested elsewhere
+        resource_broker_.handle_registration_updated_internal_message();
         
         // Make sure registration record is marked as registered
         ASSERT_TRUE(mbl::RegistrationRecord::State_Registered == 
@@ -155,8 +156,9 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         // Check registration failure flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration failed",
             access_token.c_str());
-        // Next call will invoke resource-broker's cb function with will then call DBusAdapterTest
-        resource_broker_.handle_mbed_client_error(MbedCloudClient::ConnectInvalidParameters);
+        
+        // Next calls doesn't check sending and receiving of mailbox messages as this is tested elsewhere
+        resource_broker_.handle_mbed_client_error_internal_message(mbl::MblError::Unknown);
     }
 
     DBusAdapterMock& dbus_adapter_tester = 

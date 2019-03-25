@@ -52,7 +52,7 @@ public:
     void resource_broker_shutdown_handler(int signal);
 
     ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////
-    virtual ~ResourceBroker(); //TODO: move to private
+    virtual ~ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////Q$#!@#@!#
 
     /**
      * @brief Main loop that create ResourceBroker, initialize and start all components
@@ -66,6 +66,12 @@ public:
     static MblError main();
 
 protected:
+
+    // TODO: documentation
+    MblError handle_mbed_client_error_internal_message(MblError status);
+
+    // TODO: documentation
+    MblError handle_registration_updated_internal_message();
 
     /**
      * @brief Process mailbox messages

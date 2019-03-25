@@ -40,6 +40,18 @@ namespace mbl
 ResourceBroker* ResourceBroker::s_ccrb_instance = nullptr;
 uint32_t ResourceBroker::dummy_network_interface_ = 0xFFFFFFFF;
 
+//TODO: add documentation
+struct MailboxMsg_RegistrationUpdated
+{
+    MblError status;
+};
+
+//TODO: add documentation
+struct MailboxMsg_MbedClientError
+{
+    MblError status;
+};
+
 MblError ResourceBroker::main()
 {
     TR_DEBUG_ENTER;
@@ -195,9 +207,9 @@ MblError ResourceBroker::stop()
     // Send EXIT message to mailbox
     // Thread shouldn't block here, but we still supply default maximum timeout of
     // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
-    MailboxMsg_Exit message_exit;
-    message_exit.stop_status = MblError::None;
-    MailboxMsg msg(message_exit, sizeof(message_exit));
+    MailboxMsg_Exit message;
+    message.stop_status = MblError::None;
+    MailboxMsg msg(message, sizeof(message));
     const MblError status = ipc_adapter_->send_mailbox_msg(msg);
     if (status != MblError::None) {
         TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
@@ -249,52 +261,6 @@ MblError ResourceBroker::stop()
     }
 
     return ret_value.get();
-}
-
-MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
-{
-    TR_DEBUG_ENTER;
-
-    auto data_type_name = msg.get_data_type_name();
-    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
-        // EXIT message
-
-        // validate length (sanity check).In this case the length must be equal the actual length
-        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) {
-            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu),"
-                   " returning error=%s",
-                   msg.get_data_len(),
-                   sizeof(MailboxMsg_Exit),
-                   MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
-            return Error::DBA_MailBoxInvalidMsg;//////////////////////////////////////////////////////////////////(-EBADMSG);
-        }
-
-        // External thread request to stop event loop
-        MblError status;
-        MailboxMsg_Exit message_exit;
-        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>();
-        TR_INFO("receive message MailboxMsg_Exit sending stop request to event loop with stop"
-                " status=%s",
-                MblError_to_str(message_exit.stop_status));
-        if (status != MblError::None) {
-            TR_ERR("msg.unpack_data failed with error %s - returing -EBADMSG",
-                   MblError_to_str(status));
-            return Error::DBA_MailBoxInvalidMsg;//////////////////////////////////////////////////////////////////(-EBADMSG);
-        }
-
-        const MblError ipc_stop_err = ipc_adapter_->stop(MblError::None);
-        if (Error::None != ipc_stop_err) {
-            TR_ERR("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
-            return ipc_stop_err;
-        }
-    }
-    else
-    {
-        // This should never happen
-        TR_ERR("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
-    }
-
-    return Error::None;
 }
 
 MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
@@ -624,17 +590,73 @@ void ResourceBroker::handle_mbed_client_authorize(const int32_t request)
     }
 }
 
-void ResourceBroker::handle_mbed_client_registration_updated()
+//TODO: Need to figure out if this can be called as a result of other operations
+MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError status)
 {
     TR_DEBUG_ENTER;
 
-    // TODO: need to handle cases when mbed client does not call any callback
-    // during registration - IOTMBL-1700
+    MbedClientState current_state = mbed_client_state_.load();
+
+    // Client unregister in progress:
+    if (State_ClientUnregisterInProgress == current_state) {
+        TR_ERR("Client unregister failed with error: %s", MblError_to_str(status));
+        // We have no choice but to signal that client is unregistered which will close
+        // mbed client and unregister ungracefully
+        mbed_client_state_.store(State_ClientUnregistered);
+        return MblError::None;
+    }
+
+    // Client register in progress:
+    if (State_ClientRegisterInProgress == current_state) { 
+        TR_ERR("Client register failed with error: %s", MblError_to_str(status));
+        // We have no choice but to signal that client is unregistered which will close
+        // client and unregister ungracefully
+        mbed_client_state_.store(State_ClientUnregistered);
+        return MblError::None;
+    }
+
+    // We are in one of the following cases:
+    // 1. application requested to register resources
+    // 2. keep alive (does not occur during #1)
+
+    // Check if this callback is caused by an application trying to register resources
+    // (only one application can be in registration update state at a time)
+    RegistrationRecord_ptr registration_record = get_registration_record_register_in_progress();
+    if (nullptr != registration_record) {
+
+        TR_ERR("Registration (access_token: %s) failed with error: %s",
+               reg_update_in_progress_access_token_.c_str(),
+                MblError_to_str(status));
+
+        const MblError update_status = ipc_adapter_->update_registration_status(
+            registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
+        if (Error::None != update_status) {
+            TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
+                   MblError_to_str(update_status));
+        }
+
+        TR_DEBUG("Erase registration record (access_token: %s)",
+                 reg_update_in_progress_access_token_.c_str());
+
+        auto itr = registration_records_.find(reg_update_in_progress_access_token_);
+        registration_records_.erase(itr); // Erase registration record as regitsration failed
+        reg_update_in_progress_access_token_.clear();
+        return update_status;
+    }
+
+    // Keepalive:
+    TR_ERR("Keepalive request failed with error: %s", MblError_to_str(status));
+    return MblError::None;
+}
+
+MblError ResourceBroker::handle_registration_updated_internal_message()
+{
+    TR_DEBUG_ENTER;
 
     // This function can be called as a result of:
     // 1. application requested to register resources
     // 2. keep alive (does not occur during #1)
-    
+
     // Only one application can be in registration update state - check if there is such...
     RegistrationRecord_ptr registration_record = get_registration_record_register_in_progress();
     if (nullptr != registration_record) {
@@ -646,17 +668,115 @@ void ResourceBroker::handle_mbed_client_registration_updated()
             RegistrationRecord::State_Registered);
 
         // Send the response to adapter:
-        CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
         const MblError status = ipc_adapter_->update_registration_status(
-            registration_record->get_registration_source(), reg_status);
+            registration_record->get_registration_source(), CloudConnectStatus::STATUS_SUCCESS);
         if (Error::None != status) {
             TR_ERR("update_registration_status failed with error: %s", MblError_to_str(status));
         }
         reg_update_in_progress_access_token_.clear();
-        return;
+        return status;
     }
 
     TR_DEBUG("Keepalive finished successfully");
+    return Error::None;
+}
+
+MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
+{
+    TR_DEBUG_ENTER;
+
+    auto data_type_name = msg.get_data_type_name();
+
+    // Exit message
+    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
+        TR_INFO("Process message MailboxMsg_Exit");
+        // Validate length (sanity check). In this case the length must be equal the actual length
+        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) { ///////////////////////////////////////////////////// improve this check - move to unpack?
+            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu)",
+                   msg.get_data_len(),
+                   sizeof(MailboxMsg_Exit));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+
+        MblError status;
+        MailboxMsg_Exit message;
+        std::tie(status, message) = msg.unpack_data<MailboxMsg_Exit>();
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+
+        TR_INFO("Call ipc_adapter_->stop(status: %s)", MblError_to_str(message.stop_status));
+        const MblError ipc_stop_err = ipc_adapter_->stop(message.stop_status);
+        if (Error::None != ipc_stop_err) {
+            TR_ERR("ipc_adapter_->stop failed with error: %s", MblError_to_str(ipc_stop_err));
+        }
+        return ipc_stop_err;
+    }
+
+    // Mbed Client Registration Updated
+    if (data_type_name == typeid(MailboxMsg_RegistrationUpdated).name()) {
+        TR_INFO("Process message MailboxMsg_RegistrationUpdated");
+        // Validate length (sanity check). In this case the length must be equal the actual length
+        if (msg.get_data_len() != sizeof(MailboxMsg_RegistrationUpdated)) {
+            TR_ERR("Unexpected MailboxMsg_RegistrationUpdated message length %zu (expected %zu)",
+                   msg.get_data_len(),
+                   sizeof(MailboxMsg_RegistrationUpdated));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+
+        MblError status;
+        MailboxMsg_RegistrationUpdated message;
+        std::tie(status, message) = msg.unpack_data<MailboxMsg_RegistrationUpdated>();
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+        return handle_registration_updated_internal_message();
+    }
+
+    // Mbed Client Error
+    if (data_type_name == typeid(MailboxMsg_MbedClientError).name()) {
+        TR_INFO("Process message MailboxMsg_MbedClientError");
+        // Validate length (sanity check). In this case the length must be equal the actual length
+        if (msg.get_data_len() != sizeof(MailboxMsg_MbedClientError)) {
+            TR_ERR("Unexpected MailboxMsg_MbedClientError message length %zu (expected %zu)",
+                   msg.get_data_len(),
+                   sizeof(MailboxMsg_MbedClientError));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+
+        MblError status;
+        MailboxMsg_MbedClientError message;
+        std::tie(status, message) = msg.unpack_data<MailboxMsg_MbedClientError>();
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+        return handle_mbed_client_error_internal_message(message.status);
+    }
+
+    // This should never happen
+    TR_WARN("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
+    return Error::None;
+}
+
+void ResourceBroker::handle_mbed_client_registration_updated()
+{
+    TR_DEBUG_ENTER;
+
+    // TODO: need to handle cases when mbed client does not call any callback
+    // during registration of resources - IOTMBL-1700
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_RegistrationUpdated registration_updated_msg;
+    registration_updated_msg.status = MblError::None;
+    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
+    TR_ERR("send_mailbox_msg for register update");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
 }
 
 // TODO: this callback is related to the following scenarios which are not yet implemented:
@@ -670,54 +790,14 @@ void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
     TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
     TR_ERR("Error details: %s", mbed_client_error_description_func_());
 
-    MbedClientState current_state = mbed_client_state_.load();
-
-    // Client register in progress:
-    if (State_ClientRegisterInProgress == current_state) { 
-        TR_ERR("Client register failed.");
-        // We have no choice but to signal that device is unregistered which will cause to
-        // closeing mbed client and unregister ungracefully
-        mbed_client_state_.store(State_ClientUnregistered);
-        return;
-    }
-
-    // Client unregister in progress:
-    if (State_ClientUnregisterInProgress == current_state) {
-        TR_ERR("Client unregister failed.");
-        // We have no choice but to signal that device is unregistered which will cause to
-        // closeing mbed client and unregister ungracefully
-        mbed_client_state_.store(State_ClientUnregistered);
-        return;
-    }
-
-    // Check if this callback is caused by an application trying to register resources
-    // (only one application can be in registration update state at a time)
-    RegistrationRecord_ptr registration_record = get_registration_record_register_in_progress();
-    if (nullptr != registration_record) {
-
-        TR_ERR("Registration (access_token: %s) failed.",
-               reg_update_in_progress_access_token_.c_str());
-
-        const MblError status = ipc_adapter_->update_registration_status(
-            registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
-        if (Error::None != status) {
-            TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
-                   MblError_to_str(status));
-        }
-
-        TR_DEBUG("Erase registration record (access_token: %s)",
-                 reg_update_in_progress_access_token_.c_str());
-
-        auto itr = registration_records_.find(reg_update_in_progress_access_token_);
-        registration_records_.erase(itr); // Erase registration record as regitsration failed
-        reg_update_in_progress_access_token_.clear();
-        return;
-    }
-
-    // Keepalive:
-    if (State_ClientRegistered == current_state) {
-        TR_ERR("Keepalive request failed.");
-        return;
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_MbedClientError mbed_client_error_msg;
+    mbed_client_error_msg.status = mbl_code;
+    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
+    TR_ERR("send_mailbox_msg for mbed client error");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
     }
 }
 

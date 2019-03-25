@@ -22,7 +22,7 @@ namespace mbl
  */
 struct MailboxMsg_Exit
 {
-    // THe reason for the exit, MblError::None if stop is done in normal way
+    // The reason for the exit, MblError::None if stop is done in normal way
     MblError stop_status;
 };
 
@@ -100,12 +100,12 @@ public:
     template <typename T>
     std::pair<MblError, T> unpack_data()
     {
-        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-mailbox", "Enter");
 
         // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
-        return mbl::unpack_data<T>("ccrb-event", serializer_);
+        return mbl::unpack_data<T>("ccrb-mailbox", serializer_);
     }
 
     // Getters
@@ -134,14 +134,14 @@ private:
     template <typename T>
     MblError pack_data(T const& data)
     {
-        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-event", "Enter");
+        mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-mailbox", "Enter");
 
         // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
 
         data_type_name_.assign(typeid(T).name());
-        return mbl::pack_data<T>("ccrb-event", data, serializer_);
+        return mbl::pack_data<T>("ccrb-mailbox", data, serializer_);
     }
 
     // The actual data holder (data is serialized into a standard library string buffer)
