@@ -17,21 +17,21 @@ from pytests_utils import PELION_CONNECT_DBUS_INTERFACE_NAME
 from pytests_utils import PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
 from pytests_utils import DISPLAY
 
-@pytest.mark.parametrize("method_name,expected_result", [
-        ("RegisterResources", {"in": ["s"], "out": ["u", "s"] } ),
-        ("SetResourcesValues", {"in": ["s","a(syv)"], "out": ["au"]}),
-        ("GetResourcesValues", {"in": ["s","a(sy)"], "out": ["a(uyv)"]}) 
-    ])
 
+@pytest.mark.parametrize(
+    "method_name,expected_result",
+    [
+        ("RegisterResources", {"in": ["s"], "out": ["u", "s"]}),
+        ("SetResourcesValues", {"in": ["s", "a(syv)"], "out": ["au"]}),
+        ("GetResourcesValues", {"in": ["s", "a(sy)"], "out": ["a(uyv)"]}),
+    ],
+)
 class TestPelionConnectAPI:
     """Pelion Connect D-Bus API methods test."""
 
     logger = logging.getLogger("pytest-pelion-connect")
 
-    ###########################################################################
-    # setup() and teardown() common methods
-    ###########################################################################
-
+    # setup_method() called by pytest before each function test_*
     def setup_method(self, method):
         """Set up connection to D-Bus."""
         self.logger.info(
@@ -40,8 +40,10 @@ class TestPelionConnectAPI:
             )
         )
 
-#        os.environ["DISPLAY"] = DISPLAY
-#        os.environ["DBUS_SESSION_BUS_ADDRESS"] = PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
+        # os.environ["DISPLAY"] = DISPLAY
+        # os.environ["DBUS_SESSION_BUS_ADDRESS"] = (
+        #     PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
+        # )
 
         # get the session bus
         try:
@@ -79,14 +81,12 @@ class TestPelionConnectAPI:
     ###########################################################################
     # Introspection test
     ###########################################################################
-
     def test_introspect(self, method_name, expected_result):
-        """Verifies signatures of Pelion Connect D-Bus API."""
+        """Verifies signatures of Pelion Connect D-Bus API methods."""
 
         self.logger.info(
             "Verifying {} method in the {} interface...".format(
-                method_name,
-                PELION_CONNECT_DBUS_INTERFACE_NAME
+                method_name, PELION_CONNECT_DBUS_INTERFACE_NAME
             )
         )
 
@@ -100,38 +100,48 @@ class TestPelionConnectAPI:
             )
             raise glib_err
 
-        #parse xml data gotten from introspection
+        # parse xml data that was gotten from introspection
         root = ET.fromstring(introspect_reply)
 
         # verify existence of the Pelion interface under the 'root'
-        pelion_interface = root.find("./interface[@name='" + PELION_CONNECT_DBUS_INTERFACE_NAME + "']")
-        
-        assert pelion_interface is not None, "Couldn't find {} interface".format(
+        pelion_interface = root.find(
+            "./interface[@name='" + PELION_CONNECT_DBUS_INTERFACE_NAME + "']"
+        )
+
+        assert (
+            pelion_interface is not None
+        ), "Couldn't find {} interface".format(
             PELION_CONNECT_DBUS_INTERFACE_NAME
         )
 
         # find method node
-        method_node = pelion_interface.find("./method[@name='" + method_name + "']")
+        method_node = pelion_interface.find(
+            "./method[@name='" + method_name + "']"
+        )
 
         assert method_node is not None, "Couldn't find {} method".format(
             method_name
         )
 
-        # for 'in' and 'out' directions, 
-        # collect actual signatures and verify against expected 
+        # for 'in' and 'out' directions,
+        # collect actual signatures and verify against expected
         for direction in ["in", "out"]:
-            
             actual_types_signatures = []
-            # collect arg's signatures for the given direction ('in' or 'out')
-            for arg_node in method_node.findall("./arg[@direction='" + direction + "']"):
-                actual_types_signatures.append(arg_node.attrib['type'])
+            # collect signatures for the arg's for the given direction(in/out)
+            for arg_node in method_node.findall(
+                "./arg[@direction='" + direction + "']"
+            ):
+                actual_types_signatures.append(arg_node.attrib["type"])
 
-            # we compare expected signature to the actual assuming that 
-            # method_node.findall returns output in the same order they are
-            # presented in xml data
-            assert expected_result[direction] == actual_types_signatures, "Expected {} types {} for the method {} differs from actual types {}!".format(
+            # we compare expected signature to the actual assuming that
+            # method_node.findall returns output in the same order, as
+            # parameters are presented in xml data.
+            assert expected_result[direction] == actual_types_signatures, (
+                "Expected '{}' types '{}' for the method '{}' differs"
+                + "from actual types '{}'!".format(
                     direction,
                     expected_result[direction],
                     method_name,
-                    actual_types_signatures
+                    actual_types_signatures,
                 )
+            )
