@@ -19,7 +19,7 @@ from dbus_configuration import DISPLAY
 
 
 @pytest.mark.parametrize(
-    "dbus_method_name,expected_result",
+    "dbus_method_name,expected_method_signature",
     [
         ("RegisterResources", {"in": ["s"], "out": ["u", "s"]}),
         ("SetResourcesValues", {"in": ["s", "a(syv)"], "out": ["au"]}),
@@ -79,7 +79,7 @@ class TestPelionConnectAPI:
     ###########################################################################
     # Introspection test
     ###########################################################################
-    def test_introspect(self, dbus_method_name, expected_result):
+    def test_introspect(self, dbus_method_name, expected_method_signature):
         """Verifies signatures of Pelion Connect D-Bus API methods."""
 
         print(
@@ -101,7 +101,7 @@ class TestPelionConnectAPI:
         # parse XML data that was gotten from introspection
         root = ET.fromstring(introspect_reply)
 
-        # verify existence of the Pelion interface under the 'root'
+        # find Pelion interface name in the introspect XML
         pelion_interface = root.find(
             "./interface[@name='{}']".format(
                 PELION_CONNECT_DBUS_INTERFACE_NAME
@@ -124,7 +124,8 @@ class TestPelionConnectAPI:
         )
 
         # for 'in' and 'out' directions,
-        # collect actual signatures and verify against expected
+        # collect actual method signatures, and verify them against
+        # expected signatures
         for direction in ["in", "out"]:
             actual_types_signatures = []
             # collect signatures for the arguments for the given
@@ -139,11 +140,14 @@ class TestPelionConnectAPI:
             # we compare expected signature to the actual assuming that
             # method_node.findall returns output in the same order, as
             # parameters are presented in XML data.
-            assert expected_result[direction] == actual_types_signatures, (
+
+            assert (
+                expected_method_signature[direction] == actual_types_signatures
+            ), (
                 "Expected '{}' types '{}' for the method '{}' differs"
                 + "from actual types '{}'!".format(
                     direction,
-                    expected_result[direction],
+                    expected_method_signature[direction],
                     dbus_method_name,
                     actual_types_signatures,
                 )
