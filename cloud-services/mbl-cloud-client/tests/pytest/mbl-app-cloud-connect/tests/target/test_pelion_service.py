@@ -11,15 +11,15 @@ from pydbus import SessionBus
 from gi.repository import GLib
 import xml.etree.ElementTree as ET
 import pytest
-from pytests_utils import PELION_CONNECT_DBUS_NAME
-from pytests_utils import PELION_CONNECT_DBUS_OBJECT_PATH
-from pytests_utils import PELION_CONNECT_DBUS_INTERFACE_NAME
-from pytests_utils import PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
-from pytests_utils import DISPLAY
+from dbus_configuration import PELION_CONNECT_DBUS_NAME
+from dbus_configuration import PELION_CONNECT_DBUS_OBJECT_PATH
+from dbus_configuration import PELION_CONNECT_DBUS_INTERFACE_NAME
+from dbus_configuration import PELION_CONNECT_DBUS_BUS_ADDRESS
+from dbus_configuration import DISPLAY
 
 
 @pytest.mark.parametrize(
-    "method_name,expected_result",
+    "dbus_method_name,expected_result",
     [
         ("RegisterResources", {"in": ["s"], "out": ["u", "s"]}),
         ("SetResourcesValues", {"in": ["s", "a(syv)"], "out": ["au"]}),
@@ -29,27 +29,25 @@ from pytests_utils import DISPLAY
 class TestPelionConnectAPI:
     """Pelion Connect D-Bus API methods test."""
 
-    logger = logging.getLogger("pytest-pelion-connect")
-
     # setup_method() called by pytest before each function test_*
     def setup_method(self, method):
         """Set up connection to D-Bus."""
-        self.logger.info(
+        print(
             "Connecting to D-Bus {} D-Bus object {}...".format(
                 PELION_CONNECT_DBUS_NAME, PELION_CONNECT_DBUS_OBJECT_PATH
             )
         )
 
-        # os.environ["DISPLAY"] = DISPLAY
-        # os.environ["DBUS_SESSION_BUS_ADDRESS"] = (
-        #     PELION_CONNECT_DBUS_SESSION_BUS_ADDRESS
-        # )
+        os.environ["DISPLAY"] = DISPLAY
+        os.environ[
+            "DBUS_SESSION_BUS_ADDRESS"
+        ] = PELION_CONNECT_DBUS_BUS_ADDRESS
 
         # get the session bus
         try:
             self.bus = SessionBus()
         except GLib.GError as glib_err:
-            self.logger.error(
+            print(
                 "Couldn't get Pelion Connect D-Bus bus. Error: {}!".format(
                     glib_err
                 )
@@ -58,12 +56,12 @@ class TestPelionConnectAPI:
 
         # connect to the bus
         try:
-            self.cc_object = self.bus.get(
+            self.cloud_connect_dbus_object = self.bus.get(
                 PELION_CONNECT_DBUS_NAME,
                 object_path=PELION_CONNECT_DBUS_OBJECT_PATH,
             )
         except GLib.GError as glib_err:
-            self.logger.error(
+            print(
                 "Couldn't connect to D-Bus {} object {}. Error: {}!".format(
                     PELION_CONNECT_DBUS_NAME,
                     PELION_CONNECT_DBUS_OBJECT_PATH,
@@ -72,7 +70,7 @@ class TestPelionConnectAPI:
             )
             raise glib_err
 
-        self.logger.info(
+        print(
             "Successfully connected to the D-Bus {} object {}...".format(
                 PELION_CONNECT_DBUS_NAME, PELION_CONNECT_DBUS_OBJECT_PATH
             )
@@ -81,31 +79,33 @@ class TestPelionConnectAPI:
     ###########################################################################
     # Introspection test
     ###########################################################################
-    def test_introspect(self, method_name, expected_result):
+    def test_introspect(self, dbus_method_name, expected_result):
         """Verifies signatures of Pelion Connect D-Bus API methods."""
 
-        self.logger.info(
+        print(
             "Verifying {} method in the {} interface...".format(
-                method_name, PELION_CONNECT_DBUS_INTERFACE_NAME
+                dbus_method_name, PELION_CONNECT_DBUS_INTERFACE_NAME
             )
         )
 
         try:
-            introspect_reply = self.cc_object.Introspect()
+            introspect_reply = self.cloud_connect_dbus_object.Introspect()
         except GLib.GError as glib_err:
-            self.logger.error(
+            print(
                 "Pelion Connect Introspect() failed. Error: {}!".format(
                     glib_err
                 )
             )
             raise glib_err
 
-        # parse xml data that was gotten from introspection
+        # parse XML data that was gotten from introspection
         root = ET.fromstring(introspect_reply)
 
         # verify existence of the Pelion interface under the 'root'
         pelion_interface = root.find(
-            "./interface[@name='" + PELION_CONNECT_DBUS_INTERFACE_NAME + "']"
+            "./interface[@name='{}']".format(
+                PELION_CONNECT_DBUS_INTERFACE_NAME
+            )
         )
 
         assert (
@@ -116,32 +116,41 @@ class TestPelionConnectAPI:
 
         # find method node
         method_node = pelion_interface.find(
-            "./method[@name='" + method_name + "']"
+            "./method[@name='{}']".format(dbus_method_name)
         )
 
         assert method_node is not None, "Couldn't find {} method".format(
-            method_name
+            dbus_method_name
         )
 
         # for 'in' and 'out' directions,
         # collect actual signatures and verify against expected
         for direction in ["in", "out"]:
             actual_types_signatures = []
-            # collect signatures for the arg's for the given direction(in/out)
-            for arg_node in method_node.findall(
-                "./arg[@direction='" + direction + "']"
+            # collect signatures for the arguments for the given
+            # direction(in/out)
+            for argument_signature in method_node.findall(
+                "./arg[@direction='{}']".format(direction)
             ):
-                actual_types_signatures.append(arg_node.attrib["type"])
+                actual_types_signatures.append(
+                    argument_signature.attrib["type"]
+                )
 
             # we compare expected signature to the actual assuming that
             # method_node.findall returns output in the same order, as
-            # parameters are presented in xml data.
+            # parameters are presented in XML data.
             assert expected_result[direction] == actual_types_signatures, (
                 "Expected '{}' types '{}' for the method '{}' differs"
                 + "from actual types '{}'!".format(
                     direction,
                     expected_result[direction],
-                    method_name,
+                    dbus_method_name,
                     actual_types_signatures,
                 )
             )
+
+        print(
+            "Method {} signature successfully verified.".format(
+                dbus_method_name
+            )
+        )
