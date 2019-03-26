@@ -406,7 +406,7 @@ protected:
      * @param ev - event data
      * @return Error::None in case of success
      */
-    static MblError periodic_keepalive_callback(sd_event_source* s, const Event* ev);
+    static MblError periodic_keepalive_callback(sd_event_source* s, Event* ev);
 
     /**
      * @brief - Registration update callback.

@@ -101,6 +101,10 @@ public:
         const std::string& access_token,
         CloudConnectStatus dbus_adapter_expected_status);
 
+    void simulate_mbed_client_register_update_callback_test(
+        const std::string& access_token,
+        bool simulate_registration_success);
+
     /**
      * @brief Get resource by path and compare to expected status
      * 
@@ -231,7 +235,12 @@ public:
      */
     inline mbl::ResourceBroker& get_ccrb() {return resource_broker_;}
 
+    void start_ccrb();
+    void stop_ccrb();
+
 private:
+
+    static void* mbed_client_mock_thread_func(void* data);
 
     /**
      * @brief Mock Mbed client function that ads a list of objects that the application wants to 

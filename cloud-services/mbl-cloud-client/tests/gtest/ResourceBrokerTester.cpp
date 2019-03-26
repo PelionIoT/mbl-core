@@ -19,7 +19,7 @@
 #include "DBusAdapterMock.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-
+#include "MailboxMsg.h"
 #include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-res-broker-tester"
@@ -55,6 +55,20 @@ ResourceBrokerTester::~ResourceBrokerTester()
 {
     TR_DEBUG_ENTER;
 }
+
+void ResourceBrokerTester::start_ccrb()
+{
+    ASSERT_TRUE(mbl::MblError::None == resource_broker_.start());
+}
+
+void ResourceBrokerTester::stop_ccrb()
+{
+    ASSERT_TRUE(mbl::MblError::None == resource_broker_.stop());
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mbed client mock functions
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 mbl::MblError ResourceBrokerTester::mock_init_mbed_client()
 {
@@ -108,8 +122,9 @@ void ResourceBrokerTester::mbed_client_mock_register_update()
     // Currently does nothing, in future test we might want to add more code here
 }
 
-void
-ResourceBrokerTester::register_resources_test(
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+void ResourceBrokerTester::register_resources_test(
     const mbl::IpcConnection &source,
     const std::string& app_resource_definition,
     CloudConnectStatus& out_status,
@@ -152,7 +167,9 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         // Make sure registration record is marked as registered
         ASSERT_TRUE(mbl::RegistrationRecord::State_Registered == 
             registration_record->get_registration_state());
+
     } else {
+
         // Check registration failure flow
         TR_DEBUG("Notify resource broker (access_token: %s) that registration failed",
             access_token.c_str());
@@ -168,11 +185,67 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
     // Verify adapter got the right call from resource broker
     ASSERT_TRUE(dbus_adapter_expected_status == 
         dbus_adapter_tester.get_register_cloud_connect_status());
-
-    // Verify internal state is back to registered
-    mbl::ResourceBroker::MbedClientState state = resource_broker_.mbed_client_state_.load();
-    ASSERT_TRUE(mbl::ResourceBroker::State_ClientRegistered == state);
 }
+
+struct thread_data {
+    ResourceBrokerTester* tester;
+    bool simulate_registration_success;
+};
+
+void* ResourceBrokerTester::mbed_client_mock_thread_func(void* data)
+{
+    TR_DEBUG_ENTER;
+    thread_data* test_data = static_cast<thread_data*>(data);
+
+    if(test_data->simulate_registration_success) {
+        test_data->tester->resource_broker_.handle_mbed_client_registration_updated();
+    } else {
+        test_data->tester->resource_broker_.handle_mbed_client_error(
+            MbedCloudClient::ConnectUnknownError
+        );
+    }
+    sleep(1); // Allow mailbox to call resource broker to handle above messages
+    pthread_exit((void*) 0);
+}
+
+void ResourceBrokerTester::simulate_mbed_client_register_update_callback_test(
+    const std::string& access_token,
+    bool simulate_registration_success)
+{
+    TR_DEBUG_ENTER;
+
+    auto itr = resource_broker_.registration_records_.find(access_token);
+    ASSERT_TRUE(resource_broker_.registration_records_.end() != itr);
+    mbl::ResourceBroker::RegistrationRecord_ptr registration_record = itr->second;
+
+    // Make sure registration_record state is register in progress
+    ASSERT_TRUE(mbl::RegistrationRecord::State_RegistrationInProgress == 
+        registration_record->get_registration_state());
+
+    // Create new thread that will simulate mbed client callback
+    struct thread_data data{this, simulate_registration_success};
+    pthread_t mbed_client_thread_id = 0;
+    ASSERT_EQ(pthread_create(&mbed_client_thread_id,
+                         nullptr, // thread is created with default attributes
+                         ResourceBrokerTester::mbed_client_mock_thread_func,
+                         &data), 0);
+    void* retval;
+    ASSERT_EQ(pthread_join(mbed_client_thread_id, &retval), 0);
+
+    if(simulate_registration_success) {
+        // Make sure registration_record state is register in progress
+        // (we can still use above registration record shared ptr)
+        ASSERT_TRUE(mbl::RegistrationRecord::State_Registered == 
+            registration_record->get_registration_state());
+    } else
+    {
+        // Make sure registration record was erased from map as it is failed registration
+        itr = resource_broker_.registration_records_.find(access_token);
+        ASSERT_TRUE(resource_broker_.registration_records_.end() == itr); // Does not exist!
+    }
+    
+}
+
 
 void ResourceBrokerTester::get_m2m_resource_test(
     const std::string& access_token,

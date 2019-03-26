@@ -7,12 +7,11 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
+#include "DBusAdapter.hpp"
+#include "MailboxMsg.h"
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed_cloud_client_user_config.h"
 #include "ns-hal-pal/ns_event_loop.h"
-#include "EventPeriodic.h" ////////////////////////////////////////// ??? need that?
-#include "DBusAdapter.hpp"
-#include "MailboxMsg.h"
 
 #include <cassert>
 #include <csignal>
@@ -271,16 +270,16 @@ MblError ResourceBroker::stop()
     return ret_value.get();
 }
 
-MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
+MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* ev)
 {
     TR_DEBUG_ENTER;
     UNUSED(s); // Can't call unref_event_source as this event should be keep on comming
     assert(ev);
-    EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
+    EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
     TR_DEBUG("%s event", periodic_ev->get_description().c_str());
 
     auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>(sizeof(EventData_Keepalive));
-    if(unpack_pair.first != Error::None) {
+    if (unpack_pair.first != Error::None) {
         TR_ERR("Unpack of periodic event failed with error %s", MblError_to_str(unpack_pair.first));
         return unpack_pair.first;
     }
@@ -324,7 +323,7 @@ void ResourceBroker::init_mbed_client_function_pointers()
 
     mbed_client_endpoint_info_func_ =
         std::bind(static_cast<const ConnectorClientEndpointInfo* (MbedCloudClient::*) () const>(
-                  &MbedCloudClient::endpoint_info),
+                      &MbedCloudClient::endpoint_info),
                   cloud_client_);
 
     mbed_client_error_description_func_ = std::bind(
@@ -392,14 +391,14 @@ MblError ResourceBroker::init()
         return init_mbed_clinet_status;
     }
 
-    //Set keepalive periodic event
-    EventData_Keepalive event_data = { this };
+    // Set keepalive periodic event
+    EventData_Keepalive event_data = {this};
     auto ret_pair = ipc_adapter_->send_event_periodic<EventData_Keepalive>(
-                        event_data,
-                        sizeof(event_data),
-                        ResourceBroker::periodic_keepalive_callback,
-                        g_keepalive_period_miliseconds,
-                        std::string("Mbed cloud client keep-alive"));
+        event_data,
+        sizeof(event_data),
+        ResourceBroker::periodic_keepalive_callback,
+        g_keepalive_period_miliseconds,
+        std::string("Mbed cloud client keep-alive"));
 
     if (Error::None != ret_pair.first) {
         TR_ERR("send_event_periodic keep-alive failed with error %s",
@@ -414,7 +413,7 @@ void ResourceBroker::deinit_mbed_client()
 {
     TR_DEBUG_ENTER;
     assert(cloud_client_);
-    TR_INFO("Erase mbed client");    
+    TR_INFO("Erase mbed client");
     delete cloud_client_;
     TR_INFO("Stop the mbed event loop thread");
     ns_event_loop_thread_stop();
@@ -503,7 +502,7 @@ ResourceBroker::get_registration_record(const std::string& access_token)
 {
     TR_DEBUG_ENTER;
 
-    if(access_token.empty()) {
+    if (access_token.empty()) {
         TR_ERR("access_token is empty");
         return nullptr;
     }
@@ -610,7 +609,7 @@ void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
 // Mailbox messages related functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//TODO: Need to figure out if this can be called as a result of other operations
+// TODO: Need to figure out if this can be called as a result of other operations
 MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
 {
     TR_DEBUG_ENTER;
@@ -627,7 +626,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed
     }
 
     // Client register in progress:
-    if (State_ClientRegisterInProgress == current_state) { 
+    if (State_ClientRegisterInProgress == current_state) {
         TR_ERR("Client register failed with error: %s", MblError_to_str(mbed_client_error));
         // We have no choice but to signal that client is unregistered which will close
         // client and unregister ungracefully
@@ -642,12 +641,12 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed
     // Check if this callback is caused by an application trying to register resources
     // (only one application can be in registration update state at a time)
     RegistrationRecord_ptr registration_record =
-            get_registration_record(reg_update_in_progress_access_token_);
+        get_registration_record(reg_update_in_progress_access_token_);
     if (nullptr != registration_record) {
 
         TR_ERR("Registration (access_token: %s) failed with error: %s",
                reg_update_in_progress_access_token_.c_str(),
-                MblError_to_str(mbed_client_error));
+               MblError_to_str(mbed_client_error));
 
         const MblError update_status = ipc_adapter_->update_registration_status(
             registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
@@ -680,14 +679,13 @@ MblError ResourceBroker::handle_registration_updated_internal_message()
 
     // Only one application can be in registration update state - check if there is such...
     RegistrationRecord_ptr registration_record =
-            get_registration_record(reg_update_in_progress_access_token_);
+        get_registration_record(reg_update_in_progress_access_token_);
     if (nullptr != registration_record) {
 
         TR_DEBUG("Registration record (access_token: %s) registered successfully.",
                  reg_update_in_progress_access_token_.c_str());
 
-        registration_record->set_registration_state(
-            RegistrationRecord::State_Registered);
+        registration_record->set_registration_state(RegistrationRecord::State_Registered);
 
         // Send the response to adapter:
         const MblError status = ipc_adapter_->update_registration_status(
@@ -733,7 +731,7 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
         TR_INFO("Process message MailboxMsg_RegistrationUpdated");
         MblError status;
         MailboxMsg_RegistrationUpdated message;
-        std::tie(status, message) = 
+        std::tie(status, message) =
             msg.unpack_data<MailboxMsg_RegistrationUpdated>(sizeof(MailboxMsg_RegistrationUpdated));
         if (status != MblError::None) {
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
@@ -747,7 +745,7 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
         TR_INFO("Process message MailboxMsg_MbedClientError");
         MblError status;
         MailboxMsg_MbedClientError message;
-        std::tie(status, message) = 
+        std::tie(status, message) =
             msg.unpack_data<MailboxMsg_MbedClientError>(sizeof(MailboxMsg_MbedClientError));
         if (status != MblError::None) {
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
@@ -778,7 +776,7 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
         ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
         return ret_pair;
     }
-    
+
     // Only one register update request is allowed at a time:
     if (!reg_update_in_progress_access_token_.empty()) {
         TR_ERR("Registration of resources is already in progress.");
@@ -1122,10 +1120,10 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
             // if yes - clear reg_update_in_progress_access_token_ member
             if (itr->first == reg_update_in_progress_access_token_) {
                 TR_WARN("Erase registration record (access_token: %s) during register of resources",
-                    itr->first.c_str());
+                        itr->first.c_str());
                 reg_update_in_progress_access_token_.clear();
             }
-            
+
             TR_DEBUG("Erase registration record (access_token: %s)", itr->first.c_str());
             itr = registration_records_.erase(itr); // supported since C++11
         }

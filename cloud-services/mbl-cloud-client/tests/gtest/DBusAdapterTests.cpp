@@ -823,7 +823,7 @@ class DBusAdapterWithEventPeriodicTestFixture : public ::testing::Test
 public:
     static const uint64_t NUM_ITERATIONS = 10;
 
-    static MblError adapter_periodic_event_callback(sd_event_source* s, const Event* ev);
+    static MblError adapter_periodic_event_callback(sd_event_source* s, Event* ev);
 
     void SetUp() override
     {
@@ -841,12 +841,12 @@ milliseconds DBusAdapterWithEventPeriodicTestFixture::send_time_(0);
 
 MblError
 DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback(sd_event_source* s,
-                                                                         const Event* ev)
+                                                                         Event* ev)
 {
     TR_DEBUG_ENTER;
 
     milliseconds arrive_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    const EventPeriodic* periodic_ev = dynamic_cast<const EventPeriodic*>(ev);
+    const EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
     uint64_t period_millisec = periodic_ev->get_period_millisec();
     OneSetMblError error;
     uint64_t delay_milliseconds = 0;

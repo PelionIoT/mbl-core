@@ -387,7 +387,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
 
     // Process message
     const MblError status = ccrb_.process_mailbox_message(ret_pair.second);
-    if(Error::DBA_MailBoxInvalidMsg == status) {
+    if (Error::DBA_MailBoxInvalidMsg == status) {
         TR_ERR("process_mailbox_message failed with error: %s", MblError_to_str(status));
         return (-EBADMSG);
     }
@@ -792,13 +792,13 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
     // This API is allowed to be called only from internal (initializer) thread
     assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
-    // Self exit request, use event_loop_request_stop 
+    // Self exit request, use event_loop_request_stop
     int r = event_loop_request_stop(stop_status);
     if (r < 0) {
         TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
-                strerror(-r),
-                r,
-                MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
+               strerror(-r),
+               r,
+               MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
         return MblError::DBA_SdEventExitRequestFailure;
     }
     TR_INFO("Sent self request to exit sd-event loop!");
@@ -938,6 +938,5 @@ MblError DBusAdapterImpl::send_mailbox_msg(MailboxMsg& msg_to_send)
     }
     return status;
 }
-
 
 } // namespace mbl

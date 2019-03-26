@@ -25,6 +25,10 @@
 
 #define TRACE_GROUP "ccrb-register-test"
 
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Positive tests
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 /**
  * @brief This test successful registration
  * 
@@ -57,6 +61,48 @@ TEST(Resource_Broker_Positive, registration_success)
     resource_broker_tester.mbed_client_register_update_callback_test(
         out_access_token,
         CloudConnectStatus::STATUS_SUCCESS);
+}
+
+/**
+ * @brief This test successful registration with Mbed client callback simulation
+ * This test includes Resource broker, adapter, mailbox and mbed client simulation.
+ * The tested scenario is:
+ * 1. Start resource broker main thread
+ * 2. Resource Broker is called for register_resources() API
+ * 3. Application resource definition is parsed by RegistrationRecord class
+ * 4. Resource Broker calls Mbed cloud client to register the resources
+ * 5. Test simulate Mbed cloud client callback for successful registration
+ * 6. Resource broker send register update message to mailbox
+ * 7. Resource broker is called to process register message from the adapter
+ * 8. Resource Broker update registration record state to "registered"
+ * 9. Stop resource broker main thread
+ */
+TEST(Resource_Broker_Positive, advanced_registration_success) 
+{
+    GTEST_LOG_START_TEST;
+
+    ResourceBrokerTester resource_broker_tester(false);
+    const std::string application_resource_definition = 
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.start_ccrb(); // Will fail test is start fails
+
+    resource_broker_tester.register_resources_test(
+        mbl::IpcConnection("source1"),
+        application_resource_definition,
+        cloud_connect_out_status,
+        out_access_token,
+        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.simulate_mbed_client_register_update_callback_test(
+        out_access_token,
+        true); // true = simulatate successful registration
+
+    resource_broker_tester.stop_ccrb(); // Will fail test is stop fails
 }
 
 /**
@@ -113,6 +159,42 @@ TEST(Resource_Broker_Positive, registration_success_after_connection_close)
         CloudConnectStatus::STATUS_SUCCESS);
 }
 
+TEST(Resource_Broker_Positive, start_stop_20_times) {
+
+    GTEST_LOG_START_TEST;
+    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
+    resource_broker_tester.resourceBroker_start_stop_test(20);
+}
+
+TEST(Resource_Broker_Positive, start_stop) {
+
+    GTEST_LOG_START_TEST;
+    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
+    resource_broker_tester.resourceBroker_start_stop_test(1);
+}
+
+/**
+ * @brief Test that ResourceBroker track IPC connections as expected
+ * ResourceBroker uses 3 registration records:
+ * 1. Registration record 1 with IPC connections: source_1 and source_2
+ * 2. Registration record 2 with IPC connections: source_2 and source_1
+ * 3. Registration record 3 with IPC connections: source_3
+ * 
+ * Close connection source_3 and make sure ResourceBroker erased registration record 3 as it
+ * does not have any valid connections anymore
+ * Close connection source_1 - Broker have 2 registration records
+ * Close connection source_2 - Broker have no registration records.
+ */
+TEST(Resource_Broker_Positive, notify_connection_closed_multiple_reg_records_3_connections) 
+{
+    GTEST_LOG_START_TEST;
+    ResourceBrokerTester resource_broker_tester;
+    resource_broker_tester.notify_connection_closed_test_multiple_reg_records();
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Negative tests
+////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief This test failed registration
@@ -298,35 +380,45 @@ TEST(Resource_Broker_Negative, first_registration_fail_second_succeeded)
         CloudConnectStatus::STATUS_SUCCESS);    
 }
 
-TEST(Resource_Broker_Positive, start_stop_20_times) {
-
-    GTEST_LOG_START_TEST;
-    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
-    resource_broker_tester.resourceBroker_start_stop_test(20);
-}
-
-TEST(Resource_Broker_Positive, start_stop) {
-
-    GTEST_LOG_START_TEST;
-    ResourceBrokerTester resource_broker_tester(false); // false = don't use mock dbus adapter
-    resource_broker_tester.resourceBroker_start_stop_test(1);
-}
-
 /**
- * @brief Test that ResourceBroker track IPC connections as expected
- * ResourceBroker uses 3 registration records:
- * 1. Registration record 1 with IPC connections: source_1 and source_2
- * 2. Registration record 2 with IPC connections: source_2 and source_1
- * 3. Registration record 3 with IPC connections: source_3
- * 
- * Close connection source_3 and make sure ResourceBroker erased registration record 3 as it
- * does not have any valid connections anymore
- * Close connection source_1 - Broker have 2 registration records
- * Close connection source_2 - Broker have no registration records.
+ * @brief This test successful registration with Mbed client callback simulation
+ * This test includes Resource broker, adapter, mailbox and mbed client simulation.
+ * The tested scenario is:
+ * 1. Start resource broker main thread
+ * 2. Resource Broker is called for register_resources() API
+ * 3. Application resource definition is parsed by RegistrationRecord class
+ * 4. Resource Broker calls Mbed cloud client to register the resources
+ * 5. Test simulate Mbed cloud client callback for registration failure
+ * 6. Resource broker send mbed client error message to mailbox
+ * 7. Resource broker is called to process error message from the adapter
+ * 8. Resource Broker delete registration record
+ * 9. Stop resource broker main thread
  */
-TEST(Resource_Broker_Positive, notify_connection_closed_multiple_reg_records_3_connections) 
+TEST(Resource_Broker_Negative, advanced_registration_failure) 
 {
     GTEST_LOG_START_TEST;
-    ResourceBrokerTester resource_broker_tester;
-    resource_broker_tester.notify_connection_closed_test_multiple_reg_records();
+
+    ResourceBrokerTester resource_broker_tester(false);
+    const std::string application_resource_definition = 
+        VALID_APP_RESOURCE_DEFINITION_TWO_OBJECTS_WITH_ONE_OBJECT_INSTANCE_AND_ONE_RESOURCE;
+    CloudConnectStatus cloud_connect_out_status;
+    std::string out_access_token;
+
+    resource_broker_tester.start_ccrb(); // Will fail test is start fails
+
+    resource_broker_tester.register_resources_test(
+        mbl::IpcConnection("source1"),
+        application_resource_definition,
+        cloud_connect_out_status,
+        out_access_token,
+        CloudConnectStatus::STATUS_SUCCESS // expected cloud connect status
+    );
+
+    // Test registration callback succeeded
+    resource_broker_tester.simulate_mbed_client_register_update_callback_test(
+        out_access_token,
+        false); // false = simulatate failed registration
+
+    resource_broker_tester.stop_ccrb(); // Will fail test is stop fails
 }
+
