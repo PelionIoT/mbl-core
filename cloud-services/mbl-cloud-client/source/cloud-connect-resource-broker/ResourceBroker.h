@@ -51,8 +51,6 @@ public:
      */
     void resource_broker_shutdown_handler(int signal);
 
-    ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////
-    virtual ~ResourceBroker(); //TODO: move to private ///////////////////////////////////////////////////////////////////////////Q$#!@#@!#
 
     /**
      * @brief Main loop that create ResourceBroker, initialize and start all components
@@ -67,10 +65,26 @@ public:
 
 protected:
 
-    // TODO: documentation
-    MblError handle_mbed_client_error_internal_message(MblError status);
+    ResourceBroker();
+    virtual ~ResourceBroker();
 
-    // TODO: documentation
+    /**
+     * @brief Handle mbed client error message
+     * When mbed client error callback is called (mbed client thread) - an internal message is sent 
+     * to mailbox in order to handle it in internal thread in this function.
+
+     * @param mbed_client_error - mbed client error code
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
+    MblError handle_mbed_client_error_internal_message(MblError mbed_client_error);
+
+    /**
+     * @brief Handle mbed client registration updated message
+     * When mbed client registration updated callback is called (mbed client thread) - an internal 
+     * message is sent to mailbox in order to handle it in internal thread in this function
+     * 
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
     MblError handle_registration_updated_internal_message();
 
     /**

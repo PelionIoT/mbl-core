@@ -221,8 +221,8 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
         // write was successful!, write to log and release the unique ptr .
         // be carefull not to dereference the unique_ptr, it might be free!
 
-        TR_INFO("Message sent via %s mailbox. sequence_num_=%" PRIu64 " padata_len_yload_len_=%zu"
-                " type=%s",
+        TR_DEBUG("Message sent via %s. sequence_num: %" PRIu64 " data_len: %zu"
+                " type: %s",
                 get_name(),
                 msg_to_send.sequence_num_,
                 msg_to_send.data_len_,

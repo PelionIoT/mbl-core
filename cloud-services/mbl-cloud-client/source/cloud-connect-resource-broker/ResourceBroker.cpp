@@ -40,13 +40,21 @@ namespace mbl
 ResourceBroker* ResourceBroker::s_ccrb_instance = nullptr;
 uint32_t ResourceBroker::dummy_network_interface_ = 0xFFFFFFFF;
 
-//TODO: add documentation
+/**
+ * @brief Mailbox message for mbed client RegistrationUpdated callback
+ * This message is sent to mailbox when mbed client RegistrationUpdated callback is called
+ * In order to handle the callback in internal therad and not mbed client thread
+ */
 struct MailboxMsg_RegistrationUpdated
 {
     MblError status;
 };
 
-//TODO: add documentation
+/**
+ * @brief Mailbox message for mbed client error callback
+ * This message is sent to mailbox when mbed client error callback is called
+ * In order to handle the callback in internal therad and not mbed client thread
+ */
 struct MailboxMsg_MbedClientError
 {
     MblError status;
@@ -542,6 +550,7 @@ bool ResourceBroker::is_registration_record_register_in_progress()
 
     return false;
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Callback functions that are being called by Mbed client
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -590,8 +599,52 @@ void ResourceBroker::handle_mbed_client_authorize(const int32_t request)
     }
 }
 
+void ResourceBroker::handle_mbed_client_registration_updated()
+{
+    TR_DEBUG_ENTER;
+
+    // TODO: need to handle cases when mbed client does not call any callback
+    // during registration of resources - IOTMBL-1700
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_RegistrationUpdated registration_updated_msg;
+    registration_updated_msg.status = MblError::None;
+    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
+    TR_ERR("send_mailbox_msg for register update");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
+}
+
+// TODO: this callback is related to the following scenarios which are not yet implemented:
+// add resource instances and remove resource instances.
+void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
+{
+    TR_DEBUG_ENTER;
+
+    const MblError mbl_code =
+        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
+    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
+    TR_ERR("Error details: %s", mbed_client_error_description_func_());
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_MbedClientError mbed_client_error_msg;
+    mbed_client_error_msg.status = mbl_code;
+    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
+    TR_ERR("send_mailbox_msg for mbed client error");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mailbox messages related functions
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //TODO: Need to figure out if this can be called as a result of other operations
-MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError status)
+MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
 {
     TR_DEBUG_ENTER;
 
@@ -599,7 +652,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError stat
 
     // Client unregister in progress:
     if (State_ClientUnregisterInProgress == current_state) {
-        TR_ERR("Client unregister failed with error: %s", MblError_to_str(status));
+        TR_ERR("Client unregister failed with error: %s", MblError_to_str(mbed_client_error));
         // We have no choice but to signal that client is unregistered which will close
         // mbed client and unregister ungracefully
         mbed_client_state_.store(State_ClientUnregistered);
@@ -608,7 +661,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError stat
 
     // Client register in progress:
     if (State_ClientRegisterInProgress == current_state) { 
-        TR_ERR("Client register failed with error: %s", MblError_to_str(status));
+        TR_ERR("Client register failed with error: %s", MblError_to_str(mbed_client_error));
         // We have no choice but to signal that client is unregistered which will close
         // client and unregister ungracefully
         mbed_client_state_.store(State_ClientUnregistered);
@@ -626,7 +679,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError stat
 
         TR_ERR("Registration (access_token: %s) failed with error: %s",
                reg_update_in_progress_access_token_.c_str(),
-                MblError_to_str(status));
+                MblError_to_str(mbed_client_error));
 
         const MblError update_status = ipc_adapter_->update_registration_status(
             registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
@@ -645,7 +698,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError stat
     }
 
     // Keepalive:
-    TR_ERR("Keepalive request failed with error: %s", MblError_to_str(status));
+    TR_ERR("Keepalive request failed with error: %s", MblError_to_str(mbed_client_error));
     return MblError::None;
 }
 
@@ -757,51 +810,12 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
     }
 
     // This should never happen
-    TR_WARN("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
+    TR_WARN("Unexpected message type %s, Ignoring...", data_type_name.c_str());
     return Error::None;
 }
 
-void ResourceBroker::handle_mbed_client_registration_updated()
-{
-    TR_DEBUG_ENTER;
-
-    // TODO: need to handle cases when mbed client does not call any callback
-    // during registration of resources - IOTMBL-1700
-
-    // Send mailbox message (will be handled in process_mailbox_message API)
-    MailboxMsg_RegistrationUpdated registration_updated_msg;
-    registration_updated_msg.status = MblError::None;
-    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
-    TR_ERR("send_mailbox_msg for register update");
-    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
-    if (send_status != MblError::None) {
-        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
-    }
-}
-
-// TODO: this callback is related to the following scenarios which are not yet implemented:
-// add resource instances and remove resource instances.
-void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
-{
-    TR_DEBUG_ENTER;
-
-    const MblError mbl_code =
-        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
-    TR_ERR("Error details: %s", mbed_client_error_description_func_());
-
-    // Send mailbox message (will be handled in process_mailbox_message API)
-    MailboxMsg_MbedClientError mbed_client_error_msg;
-    mbed_client_error_msg.status = mbl_code;
-    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
-    TR_ERR("send_mailbox_msg for mbed client error");
-    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
-    if (send_status != MblError::None) {
-        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// Adapter related functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<CloudConnectStatus, std::string>
@@ -1150,6 +1164,8 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
     while (itr != registration_records_.end()) {
         // Call track_ipc_connection, and in case registration record does not have any other
         // ipc connections - erase from registration_records_
+        // this is safe as all related operation on registration_records_ are done in internal
+        // thread.
         const MblError status =
             itr->second->track_ipc_connection(source, RegistrationRecord::TrackOperation::REMOVE);
         if (Error::CCRBNoValidConnection == status) {

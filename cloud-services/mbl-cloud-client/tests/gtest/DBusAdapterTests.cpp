@@ -22,6 +22,7 @@
 #include "TestInfra.h"
 #include "TestInfraAppThread.h"
 #include "TestInfra_DBusAdapterTester.h"
+#include "ResourceBrokerTester.h"
 
 #include <gtest/gtest.h>
 
@@ -389,8 +390,8 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
     milliseconds arrive_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
     uint64_t period_millisec = periodic_ev->get_period_millisec();
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
 
     // in case gtest_repeat > 1, it is not enough to initialize static send_time variable on its
@@ -780,8 +781,8 @@ TEST_F(DBusAdapterWithEventImmediateTestFixture, adapter_immediate_event)
     GTEST_LOG_START_TEST;
     EventData_Raw event_data = { 0 };
     MblError stop_status;
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
 
     // initialize adapter
@@ -936,8 +937,8 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
     GTEST_LOG_START_TEST;
     EventData_Raw event_data = { DATA_VAL };
     MblError stop_status;
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
     // random  100 millisec <= microseconds <= 1099 millisec
     uint64_t period_millisec = (rand() % EventPeriodic::millisec_per_sec) +
@@ -970,8 +971,8 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
 TEST(DBusAdapter, AccessTokenGenerating_check_non_repeating)
 {
     const ssize_t NUM_ITERATIONS = 100000;
-    ResourceBroker broker;
-    DBusAdapter adapter(broker);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     //use and unordered set - prefer speed
     std::unordered_set<std::string> generated_access_tokens;
 
@@ -988,8 +989,8 @@ TEST(DBusAdapter, AccessTokenGenerating_check_non_repeating)
 
 TEST(DBusAdapter, enforce_single_connection_unit_test)
 {   
-    ResourceBroker broker;    
-    DBusAdapter adapter(broker);    
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
   
     ASSERT_EQ(adapter.init(), MblError::None);
@@ -1070,8 +1071,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_
 // a pointer to adapter as the user data
 TEST(DBusAdapter, basic_send_event)
 {
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { &adapter };
 
     ASSERT_EQ(adapter.init(), MblError::None);

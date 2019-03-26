@@ -43,10 +43,17 @@ public:
 
     ~ResourceBrokerTester();
 
-    //TODO: ADD DESCRIPTION
+    /**
+     * @brief Mock function for init mbed client
+     * Init resource broker mbed client function pointers to point to this calss
+     * @return mbl::MblError::None
+     */
     mbl::MblError mock_init_mbed_client();
 
-    //TODO: ADD DESCRIPTION
+    /**
+     * @brief Mock function for deinit mbed client
+     * 
+     */
     void mock_deinit_mbed_client();
     
     /**
@@ -214,6 +221,15 @@ public:
      * @param source - connection which has been closed
      */
     void notify_connection_closed(mbl::IpcConnection source);
+
+    /**
+     * @brief Return internal ccrb
+     * This function is used for tests that need ccrb reference as they can't create it
+     * because ccrb c'tor is private (this class is friend of it so it can be done)
+     * 
+     * @return mbl::ResourceBroker& 
+     */
+    inline mbl::ResourceBroker& get_ccrb() {return resource_broker_;}
 
 private:
 
