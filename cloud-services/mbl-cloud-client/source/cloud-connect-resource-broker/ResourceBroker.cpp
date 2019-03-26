@@ -298,7 +298,7 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
 
     // Check if application register update is in progress
     // if yes - do nothing as register update will act as keep alive
-    if (this_ccrb->is_registration_record_register_in_progress()) {
+    if (!this_ccrb->reg_update_in_progress_access_token_.empty()) {
         TR_DEBUG("Application registration update is in progress- no need for keepalive.");
         return Error::None;
     }
@@ -503,6 +503,11 @@ ResourceBroker::get_registration_record(const std::string& access_token)
 {
     TR_DEBUG_ENTER;
 
+    if(access_token.empty()) {
+        TR_ERR("access_token is empty");
+        return nullptr;
+    }
+
     auto itr = registration_records_.find(access_token);
     if (registration_records_.end() == itr) {
         // Could not found registration_record
@@ -511,39 +516,6 @@ ResourceBroker::get_registration_record(const std::string& access_token)
     }
 
     return itr->second;
-}
-
-ResourceBroker::RegistrationRecord_ptr
-ResourceBroker::get_registration_record_register_in_progress()
-{
-    TR_DEBUG_ENTER;
-
-    auto itr = registration_records_.begin();
-    while (itr != registration_records_.end()) {
-        if (RegistrationRecord::State_RegistrationInProgress == 
-             itr->second->get_registration_state()) {
-            return itr->second;
-        }
-        itr++;
-    }
-
-    return nullptr;
-}
-
-bool ResourceBroker::is_registration_record_register_in_progress()
-{
-    TR_DEBUG_ENTER;
-
-    auto itr = registration_records_.begin();
-    while (itr != registration_records_.end()) {
-        if (RegistrationRecord::State_RegistrationInProgress == 
-             itr->second->get_registration_state()) {
-            return true;
-        }
-        itr++;
-    }
-
-    return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -669,7 +641,8 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed
 
     // Check if this callback is caused by an application trying to register resources
     // (only one application can be in registration update state at a time)
-    RegistrationRecord_ptr registration_record = get_registration_record_register_in_progress();
+    RegistrationRecord_ptr registration_record =
+            get_registration_record(reg_update_in_progress_access_token_);
     if (nullptr != registration_record) {
 
         TR_ERR("Registration (access_token: %s) failed with error: %s",
@@ -706,7 +679,8 @@ MblError ResourceBroker::handle_registration_updated_internal_message()
     // 2. keep alive (does not occur during #1)
 
     // Only one application can be in registration update state - check if there is such...
-    RegistrationRecord_ptr registration_record = get_registration_record_register_in_progress();
+    RegistrationRecord_ptr registration_record =
+            get_registration_record(reg_update_in_progress_access_token_);
     if (nullptr != registration_record) {
 
         TR_DEBUG("Registration record (access_token: %s) registered successfully.",
@@ -806,8 +780,8 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     }
     
     // Only one register update request is allowed at a time:
-    if (is_registration_record_register_in_progress()) {
-        TR_ERR("Registration is already in progress.");
+    if (!reg_update_in_progress_access_token_.empty()) {
+        TR_ERR("Registration of resources is already in progress.");
         ret_pair.first = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return ret_pair;
     }
@@ -1141,8 +1115,17 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
         // thread.
         const MblError status =
             itr->second->track_ipc_connection(source, RegistrationRecord::TrackOperation::REMOVE);
+        // Check if Registration record does not have any more valid connections - if yes
+        // erase from map
         if (Error::CCRBNoValidConnection == status) {
-            // Registration record does not have any more valid connections - erase from map
+            // Check if registration record is in progress of register update its resources
+            // if yes - clear reg_update_in_progress_access_token_ member
+            if (itr->first == reg_update_in_progress_access_token_) {
+                TR_WARN("Erase registration record (access_token: %s) during register of resources",
+                    itr->first.c_str());
+                reg_update_in_progress_access_token_.clear();
+            }
+            
             TR_DEBUG("Erase registration record (access_token: %s)", itr->first.c_str());
             itr = registration_records_.erase(itr); // supported since C++11
         }

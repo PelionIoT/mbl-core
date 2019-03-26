@@ -532,23 +532,6 @@ protected:
      */
     ResourceBroker::RegistrationRecord_ptr get_registration_record(const std::string& access_token);
 
-    /**
-     * @brief Get the registration record of an application that is registering its resources.
-     * Only one application is allowed to register its resources at a time.
-     * 
-     * @return RegistrationRecord - if register of application resources is in progress
-     *         or nullptr in case no application is in progress of registering its resources.
-     */
-    ResourceBroker::RegistrationRecord_ptr get_registration_record_register_in_progress();
-
-    /**
-     * @brief Check if register of application resources is in progress
-     * 
-     * @return true - in case register of application resources is in progress
-     * @return false - in case register of application resources is not in progress.
-     */
-    bool is_registration_record_register_in_progress();
-
     // Registration record map that holds records of registered / register requests
     // Used also for other application related operation
     // Modifing this map should be done carefully as it can be done in callbacks and in Broker's
@@ -601,7 +584,21 @@ protected:
      */
     std::atomic<MbedClientState> mbed_client_state_;
 
-    // Access token of the current operation against Mbed client
+    /**
+     * @brief In progress register update access token
+     * Only one application can be in progress of register update of its resources
+     * Only when register update is finished (either successful or failed) - this member will be
+     * cleared.
+     * If this member is not empty - it means register update is in progress.
+     * Lifecycle:
+     * Created in register_resources() API
+     * Erased in one of the following:
+     *      handle_mbed_client_error_internal_message - in case register update failed
+     *      handle_registration_updated_internal_message - in case register update succeeded
+     *      notify_connection_closed - in case the register record of this access token does not
+     *          have any valid connection (this register record is also being erased)
+     * Note: this member is used only from internal thread so there are no race conditions.
+     */
     std::string reg_update_in_progress_access_token_;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
