@@ -49,7 +49,7 @@ MblError ResourceBrokerMockBase::process_mailbox_message(MailboxMsg& msg)
         // External thread request to stop event loop
         MblError status;
         MailboxMsg_Exit message_exit;
-        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>();
+        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>(sizeof(MailboxMsg_Exit));
         TR_INFO("receive message MailboxMsg_Exit sending stop request to event loop with stop"
                 " status=%s",
                 MblError_to_str(message_exit.stop_status));

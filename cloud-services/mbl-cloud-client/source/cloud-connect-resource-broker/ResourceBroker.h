@@ -520,7 +520,7 @@ protected:
 
     /**
      * @brief Set mbed cloud client function pointers.
-     * In case of tests we will use it to set mbed cloud client function pointers to mock class.
+     * In case of tests we will use it to set mock mbed cloud client function pointers.
      */
     void init_mbed_client_function_pointers();
 

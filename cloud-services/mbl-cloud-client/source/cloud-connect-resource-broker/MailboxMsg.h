@@ -91,21 +91,22 @@ public:
      * @brief Templated deserialization function. Fill a reference of type T by reading cytes from
      * serializer_.
      *
-     * @tparam T The type to fill the serialized data in. must be POD type.
+     * @param expected_msg_size - expected data size to be unpacked
      * @return std::pair<MblError, T> - a pair with :
      * First element - the result of the operation, SystemCallFailed for failure.
      * Second element - relevant only on success - T unpacked by NRVO
      * (Named Return Value Optimization)
      */
     template <typename T>
-    std::pair<MblError, T> unpack_data()
+    std::pair<MblError, T> unpack_data(size_t expected_msg_size)
     {
         mbed_tracef(TRACE_LEVEL_DEBUG, "ccrb-mailbox", "Enter");
 
         // Static assert - make sure user will try to compile only built in data types (PODs)
         static_assert(std::is_trivial<T>::value && std::is_standard_layout<T>::value,
                       "None POD types are not supported with this function!");
-        return mbl::unpack_data<T>("ccrb-mailbox", serializer_);
+
+        return mbl::unpack_data<T>("ccrb-mailbox", serializer_, expected_msg_size);
     }
 
     // Getters

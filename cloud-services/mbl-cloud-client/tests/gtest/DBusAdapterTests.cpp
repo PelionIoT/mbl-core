@@ -136,7 +136,8 @@ TEST_F(MailBoxTestFixture, send_rcv_msg_single_thread)
         // check that sent data equal received data
         MailboxMsg_Raw rcv_data;
         MblError status;
-        std::tie(status, rcv_data) = ret_pair.second.unpack_data<MailboxMsg_Raw>();
+        std::tie(status, rcv_data) =
+            ret_pair.second.unpack_data<MailboxMsg_Raw>(sizeof(MailboxMsg_Raw));
 
         ASSERT_EQ(status, MblError::None);
         ASSERT_EQ(memcmp(&send_payload, &rcv_data, random_str.length()), 0);
@@ -167,7 +168,8 @@ void* MailBoxTestFixture::reader_thread_start(void* mailbox)
 
         MailboxMsg_Raw rcv_data;
         MblError status;
-        std::tie(status, rcv_data) = ret_pair.second.unpack_data<MailboxMsg_Raw>();
+        std::tie(status, rcv_data) =
+            ret_pair.second.unpack_data<MailboxMsg_Raw>(sizeof(MailboxMsg_Raw));
         if (status != MblError::None)
         {
             pthread_exit((void*) -1010);
@@ -293,7 +295,7 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, 
     MblError status = MblError::None;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
 
-    std::tie(status, event_data) = ev->unpack_data<EventData_Raw>();
+    std::tie(status, event_data) = ev->unpack_data<EventData_Raw>(sizeof(EventData_Raw));
     if (status != MblError::None) {
         sd_event_exit(event_loop_handle_, MblError::DBA_InvalidValue);
         return status;
@@ -731,7 +733,7 @@ DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(
     MblError result = MblError::None;
     int n;
 
-    std::tie(result, event_data) = ev->unpack_data<EventData_Raw>();
+    std::tie(result, event_data) = ev->unpack_data<EventData_Raw>(sizeof(EventData_Raw));
     if (result != MblError::None) {
         sd_event_exit(sd_event_source_get_event(s), (int) result);
         return result;
@@ -1036,7 +1038,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_periodic_callback(sd_event_s
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
     MblError status = MblError::None;
 
-    std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
+    std::tie(status, user_data) =
+        ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(sizeof(DBusAdapeterTestFixture2::DBusAdapterPtr));
 
     user_data.adapter->stop(status);
     
@@ -1048,7 +1051,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
     MblError status = MblError::None;
 
-    std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
+    std::tie(status, user_data) = 
+        ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(sizeof(DBusAdapeterTestFixture2::DBusAdapterPtr));
     if (status != MblError::None){
         TR_ERR("send_event_periodic failed!");
         user_data.adapter->stop(status);

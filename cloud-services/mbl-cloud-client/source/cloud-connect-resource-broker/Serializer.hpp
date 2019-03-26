@@ -54,12 +54,15 @@ MblError pack_data(const char* trace_group, T const& data, std::stringstream& se
  * @param T - the type of data to serialize - must be POD
  * @param trace_group - used for logging (replace TRACE_GROUP)
  * @param serializer - the string buffer to serialize data to
+ * @param expected_data_size - expected data size to be unpacked
  * @return std::pair<MblError, T> -  pair where the first element is the status. SystemCallFailed
  * for failure or None for success. The 2nd element is relevant only on success, and is the
  * serialized data
  */
 template <typename T>
-std::pair<MblError, T> unpack_data(const char* trace_group, std::stringstream& serializer)
+std::pair<MblError, T> unpack_data(const char* trace_group,
+                                   std::stringstream& serializer,
+                                   size_t expected_data_size)
 {
     mbed_tracef(TRACE_LEVEL_DEBUG, trace_group, "Enter");
 
@@ -68,10 +71,19 @@ std::pair<MblError, T> unpack_data(const char* trace_group, std::stringstream& s
                   "None POD types are not supported with this function!");
     T data;
     decltype(sizeof(T)) size = sizeof(T);
+    // Validate data size (sanity check)
+    if(size != expected_data_size) {
+        mbed_tracef(TRACE_LEVEL_ERROR,
+                    trace_group,
+                    "Unexpected data size %zu (expected %zu)",
+                    size,
+                    expected_data_size);
+        return std::make_pair(MblError::SystemCallFailed, data);
+    }
     serializer.read(reinterpret_cast<char*>(&data), size);
     if (!serializer.good()) {
         mbed_tracef(TRACE_LEVEL_ERROR,
-                    "ccrb-event",
+                    trace_group,
                     "serializer.read failed! failbit=%d"
                     " eofbit=%d badbit=%d - returning error %s",
                     serializer.fail(),

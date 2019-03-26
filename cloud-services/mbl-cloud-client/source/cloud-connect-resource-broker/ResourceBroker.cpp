@@ -274,14 +274,12 @@ MblError ResourceBroker::stop()
 MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const Event* ev)
 {
     TR_DEBUG_ENTER;
-
-    UNUSED(s); /////////////////////////////////////////////////////////////////////////////////////////// sd_event_source_unref API???
-
+    UNUSED(s); // Can't call unref_event_source as this event should be keep on comming
     assert(ev);
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
     TR_DEBUG("%s event", periodic_ev->get_description().c_str());
 
-    auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>();
+    auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>(sizeof(EventData_Keepalive));
     if(unpack_pair.first != Error::None) {
         TR_ERR("Unpack of periodic event failed with error %s", MblError_to_str(unpack_pair.first));
         return unpack_pair.first;
@@ -291,12 +289,6 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
     assert(this_ccrb);
 
     MbedClientState current_state = this_ccrb->mbed_client_state_.load();
-    // Check if application registration update is in progress
-    // if yes - do nothing as registration will act as keep alive
-    if (this_ccrb->is_registration_record_register_in_progress()) {
-        TR_DEBUG("Application registration update is in progress- no need for keepalive.");
-        return Error::None;
-    }
 
     // Keep alive is only needed when device is registered
     if (State_ClientRegistered != current_state) {
@@ -304,7 +296,14 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, const E
         return Error::None;
     }
 
-    TR_DEBUG("Call cloud_client_->register_update");
+    // Check if application register update is in progress
+    // if yes - do nothing as register update will act as keep alive
+    if (this_ccrb->is_registration_record_register_in_progress()) {
+        TR_DEBUG("Application registration update is in progress- no need for keepalive.");
+        return Error::None;
+    }
+
+    TR_DEBUG("Call cloud_client_->register_update for (keepalive)");
     this_ccrb->mbed_client_register_update_func_();
 
     return Error::None;
@@ -414,7 +413,6 @@ MblError ResourceBroker::init()
 void ResourceBroker::deinit_mbed_client()
 {
     TR_DEBUG_ENTER;
-
     assert(cloud_client_);
     TR_INFO("Erase mbed client");    
     delete cloud_client_;
@@ -425,7 +423,6 @@ void ResourceBroker::deinit_mbed_client()
 MblError ResourceBroker::deinit()
 {
     TR_DEBUG_ENTER;
-
     assert(ipc_adapter_);
 
     // FIXME: Currently we call ipc_adapter_->deinit unconditionally.
@@ -463,9 +460,7 @@ MblError ResourceBroker::run()
 void* ResourceBroker::ccrb_main(void* ccrb)
 {
     TR_DEBUG_ENTER;
-
     assert(ccrb);
-
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ccrb);
 
     OneSetMblError status(this_ccrb->init());
@@ -743,17 +738,9 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
     // Exit message
     if (data_type_name == typeid(MailboxMsg_Exit).name()) {
         TR_INFO("Process message MailboxMsg_Exit");
-        // Validate length (sanity check). In this case the length must be equal the actual length
-        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) { ///////////////////////////////////////////////////// improve this check - move to unpack?
-            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu)",
-                   msg.get_data_len(),
-                   sizeof(MailboxMsg_Exit));
-            return Error::DBA_MailBoxInvalidMsg;
-        }
-
         MblError status;
         MailboxMsg_Exit message;
-        std::tie(status, message) = msg.unpack_data<MailboxMsg_Exit>();
+        std::tie(status, message) = msg.unpack_data<MailboxMsg_Exit>(sizeof(MailboxMsg_Exit));
         if (status != MblError::None) {
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
@@ -770,17 +757,10 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
     // Mbed Client Registration Updated
     if (data_type_name == typeid(MailboxMsg_RegistrationUpdated).name()) {
         TR_INFO("Process message MailboxMsg_RegistrationUpdated");
-        // Validate length (sanity check). In this case the length must be equal the actual length
-        if (msg.get_data_len() != sizeof(MailboxMsg_RegistrationUpdated)) {
-            TR_ERR("Unexpected MailboxMsg_RegistrationUpdated message length %zu (expected %zu)",
-                   msg.get_data_len(),
-                   sizeof(MailboxMsg_RegistrationUpdated));
-            return Error::DBA_MailBoxInvalidMsg;
-        }
-
         MblError status;
         MailboxMsg_RegistrationUpdated message;
-        std::tie(status, message) = msg.unpack_data<MailboxMsg_RegistrationUpdated>();
+        std::tie(status, message) = 
+            msg.unpack_data<MailboxMsg_RegistrationUpdated>(sizeof(MailboxMsg_RegistrationUpdated));
         if (status != MblError::None) {
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
@@ -791,17 +771,10 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
     // Mbed Client Error
     if (data_type_name == typeid(MailboxMsg_MbedClientError).name()) {
         TR_INFO("Process message MailboxMsg_MbedClientError");
-        // Validate length (sanity check). In this case the length must be equal the actual length
-        if (msg.get_data_len() != sizeof(MailboxMsg_MbedClientError)) {
-            TR_ERR("Unexpected MailboxMsg_MbedClientError message length %zu (expected %zu)",
-                   msg.get_data_len(),
-                   sizeof(MailboxMsg_MbedClientError));
-            return Error::DBA_MailBoxInvalidMsg;
-        }
-
         MblError status;
         MailboxMsg_MbedClientError message;
-        std::tie(status, message) = msg.unpack_data<MailboxMsg_MbedClientError>();
+        std::tie(status, message) = 
+            msg.unpack_data<MailboxMsg_MbedClientError>(sizeof(MailboxMsg_MbedClientError));
         if (status != MblError::None) {
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
