@@ -7,8 +7,8 @@
 #include "DBusAdapter.h"
 #include "CloudConnectTrace.h"
 #include "DBusAdapterCommon.h"
-#include "DBusCloudConnectNames.h"
 #include "DBusAdapter_Impl.h"
+#include "DBusCloudConnectNames.h"
 #include "MbedCloudClient.h"
 #include "MblError.h"
 #include "ResourceBroker.h"
@@ -18,6 +18,8 @@
 
 #include <gtest/gtest.h>
 #include <semaphore.h>
+#include <string>
+
 
 #define TRACE_GROUP "ccrb-dbus-gtest"
 
@@ -26,7 +28,9 @@ using namespace mbl;
 // string value used in Set/Get resources values tests
 static const std::string string_value = "string_value";
 // int64_t value used in Set/Get resources values tests
-static const int64_t int64_value = 0xF;
+static const int64_t int64_value = 100;
+// resource path used in Set/Get resources values tests
+static const char* resource_path = "/111/22/3";
 
 struct AdapterParameterizedData
 {
@@ -70,10 +74,60 @@ public:
         return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
     }
 
-    CloudConnectStatus set_resources_values(const IpcConnection& /*unused*/,
+    CloudConnectStatus set_resources_values(IpcConnection /*unused*/,
                                             const std::string& token,
                                             std::vector<ResourceSetOperation>& inout_set_operations)
     {
+        // check expected resource path and value
+        for (auto operation : inout_set_operations) {
+
+            std::string path = operation.input_data_.get_path();
+            if (path != std::string(resource_path)) {
+
+                TR_ERR("Actual path(%s) != Expected path(%s)", path.c_str(), resource_path);
+                return CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
+            }
+
+            ResourceDataType data_type = operation.input_data_.get_data_type();
+
+            switch (data_type)
+            {
+            case STRING:
+            {
+                std::string value = operation.input_data_.get_value_string();
+
+                if (value != string_value) {
+
+                    TR_ERR("Actual value(%s) != Expected value(%s)",
+                           value.c_str(),
+                           string_value.c_str());
+                    return CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
+                }
+                break;
+            }
+            case INTEGER:
+            {
+                int64_t value = operation.input_data_.get_value_integer();
+
+                if (value != int64_value) {
+
+                    TR_ERR("Actual value(%" PRIx64 ") != Expected value(%" PRIx64 ")",
+                           value,
+                           int64_value);
+                    return CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
+                }
+                break;
+            }
+
+            default:
+            {
+                std::stringstream msg("Data type " + std::string(stringify(data_type)) +
+                                      " is not supported");
+                return CloudConnectStatus::ERR_INVALID_RESOURCE_TYPE;
+            }
+            }
+        }
+
         CloudConnectStatus resource_ret_status = STATUS_SUCCESS;
 
         if (token == "Return_invalid_access_token") {
@@ -103,6 +157,9 @@ public:
 
         CloudConnectStatus ret_status = STATUS_SUCCESS;
         CloudConnectStatus resource_ret_status = STATUS_SUCCESS;
+
+        for (auto operation : inout_get_operations) {
+        }
 
         if (token == "Return_invalid_access_token") {
             return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
@@ -680,34 +737,34 @@ const static std::vector<SetResourcesValues_entry> SetResourcesValues_test_array
     // string input, return success
     {
         "Return_Success",     // input_access_token
-        "/5555/11/111",       // input_resource_path
+        resource_path,        // input_resource_path
         STRING,               // input_format
-        "test_value_1",       // input_resource_value
+        string_value.c_str(), // input_resource_value
         "" /* not relevant */ // expected_sd_bus_error_name
     },
     // string input, return error
     {
         "Return_invalid_access_token",         // input_access_token
-        "/5555/11/222",                        // input_resource_path
+        resource_path,                         // input_resource_path
         STRING,                                // input_format
-        "test_value_2",                        // input_resource_value
+        string_value.c_str(),                  // input_resource_value
         CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN // expected_sd_bus_error_name
     },
     // int64 input, return success
     {
-        "Return_Success",     // input_access_token
-        "/5555/11/111",       // input_resource_path
-        INTEGER,              // input_format
-        "-10",                // input_resource_value
-        "" /* not relevant */ // expected_sd_bus_error_name
+        "Return_Success",                    // input_access_token
+        resource_path,                       // input_resource_path
+        INTEGER,                             // input_format
+        std::to_string(int64_value).c_str(), // input_resource_value
+        "" /* not relevant */                // expected_sd_bus_error_name
     },
 
     // int64 input, return error
     {
         "Return_invalid_resource_path",         // input_access_token
-        "/5555/11/222",                         // input_resource_path
+        resource_path,                          // input_resource_path
         INTEGER,                                // input_format
-        "100",                                  // input_resource_value
+        std::to_string(int64_value).c_str(),    // input_resource_value
         CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
     }};
 
@@ -847,7 +904,7 @@ const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array
     // string input, return success
     {
         "Return_Success",     // input_access_token
-        "/5555/11/111",       // input_resource_path
+        resource_path,        // input_resource_path
         STRING,               // input_format
         "" /* not relevant */ // expected_sd_bus_error_name
     },
@@ -855,7 +912,7 @@ const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array
     // string input, return error
     {
         "Return_invalid_access_token",         // input_access_token
-        "/5555/11/222",                        // input_resource_path
+        resource_path,                         // input_resource_path
         STRING,                                // input_format
         CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN // expected_sd_bus_error_name
     },
@@ -863,7 +920,7 @@ const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array
     // uint32 input, return success
     {
         "Return_Success",     // input_access_token
-        "/5555/11/333",       // input_resource_path
+        resource_path,        // input_resource_path
         INTEGER,              // input_format
         "" /* not relevant */ // expected_sd_bus_error_name
     },
@@ -871,7 +928,7 @@ const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array
     // uint32 input, return error
     {
         "Return_invalid_resource_path",         // input_access_token
-        "/5555/11/444",                         // input_resource_path
+        resource_path,                          // input_resource_path
         INTEGER,                                // input_format
         CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
     }};

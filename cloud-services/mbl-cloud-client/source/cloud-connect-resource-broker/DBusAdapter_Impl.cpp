@@ -10,6 +10,7 @@
 #include "DBusAdapter.h"
 #include "DBusAdapterCommon.h"
 #include "DBusCloudConnectNames.h"
+#include "DBusMessage.h"
 #include "DBusMessagesFactory.h"
 #include "DBusService.h"
 #include "MailboxMsg.h"
@@ -581,8 +582,27 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
-    r = DBusMessagesFactory::process_message(
-        impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
+    std::string method_name = sd_bus_message_get_member(m);
+
+    std::shared_ptr<DBusCommonMessageProcessor> processor =
+        DBusMessagesFactory::get_message_processor(method_name);
+    if (processor == nullptr) {
+
+        TR_ERR("Failed to find message processor for message=%s", method_name.c_str());
+
+        r = sd_bus_error_set_const(
+            ret_error,
+            CloudConnectStatus_error_to_DBus_format_str(ERR_NOT_SUPPORTED), // sd_bus_error.name
+            CloudConnectStatus_to_readable_str(ERR_NOT_SUPPORTED));         // sd_bus_error.message
+        assert(-ERR_NOT_SUPPORTED == r);
+        return r;
+    }
+
+    TR_INFO("Starting to process %s method call from sender %s",
+            method_name.c_str(),
+            sd_bus_message_get_sender(m));
+
+    r = processor->process_message(impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
     if (r < 0) {
         TR_ERR("process_message failed, r=%d", r);
     }

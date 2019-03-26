@@ -7,10 +7,6 @@
 #ifndef _DBusMessagesFactory_h_
 #define _DBusMessagesFactory_h_
 
-#include "CloudConnectTypes.h"
-
-#include <systemd/sd-bus.h>
-
 #include <map>
 #include <memory>
 #include <string>
@@ -30,19 +26,13 @@ class DBusMessagesFactory
 {
 public:
     /**
-     * @brief Static methos: find sd-bus message processor which corresponds to the sd-bus message
-     * method name and call its process_message() API.
-     * @param connection_handle - sd-bus bus connection handle
-     * @param m - message received on sd-bus bus
-     * @param ccrb - reference to the Cloud Connect resource broker
-     * @param ret_error - The sd_bus_error structure carries information about a D-Bus error
-     * condition.
-     * @return int - 0 on success, On failure, return a negative Linux errno-style error code.
+     * @brief Static method: find sd-bus message processor which corresponds to the sd-bus message
+     * method name.
+     * @param method_name - sd-bus method name
+     * @return std::shared_ptr<DBusCommonMessageProcessor> - sd-bus method message processor
      */
-    static int process_message(sd_bus* connection_handle,
-                               sd_bus_message* m,
-                               ResourceBroker& ccrb,
-                               sd_bus_error* ret_error);
+    static std::shared_ptr<DBusCommonMessageProcessor>
+    get_message_processor(std::string& method_name);
 
     typedef std::shared_ptr<DBusCommonMessageProcessor> DBusMsgProcessor;
 

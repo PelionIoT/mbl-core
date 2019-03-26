@@ -126,6 +126,7 @@ int DBusCommonMessageProcessor::handle_message_process_failure(CloudConnectStatu
         "%s failed with cloud connect error %s", method_name, CloudConnectStatus_to_str(cc_status));
 
     // set custom error to sd_bus_error structure.
+
     // sd_bus_error_set_const translates DBus format error string to negative integer
     // and returns it's value(in this case -status_to_send)
     int r = sd_bus_error_set_const(
@@ -249,7 +250,7 @@ int DBusDeregisterResourcesMessageProcessor::process_message(sd_bus* connection_
     assert(sender);
     TR_INFO("Starting to process DeregisterResources method call from sender %s", sender);
 
-    std::string access_token;
+    std::string access_token("");
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, r=%d", r);
@@ -322,7 +323,7 @@ int DBusSetResourcesMessageProcessor::process_message(sd_bus* connection_handle,
     assert(sender);
     TR_INFO("Starting to process SetResourcesValues method call from sender %s", sender);
 
-    std::string access_token;
+    std::string access_token("");
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, return = %d", r);
@@ -421,14 +422,14 @@ int DBusSetResourcesMessageProcessor::handle_message_process_failure(
     // check each set operation status
     uint32_t err_count = 0;
     CloudConnectStatus ret_status = STATUS_SUCCESS;
-    string return_err = "Set LWM2M resources failed: ";
+    std::string return_err = "Set LWM2M resources failed: ";
 
     for (auto operation : set_operations) {
         if (operation.output_status_ != STATUS_SUCCESS) {
             if (err_count < MAX_NUMBER_OF_ERRORS_IN_REPLY) {
 
-                string current_error(operation.input_data_.get_path() + " : " +
-                                     CloudConnectStatus_to_str(operation.output_status_));
+                std::string current_error(operation.input_data_.get_path() + " : " +
+                                          CloudConnectStatus_to_str(operation.output_status_));
                 // check the error message size
                 if (return_err.size() + current_error.size() <=
                     SD_BUS_RETURN_ERROR_MESSAGE_MAX_LENGTH)
@@ -481,7 +482,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
     // enter struct
     while ((r = sd_bus_message_enter_container(m, SD_BUS_TYPE_STRUCT, "sv")) > 0) {
         // read path, empty path is checked inside get_string_argument()
-        std::string resource_path;
+        std::string resource_path("");
         std::tie(r, resource_path) = get_string_argument(m, ret_error);
         if (r < 0) {
             TR_ERR("get_string_argument failed, return = %d", r);
@@ -499,7 +500,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
         if (r < 0) {
             return LOG_AND_SET_SD_BUS_ERROR(EFAULT, ret_error, "sd_bus_message_enter_container");
         }
-        char variant_inner_type;
+        char variant_inner_type = _SD_BUS_TYPE_INVALID;
         r = sd_bus_message_peek_type(m, &variant_inner_type, &contents);
         if (r < 0) {
             return LOG_AND_SET_SD_BUS_ERROR(EFAULT, ret_error, "sd_bus_message_peek_type");
@@ -509,14 +510,14 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
         {
         case SD_BUS_TYPE_STRING:
         {
-            std::string s_value;
-            std::tie(r, resource_path) = get_string_argument(m, ret_error);
+            std::string s_value("");
+            std::tie(r, s_value) = get_string_argument(m, ret_error);
             if (r < 0) {
                 TR_ERR("get_string_argument failed, return = %d", r);
                 return r;
             }
 
-            resource_set_operation.push_back(ResourceData(resource_path, std::string(s_value)));
+            resource_set_operation.push_back(ResourceData(resource_path, s_value));
 
             break;
         }
@@ -580,7 +581,7 @@ int DBusGetResourcesMessageProcessor::process_message(sd_bus* connection_handle,
     assert(sender);
     TR_INFO("Starting to process GetResourcesValues method call from sender %s", sender);
 
-    std::string access_token;
+    std::string access_token("");
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, return = %d", r);
@@ -633,9 +634,9 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
         return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
     }
 
-    for (auto& i : get_operations_) {
+    for (auto& operations : get_operations_) {
 
-        ResourceDataType data_type = i.inout_data_.get_data_type();
+        ResourceDataType data_type = operations.inout_data_.get_data_type();
         switch (data_type)
         {
         case STRING:
@@ -645,7 +646,7 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
                                       1,
                                       static_cast<uint8_t>(data_type),
                                       "s",
-                                      i.inout_data_.get_value_string().c_str());
+                                      operations.inout_data_.get_value_string().c_str());
             break;
         }
         case INTEGER:
@@ -655,13 +656,15 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
                                       1,
                                       static_cast<uint8_t>(data_type),
                                       "x",
-                                      i.inout_data_.get_value_integer());
+                                      operations.inout_data_.get_value_integer());
             break;
         }
 
         default:
+
         {
-            std::stringstream msg("Data type not supported");
+            std::stringstream msg("Data type " + std::string(stringify(data_type)) +
+                                  " is not supported");
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
         }
         }
@@ -730,8 +733,8 @@ int DBusGetResourcesMessageProcessor::handle_message_process_failure(
 
             if (err_count < MAX_NUMBER_OF_ERRORS_IN_REPLY) {
 
-                string current_error(operation.inout_data_.get_path() + " : " +
-                                     CloudConnectStatus_to_str(operation.output_status_));
+                std::string current_error(operation.inout_data_.get_path() + " : " +
+                                          CloudConnectStatus_to_str(operation.output_status_));
                 // check the error message size
                 if (return_err.size() + current_error.size() <=
                     SD_BUS_RETURN_ERROR_MESSAGE_MAX_LENGTH)
@@ -778,15 +781,15 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
     assert(resource_get_operation.empty());
     assert(ret_error);
 
-    // enter an array
+    // enter an array container
     int r = sd_bus_message_enter_container(m, SD_BUS_TYPE_ARRAY, "(sy)");
     if (r < 0) {
         return LOG_AND_SET_SD_BUS_ERROR(EBADMSG, ret_error, "sd_bus_message_enter_container");
     }
-    // enter struct
+    // enter struct container
     while ((r = sd_bus_message_enter_container(m, SD_BUS_TYPE_STRUCT, "sy")) > 0) {
         // read path
-        std::string resource_path;
+        std::string resource_path("");
         std::tie(r, resource_path) = get_string_argument(m, ret_error);
         if (r < 0) {
             TR_ERR("get_string_argument failed, return = %d", r);
@@ -802,14 +805,14 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
         ResourceGetOperation get_operation(resource_path, u_value);
         resource_get_operation.push_back(std::move(get_operation));
 
-        // exit an array
+        // exit struct container
         r = sd_bus_message_exit_container(m);
         if (r < 0) {
             return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_exit_container");
         }
     }
 
-    // exit an array
+    // exit an array container
     r = sd_bus_message_exit_container(m);
     if (r < 0) {
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_exit_container");

@@ -9,10 +9,6 @@
 #include "DBusCloudConnectNames.h"
 #include "DBusMessage.h"
 
-#include <sstream>
-
-#include <systemd/sd-bus.h>
-
 #define TRACE_GROUP "ccrb-dbus"
 
 namespace mbl
@@ -37,43 +33,19 @@ std::map<std::string, DBusMessagesFactory::DBusMsgProcessor>
             DBUS_CC_SET_RESOURCES_VALUES_METHOD_NAME,
             DBusMessagesFactory::DBusMsgProcessor(new DBusSetResourcesMessageProcessor()))};
 
-int DBusMessagesFactory::process_message(sd_bus* connection_handle,
-                                         sd_bus_message* m,
-                                         ResourceBroker& ccrb,
-                                         sd_bus_error* ret_error)
+std::shared_ptr<DBusCommonMessageProcessor>
+DBusMessagesFactory::get_message_processor(std::string& method_name)
 {
     TR_DEBUG_ENTER;
-    assert(connection_handle);
-    assert(m);
-    assert(ret_error);
-
-    std::string method_name = sd_bus_message_get_member(m);
 
     auto it = message_processors_.find(method_name);
     if (it == message_processors_.end()) {
 
-        // TODO: - probably need to reply with error reply to sender?
-
         TR_ERR("Failed to find message processor for message=%s", method_name.c_str());
-        return (-EBADMSG);
+        return nullptr;
     }
-    if (nullptr == it->second) {
-        TR_ERR("Failed to find message processor for message=%s", method_name.c_str());
-        return (-EBADMSG);
-    }
-
-    TR_INFO("Starting to process %s method call from sender %s",
-            it->first.c_str(),
-            sd_bus_message_get_sender(m));
-
-    // process the message
-    int r = it->second->process_message(connection_handle, m, ccrb, ret_error);
-    if (r < 0) {
-        TR_ERR("process_message failed, r=%d", r);
-        return r;
-    }
-
-    return 0;
+    assert(it->second != nullptr);
+    return it->second;
 }
 
 } // namespace mbl
