@@ -17,7 +17,6 @@
 
 #include "application_init.h"
 #include "log.h"
-//#include "MblCloudClient.h"
 #include "cloud-connect-resource-broker/ResourceBroker.h"
 #include "signals.h"
 

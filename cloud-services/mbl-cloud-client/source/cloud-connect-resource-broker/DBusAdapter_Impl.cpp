@@ -387,7 +387,7 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
 
     // Process message
     const MblError status = ccrb_.process_mailbox_message(ret_pair.second);
-    if (Error::DBA_MailBoxInvalidMsg == status) {
+    if (Error::None != status) {
         TR_ERR("process_mailbox_message failed with error: %s", MblError_to_str(status));
         return (-EBADMSG);
     }
