@@ -250,7 +250,7 @@ int DBusDeregisterResourcesMessageProcessor::process_message(sd_bus* connection_
     assert(sender);
     TR_INFO("Starting to process DeregisterResources method call from sender %s", sender);
 
-    std::string access_token("");
+    std::string access_token;
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, r=%d", r);
@@ -323,7 +323,7 @@ int DBusSetResourcesMessageProcessor::process_message(sd_bus* connection_handle,
     assert(sender);
     TR_INFO("Starting to process SetResourcesValues method call from sender %s", sender);
 
-    std::string access_token("");
+    std::string access_token;
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, return = %d", r);
@@ -482,7 +482,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
     // enter struct
     while ((r = sd_bus_message_enter_container(m, SD_BUS_TYPE_STRUCT, "sv")) > 0) {
         // read path, empty path is checked inside get_string_argument()
-        std::string resource_path("");
+        std::string resource_path;
         std::tie(r, resource_path) = get_string_argument(m, ret_error);
         if (r < 0) {
             TR_ERR("get_string_argument failed, return = %d", r);
@@ -510,7 +510,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
         {
         case SD_BUS_TYPE_STRING:
         {
-            std::string s_value("");
+            std::string s_value;
             std::tie(r, s_value) = get_string_argument(m, ret_error);
             if (r < 0) {
                 TR_ERR("get_string_argument failed, return = %d", r);
@@ -581,7 +581,7 @@ int DBusGetResourcesMessageProcessor::process_message(sd_bus* connection_handle,
     assert(sender);
     TR_INFO("Starting to process GetResourcesValues method call from sender %s", sender);
 
-    std::string access_token("");
+    std::string access_token;
     std::tie(r, access_token) = get_string_argument(m, ret_error);
     if (r < 0) {
         TR_ERR("get_string_argument failed, return = %d", r);
@@ -789,7 +789,7 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
     // enter struct container
     while ((r = sd_bus_message_enter_container(m, SD_BUS_TYPE_STRUCT, "sy")) > 0) {
         // read path
-        std::string resource_path("");
+        std::string resource_path;
         std::tie(r, resource_path) = get_string_argument(m, ret_error);
         if (r < 0) {
             TR_ERR("get_string_argument failed, return = %d", r);

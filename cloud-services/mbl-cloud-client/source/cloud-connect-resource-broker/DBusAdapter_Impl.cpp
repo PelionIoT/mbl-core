@@ -584,9 +584,9 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
 
     std::string method_name = sd_bus_message_get_member(m);
 
-    std::shared_ptr<DBusCommonMessageProcessor> processor =
+    std::shared_ptr<DBusCommonMessageProcessor> message_processor =
         DBusMessagesFactory::get_message_processor(method_name);
-    if (processor == nullptr) {
+    if (message_processor == nullptr) {
 
         TR_ERR("Failed to find message processor for message=%s", method_name.c_str());
 
@@ -602,7 +602,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
             method_name.c_str(),
             sd_bus_message_get_sender(m));
 
-    r = processor->process_message(impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
+    r = message_processor->process_message(
+        impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
     if (r < 0) {
         TR_ERR("process_message failed, r=%d", r);
     }
