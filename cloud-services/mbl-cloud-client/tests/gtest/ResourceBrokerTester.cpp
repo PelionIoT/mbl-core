@@ -222,7 +222,7 @@ void ResourceBrokerTester::simulate_mbed_client_register_update_callback_test(
     ASSERT_TRUE(mbl::RegistrationRecord::State_RegistrationInProgress == 
         registration_record->get_registration_state());
 
-    // Create new thread that will simulate mbed client callback
+    // Create new thread that will simulate mbed client callback (registration failed / succeeded)
     struct thread_data data{this, simulate_registration_success};
     pthread_t mbed_client_thread_id = 0;
     ASSERT_EQ(pthread_create(&mbed_client_thread_id,

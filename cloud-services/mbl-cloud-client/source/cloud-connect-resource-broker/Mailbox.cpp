@@ -310,10 +310,9 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
     }
     assert(MailboxMsg::MSG_PROTECTION_FIELD == msg_->protection_field_);
 
-    TR_INFO("Message received via %s mailbox.sequence_num=%" PRIu64 " data_len_=%zu",
-            get_name(),
-            msg_->sequence_num_,
-            msg_->data_len_);
+    TR_DEBUG("Message received via mailbox. sequence_num=%" PRIu64 " data_len_=%zu",
+             msg_->sequence_num_,
+             msg_->data_len_);
 
     // FIXME - remove later (keep for debug)
     // TR_DEBUG("msg_=%p", msg_);

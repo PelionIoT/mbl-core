@@ -527,7 +527,8 @@ void ResourceBroker::handle_mbed_client_registered()
 
     // In case terminate signal was received during register request - ignore registration flow
     // and continue un-registering device
-    if (State_ClientUnregisterInProgress == mbed_client_state_.load()) {
+    // Next NOLINT filter clang-tidy warning of gcc/x86_64-linux-gnu/5.4.0 of atomic impl
+    if (State_ClientUnregisterInProgress == mbed_client_state_.load()) { // NOLINT
         TR_WARN("client_registered callback was called while trying to un-register.");
         return;
     }

@@ -101,6 +101,16 @@ public:
         const std::string& access_token,
         CloudConnectStatus dbus_adapter_expected_status);
 
+    /**
+     * @brief This function create a new thread that simulate mbed client thread
+     * and pass the expected behaviour of mbed client thread (registration fail or success)
+     * Then it check the result of this mbed client simulation in terms of expected result in
+     * Resource broker.
+     * 
+     * @param access_token - access token of the registration operation
+     * @param simulate_registration_success - if true - simulate success
+     *                                        if false - simulate failure
+     */
     void simulate_mbed_client_register_update_callback_test(
         const std::string& access_token,
         bool simulate_registration_success);
@@ -235,11 +245,29 @@ public:
      */
     inline mbl::ResourceBroker& get_ccrb() {return resource_broker_;}
 
+    /**
+     * @brief Start ccrb thread and init adapter
+     * 
+     */
     void start_ccrb();
+
+    /**
+     * @brief Stop ccrb thread and deinit adapter
+     * 
+     */
     void stop_ccrb();
 
 private:
 
+    /**
+     * @brief Mbed client mock thread that simulates calls to resource broker's callback functions
+     * Based on expected behaviour input thread params
+     * 
+     * @param data - struct passed from thread creator that includes pointer to tester and expected
+     *               registration result (fail/success). based on that data the right callback will
+     *               be called
+     * @return void* - thread result
+     */
     static void* mbed_client_mock_thread_func(void* data);
 
     /**
