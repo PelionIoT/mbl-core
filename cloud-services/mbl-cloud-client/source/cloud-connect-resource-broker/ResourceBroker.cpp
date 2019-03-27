@@ -610,10 +610,61 @@ void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
 // Mailbox messages related functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+bool ResourceBroker::is_action_needed_for_error(MblError mbed_client_error)
+{
+    TR_DEBUG_ENTER;
+
+    switch (mbed_client_error)
+    {
+    // Security object is not valid or server rejects the registration.
+    // No internal recovery mechanism. Actions needed on the application side.
+    // This error is returned in case invalid parameters were send to mbed client add_objects()
+    // Api, and as a result - setup() or register_update() API might fail.
+    // if this error is returned in mbed client error callback - it means that operation failed.
+    case MblError::ConnectInvalidParameters:
+
+    // Cannot unregister as client is not registered.
+    // No internal recovery mechanism. Actions needed on the application side.
+    // if this error is returned in mbed client error callback - it means that unregister
+    // operation (mbed client close() API) failed.
+    case MblError::ConnectNotRegistered:
+
+    // Memory allocation has failed.
+    // No internal recovery mechanism. Actions needed on the application side.
+    // TODO: Need to notify application - see IOTMBL-1682
+    case MblError::ConnectMemoryConnectFail:
+
+    // API call is not allowed for now.
+    // Application should try again later
+    // This error can be triggered by register_update() (keepalive/ app registering resources)
+    // TODO: Need to notify application - see IOTMBL-1667
+    case MblError::ConnectNotAllowed:
+
+    // Failed to read credentials from storage.
+    // No internal recovery mechanism. Actions needed on the application side.
+    // TODO: Need to notify application - see IOTMBL-1667
+    case MblError::ConnectorFailedToReadCredentials:
+    {
+        // All the above errors state that an action is needed
+        return true;
+    }
+    default:
+    {
+        // All other errors state that an action is NOT needed (mbed client recovers automatically)
+        return false;
+    }
+    }
+}
+
 // TODO: Need to figure out if this can be called as a result of other operations
 MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
 {
     TR_DEBUG_ENTER;
+
+    if (!is_action_needed_for_error(mbed_client_error)) {
+        TR_DEBUG("Action is not needed for error %s", MblError_to_str(mbed_client_error));
+        return MblError::None;
+    }
 
     MbedClientState current_state = mbed_client_state_.load();
 

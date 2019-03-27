@@ -175,7 +175,8 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
             access_token.c_str());
         
         // Next calls doesn't check sending and receiving of mailbox messages as this is tested elsewhere
-        resource_broker_.handle_mbed_client_error_internal_message(mbl::MblError::Unknown);
+        resource_broker_.handle_mbed_client_error_internal_message(
+            mbl::MblError::ConnectInvalidParameters);  // This error require action!
     }
 
     DBusAdapterMock& dbus_adapter_tester = 
@@ -201,8 +202,7 @@ void* ResourceBrokerTester::mbed_client_mock_thread_func(void* data)
         test_data->tester->resource_broker_.handle_mbed_client_registration_updated();
     } else {
         test_data->tester->resource_broker_.handle_mbed_client_error(
-            MbedCloudClient::ConnectUnknownError
-        );
+            MbedCloudClient::ConnectInvalidParameters); // This error require action!
     }
     sleep(1); // Allow mailbox to call resource broker to handle above messages
     pthread_exit((void*) 0);

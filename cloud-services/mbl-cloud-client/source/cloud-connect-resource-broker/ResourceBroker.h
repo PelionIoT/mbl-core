@@ -416,6 +416,15 @@ protected:
     void handle_mbed_client_registration_updated();
 
     /**
+     * @brief Determain if an action is needed based on mbed client error code
+     * 
+     * @param mbed_client_error - Mbed client error code
+     * @return true - in case action is needed
+     * @return false - in case action is not needed
+     */
+    bool is_action_needed_for_error(MblError mbed_client_error);
+
+    /**
      * @brief - Error callback function
      * Called by Mbed Cloud Client to indicate last mbed-cloud-client operation failure
      * 
