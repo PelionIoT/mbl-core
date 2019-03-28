@@ -4,11 +4,10 @@
 
 FROM debian:9.7
  
-RUN apt-get update && apt-get install wget build-essential -y
+RUN apt-get update && apt-get install wget build-essential sudo rsync -y
 RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-utils-0.3.6.tar.gz && \
 	tar xvzf opkg-utils-0.3.6.tar.gz && make -C opkg-utils-0.3.6 install && \
 	rm -rf opkg-utils-0.3.6 opkg-utils-0.3.6.tar.gz
-RUN apt-get install sudo
 
-ENTRYPOINT ["/hello_pelion_connect/container_entry_point.sh"]
-CMD ["/hello_pelion_connect/create_sample_application.sh"]
+ENTRYPOINT ["/hello_pelion_connect/scripts/container_entry_point.sh"]
+CMD ["make -C /hello_pelion_connect release"]

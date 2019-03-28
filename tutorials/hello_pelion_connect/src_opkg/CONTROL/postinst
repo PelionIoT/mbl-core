@@ -1,0 +1,12 @@
+#!/bin/sh
+
+#!/bin/bash
+
+# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Post installation script to allow DNS resolution
+
+# Copy MBL Domain Name System (DNS) resolver configuration file to the OCI bundle filesystem
+cp -v /etc/resolv.conf /home/app/hello-pelion-connect/rootfs/etc/resolv.conf

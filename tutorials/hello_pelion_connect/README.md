@@ -3,6 +3,14 @@
 The purpose of the hello-pelion-connect sample application is to demonstrate Pelion Connect D-Bus service methods' invocation from the containerized application which runs on the device. Demonstrated methods:
 1. RegisterResources - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.
 
+# Mbed Linux OS hello-pelion-connect sample application 
+
+<span class="notes">**Note**: Mbed Linux OS (MBL) is currently in limited preview. If you would like access to the code repositories, [please request to join the preview](https://os.mbed.com/linux-os/).</span>
+
+This tutorial creates a user application that runs on MBL devices. It is an application written in Python, which demonstrates how an application should call the Pelion Connect D-Bus API methods.
+
+<span class="notes">**Note:** Your device must already be running an MBL image. Please [follow the tutorial](https://os.mbed.com/docs/linux-os/v0.5/getting-started/tutorial-building-an-image.html) if you don't have an MBL image yet.</span>
+
 # Prerequisites
 
  * Host PC OS should be Ubuntu 16.04.
@@ -12,40 +20,46 @@ The purpose of the hello-pelion-connect sample application is to demonstrate Pel
 # Structure
 
 `<mbl-core>/tutorials/hello_pelion_connect` directory which contains the following software:
-- hello-pelion-connect application sources. The source code of the application is located in the `source` folder . For hello-pelion-connect application description please see this [readme file][hello-pelion-connect-readme].
-- Docker environment (shell scripts and the Dockerfile) for the containerized hello-pelion-connect application IPK creation. Shell scripts are located in the `<mbl-core>/tutorials/hello_pelion_connect` folder. Dockerfile is located in the `cc-env` folder.
+- hello-pelion-connect application sources. The source code of the application is located in the `hello-pelion-connect` folder. The hello-pelion-connect application description please see in this [readme file][hello-pelion-connect-readme].
+- Docker environment (shell scripts, makefile and the Dockerfile) for the containerized hello-pelion-connect application IPK creation. Shell scripts are located in the `<mbl-core>/tutorials/hello_pelion_connect/scripts` folder. Dockerfile which builds containerized `hello_pelion_connect` application resides in the root folder. Dockerfile which builds docker that is responsible for the IPK generation is located in the `cc-env` folder. Makefile which creates rootfs for the OCI container and generates the final IPK is located in the root folder. 
 - OPKG configuration file which is required for IPK generation. OPKG configuration file is located under `src_opkg` folder.
-- OCI container configuration file is located under `src_bundle` folder.    
+- OCI container configuration file is located under `src_bundle` folder.
 
 
-## Create hello-pelion-connect IPK on a PC
 
-The hello-pelion-connect application is created inside the Docker container on a PC. The Docker container contains all the necessary tools that are required for the application creation. 
+# Dockerizing the application and packing int the IPK file
 
-The Docker container is built and run by the main script `container_create_hello_pelion_connect.sh`. This script is the main script which is used for the hello-pelion-connect application IPK creation. The resulting IPK contains the containerized hello-pelion-connect application. 
+On the device, the application runs on a target inside an OCI container. To create the OCI container, we dockerize the [`hello-pelion-connect`](hello-pelion-connect/) python package on a host machine. After that, the image is packed into the IPK file.  
 
-During the build, the Docker container runs `container_entry_point.sh` which sets the user id and user name to those of the user.
-After that, `create_sample_application.sh` creates IPK package using OPKG tools.
-
-To create hello-pelion-connect application navigate to the `<mbl-core>/tutorials/hello_pelion_connect` folder, and run the following command: ```container_create_hello_pelion_connect.sh```.
-
-Creation script product is the IPK package `ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk` containing containerized hello-pelion-connect application.
-
-To clean the previously created artifacts run the following command:
+Run the following command to dockerize the application and generate IPK file:
 ```
-container_create_hello_pelion_connect.sh clean
+sh scripts/dockerize-hello-pelion-connect-app.sh
 ```
+The script builds a docker image which includes an installation of the hello-pelion-connect application. The filesystem contained in the image is then exported and extracted to `release/runtime-bundle-filesystem`. The script builds a Docker image with dockcross, adding the `opkg-utils` utility. 
 
-## Install and start hello-pelion-connect in OCI container on the device
+The final artifact of the `dockerize-hello-pelion-connect-app.sh` script is the OCI container image that is packed in the IPK file at [`release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk`](release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk).
 
-Install the application IPK on the device, using one of the following ways:
+## Cleaning the build artifacts
 
- * [Send the application using over-the-air firmware update with the Pelion Device Management][over-the-air-firmware-update].
- * [Flash the application over USB with mbl-cli][mbl-cli-flash].
+Run the following command to remove the [`release`](release/) directory:
+```
+sh scripts/dockerize-hello-pelion-connect-app.sh clean
+``` 
 
-After the application IPK has been successfully installed on the device, expect to have the `/home/app/hello-pelion-connect/` folder on the device.  This folder contains containerized (in OCI container) hello-pelion-connect application. Also, put attention, that after the installation, the hello-pelion-connect application has been started as part of the installation procedure.  
+## Notes
 
-Note: during the device reboot, if the hello-pelion-connect was installed, it will be started automatically during the boot sequence.
+* The `release` directory is created by the [`dockerize-hello-pelion-connect-app.sh`](scripts/dockerize-hello-pelion-connect-app.sh) script.
+
+## Installing and running the application on the device
+
+To install the application on the device:
+
+* [Send the application as an over-the-air firmware update with Device Management](https://os.mbed.com/docs/linux-os/v0.5/getting-started/tutorial-updating-mbl-devices-and-applications.html).
+* [Flash the application over USB with MBL CLI](https://os.mbed.com/docs/linux-os/v0.5/tools/device-update.html#update-an-application).
+
+After installation, and after every reboot, the application performs the functionality described in this.
+
+MBL redirects the logging information to the log file `/var/log/app/hello-pelion-connect.log`.
 
 ### Restart hello-pelion-connect
 In order to restart the hello-pelion-connect application, kill the current hello-pelion-connect OCI container, and start the new one: 
