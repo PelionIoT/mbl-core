@@ -30,20 +30,20 @@ namespace mbl {
 
 class MbedClientManager {
 
-typedef std::function<void()> ResourcesRegistrationSucceededCallback;
-typedef std::function<void(MblError)> MbedClientErrorCallback;
-
 public:
 
     MbedClientManager();
     virtual ~MbedClientManager();
+
+    typedef std::function<void()> ResourcesRegistrationSucceededCallback;
+    typedef std::function<void(MblError)> MbedClientErrorCallback;
 
     /**
      * @brief Set the on resources registration succeeded callback
      * 
      * @param callback_func - callback function
      */
-    void on_resources_registration_succeeded(
+    void set_resources_registration_succeeded_callback(
         ResourcesRegistrationSucceededCallback callback_func
     );
 
@@ -52,7 +52,7 @@ public:
      * 
      * @param callback_func - callback function
      */
-    void on_mbed_client_error(MbedClientErrorCallback callback_func);
+    void set_mbed_client_error_callback(MbedClientErrorCallback callback_func);
 
     /**
      * @brief Create mbed client
@@ -61,7 +61,7 @@ public:
      *    Callback function for successful un-register device
      *    Callback function for successful registration update (application resources registration)
      *    Callback function for monitoring download progress
-     *    Callback function for authorizing firmware downloads and rhandle_authorizeboots
+     *    Callback function for authorizing firmware downloads and handle_authorize boots
      *    Callback function for occurred error in the above scenariohandle_authorize
      * Start mbed client register operation (register device defaulthandle_authorizeresources)
      * Set internal state to mark that register is in progress
@@ -75,13 +75,17 @@ public:
      * @brief Deinit mbed client
      * Called after unregister client is finished as part of deinit operation
      * Erase mbed client that was created in init()
-     * Stop the mbed event loop thread so no callbacks will be fired
+     * Stop the mbed event loop thread so no callbacks will be fired.
+     * Note: need to call this function only after calling unregister_mbed_client() API
+     * and after state is change to unregistered (use is_device_unregistered() for that.)
      */
     virtual void deinit();
 
     /**
      * @brief Unregister mbed client (device resources)
      * This function is called when terminate signal arrive.
+     * After this call need to wait for change in state to Unregister as mbed client callback is
+     * called later on.
      */
     virtual void unregister_mbed_client();
 
@@ -188,23 +192,22 @@ private:
     void handle_mbed_client_registration_updated();
 
     /**
-     * @brief Determain if error is fatal
-     * In case of fatal error - move to unregistered state
+     * @brief Determine if error is fatal
      * 
      * @param mbed_client_error - Mbed client error code
      * @return true - in case of fatal error
      * @return false - in case error is not fatal
      */
-    bool fatal_error(MblError mbed_client_error);
+    bool is_fatal_error(MblError mbed_client_error);
 
     /**
-     * @brief Determain if an action is needed based on mbed client error code
+     * @brief Determine if an action is needed based on mbed client error code
      * 
      * @param mbed_client_error - Mbed client error code
      * @return true - in case action is needed
      * @return false - in case action is not needed
      */
-    bool action_needed_for_error(MblError mbed_client_error);
+    bool is_action_needed_for_error(MblError mbed_client_error);
 
     /**
      * @brief - Error callback function

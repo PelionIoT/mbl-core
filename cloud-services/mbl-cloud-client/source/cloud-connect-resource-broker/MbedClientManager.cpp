@@ -49,13 +49,13 @@ MbedClientManager::~MbedClientManager()
     s_instance = nullptr;
 }
 
-void MbedClientManager::on_resources_registration_succeeded(
+void MbedClientManager::set_resources_registration_succeeded_callback(
     ResourcesRegistrationSucceededCallback callback_func)
 {
     resources_registration_succeeded_callback_func_ = callback_func;
 }
 
-void MbedClientManager::on_mbed_client_error(MbedClientErrorCallback callback_func)
+void MbedClientManager::set_mbed_client_error_callback(MbedClientErrorCallback callback_func)
 {
     mbed_client_error_callback_func_ = callback_func;
 }
@@ -97,16 +97,16 @@ void MbedClientManager::deinit()
 {
     TR_DEBUG_ENTER;
 
-    assert(cloud_client_);
+    if (cloud_client_) {
+        TR_INFO("Erase mbed client");
+        MbedCloudClient* cloud_client_obj = cloud_client_.release();
+        assert(cloud_client_obj);
+        delete cloud_client_obj;
+        cloud_client_ = nullptr;
 
-    TR_INFO("Erase mbed client");
-    MbedCloudClient* cloud_client_obj = cloud_client_.release();
-    assert(cloud_client_obj);
-    delete cloud_client_obj;
-    cloud_client_ = nullptr;
-
-    TR_INFO("Stop the mbed event loop thread");
-    ns_event_loop_thread_stop();
+        TR_INFO("Stop the PAL event loop thread");
+        ns_event_loop_thread_stop();
+    }
 }
 
 void MbedClientManager::unregister_mbed_client()
@@ -211,10 +211,12 @@ void MbedClientManager::handle_mbed_client_registration_updated()
     // during registration of resources - IOTMBL-1700
 
     // Notify resource broker that resources registration is finished
-    resources_registration_succeeded_callback_func_();
+    if (resources_registration_succeeded_callback_func_) {
+        resources_registration_succeeded_callback_func_();
+    }
 }
 
-bool MbedClientManager::action_needed_for_error(MblError mbed_client_error)
+bool MbedClientManager::is_action_needed_for_error(MblError mbed_client_error)
 {
     TR_DEBUG_ENTER;
 
@@ -250,7 +252,7 @@ bool MbedClientManager::action_needed_for_error(MblError mbed_client_error)
     }
 }
 
-bool MbedClientManager::fatal_error(MblError mbed_client_error)
+bool MbedClientManager::is_fatal_error(MblError mbed_client_error)
 {
     TR_DEBUG_ENTER;
 
@@ -288,13 +290,13 @@ void MbedClientManager::handle_mbed_client_error(const int cloud_client_code)
     TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
     TR_ERR("Error details: %s", cloud_client_->error_description());
 
-    if (fatal_error(mbl_code)) {
+    if (is_fatal_error(mbl_code)) {
         TR_ERR("FATAL ERROR! OCCURRED: %s", MblError_to_str(mbl_code));
         mbed_client_state_.store(State_DeviceUnregistered);
         return;
     }
 
-    if (!action_needed_for_error(mbl_code)) {
+    if (!is_action_needed_for_error(mbl_code)) {
         TR_DEBUG("Action is not needed for error %s", MblError_to_str(mbl_code));
         return;
     }
@@ -322,7 +324,9 @@ void MbedClientManager::handle_mbed_client_error(const int cloud_client_code)
     // Notify resource broker as we are in one of the following cases:
     // 1. application requested to register resources
     // 2. keep alive (does not occur during #1)
-    mbed_client_error_callback_func_(mbl_code);
+    if (mbed_client_error_callback_func_) {
+        mbed_client_error_callback_func_(mbl_code);
+    }
 }
 
 } // namespace mbl

@@ -249,7 +249,7 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* 
     assert(ev);
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
     if (nullptr == periodic_ev) {
-        TR_ERR("Invalid periodic event (null)");
+        TR_ERR("Invalid periodic event type");
         return MblError::SystemCallFailed;
     }
 
@@ -300,10 +300,10 @@ MblError ResourceBroker::init()
     }
 
     // Init Mbed cloud client
-    mbed_client_manager_->on_resources_registration_succeeded(
+    mbed_client_manager_->set_resources_registration_succeeded_callback(
         std::bind(&ResourceBroker::resources_registration_succeeded, this));
 
-    mbed_client_manager_->on_mbed_client_error(std::bind(
+    mbed_client_manager_->set_mbed_client_error_callback(std::bind(
         static_cast<void (ResourceBroker::*)(MblError)>(&ResourceBroker::handle_mbed_client_error),
         this,
         std::placeholders::_1));
