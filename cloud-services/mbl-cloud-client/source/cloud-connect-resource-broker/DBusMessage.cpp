@@ -40,10 +40,10 @@ int DBusCommonMessageProcessor::verify_signature(sd_bus_message* m, sd_bus_error
 
         std::string signature = sd_bus_message_get_signature(m, 1);
 
-        std::stringstream msg("Unexpected message signature: " + signature +
-                              ", expected message signature: " + message_signature_ + ", member " +
-                              std::string(sd_bus_message_get_member(m)) + ", sender " +
-                              std::string(sd_bus_message_get_sender(m)));
+        std::stringstream msg("Unexpected message signature received from sender: " +
+                              std::string(sd_bus_message_get_sender(m)) + ", member: " +
+                              std::string(sd_bus_message_get_member(m)) + ", actual signature: " +
+                              signature + ", expected signature: " + message_signature_);
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
