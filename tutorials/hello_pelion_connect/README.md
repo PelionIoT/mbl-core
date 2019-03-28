@@ -37,11 +37,11 @@ sh scripts/dockerize-hello-pelion-connect-app.sh
 ```
 The script builds a docker image which includes an installation of the hello-pelion-connect application. The filesystem contained in the image is then exported and extracted to `release/runtime-bundle-filesystem`. The script builds a Docker image with dockcross, adding the `opkg-utils` utility. 
 
-The final artifact of the `dockerize-hello-pelion-connect-app.sh` script is the OCI container image that is packed in the IPK file at [`release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk`](release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk).
+The final artifact of the [`dockerize-hello-pelion-connect-app.sh`](scripts/dockerize-hello-pelion-connect-app.sh) script is the OCI container image that is packed in the IPK file at `release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk`.
 
 ## Cleaning the build artifacts
 
-Run the following command to remove the [`release`](release/) directory:
+Run the following command to remove the `release` directory:
 ```
 sh scripts/dockerize-hello-pelion-connect-app.sh clean
 ``` 
@@ -82,6 +82,6 @@ If during the application execution any error has occurred, execution will be ab
 [over-the-air-firmware-update]: https://os.mbed.com/docs/mbed-linux-os/v0.5/getting-started/tutorial-updating-mbl-devices-and-applications.html
 [mbl-cli-flash]: https://os.mbed.com/docs/mbed-linux-os/v0.5/tools/device-update.html#update-an-application
 [install-docker]: https://docs.docker.com/install/linux/docker-ce/ubuntu
-[hello-pelion-connect-readme]: ./source/README.md
+[hello-pelion-connect-readme]: ./hello-pelion-connect/README.md
 
-[hello-pelion-connect-readme-analyzing-result]: ./source/README.md#analyzing-result
+[hello-pelion-connect-readme-analyzing-result]: ./hello-pelion-connect/README.md#analyzing-result
