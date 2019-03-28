@@ -112,6 +112,7 @@ ResourceBroker::ResourceBroker()
 {
     TR_DEBUG_ENTER;
 
+    assert(s_ccrb_instance == nullptr);
     s_ccrb_instance = this;
 
     // This function pointers will be used in init() / deinit() of mbed cloud client
@@ -560,9 +561,9 @@ void ResourceBroker::handle_mbed_client_authorize(const int32_t request)
     TR_DEBUG_ENTER;
 
     if (update_handlers::handle_authorize(request)) {
-        if (nullptr != s_ccrb_instance) {
+            (s_ccrb_instance != nullptr);
+            (s_ccrb_instance->cloud_client_ != nullptr);
             s_ccrb_instance->cloud_client_->update_authorize(request);
-        }
     }
 }
 

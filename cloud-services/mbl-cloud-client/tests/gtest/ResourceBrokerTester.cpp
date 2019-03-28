@@ -28,8 +28,6 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
 {
     TR_DEBUG_ENTER;
 
-    //resource_broker_.s_ccrb_instance = new mbl::ResourceBroker();
-    
     // Set resource adapter function pointer that in some tests will be called as part of 
     // ResourceBroker::init() API.
     resource_broker_.init_mbed_client_func_ = std::bind(
