@@ -8,8 +8,8 @@
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter.hpp"
-#include "MbedClientManager.h"
 #include "MailboxMsg.h"
+#include "MbedClientManager.h"
 
 #include <cassert>
 #include <time.h>
@@ -98,9 +98,9 @@ MblError ResourceBroker::main()
 
 // This constructor is called from main function
 ResourceBroker::ResourceBroker()
-: init_sem_initialized_(false),
-  ipc_adapter_(nullptr),
-  mbed_client_manager_(std::make_unique<MbedClientManager>(*this))
+    : init_sem_initialized_(false),
+      ipc_adapter_(nullptr),
+      mbed_client_manager_(std::make_unique<MbedClientManager>(*this))
 {
     TR_DEBUG_ENTER;
 }
@@ -422,7 +422,8 @@ ResourceBroker::get_registration_record(const std::string& access_token)
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: Need to figure out if this can be called as a result of other operations
-MblError ResourceBroker::handle_resources_registration_failed_internal_message(MblError mbed_client_error)
+MblError
+ResourceBroker::handle_resources_registration_failed_internal_message(MblError mbed_client_error)
 {
     // Check if this callback is caused by an application trying to register resources
     // (only one application can be in registration update state at a time)

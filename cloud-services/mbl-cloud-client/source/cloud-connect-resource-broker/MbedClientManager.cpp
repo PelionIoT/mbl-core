@@ -16,13 +16,12 @@
  */
 
 #include "MbedClientManager.h"
-#include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
+#include "ResourceBroker.h"
 
 #include "mbed-cloud-client/MbedCloudClient.h"
 #include "mbed_cloud_client_user_config.h"
 #include "ns-hal-pal/ns_event_loop.h"
-
 
 #define TRACE_GROUP "ccrb-mbed-client-mng"
 
@@ -32,11 +31,8 @@ namespace mbl
 MbedClientManager* MbedClientManager::s_instance = nullptr;
 uint32_t MbedClientManager::dummy_network_interface_ = 0xFFFFFFFF;
 
-
 MbedClientManager::MbedClientManager(ResourceBroker& ccrb)
-: mbed_client_state_(State_ClientUnregistered),
-  ccrb_(ccrb),
-  cloud_client_(nullptr)
+    : mbed_client_state_(State_ClientUnregistered), ccrb_(ccrb), cloud_client_(nullptr)
 {
     TR_DEBUG_ENTER;
 
@@ -108,7 +104,7 @@ void MbedClientManager::keepalive()
 {
     TR_DEBUG_ENTER;
 
-    assert(cloud_client_);    
+    assert(cloud_client_);
     cloud_client_->register_update();
 }
 
@@ -116,25 +112,27 @@ void MbedClientManager::register_resources(const M2MObjectList& object_list)
 {
     TR_DEBUG_ENTER;
 
-    assert(cloud_client_);    
+    assert(cloud_client_);
     cloud_client_->add_objects(object_list);
     cloud_client_->register_update();
 }
 
 bool MbedClientManager::is_device_registered()
 {
+    bool ret = false;
     if (State_ClientRegistered == mbed_client_state_.load()) {
-        return true;
+        ret = true;
     }
-    return false;
+    return ret;
 }
 
 bool MbedClientManager::is_device_unregistered()
 {
+    bool ret = false;
     if (State_ClientUnregistered == mbed_client_state_.load()) {
-        return true;
+        ret = true;
     }
-    return false;
+    return ret;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +251,6 @@ void MbedClientManager::handle_mbed_client_error(const int cloud_client_code)
         CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
     TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
     TR_ERR("Error details: %s", cloud_client_->error_description());
-
 
     if (!is_action_needed_for_error(mbl_code)) {
         TR_DEBUG("Action is not needed for error %s", MblError_to_str(mbl_code));
