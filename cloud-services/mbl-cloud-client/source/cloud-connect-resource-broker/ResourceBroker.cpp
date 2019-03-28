@@ -8,13 +8,10 @@
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter.hpp"
+#include "MbedClientManager.h"
 #include "MailboxMsg.h"
-#include "mbed-cloud-client/MbedCloudClient.h"
-#include "mbed_cloud_client_user_config.h"
-#include "ns-hal-pal/ns_event_loop.h"
 
 #include <cassert>
-#include <csignal>
 #include <time.h>
 #include <unistd.h>
 
@@ -35,9 +32,6 @@ namespace mbl
 // MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
 // re-registration (keepalive)
 static const uint64_t g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
-
-ResourceBroker* ResourceBroker::s_ccrb_instance = nullptr;
-uint32_t ResourceBroker::dummy_network_interface_ = 0xFFFFFFFF;
 
 /**
  * @brief Mailbox message for mbed client RegistrationUpdated callback
@@ -63,7 +57,6 @@ MblError ResourceBroker::main()
 {
     TR_DEBUG_ENTER;
     ResourceBroker resource_broker;
-    assert(s_ccrb_instance);
 
     // Note: start() will init mbed client and state_ is moved to State_ClientRegisterInProgress.
     const MblError ccrb_start_err = resource_broker.start();
@@ -79,11 +72,11 @@ MblError ResourceBroker::main()
 
             TR_WARN("Received signal: %s, Un-registering device...",
                     strsignal(g_shutdown_signal_once));
-            resource_broker.unregister_mbed_client();
+            resource_broker.mbed_client_manager_->unregister_mbed_client();
             g_shutdown_signal_once = 0;
         }
 
-        if (State_ClientUnregistered == resource_broker.mbed_client_state_.load()) {
+        if (resource_broker.mbed_client_manager_->is_device_unregistered()) {
 
             TR_DEBUG("State is unregistered - stop ccrb_main thread");
             // Unregister device is finished - stop resource broker
@@ -105,38 +98,16 @@ MblError ResourceBroker::main()
 
 // This constructor is called from main function
 ResourceBroker::ResourceBroker()
-    : init_sem_initialized_(false),
-      ipc_adapter_(nullptr),
-      cloud_client_(nullptr),
-      mbed_client_state_(State_ClientUnregistered)
+: init_sem_initialized_(false),
+  ipc_adapter_(nullptr),
+  mbed_client_manager_(std::make_unique<MbedClientManager>(*this))
 {
     TR_DEBUG_ENTER;
-
-    assert(s_ccrb_instance == nullptr);
-    s_ccrb_instance = this;
-
-    // This function pointers will be used in init() / deinit() of mbed cloud client
-    // In case of tests we will use it call mock function
-    init_mbed_client_func_ = std::bind(
-        static_cast<MblError (ResourceBroker::*)()>(&ResourceBroker::init_mbed_client), this);
-    deinit_mbed_client_func_ = std::bind(&ResourceBroker::deinit_mbed_client, this);
 }
 
 ResourceBroker::~ResourceBroker()
 {
     TR_DEBUG_ENTER;
-    s_ccrb_instance = nullptr;
-}
-
-void ResourceBroker::unregister_mbed_client()
-{
-    TR_DEBUG_ENTER;
-
-    mbed_client_state_.store(State_ClientUnregisterInProgress);
-
-    TR_INFO("Close mbed client");
-
-    cloud_client_->close();
 }
 
 MblError ResourceBroker::start()
@@ -288,10 +259,8 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* 
     ResourceBroker* const this_ccrb = unpack_pair.second.ccrb_this;
     assert(this_ccrb);
 
-    MbedClientState current_state = this_ccrb->mbed_client_state_.load();
-
     // Keep alive is only needed when device is registered
-    if (State_ClientRegistered != current_state) {
+    if (!this_ccrb->mbed_client_manager_->is_device_registered()) {
         TR_DEBUG("Device is not registered.");
         return Error::None;
     }
@@ -304,67 +273,7 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* 
     }
 
     TR_DEBUG("Call cloud_client_->register_update for (keepalive)");
-    this_ccrb->mbed_client_register_update_func_();
-
-    return Error::None;
-}
-
-void ResourceBroker::init_mbed_client_function_pointers()
-{
-    TR_DEBUG_ENTER;
-
-    assert(nullptr != cloud_client_);
-
-    mbed_client_add_objects_func_ = std::bind(
-        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
-        cloud_client_,
-        std::placeholders::_1);
-
-    mbed_client_register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
-
-    mbed_client_endpoint_info_func_ =
-        std::bind(static_cast<const ConnectorClientEndpointInfo* (MbedCloudClient::*) () const>(
-                      &MbedCloudClient::endpoint_info),
-                  cloud_client_);
-
-    mbed_client_error_description_func_ = std::bind(
-        static_cast<const char* (MbedCloudClient::*) () const>(&MbedCloudClient::error_description),
-        cloud_client_);
-}
-
-MblError ResourceBroker::init_mbed_client()
-{
-    TR_DEBUG_ENTER;
-
-    assert(nullptr == cloud_client_);
-
-    cloud_client_ = new MbedCloudClient();
-
-    // 1. Set function pointers to point to mbed_client functions
-    //    (In gtest our friend test class will override these pointers to get all the calls)
-    init_mbed_client_function_pointers();
-
-    // 2. Register mbed client callback:
-    cloud_client_->on_registered(this, &ResourceBroker::handle_mbed_client_registered);
-    cloud_client_->on_unregistered(this, &ResourceBroker::handle_mbed_client_unregistered);
-    cloud_client_->on_registration_updated(
-        this, &ResourceBroker::handle_mbed_client_registration_updated);
-    cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
-    cloud_client_->set_update_authorize_handler(&handle_mbed_client_authorize);
-    cloud_client_->on_error(this, &ResourceBroker::handle_mbed_client_error);
-
-    // 3. Register Device Default Resources
-    M2MObjectList objs; // Using empty ObjectList
-    mbed_client_add_objects_func_(objs);
-
-    // Dummy network interface needed by cloud_client_->setup API (used only in MbedOS)
-    const bool setup_ok = cloud_client_->setup((void*) &dummy_network_interface_);
-    if (!setup_ok) {
-        TR_ERR("Mbed cloud client setup failed");
-        return Error::ConnectUnknownError; // state_ will stay on State_ClientUnregistered
-    }
-
-    mbed_client_state_.store(State_ClientRegisterInProgress);
+    this_ccrb->mbed_client_manager_->keepalive();
 
     return Error::None;
 }
@@ -386,7 +295,7 @@ MblError ResourceBroker::init()
     }
 
     // Init Mbed cloud client
-    const MblError init_mbed_clinet_status = init_mbed_client_func_();
+    const MblError init_mbed_clinet_status = mbed_client_manager_->init_mbed_client();
     if (Error::None != init_mbed_clinet_status) {
         TR_ERR("init_mbed_client failed with error %s", MblError_to_str(init_mbed_clinet_status));
         return init_mbed_clinet_status;
@@ -410,16 +319,6 @@ MblError ResourceBroker::init()
     return Error::None;
 }
 
-void ResourceBroker::deinit_mbed_client()
-{
-    TR_DEBUG_ENTER;
-    assert(cloud_client_);
-    TR_INFO("Erase mbed client");
-    delete cloud_client_;
-    TR_INFO("Stop the mbed event loop thread");
-    ns_event_loop_thread_stop();
-}
-
 MblError ResourceBroker::deinit()
 {
     TR_DEBUG_ENTER;
@@ -436,7 +335,7 @@ MblError ResourceBroker::deinit()
     ipc_adapter_.reset(nullptr);
 
     // This is done after device is unregistered (no mbed client callbacks will arrive)
-    deinit_mbed_client_func_();
+    mbed_client_manager_->deinit_mbed_client();
 
     return status;
 }
@@ -519,178 +418,12 @@ ResourceBroker::get_registration_record(const std::string& access_token)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Callback functions that are being called by Mbed client
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void ResourceBroker::handle_mbed_client_registered()
-{
-    TR_DEBUG_ENTER;
-
-    // In case terminate signal was received during register request - ignore registration flow
-    // and continue un-registering device
-    // Next NOLINT filter clang-tidy warning of gcc/x86_64-linux-gnu/5.4.0 of atomic impl
-    if (State_ClientUnregisterInProgress == mbed_client_state_.load()) { // NOLINT
-        TR_WARN("client_registered callback was called while trying to un-register.");
-        return;
-    }
-
-    mbed_client_state_.store(State_ClientRegistered);
-
-    TR_INFO("Client registered");
-
-    const ConnectorClientEndpointInfo* endpoint = mbed_client_endpoint_info_func_();
-    if (nullptr == endpoint) {
-        TR_WARN("Failed to get endpoint info");
-        return;
-    }
-
-    TR_INFO("Endpoint Name: %s", endpoint->endpoint_name.c_str());
-    TR_INFO("Device Id: %s", endpoint->internal_endpoint_name.c_str());
-}
-
-void ResourceBroker::handle_mbed_client_unregistered()
-{
-    TR_DEBUG_ENTER;
-
-    mbed_client_state_.store(State_ClientUnregistered);
-    TR_WARN("Client unregistered");
-}
-
-void ResourceBroker::handle_mbed_client_authorize(const int32_t request)
-{
-    TR_DEBUG_ENTER;
-
-    if (update_handlers::handle_authorize(request)) {
-            (s_ccrb_instance != nullptr);
-            (s_ccrb_instance->cloud_client_ != nullptr);
-            s_ccrb_instance->cloud_client_->update_authorize(request);
-    }
-}
-
-void ResourceBroker::handle_mbed_client_registration_updated()
-{
-    TR_DEBUG_ENTER;
-
-    // TODO: need to handle cases when mbed client does not call any callback
-    // during registration of resources - IOTMBL-1700
-
-    // Send mailbox message (will be handled in process_mailbox_message API)
-    MailboxMsg_RegistrationUpdated registration_updated_msg;
-    registration_updated_msg.status = MblError::None;
-    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
-    TR_ERR("send_mailbox_msg for register update");
-    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
-    if (send_status != MblError::None) {
-        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
-    }
-}
-
-// TODO: this callback is related to the following scenarios which are not yet implemented:
-// add resource instances and remove resource instances.
-void ResourceBroker::handle_mbed_client_error(const int cloud_client_code)
-{
-    TR_DEBUG_ENTER;
-
-    const MblError mbl_code =
-        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
-    TR_ERR("Error details: %s", mbed_client_error_description_func_());
-
-    // Send mailbox message (will be handled in process_mailbox_message API)
-    MailboxMsg_MbedClientError mbed_client_error_msg;
-    mbed_client_error_msg.status = mbl_code;
-    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
-    TR_ERR("send_mailbox_msg for mbed client error");
-    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
-    if (send_status != MblError::None) {
-        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
 // Mailbox messages related functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool ResourceBroker::is_action_needed_for_error(MblError mbed_client_error)
-{
-    TR_DEBUG_ENTER;
-
-    switch (mbed_client_error)
-    {
-    // Security object is not valid or server rejects the registration.
-    // No internal recovery mechanism. Actions needed on the application side.
-    // This error is returned in case invalid parameters were send to mbed client add_objects()
-    // Api, and as a result - setup() or register_update() API might fail.
-    // if this error is returned in mbed client error callback - it means that operation failed.
-    case MblError::ConnectInvalidParameters:
-
-    // Cannot unregister as client is not registered.
-    // No internal recovery mechanism. Actions needed on the application side.
-    // if this error is returned in mbed client error callback - it means that unregister
-    // operation (mbed client close() API) failed.
-    case MblError::ConnectNotRegistered:
-
-    // Memory allocation has failed.
-    // No internal recovery mechanism. Actions needed on the application side.
-    // TODO: Need to notify application - see IOTMBL-1682
-    case MblError::ConnectMemoryConnectFail:
-
-    // API call is not allowed for now.
-    // Application should try again later
-    // This error can be triggered by register_update() (keepalive/ app registering resources)
-    // TODO: Need to notify application - see IOTMBL-1667
-    case MblError::ConnectNotAllowed:
-
-    // Failed to read credentials from storage.
-    // No internal recovery mechanism. Actions needed on the application side.
-    // TODO: Need to notify application - see IOTMBL-1667
-    case MblError::ConnectorFailedToReadCredentials:
-    {
-        // All the above errors state that an action is needed
-        return true;
-    }
-    default:
-    {
-        // All other errors state that an action is NOT needed (mbed client recovers automatically)
-        return false;
-    }
-    }
-}
-
 // TODO: Need to figure out if this can be called as a result of other operations
-MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
+MblError ResourceBroker::handle_resources_registration_failed_internal_message(MblError mbed_client_error)
 {
-    TR_DEBUG_ENTER;
-
-    if (!is_action_needed_for_error(mbed_client_error)) {
-        TR_DEBUG("Action is not needed for error %s", MblError_to_str(mbed_client_error));
-        return MblError::None;
-    }
-
-    MbedClientState current_state = mbed_client_state_.load();
-
-    // Client unregister in progress:
-    if (State_ClientUnregisterInProgress == current_state) {
-        TR_ERR("Client unregister failed with error: %s", MblError_to_str(mbed_client_error));
-        // We have no choice but to signal that client is unregistered which will close
-        // mbed client and unregister ungracefully
-        mbed_client_state_.store(State_ClientUnregistered);
-        return MblError::None;
-    }
-
-    // Client register in progress:
-    if (State_ClientRegisterInProgress == current_state) {
-        TR_ERR("Client register failed with error: %s", MblError_to_str(mbed_client_error));
-        // We have no choice but to signal that client is unregistered which will close
-        // client and unregister ungracefully
-        mbed_client_state_.store(State_ClientUnregistered);
-        return MblError::None;
-    }
-
-    // We are in one of the following cases:
-    // 1. application requested to register resources
-    // 2. keep alive (does not occur during #1)
-
     // Check if this callback is caused by an application trying to register resources
     // (only one application can be in registration update state at a time)
     RegistrationRecord_ptr registration_record =
@@ -722,7 +455,7 @@ MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed
     return MblError::None;
 }
 
-MblError ResourceBroker::handle_registration_updated_internal_message()
+MblError ResourceBroker::handle_resources_registration_succeeded_internal_message()
 {
     TR_DEBUG_ENTER;
 
@@ -790,7 +523,7 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
         }
-        return handle_registration_updated_internal_message();
+        return handle_resources_registration_succeeded_internal_message();
     }
 
     // Mbed Client Error
@@ -804,7 +537,7 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
         }
-        return handle_mbed_client_error_internal_message(message.status);
+        return handle_resources_registration_failed_internal_message(message.status);
     }
 
     // This should never happen
@@ -813,7 +546,40 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Adapter related functions
+// APIs to be used by Mbed client manager class
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void ResourceBroker::resources_registration_succeeded()
+{
+    TR_DEBUG_ENTER;
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_RegistrationUpdated registration_updated_msg;
+    registration_updated_msg.status = MblError::None;
+    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
+    TR_ERR("send_mailbox_msg for register update");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
+}
+
+void ResourceBroker::resources_registration_failed(MblError cloud_client_error)
+{
+    TR_DEBUG_ENTER;
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_MbedClientError mbed_client_error_msg;
+    mbed_client_error_msg.status = cloud_client_error;
+    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
+    TR_ERR("send_mailbox_msg for mbed client error");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// APIs to be used by DBusAdapter class
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<CloudConnectStatus, std::string>
@@ -824,7 +590,7 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
                                                         std::string());
 
-    if (State_ClientRegistered != mbed_client_state_.load()) {
+    if (!mbed_client_manager_->is_device_registered()) {
         TR_ERR("Client is not registered.");
         ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
         return ret_pair;
@@ -879,9 +645,7 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     registration_records_[reg_update_in_progress_access_token_] = registration_record;
 
     // Call Mbed cloud client to start registration update
-    mbed_client_add_objects_func_(registration_record->get_m2m_object_list());
-    mbed_client_register_update_func_();
-
+    mbed_client_manager_->register_resources(registration_record->get_m2m_object_list());
     return ret_pair;
 }
 
@@ -1027,7 +791,7 @@ ResourceBroker::set_resources_values(IpcConnection source,
     TR_DEBUG("access_token: %s", access_token.c_str());
 
     // It is allowed to set resource value only after device is registered
-    if (State_ClientRegistered != mbed_client_state_.load()) {
+    if (!mbed_client_manager_->is_device_registered()) {
         TR_ERR("Client is not registered.");
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
@@ -1120,7 +884,7 @@ ResourceBroker::get_resources_values(IpcConnection source,
     TR_DEBUG("access_token: %s", access_token.c_str());
 
     // It is allowed to get resource value only after device is registered
-    if (State_ClientRegistered != mbed_client_state_.load()) {
+    if (!mbed_client_manager_->is_device_registered()) {
         TR_ERR("Client is not registered.");
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }

@@ -43,8 +43,7 @@ class DBusAdapterImpl
     friend ::TestInfra_DBusAdapterTester;
 
 private:
-    // reference to the Cloud Conect Resource Broker (CCRB) which acts as the upper layer and the
-    // containing object for
+    // reference to the Cloud Conect Resource Broker (CCRB) which acts as the upper layer
     ResourceBroker& ccrb_;
 
     // TODO: (when upper layer code is more complete)

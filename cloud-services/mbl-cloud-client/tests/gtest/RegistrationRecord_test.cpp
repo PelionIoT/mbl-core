@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include "RegistrationRecordTester.h"
 #include "RegistrationRecord.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "TestInfra.h"
+#include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-set_res_value-test"
 
