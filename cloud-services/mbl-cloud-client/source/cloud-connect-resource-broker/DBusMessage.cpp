@@ -40,10 +40,9 @@ int DBusCommonMessageProcessor::verify_signature(sd_bus_message* m, sd_bus_error
 
         std::string signature = sd_bus_message_get_signature(m, 1);
 
-        std::stringstream msg("Unexpected message signature " + signature +
-                              " expected message signature " +
-                              std::string(sd_bus_message_get_signature(m, 1)) + " member " +
-                              std::string(sd_bus_message_get_member(m)) + " sender " +
+        std::stringstream msg("Unexpected message signature: " + signature +
+                              ", expected message signature: " + message_signature_ + ", member " +
+                              std::string(sd_bus_message_get_member(m)) + ", sender " +
                               std::string(sd_bus_message_get_sender(m)));
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
@@ -61,15 +60,15 @@ std::pair<int, std::string> DBusCommonMessageProcessor::get_string_argument(sd_b
     const char* out_read = nullptr;
     int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &out_read);
     if (r < 0) {
-        std::stringstream msg("Member " + std::string(sd_bus_message_get_member(m)) + " sender " +
+        std::stringstream msg("Member " + std::string(sd_bus_message_get_member(m)) + ", sender " +
                               std::string(sd_bus_message_get_sender(m)) +
-                              " sd_bus_message_read_basic SD_BUS_TYPE_STRING");
+                              " : sd_bus_message_read_basic SD_BUS_TYPE_STRING");
         return std::pair<int, std::string>(LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg), "");
     }
 
     if ((nullptr == out_read) || (strlen(out_read) == 0)) {
-        std::stringstream msg("sd_bus_message_read_basic empty string! Member " +
-                              std::string(sd_bus_message_get_member(m)) + " sender " +
+        std::stringstream msg("sd_bus_message_read_basic empty string! Member: " +
+                              std::string(sd_bus_message_get_member(m)) + ", sender: " +
                               std::string(sd_bus_message_get_sender(m)));
         return std::pair<int, std::string>(LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg), "");
     }
@@ -100,7 +99,7 @@ int DBusCommonMessageProcessor::reply_on_message(sd_bus* connection_handle,
 
     int r = sd_bus_message_new_method_return(m_to_reply_on, &m_reply);
     if (r < 0) {
-        std::stringstream msg("Sending reply on " + std::string(method_name) + +" sender name " +
+        std::stringstream msg("Sending reply on " + std::string(method_name) + ", sender name " +
                               std::string(sender_name) +
                               " : sd_bus_message_new_method_return error");
         return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
@@ -109,14 +108,14 @@ int DBusCommonMessageProcessor::reply_on_message(sd_bus* connection_handle,
     // append data to the reply message
     r = fill_reply_message(m_reply, method_name, status, ret_error);
     if (r < 0) {
-        std::stringstream msg("Sending reply on " + std::string(method_name) + +" sender name " +
+        std::stringstream msg("Sending reply on " + std::string(method_name) + ", sender name " +
                               std::string(sender_name) + " : fill_reply_message error");
         return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
     }
     // send the message
     r = sd_bus_send(connection_handle, m_reply, nullptr);
     if (r < 0) {
-        std::stringstream msg("Sending reply on " + std::string(method_name) + +" sender name " +
+        std::stringstream msg("Sending reply on " + std::string(method_name) + ", sender name " +
                               std::string(sender_name) + " : sd_bus_send error");
         return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
     }
@@ -498,8 +497,8 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
     // enter array
     int r = sd_bus_message_enter_container(m, SD_BUS_TYPE_ARRAY, "(sv)");
     if (r < 0) {
-        std::stringstream msg("Set resources values: member " + member + " sender " + sender +
-                              " sd_bus_message_enter_container array error");
+        std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
+                              " : sd_bus_message_enter_container array error");
         return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, msg);
     }
     // enter struct
@@ -516,22 +515,22 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
         const char* contents = nullptr;
         r = sd_bus_message_peek_type(m, nullptr, &contents);
         if (r < 0) {
-            std::stringstream msg("Set resources values: member " + member + " sender " + sender +
-                                  " sd_bus_message_peek_type error");
+            std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
+                                  " : sd_bus_message_peek_type error");
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
         }
         // enter variant
         r = sd_bus_message_enter_container(m, SD_BUS_TYPE_VARIANT, contents);
         if (r < 0) {
-            std::stringstream msg("Set resources values: member " + member + " sender " + sender +
-                                  " sd_bus_message_enter_container variant error");
+            std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
+                                  " : sd_bus_message_enter_container variant error");
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
         }
         char variant_inner_type = _SD_BUS_TYPE_INVALID;
         r = sd_bus_message_peek_type(m, &variant_inner_type, &contents);
         if (r < 0) {
-            std::stringstream msg("Set resources values: member " + member + " sender " + sender +
-                                  " sd_bus_message_peek_type error");
+            std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
+                                  " : sd_bus_message_peek_type error");
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
         }
 
@@ -555,9 +554,9 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
             int64_t int64_value = 0;
             r = sd_bus_message_read_basic(m, SD_BUS_TYPE_INT64, &int64_value);
             if (r < 0) {
-                std::stringstream msg("Set resources values: member " + member + " sender " +
+                std::stringstream msg("Set resources values: member " + member + ", sender " +
                                       sender +
-                                      " sd_bus_message_read_basic SD_BUS_TYPE_INT64 error");
+                                      " : sd_bus_message_read_basic SD_BUS_TYPE_INT64 error");
                 return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, msg);
             }
 
@@ -568,7 +567,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
         }
         default:
         {
-            std::stringstream msg("Set resources values: member " + member + " sender " + sender +
+            std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
                                   ": unsupported variant type " +
                                   std::string(stringify(data_type)));
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
@@ -577,7 +576,7 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
 
         r = sd_bus_message_exit_container(m);
         if (r < 0) {
-            std::stringstream msg("Set resources values: member " + member + " sender " + sender +
+            std::stringstream msg("Set resources values: member " + member + ", sender " + sender +
                                   " sd_bus_message_exit_container");
             return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
         }
@@ -586,8 +585,8 @@ int DBusSetResourcesMessageProcessor::read_array_from_message(
     r = sd_bus_message_exit_container(m);
 
     if (r < 0) {
-        std::stringstream msg("Member " + member + " sender " + sender +
-                              " sd_bus_message_exit_container");
+        std::stringstream msg("Member " + member + ", sender " + sender +
+                              " : sd_bus_message_exit_container");
         return LOG_AND_SET_SD_BUS_ERROR_F(EFAULT, ret_error, msg);
     }
 
@@ -831,8 +830,8 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
     // enter an array container
     int r = sd_bus_message_enter_container(m, SD_BUS_TYPE_ARRAY, "(sy)");
     if (r < 0) {
-        std::stringstream msg("Get resources values, member " + member + " sender " + sender +
-                              ": sd_bus_message_enter_container array");
+        std::stringstream msg("Get resources values, member " + member + ", sender " + sender +
+                              " : sd_bus_message_enter_container array");
         return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, msg);
     }
     // enter struct container
@@ -848,8 +847,8 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
         uint8_t u_value = 0;
         r = sd_bus_message_read_basic(m, SD_BUS_TYPE_BYTE, &u_value);
         if (r < 0) {
-            std::stringstream msg("Get resources values, member " + member + " sender " + sender +
-                                  "sd_bus_message_read_basic SD_BUS_TYPE_BYTE");
+            std::stringstream msg("Get resources values, member " + member + ", sender " + sender +
+                                  " : sd_bus_message_read_basic SD_BUS_TYPE_BYTE");
             return LOG_AND_SET_SD_BUS_ERROR_F(EBADMSG, ret_error, msg);
         }
 
@@ -859,8 +858,8 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
         // exit struct container
         r = sd_bus_message_exit_container(m);
         if (r < 0) {
-            std::stringstream msg("Get resources values, member " + member + " sender " + sender +
-                                  " exit struct container sd_bus_message_exit_container error");
+            std::stringstream msg("Get resources values, member " + member + ", sender " + sender +
+                                  " : exit struct container sd_bus_message_exit_container error");
             return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
         }
     }
@@ -868,8 +867,8 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
     // exit an array container
     r = sd_bus_message_exit_container(m);
     if (r < 0) {
-        std::stringstream msg("Get resources values, member " + member + " sender " + sender +
-                              " exit an array container sd_bus_message_exit_container error");
+        std::stringstream msg("Get resources values, member " + member + ", sender " + sender +
+                              " : exit an array container sd_bus_message_exit_container error");
         return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
     }
 
