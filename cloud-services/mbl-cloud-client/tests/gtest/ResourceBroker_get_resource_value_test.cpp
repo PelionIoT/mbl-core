@@ -15,10 +15,11 @@
  * limitations under the License.
  */
 
-#include <gtest/gtest.h>
 #include "TestInfra.h"
 #include "ResourceBrokerTester.h"
 #include "ResourceDefinitionJson.h"
+
+#include <gtest/gtest.h>
 
 #define TRACE_GROUP "ccrb-get_res_value-test"
 

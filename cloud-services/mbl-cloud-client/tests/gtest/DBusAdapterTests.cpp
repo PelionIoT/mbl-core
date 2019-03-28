@@ -8,6 +8,7 @@
 #include "DBusAdapter.hpp"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
+#include "DBusCloudConnectNames.h"
 #include "DBusAdapter_Impl.h"
 #include "DBusService.h"
 #include "Event.h"
@@ -439,7 +440,7 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
     // send exit if finished all iterations or an error ocurred
     if (iteration_ >= NUM_ITERATIONS || MblError::None != error.get()) {
 
-        // desable event source
+        // disable event source
         int r = sd_event_source_set_enabled(periodic_ev->get_sd_event_source(), SD_EVENT_OFF);
         if (r < 0) {
 
