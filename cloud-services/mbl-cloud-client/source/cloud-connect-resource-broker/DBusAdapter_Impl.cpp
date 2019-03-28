@@ -583,6 +583,16 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     std::string method_name = sd_bus_message_get_member(m);
+    if (method_name.c_str() == nullptr) {
+        std::stringstream msg("sd_bus_message_get_member returned NULL!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
+    }
+
+    const char* sender_name = sd_bus_message_get_sender(m);
+    if (sender_name == nullptr) {
+        std::stringstream msg("sd_bus_message_get_sender returned NULL!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
+    }
 
     std::shared_ptr<DBusCommonMessageProcessor> message_processor =
         DBusMessagesFactory::get_message_processor(method_name);
@@ -598,9 +608,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return r;
     }
 
-    TR_INFO("Starting to process %s method call from sender %s",
-            method_name.c_str(),
-            sd_bus_message_get_sender(m));
+    TR_INFO("Starting to process %s method call from sender %s", method_name.c_str(), sender_name);
 
     r = message_processor->process_message(
         impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
@@ -609,9 +617,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     }
 
     std::stringstream log_msg;
-    log_msg << "Message of type " << message_type_to_str(type) << " member name "
-            << sd_bus_message_get_member(m) << " from sender " << sd_bus_message_get_sender(m)
-            << " - ";
+    log_msg << "Message of type " << message_type_to_str(type) << " member name " << sender_name
+            << " from sender " << sender_name << " - ";
 
     // handle and print to logs handling status
     if (r == 0) {

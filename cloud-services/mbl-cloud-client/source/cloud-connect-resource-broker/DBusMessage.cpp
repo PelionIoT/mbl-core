@@ -23,9 +23,9 @@
 namespace mbl
 {
 
-DBusCommonMessageProcessor::DBusCommonMessageProcessor(const std::string message_format,
-                                                       const std::string reply_message_format)
-    : message_format_(message_format), reply_message_format_(reply_message_format)
+DBusCommonMessageProcessor::DBusCommonMessageProcessor(const std::string message_signature,
+                                                       const std::string reply_message_signature)
+    : message_signature_(message_signature), reply_message_signature_(reply_message_signature)
 {
     TR_DEBUG_ENTER;
 }
@@ -36,10 +36,14 @@ int DBusCommonMessageProcessor::verify_signature(sd_bus_message* m, sd_bus_error
     assert(m);
     assert(ret_error);
 
-    if (0 >= sd_bus_message_has_signature(m, message_format_.c_str())) {
+    if (0 >= sd_bus_message_has_signature(m, message_signature_.c_str())) {
 
-        std::stringstream msg("Unexpected message signature" +
+        std::string signature = sd_bus_message_get_signature(m, 1);
+
+        std::stringstream msg("Unexpected message signature " + signature +
+                              " expected message signature " +
                               std::string(sd_bus_message_get_signature(m, 1)));
+
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
@@ -213,7 +217,7 @@ int DBusRegisterResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_
     assert(access_token_ != "");
 
     // append access_token
-    int r = sd_bus_message_append(m_reply, reply_message_format_.c_str(), access_token_.c_str());
+    int r = sd_bus_message_append(m_reply, reply_message_signature_.c_str(), access_token_.c_str());
     if (r < 0) {
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
     }
@@ -286,7 +290,7 @@ int DBusDeregisterResourcesMessageProcessor::fill_reply_message(sd_bus_message* 
     assert(member == DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME);
     assert(ret_error);
 
-    int r = sd_bus_message_append(m_reply, reply_message_format_.c_str(), status);
+    int r = sd_bus_message_append(m_reply, reply_message_signature_.c_str(), status);
     if (r < 0) {
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
     }
@@ -368,7 +372,7 @@ int DBusSetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
     UNUSED(status);
 
     // SetResourcesValues message reply is empty
-    assert(reply_message_format_.empty());
+    assert(reply_message_signature_.empty());
 
     return 0;
 }
@@ -642,7 +646,7 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
         case STRING:
         {
             r = sd_bus_message_append(m_reply,
-                                      reply_message_format_.c_str(),
+                                      reply_message_signature_.c_str(),
                                       1,
                                       static_cast<uint8_t>(data_type),
                                       "s",
@@ -652,7 +656,7 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
         case INTEGER:
         {
             r = sd_bus_message_append(m_reply,
-                                      reply_message_format_.c_str(),
+                                      reply_message_signature_.c_str(),
                                       1,
                                       static_cast<uint8_t>(data_type),
                                       "x",
@@ -671,7 +675,7 @@ int DBusGetResourcesMessageProcessor::fill_reply_message(sd_bus_message* m_reply
 
         if (r < 0) {
             std::stringstream msg("sd_bus_message_append failed! Message reply format: " +
-                                  reply_message_format_);
+                                  reply_message_signature_);
             return LOG_AND_SET_SD_BUS_ERROR_F(r, ret_error, msg);
         }
     }

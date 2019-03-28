@@ -27,8 +27,8 @@ class ResourceBroker;
 class DBusCommonMessageProcessor
 {
 public:
-    DBusCommonMessageProcessor(const std::string message_format,
-                               const std::string reply_message_format);
+    DBusCommonMessageProcessor(const std::string message_signature,
+                               const std::string reply_message_signature);
 
     virtual ~DBusCommonMessageProcessor() {}
 
@@ -99,10 +99,10 @@ protected:
                                        const char* method_name,
                                        sd_bus_error* ret_error);
 
-    // message format
-    const std::string message_format_;
-    // message reply format
-    const std::string reply_message_format_;
+    // message signature
+    const std::string message_signature_;
+    // message reply signature
+    const std::string reply_message_signature_;
 
 private:
     /**
