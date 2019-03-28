@@ -84,7 +84,7 @@ static inline bool is_cloud_connect_error(const CloudConnectStatus val){
  */
 enum ResourceDataType {
     STRING    = 1,  // supported as array of chars
-    INTEGER   = 2,  // supported as UINT64 
+    INTEGER   = 2,  // supported as INT64 
     FLOAT     = 3,  // currently not supported
     BOOLEAN   = 4,  // currently not supported
     OPAQUE    = 5,  // currently not supported

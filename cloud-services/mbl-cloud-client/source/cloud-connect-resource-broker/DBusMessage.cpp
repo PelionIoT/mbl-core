@@ -796,13 +796,13 @@ int DBusGetResourcesMessageProcessor::read_array_from_message(
             return r;
         }
 
-        ResourceDataType u_value;
-        r = sd_bus_message_read_basic(m, 'y', static_cast<void*>(&u_value));
+        uint8_t u_value = 0;
+        r = sd_bus_message_read_basic(m, SD_BUS_TYPE_BYTE, &u_value);
         if (r < 0) {
             return LOG_AND_SET_SD_BUS_ERROR(EBADMSG, ret_error, "sd_bus_message_read_basic");
         }
 
-        ResourceGetOperation get_operation(resource_path, u_value);
+        ResourceGetOperation get_operation(resource_path, (ResourceDataType) u_value);
         resource_get_operation.push_back(std::move(get_operation));
 
         // exit struct container

@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 #include <semaphore.h>
 #include <string>
+#include <stdlib.h>
+#include <climits>
 
 
 #define TRACE_GROUP "ccrb-dbus-gtest"
@@ -27,8 +29,6 @@ using namespace mbl;
 
 // string value used in Set/Get resources values tests
 static const std::string string_value = "string_value";
-// int64_t value used in Set/Get resources values tests
-static const int64_t int64_value = 100;
 // resource path used in Set/Get resources values tests
 static const char* resource_path = "/111/22/3";
 
@@ -48,6 +48,32 @@ class MessageReplyTest_ResourceBroker : public ResourceBroker
 {
 
 public:
+
+    MessageReplyTest_ResourceBroker(ResourceDataType data_type = STRING,
+                                    const std::string& expected_path = "",
+                                    const std::string& expected_val = "")
+    : data_type_(data_type), 
+      expected_path_(expected_path)
+    {     
+        switch (data_type)
+        {
+        case STRING: 
+        
+            expected_string_val_ = expected_val;
+            break;
+
+        case INTEGER: 
+
+            expected_int64_val_ = atoi(const_cast<const char*>(expected_val.c_str()));
+            break;
+
+        default:
+            std::stringstream msg("Bad test input format: unsupported resource type: " +
+                                  std::to_string(data_type));
+            assert(0 && msg);       
+        } 
+    }
+
     std::pair<CloudConnectStatus, std::string> register_resources(mbl::IpcConnection /*unused*/,
                                                                   const std::string& json) override
     {
@@ -82,9 +108,9 @@ public:
         for (auto operation : inout_set_operations) {
 
             std::string path = operation.input_data_.get_path();
-            if (path != std::string(resource_path)) {
+            if (path != std::string(expected_path_)) {
 
-                TR_ERR("Actual path(%s) != Expected path(%s)", path.c_str(), resource_path);
+                TR_ERR("Actual path(%s) != Expected path(%s)", path.c_str(), expected_path_.c_str());
                 return CloudConnectStatus::ERR_INVALID_RESOURCE_PATH;
             }
 
@@ -96,11 +122,11 @@ public:
             {
                 std::string value = operation.input_data_.get_value_string();
 
-                if (value != string_value) {
+                if (value != expected_string_val_) {
 
                     TR_ERR("Actual value(%s) != Expected value(%s)",
                            value.c_str(),
-                           string_value.c_str());
+                           expected_string_val_.c_str());
                     return CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
                 }
                 break;
@@ -109,11 +135,11 @@ public:
             {
                 int64_t value = operation.input_data_.get_value_integer();
 
-                if (value != int64_value) {
+                if (value != expected_int64_val_) {
 
                     TR_ERR("Actual value(%" PRIx64 ") != Expected value(%" PRIx64 ")",
                            value,
-                           int64_value);
+                           expected_int64_val_);
                     return CloudConnectStatus::ERR_INVALID_APPLICATION_RESOURCES_DEFINITION;
                 }
                 break;
@@ -149,7 +175,7 @@ public:
         return STATUS_SUCCESS;
     }
 
-    CloudConnectStatus get_resources_values(const IpcConnection& /*unused*/,
+    CloudConnectStatus get_resources_values(IpcConnection /*unused*/,
                                             const std::string& token,
                                             std::vector<ResourceGetOperation>& inout_get_operations)
     {
@@ -157,9 +183,6 @@ public:
 
         CloudConnectStatus ret_status = STATUS_SUCCESS;
         CloudConnectStatus resource_ret_status = STATUS_SUCCESS;
-
-        for (auto operation : inout_get_operations) {
-        }
 
         if (token == "Return_invalid_access_token") {
             return CloudConnectStatus::ERR_INVALID_ACCESS_TOKEN;
@@ -174,12 +197,15 @@ public:
         }
 
         for (auto& i : inout_get_operations) {
-            if (i.inout_data_.get_data_type() == ResourceDataType::STRING) {
-                i.inout_data_.set_value(string_value);
+
+            ResourceDataType type = i.inout_data_.get_data_type();
+
+            if (type == ResourceDataType::STRING) {
+                i.inout_data_.set_value(expected_string_val_);
             }
-            else if (i.inout_data_.get_data_type() == ResourceDataType::INTEGER)
+            else if (type == ResourceDataType::INTEGER)
             {
-                i.inout_data_.set_value(int64_value);
+                i.inout_data_.set_value(expected_int64_val_);
             }
             else
             { // invalid resource type - return
@@ -192,6 +218,14 @@ public:
 
         return STATUS_SUCCESS;
     }
+
+private:
+    ResourceDataType data_type_;
+    // expected resource value
+    std::string expected_string_val_; 
+    int64_t expected_int64_val_;
+     // expected resource path
+    const std::string expected_path_;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -755,18 +789,50 @@ const static std::vector<SetResourcesValues_entry> SetResourcesValues_test_array
         "Return_Success",                    // input_access_token
         resource_path,                       // input_resource_path
         INTEGER,                             // input_format
-        std::to_string(int64_value).c_str(), // input_resource_value
+        "100",                               // input_resource_value
         "" /* not relevant */                // expected_sd_bus_error_name
     },
-
     // int64 input, return error
     {
         "Return_invalid_resource_path",         // input_access_token
         resource_path,                          // input_resource_path
         INTEGER,                                // input_format
-        std::to_string(int64_value).c_str(),    // input_resource_value
+        "100",                                  // input_resource_value
         CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
-    }};
+    },
+    // very long path, string input, return success
+    {
+        "Return_Success",                        // input_access_token
+        "/55555555/44444444/33333333",           // input_resource_path
+        STRING,                                  // input_format
+        string_value.c_str(),                    // input_resource_value
+        "" /* not relevant */                    // expected_sd_bus_error_name
+    },
+    // very long string input, return success
+    {
+        "Return_Success",                        // input_access_token
+        resource_path,                           // input_resource_path
+        STRING,                                  // input_format
+        "very_long_string_input_parameter_very_long_string_input_parameter_",// input_resource_value
+        "" /* not relevant */                    // expected_sd_bus_error_name
+    },
+    // int64 maximal value input, return success
+    {
+        "Return_Success",                    // input_access_token
+        resource_path,                       // input_resource_path
+        INTEGER,                             // input_format
+        std::to_string(LLONG_MAX).c_str(),   // input_resource_value
+        "" /* not relevant */                // expected_sd_bus_error_name
+    },
+    // int64 minimal value input, return success
+    {
+        "Return_Success",                    // input_access_token
+        resource_path,                       // input_resource_path
+        INTEGER,                             // input_format
+        std::to_string(LLONG_MIN).c_str(),   // input_resource_value
+        "" /* not relevant */                // expected_sd_bus_error_name
+    },
+    };
 
 static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thread, void* user_data)
 {
@@ -786,21 +852,13 @@ static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thre
     sd_bus_object_cleaner<sd_bus_error> error_cleaner(&error, sd_bus_error_free);
 
     int test_result = TEST_SUCCESS;
-    string type;
+    int r = 0;
 
     switch (test_data.input_format)
     {
-    case STRING: type = "s"; break;
-
-    case INTEGER: type = "x"; break;
-
-    default:
-        TR_ERR("Bad test input format: unsupported resource type %d", test_data.input_format);
-        set_test_result(test_result, TEST_FAILED_INVALID_TEST_PARAMETERS);
-        return test_result;
-    }
-
-    int r = sd_bus_call_method(app_thread->get_connection_handle(),
+    case STRING: 
+    
+        r = sd_bus_call_method(app_thread->get_connection_handle(),
                                DBUS_CLOUD_SERVICE_NAME,
                                DBUS_CLOUD_CONNECT_OBJECT_PATH,
                                DBUS_CLOUD_CONNECT_INTERFACE_NAME,
@@ -811,8 +869,32 @@ static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thre
                                test_data.input_access_token,
                                1, /* number of array entries */
                                test_data.input_resource_path,
-                               type.c_str(), /* Property variant type */
+                               "s", /* Property variant type */
                                test_data.input_resource_value);
+        break;
+
+    case INTEGER: 
+
+        r = sd_bus_call_method(app_thread->get_connection_handle(),
+                               DBUS_CLOUD_SERVICE_NAME,
+                               DBUS_CLOUD_CONNECT_OBJECT_PATH,
+                               DBUS_CLOUD_CONNECT_INTERFACE_NAME,
+                               DBUS_CC_SET_RESOURCES_VALUES_METHOD_NAME,
+                               &error,
+                               &m_reply,
+                               "sa(sv)",
+                               test_data.input_access_token,
+                               1, /* number of array entries */
+                               test_data.input_resource_path,
+                               "x", /* Property variant type */
+                               atoi(test_data.input_resource_value));
+        break;
+
+    default:
+        TR_ERR("Bad test input format: unsupported resource type %d", test_data.input_format);
+        set_test_result(test_result, TEST_FAILED_INVALID_TEST_PARAMETERS);
+        return test_result;
+    }
 
     if (r < 0) {
         // message reply error gotten, compare to expected errors
@@ -869,7 +951,11 @@ INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
 TEST_P(ValidateSetResourcesValues, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;
-    MessageReplyTest_ResourceBroker ccrb;
+
+    const SetResourcesValues_entry& test_data =
+        SetResourcesValues_test_array[(size_t)GetParam()];
+    MessageReplyTest_ResourceBroker ccrb(test_data.input_format, 
+        test_data.input_resource_path, test_data.input_resource_value);
     DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);
 
@@ -896,6 +982,7 @@ struct GetResourcesValues_entry
     const char* input_access_token;
     const char* input_resource_path;
     ResourceDataType type;
+    const char* input_resource_value;
     const char* expected_sd_bus_error_name;
 };
 
@@ -906,32 +993,66 @@ const static std::vector<GetResourcesValues_entry> GetResourcesValues_test_array
         "Return_Success",     // input_access_token
         resource_path,        // input_resource_path
         STRING,               // input_format
+        string_value.c_str(), // input_resource_value
         "" /* not relevant */ // expected_sd_bus_error_name
     },
-
     // string input, return error
     {
         "Return_invalid_access_token",         // input_access_token
         resource_path,                         // input_resource_path
         STRING,                                // input_format
+        string_value.c_str(),                  // input_resource_value
         CLOUD_CONNECT_ERR_INVALID_ACCESS_TOKEN // expected_sd_bus_error_name
     },
-
     // uint32 input, return success
     {
         "Return_Success",     // input_access_token
         resource_path,        // input_resource_path
         INTEGER,              // input_format
+        "100",                // input_resource_value
         "" /* not relevant */ // expected_sd_bus_error_name
     },
-
     // uint32 input, return error
     {
         "Return_invalid_resource_path",         // input_access_token
         resource_path,                          // input_resource_path
         INTEGER,                                // input_format
+        "100",                                  // input_resource_value
         CLOUD_CONNECT_ERR_INVALID_RESOURCE_PATH // expected_sd_bus_error_name
-    }};
+    },
+    // very long path, string input, return success
+    {
+        "Return_Success",                        // input_access_token
+        "/55555555/44444444/33333333",           // input_resource_path
+        STRING,                                  // input_format
+        string_value.c_str(),                    // input_resource_value
+        "" /* not relevant */                    // expected_sd_bus_error_name
+    },
+    // very long string input, return success
+    {
+        "Return_Success",                        // input_access_token
+        resource_path,                           // input_resource_path
+        STRING,                                  // input_format
+        "very_long_string_input_parameter_very_long_string_input_parameter_",// input_resource_value
+        "" /* not relevant */                    // expected_sd_bus_error_name
+    },
+    // int64 maximal value input, return success
+    {
+        "Return_Success",                         // input_access_token
+        resource_path,                            // input_resource_path
+        INTEGER,                                  // input_format
+        std::to_string(LLONG_MAX).c_str(),        // input_resource_value
+        "" /* not relevant */                     // expected_sd_bus_error_name
+    },
+    // int64 minimal value input, return success
+    {
+        "Return_Success",                          // input_access_token
+        resource_path,                             // input_resource_path
+        INTEGER,                                   // input_format
+        std::to_string(LLONG_MIN).c_str(),         // input_resource_value
+        "" /* not relevant */                      // expected_sd_bus_error_name
+    },
+    };
 
 static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thread, void* user_data)
 {
@@ -1024,10 +1145,10 @@ static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thre
                 TR_ERR("sd_bus_message_read failed(err=%d)", r);
                 set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
             }
-            if (string_value != string(value)) {
+            if (std::string(test_data.input_resource_value) != string(value)) {
                 TR_ERR("Unexpected string value (%s) != Expected string value(%s)",
                        value,
-                       string_value.c_str());
+                       test_data.input_resource_value);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
             break;
@@ -1040,11 +1161,12 @@ static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thre
                 TR_ERR("sd_bus_message_read failed(err=%d)", r);
                 set_test_result(test_result, TEST_FAILED_SD_BUS_SYSTEM_CALL_FAILED);
             }
-            if (int64_value != value) {
+            int64_t expected_value = atoi(test_data.input_resource_value);
+            if (expected_value != value) {
                 TR_ERR("Unexpected integer value (%" PRIx64 ") != Expected integer value(%" PRIx64
                        ")",
                        value,
-                       int64_value);
+                       expected_value);
                 set_test_result(test_result, TEST_FAILED_EXPECTED_RESULT_MISMATCH);
             }
             break;
@@ -1077,7 +1199,11 @@ INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
 TEST_P(ValidateGetResourcesValues, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;
-    MessageReplyTest_ResourceBroker ccrb;
+    const GetResourcesValues_entry& test_data =
+        GetResourcesValues_test_array[(size_t)GetParam()];
+    MessageReplyTest_ResourceBroker ccrb(test_data.type, test_data.input_resource_path, 
+        test_data.input_resource_value);
+
     DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);
 
@@ -1094,3 +1220,4 @@ TEST_P(ValidateGetResourcesValues, BasicMethodReply)
     ASSERT_EQ((uintptr_t) retval, TEST_SUCCESS);
     ASSERT_EQ(adapter.deinit(), MblError::None);
 }
+

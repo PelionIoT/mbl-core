@@ -39,7 +39,7 @@ typedef enum TestResult TestResult;
  */
 inline static int set_test_result(int & test_result, int result)
 {
-    if(0 == test_result)
+    if(TEST_SUCCESS == test_result)
     {
         test_result = result;
     }
