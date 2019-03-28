@@ -582,8 +582,8 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
 
-    std::string method_name = sd_bus_message_get_member(m);
-    if (method_name.c_str() == nullptr) {
+    const char* method_name = sd_bus_message_get_member(m);
+    if (method_name == nullptr) {
         std::stringstream msg("sd_bus_message_get_member returned NULL!");
         return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
@@ -598,7 +598,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         DBusMessagesFactory::get_message_processor(method_name);
     if (message_processor == nullptr) {
 
-        TR_ERR("Failed to find message processor for message=%s", method_name.c_str());
+        TR_ERR("Failed to find message processor for message=%s", method_name);
 
         r = sd_bus_error_set_const(
             ret_error,
@@ -608,7 +608,7 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return r;
     }
 
-    TR_INFO("Starting to process %s method call from sender %s", method_name.c_str(), sender_name);
+    TR_INFO("Starting to process %s method call from sender %s", method_name, sender_name);
 
     r = message_processor->process_message(
         impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);

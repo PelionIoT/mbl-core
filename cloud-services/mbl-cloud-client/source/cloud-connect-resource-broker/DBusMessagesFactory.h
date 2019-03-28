@@ -32,7 +32,7 @@ public:
      * @return std::shared_ptr<DBusCommonMessageProcessor> - sd-bus method message processor
      */
     static std::shared_ptr<DBusCommonMessageProcessor>
-    get_message_processor(std::string& method_name);
+    get_message_processor(const std::string method_name);
 
     typedef std::shared_ptr<DBusCommonMessageProcessor> DBusMsgProcessor;
 

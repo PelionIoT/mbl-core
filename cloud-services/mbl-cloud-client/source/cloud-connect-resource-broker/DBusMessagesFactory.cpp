@@ -34,7 +34,7 @@ std::map<std::string, DBusMessagesFactory::DBusMsgProcessor>
             DBusMessagesFactory::DBusMsgProcessor(new DBusSetResourcesMessageProcessor()))};
 
 std::shared_ptr<DBusCommonMessageProcessor>
-DBusMessagesFactory::get_message_processor(std::string& method_name)
+DBusMessagesFactory::get_message_processor(const std::string method_name)
 {
     TR_DEBUG_ENTER;
 

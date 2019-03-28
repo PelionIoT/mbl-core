@@ -58,7 +58,7 @@ public:
         case INTEGER:
         {
             size_t size = 0;
-            expected_int64_val_ = std::stoll(const_cast<const char*>(expected_val.c_str()), &size);
+            expected_int64_val_ = std::stoll(expected_val, &size);
             assert(size == expected_val.size());
             break;
         }
