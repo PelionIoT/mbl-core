@@ -4,11 +4,9 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-
 # Creates hello_pelion_connect application package.
 #
 # To clean previously created artifacts call script with "clean" argument.
-# FIXME ADD DESCRIPTION
 
 #abort on error
 set -e
@@ -24,7 +22,6 @@ if [ "$1" = "clean" ]; then
     exit 0
 fi
 
-
 # Build the hello-pelion-connect docker image
 echo "Building the hello-pelion-connect docker image..."
 docker build -t hello-pelion-connect "$SCRIPT_DIR/.."
@@ -37,12 +34,12 @@ mkdir -p "$SCRIPT_DIR/../release/runtime-bundle-filesystem"
 sudo tar -C "$SCRIPT_DIR/../release/runtime-bundle-filesystem" -xf "$SCRIPT_DIR/../release/hello-pelion-connect-docker-image.tar"
 sudo chown -R "$(id -un)":"$(id -gn)" "release/runtime-bundle-filesystem"
 
-echo "****************************** Creating container:*****************************************"
-docker build "${SCRIPT_DIR}/../cc-env/" -t hello_pelion_connect_builder
+echo "Creating ipk builder docker..."
+docker build "${SCRIPT_DIR}/../cc-env/" -t hello_pelion_connect_ipk_builder
 
-echo "****************************** Running container and creating package inside the container:"
+echo "Running ipk builder docker and creating ipk package..."
 docker run --rm -e USER_NAME="$(whoami)" -e USER_ID="$UID" \
 -v "$(realpath "${SCRIPT_DIR}/../")":/hello_pelion_connect \
 -v /etc/localtime:/etc/localtime:ro \
 -v /etc/timezone:/etc/timezone:ro \
--it hello_pelion_connect_builder
+-it hello_pelion_connect_ipk_builder
