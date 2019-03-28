@@ -578,7 +578,10 @@ protected:
     // Dummy network interface needed by cloud_client_->setup API (used only in MbedOS)
     static uint32_t dummy_network_interface_;
 
-    // Mbed client states
+    // Mbed client (device) states
+    // These states represent the devices registration states against Pelion
+    // Only when Mbed client (device) state is registered - an application can register
+    // its own resources using resource broker APIs
     enum MbedClientState
     {
         State_ClientUnregisterInProgress,

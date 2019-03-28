@@ -99,24 +99,24 @@ public:
     std::pair<MblError, M2MResource*> get_m2m_resource(const std::string& path);
 
     /**
-     * @brief Return registration ipc connection
+     * @brief Return registration IPC connection
      * 
      * @return ipc request handle
      */
     const IpcConnection& get_registration_source() const { return registration_source_; }
 
-    // Registration state
+    // Registration state of application resources
     enum RegistrationState
     {
-        State_Unregistered,
-        State_RegistrationInProgress,
-        State_Registered
+        State_Unregistered, // Resources not registered
+        State_RegistrationInProgress, // Resources registration in progress
+        State_Registered // Resources registered
     };
 
     /**
-     * @brief Return registrate state
+     * @brief Return Registration state of application resources
      * 
-     * @return RegistrationState - registrate state
+     * @return RegistrationState - Registration state
      */
     inline RegistrationState get_registration_state() const {return state_.load();};
 

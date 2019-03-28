@@ -188,7 +188,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
         dbus_adapter_tester.get_register_cloud_connect_status());
 }
 
-struct thread_data {
+struct RegistrationData {
     ResourceBrokerTester* tester;
     bool simulate_registration_success;
 };
@@ -196,12 +196,12 @@ struct thread_data {
 void* ResourceBrokerTester::mbed_client_mock_thread_func(void* data)
 {
     TR_DEBUG_ENTER;
-    thread_data* test_data = static_cast<thread_data*>(data);
+    RegistrationData* registration_data = static_cast<RegistrationData*>(data);
 
-    if(test_data->simulate_registration_success) {
-        test_data->tester->resource_broker_.handle_mbed_client_registration_updated();
+    if(registration_data->simulate_registration_success) {
+        registration_data->tester->resource_broker_.handle_mbed_client_registration_updated();
     } else {
-        test_data->tester->resource_broker_.handle_mbed_client_error(
+        registration_data->tester->resource_broker_.handle_mbed_client_error(
             MbedCloudClient::ConnectInvalidParameters); // This error require action!
     }
     sleep(1); // Allow mailbox to call resource broker to handle above messages
@@ -223,12 +223,12 @@ void ResourceBrokerTester::simulate_mbed_client_register_update_callback_test(
         registration_record->get_registration_state());
 
     // Create new thread that will simulate mbed client callback (registration failed / succeeded)
-    struct thread_data data{this, simulate_registration_success};
+    struct RegistrationData registration_data{this, simulate_registration_success};
     pthread_t mbed_client_thread_id = 0;
     ASSERT_EQ(pthread_create(&mbed_client_thread_id,
                          nullptr, // thread is created with default attributes
                          ResourceBrokerTester::mbed_client_mock_thread_func,
-                         &data), 0);
+                         &registration_data), 0);
     void* retval;
     ASSERT_EQ(pthread_join(mbed_client_thread_id, &retval), 0);
 

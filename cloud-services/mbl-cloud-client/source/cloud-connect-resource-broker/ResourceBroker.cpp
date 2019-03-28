@@ -22,11 +22,6 @@
 
 static volatile sig_atomic_t g_shutdown_signal_once = 0;
 
-// Period between re-registrations with the LWM2M server.
-// MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
-// re-registration (keepalive)
-static const uint64_t g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
-
 // This is temporary until we will move signal handling to dbus event loop
 extern "C" void resource_broker_shutdown_handler(int signal)
 {
@@ -35,6 +30,11 @@ extern "C" void resource_broker_shutdown_handler(int signal)
 
 namespace mbl
 {
+
+// Period between re-registrations with the LWM2M server.
+// MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
+// re-registration (keepalive)
+static const uint64_t g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
 
 ResourceBroker* ResourceBroker::s_ccrb_instance = nullptr;
 uint32_t ResourceBroker::dummy_network_interface_ = 0xFFFFFFFF;
