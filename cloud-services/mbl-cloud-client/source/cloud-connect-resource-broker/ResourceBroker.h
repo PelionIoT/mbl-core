@@ -71,33 +71,6 @@ public:
      */
     virtual MblError stop();
 
-protected:
-
-    /**
-     * @brief Initializes CCRB instance.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError init();
-
-    /**
-     * @brief Deinitializes CCRB instance.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError deinit();
-
-    /**
-     * @brief Runs CCRB event-loop.
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError run();
-
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // API to be used by DBusAdapter class
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -259,6 +232,33 @@ protected:
         IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceGetOperation> &inout_get_operations);
+
+
+protected:
+
+    /**
+     * @brief Initializes CCRB instance.
+     * 
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError init();
+
+    /**
+     * @brief Deinitializes CCRB instance.
+     * 
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError deinit();
+
+    /**
+     * @brief Runs CCRB event-loop.
+     * 
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError run();
 
     /**
      * @brief Inform CCRB that a connection has been closed

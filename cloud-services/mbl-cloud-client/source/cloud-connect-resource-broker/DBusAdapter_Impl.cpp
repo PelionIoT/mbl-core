@@ -8,6 +8,10 @@
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
 #include "DBusAdapter.h"
+#include "DBusAdapterCommon.h"
+#include "DBusCloudConnectNames.h"
+#include "DBusMessage.h"
+#include "DBusMessagesFactory.h"
 #include "DBusService.h"
 #include "MailboxMsg.h"
 #include "ResourceBroker.h"
@@ -349,85 +353,6 @@ int DBusAdapterImpl::event_loop_request_stop(MblError stop_status)
     return r;
 }
 
-/**
- * @brief Wrapper over log_and_set_sd_bus_error_f.
- *
- * @param err_num errno
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error.
- * @param stringstream object that should be printed
- */
-#define LOG_AND_SET_SD_BUS_ERROR_F(err_num, ret_error, stringstream)                               \
-    log_and_set_sd_bus_error_f(err_num, ret_error, __func__, __LINE__, stringstream)
-
-/**
- * @brief Wrapper over log_and_set_sd_bus_error.
- *
- * @param err_num errno
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error.
- * @param method_name failed method name.
- */
-#define LOG_AND_SET_SD_BUS_ERROR(err_num, ret_error, method_name)                                  \
-    log_and_set_sd_bus_error(err_num, ret_error, __func__, __LINE__, method_name)
-/**
- * @brief Prints error information to logs according to provided format,
- * fills sd bus error structure and returns negative error.
- * If ret_error was already filled, returns an error that was set.
- *
- * @param err_num errno
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error.
- * @param func function name to put in logs
- * @param line line in file to put in logs
- * @param msg object that should be printed
- * @return int negative integer value that equals to -err_num if ret_error was not
- *             previously filled, or existing error from ret_error if the structure
- *             was already filled.
- */
-static int log_and_set_sd_bus_error_f(
-    int err_num, sd_bus_error* ret_error, const char* func, int line, const std::stringstream& msg)
-{
-    if (0 < sd_bus_error_is_set(ret_error)) {
-        // avoid overwrite of the error that was already set
-        return sd_bus_error_get_errno(ret_error);
-    }
-
-    // do not replace this tr_err with TR_ERR! - this is a formatting
-    tr_err("%s::%d> %s", func, line, msg.str().c_str());
-    return sd_bus_error_set_errnof(ret_error, err_num, "%s", msg.str().c_str());
-}
-
-/**
- * @brief Prints short error information to logs,
- * fills sd bus error structure and returns negative error.
- * If ret_error was already filled, returns an error that was set.
- *
- * @param err_num errno
- * @param ret_error sd-bus error description place-holder that is filled in the
- *                  case of an error.
- * @param func function name to put in logs
- * @param line line in file to put in logs
- * @param method_name failed method name.
- * @return int negative integer value that equals to -err_num if ret_error was not
- *             previously filled, or existing error from ret_error if the structure
- *             was already filled.
- */
-static int log_and_set_sd_bus_error(
-    int err_num, sd_bus_error* ret_error, const char* func, int line, const char* method_name)
-{
-
-    if (0 < sd_bus_error_is_set(ret_error)) {
-        // avoid overwrite of the error that was already set
-        return sd_bus_error_get_errno(ret_error);
-    }
-
-    // do not replace this tr_err with TR_ERR! - this is a formatting
-    tr_err(
-        "%s::%d> %s failed errno = %s (%d)", func, line, method_name, strerror(err_num), err_num);
-    return sd_bus_error_set_errno(ret_error, err_num);
-}
-
 int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
                                                             int fd,
                                                             uint32_t revents)
@@ -651,33 +576,49 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
         return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "bus_track_sender");
     }
 
-    const char* member_name = nullptr;
-    if (0 < sd_bus_message_is_method_call(m, nullptr, DBUS_CC_REGISTER_RESOURCES_METHOD_NAME)) {
-        member_name = DBUS_CC_REGISTER_RESOURCES_METHOD_NAME;
-        r = impl->process_message_RegisterResources(m, ret_error);
-        if (r < 0) {
-            TR_ERR("process_message_RegisterResources failed!");
-        }
+    if (sd_bus_message_get_expect_reply(m) == 0) {
+        // reply to the message m is not expected.
+        std::stringstream msg("Unexpected message type: no reply expected!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
     }
-    else if (0 <
-             sd_bus_message_is_method_call(m, nullptr, DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME))
-    {
-        member_name = DBUS_CC_DEREGISTER_RESOURCES_METHOD_NAME;
-        r = impl->process_message_DeregisterResources(m, ret_error);
-        if (r < 0) {
-            TR_ERR("process_message_DeregisterResources failed!");
-        }
+
+    const char* method_name = sd_bus_message_get_member(m);
+    if (method_name == nullptr) {
+        std::stringstream msg("sd_bus_message_get_member returned NULL!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
     }
-    else
-    {
-        // TODO: probably need to reply with error reply to sender?
-        TR_ERR("Received a message with unknown member=%s!", sd_bus_message_get_member(m));
-        assert(0);
+
+    const char* sender_name = sd_bus_message_get_sender(m);
+    if (sender_name == nullptr) {
+        std::stringstream msg("sd_bus_message_get_sender returned NULL!");
+        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
+    }
+
+    std::shared_ptr<DBusCommonMessageProcessor> message_processor =
+        DBusMessagesFactory::get_message_processor(method_name);
+    if (message_processor == nullptr) {
+
+        TR_ERR("Failed to find message processor for message=%s", method_name);
+
+        r = sd_bus_error_set_const(
+            ret_error,
+            CloudConnectStatus_error_to_DBus_format_str(ERR_NOT_SUPPORTED), // sd_bus_error.name
+            CloudConnectStatus_to_readable_str(ERR_NOT_SUPPORTED));         // sd_bus_error.message
+        assert(-ERR_NOT_SUPPORTED == r);
+        return r;
+    }
+
+    TR_INFO("Starting to process %s method call from sender %s", method_name, sender_name);
+
+    r = message_processor->process_message(
+        impl->get_connection_handle(), m, impl->get_ccrb(), ret_error);
+    if (r < 0) {
+        TR_ERR("process_message failed, r=%d", r);
     }
 
     std::stringstream log_msg;
-    log_msg << "Message of type " << message_type_to_str(type) << " member name " << member_name
-            << " from sender " << sd_bus_message_get_sender(m) << " - ";
+    log_msg << "Message of type " << message_type_to_str(type) << " member name " << sender_name
+            << " from sender " << sender_name << " - ";
 
     // handle and print to logs handling status
     if (r == 0) {
@@ -702,237 +643,6 @@ int DBusAdapterImpl::incoming_bus_message_callback(sd_bus_message* m,
     TR_DEBUG("%s", log_msg.str().c_str());
 
     return r;
-}
-
-int DBusAdapterImpl::handle_resource_broker_async_method_success(sd_bus_message* m_to_reply_on,
-                                                                 sd_bus_error* ret_error,
-                                                                 const char* types_format,
-                                                                 CloudConnectStatus status,
-                                                                 const char* access_token)
-{
-    TR_DEBUG_ENTER;
-
-    assert(m_to_reply_on);
-    assert(types_format);
-
-    int r = method_reply_on_message(m_to_reply_on, ret_error, types_format, status, access_token);
-    if (r < 0) {
-        TR_ERR("method_reply_on_message failed!");
-        return r;
-    }
-
-    // Increase refcount of the message in order to avoid message deallocation
-    // until async process will be finished.
-    sd_bus_message_ref(m_to_reply_on);
-
-    return 0;
-}
-
-int DBusAdapterImpl::method_reply_on_message(sd_bus_message* m_to_reply_on,
-                                             sd_bus_error* ret_error,
-                                             const char* types_format,
-                                             CloudConnectStatus status,
-                                             const char* access_token)
-{
-    TR_DEBUG_ENTER;
-
-    assert(m_to_reply_on);
-    assert(types_format);
-
-    const char* method_name = sd_bus_message_get_member(m_to_reply_on);
-    const char* sender_name = sd_bus_message_get_sender(m_to_reply_on);
-    TR_DEBUG("Sending reply according to types_format=%s on %s method to %s",
-             types_format,
-             method_name,
-             sender_name);
-
-    sd_bus_message* m_reply = nullptr;
-
-    // When we leave this function scope, we need to call sd_bus_message_unrefp on m_reply
-    sd_bus_object_cleaner<sd_bus_message> reply_cleaner(m_reply, sd_bus_message_unref);
-
-    int r = sd_bus_message_new_method_return(m_to_reply_on, &m_reply);
-    if (r < 0) {
-        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_new_method_return");
-    }
-
-    if (0 == strcmp(types_format, "us")) {
-        // we expect types_format = "us" for RegisterResources.
-        std::string member(sd_bus_message_get_member(m_to_reply_on));
-        assert(member == "RegisterResources");
-
-        // access_token argument should not be null.
-        assert(access_token);
-        r = sd_bus_message_append(m_reply, types_format, status, access_token);
-    }
-    else if (0 == strcmp(types_format, "u"))
-    {
-        // we expect types_format = "u" for DeregisterResources, AddResourceInstances
-        // and RemoveResourceInstances.
-        std::string member(sd_bus_message_get_member(m_to_reply_on));
-        assert(member == "DeregisterResources" || member == "AddResourceInstances" ||
-               member == "RemoveResourceInstances");
-
-        r = sd_bus_message_append(m_reply, types_format, status);
-    }
-    else
-    {
-        assert(0);
-        // never should occur, method_reply_on_message is internal function, all invocations
-        // and parameteres are controlled by us.
-        std::stringstream msg("Unexpected types_format (" + std::string(types_format) +
-                              ") in reply on (" + method_name + ") method to " + sender_name);
-        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
-    }
-
-    if (r < 0) {
-        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_append");
-    }
-
-    r = sd_bus_send(connection_handle_, m_reply, nullptr);
-    if (r < 0) {
-        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_send");
-    }
-
-    TR_DEBUG("Reply on %s method successfully sent to %s", method_name, sender_name);
-
-    return 0;
-}
-
-int DBusAdapterImpl::handle_resource_broker_method_failure(MblError mbl_status,
-                                                           CloudConnectStatus cc_status,
-                                                           const char* method_name,
-                                                           sd_bus_error* ret_error)
-{
-    TR_DEBUG_ENTER;
-
-    assert(MblError::None != mbl_status || is_CloudConnectStatus_error(cc_status));
-
-    CloudConnectStatus status_to_send = ERR_INTERNAL_ERROR;
-    if (MblError::None != mbl_status) {
-        // we have internal error in resource broker
-        TR_ERR("%s failed with MblError %s", method_name, MblError_to_str(mbl_status));
-    }
-    else
-    {
-        // we have cloud connect related error in resource broker
-        TR_ERR("%s failed with cloud connect error %s",
-               method_name,
-               CloudConnectStatus_to_str(cc_status));
-        status_to_send = cc_status;
-    }
-
-    // set custom error to sd_bus_error structure.
-    // sd_bus_error_set_const translates DBus format error string to negative integer
-    // and returns it's value(in this case -status_to_send)
-    int r = sd_bus_error_set_const(
-        ret_error,
-        CloudConnectStatus_error_to_DBus_format_str(status_to_send), // sd_bus_error.name
-        CloudConnectStatus_to_readable_str(status_to_send));         // sd_bus_error.message
-    assert(-status_to_send == r);
-    return r;
-}
-
-int DBusAdapterImpl::verify_signature_and_get_string_argument(sd_bus_message* m,
-                                                              sd_bus_error* ret_error,
-                                                              std::string& out_string)
-{
-    TR_DEBUG_ENTER;
-    assert(m);
-
-    if (sd_bus_message_get_expect_reply(m) == 0) {
-        // m_reply to the message m is not expected.
-        std::stringstream msg("Unexpected message type: no reply expected!");
-        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
-    }
-
-    if (0 >= sd_bus_message_has_signature(m, "s")) {
-        std::stringstream msg("Unexpected message signature!");
-        return LOG_AND_SET_SD_BUS_ERROR_F(ENOMSG, ret_error, msg);
-    }
-
-    const char* out_read = nullptr;
-    int r = sd_bus_message_read_basic(m, SD_BUS_TYPE_STRING, &out_read);
-    if (r < 0) {
-        return LOG_AND_SET_SD_BUS_ERROR(r, ret_error, "sd_bus_message_read_basic");
-    }
-
-    if ((nullptr == out_read) || (strlen(out_read) == 0)) {
-        std::stringstream msg("Invalid message argument: empty string!");
-        return LOG_AND_SET_SD_BUS_ERROR_F(EINVAL, ret_error, msg);
-    }
-
-    out_string = std::string(out_read);
-
-    return 0;
-}
-
-int DBusAdapterImpl::process_message_RegisterResources(sd_bus_message* m, sd_bus_error* ret_error)
-{
-    TR_DEBUG_ENTER;
-    assert(m);
-
-    const char* sender = sd_bus_message_get_sender(m);
-    TR_INFO("Starting to process RegisterResources method call from sender %s", sender);
-
-    std::string app_resource_definition;
-    int r = verify_signature_and_get_string_argument(m, ret_error, app_resource_definition);
-    if (r < 0) {
-        TR_ERR("verify_signature_and_get_string_argument failed!");
-        return r;
-    }
-
-    // call register_resources resource broker API and handle output
-    std::pair<CloudConnectStatus, std::string> register_resources_ret_pair =
-        ccrb_.register_resources(IpcConnection(sender), app_resource_definition);
-
-    if (is_CloudConnectStatus_error(register_resources_ret_pair.first)) {
-        // TODO: remove next first dummy parameter as it is not needed anymore (Error::None)
-        return handle_resource_broker_method_failure(
-            Error::None, register_resources_ret_pair.first, "register_resources", ret_error);
-    }
-
-    // TODO: IOTMBL-1527
-    // validate app registered expected interface on bus? (use sd-bus track)
-
-    // register_resources succeeded. Send method-reply to the D-Bus connection that
-    // requested register_resources invocation.
-    return handle_resource_broker_async_method_success(m,
-                                                       ret_error,
-                                                       "us",
-                                                       register_resources_ret_pair.first,
-                                                       register_resources_ret_pair.second.c_str());
-}
-
-int DBusAdapterImpl::process_message_DeregisterResources(sd_bus_message* m, sd_bus_error* ret_error)
-{
-    TR_DEBUG_ENTER;
-    assert(m);
-
-    const char* sender = sd_bus_message_get_sender(m);
-
-    TR_INFO("Starting to process DeregisterResources method call from sender %s", sender);
-
-    std::string access_token;
-    int r = verify_signature_and_get_string_argument(m, ret_error, access_token);
-    if (r < 0) {
-        TR_ERR("verify_signature_and_get_string_argument failed!");
-        return r;
-    }
-
-    // call deregister_resources resource broker APi and handle output
-    CloudConnectStatus cc_dereg_status =
-        ccrb_.deregister_resources(IpcConnection(sender), access_token);
-
-    if (is_CloudConnectStatus_error(cc_dereg_status)) {
-        // TODO: remove next first dummy parameter as it is not needed anymore (Error::None)
-        return handle_resource_broker_method_failure(
-            Error::None, cc_dereg_status, "deregister_resources", ret_error);
-    }
-
-    // deregister_resources succeeded. Send method-reply to the D-Bus connection that
-    // requested deregister_resources invocation.
-    return handle_resource_broker_async_method_success(m, ret_error, "u", cc_dereg_status);
 }
 
 std::pair<MblError, std::string> DBusAdapterImpl::generate_access_token()

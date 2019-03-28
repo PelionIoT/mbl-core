@@ -5,6 +5,7 @@
  */
 
 #include "DBusService.h"
+#include "DBusCloudConnectNames.h"
 
 #include <assert.h>
 
@@ -76,7 +77,6 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //
     // ==Output==
     // Argument	    Type    Description
-    // 0            UINT32  Cloud Connect Status of an attempt to start a registration.
     // 1            STRING  Access token.
     //
     // ==Possible Cloud Connect Status values==
@@ -88,8 +88,11 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // 1            UINT32 Cloud Connect Error
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD(
-        "RegisterResources", "s", "us", incoming_bus_message_callback, SD_BUS_VTABLE_UNPRIVILEGED),
+    SD_BUS_METHOD(DBUS_CC_REGISTER_RESOURCES_METHOD_NAME,
+                  "s",
+                  "s",
+                  incoming_bus_message_callback,
+                  SD_BUS_VTABLE_UNPRIVILEGED),
 
     // TODO: This signal is disabled for now
     // com.mbed.Pelion1.Connect.RegisterResourcesStatus
@@ -290,29 +293,37 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     // Request to set resources values for multiple resources.
     //
     // ==Input==
-    // Argument	    Type                                   Description
-    // 0	        STRING                                 access-token
-    // 1	        ARRAY_of_STRUCTS(STRING,UINT8,VARIANT) array of structs that contains set
+    // Argument	    Type                             Description
+    // 0	        STRING                           access-token
+    // 1	        ARRAY_of_STRUCTS(STRING,VARIANT) array of structs that contains set
     // operation
-    //                                                     input. Each struct in the array contains:
+    //                                               input. Each struct in the array
+    //                                                     contains:
     //                                                     - path of the resource (STRING)
-    //                                                     - resource data type (UINT8)
     //                                                     - resource value (VARIANT)
     //
     // ==Output==
-    // Argument	    Type            Description
-    // 0            ARRAY_of_UINT32 Cloud Connect Status array. Each entry [i] is the status of
-    //                              the set operation parameter at index [i] in the input array.
+    // Argument	    Type                             Description
+    //                                               Empty reply
     //
-    // ==Error Reply==
-    // Argument     Type    Description
-    // 0            STRING Error description
-    // 1            UINT32 Cloud Connect Error
+    // Argument     Type                             Description
+    // 0            STRING                           Error reply will be sent if one or more get
+    //                                               resources values operations fail.
+    //                                               An error could contain a description of maximum
+    //                                               10
+    //                                               resource paths and the correspondent errors
+    //                                               types.
+    //                                               In case of invalid access token error or other
+    //                                               error
+    //                                               related to all resources in the request, error
+    //                                               reply
+    //                                               will only include this error.
+    //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("SetResourcesValues",
-                  "sa(syv)",
-                  "au",
+    SD_BUS_METHOD(DBUS_CC_SET_RESOURCES_VALUES_METHOD_NAME,
+                  "sa(sv)",
+                  "",
                   incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 
@@ -335,29 +346,36 @@ const sd_bus_vtable cloud_connect_service_vtable[] = {
     //                                             - type of the resource value (UINT8)
     //
     // ==Output==
-    // Argument	    Type            Description
-    // 0	        ARRAY_of_STRUCTS(UINT32,UINT8,VARIANT) array of structs that contains get
+    // Argument	    Type                            Description
+    // 0	        ARRAY_of_STRUCTS(UINT8,VARIANT) array of structs that contains get
     // operation
     //                                              output for each entry in the input array.
     //                                              Each struct contains:
-    //                                              - get operation for resource [i] value data
-    //                                              status (UINT32)
     //                                              - resource [i] data type (UINT8). Valid only if
     //                                              the status
     //                                                of the get operation is SUCCESS.
     //                                              - resource [i] value (VARIANT). Valid only if
-    //                                              the status
-    //                                                of the get operation is SUCCESS.
+    //                                              the status of the get operation is SUCCESS.
     //
     // ==Error Reply==
-    // Argument     Type    Description
-    // 0            STRING Error description
-    // 1            UINT32 Cloud Connect Error
+    // Argument     Type                             Description
+    // 0            STRING                           Error reply will be sent if one or more get
+    //                                               resources values operations fail.
+    //                                               An error could contain a description of maximum
+    //                                               10
+    //                                               resource paths and the correspondent errors
+    //                                               types.
+    //                                               In case of invalid access token error or other
+    //                                               error
+    //                                               related to all resources in the request, error
+    //                                               reply
+    //                                               will only include this error.
+    //
     // ==Possible Cloud Connect Error values==
     // TBD
-    SD_BUS_METHOD("GetResourcesValues",
+    SD_BUS_METHOD(DBUS_CC_GET_RESOURCES_VALUES_METHOD_NAME,
                   "sa(sy)",
-                  "a(uyv)",
+                  "a(yv)",
                   incoming_bus_message_callback,
                   SD_BUS_VTABLE_UNPRIVILEGED),
 

@@ -109,7 +109,7 @@ private:
     // When we shall have more types, consider using union or byte array for 
     // storing different types. 
     std::string string_value_;
-    int64_t integer_value_ = 0xBADBEEF;
+    int64_t integer_value_ = 0xDEADBEEFDEADBEEFLL;
 
     // stores type of stored data
     ResourceDataType event_type_;

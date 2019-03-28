@@ -7,6 +7,7 @@
 #include "DBusAdapter.h"
 #include "CloudConnectTrace.h"
 #include "DBusAdapter_Impl.h"
+#include "DBusCloudConnectNames.h"
 #include "ResourceBroker.h"
 
 #include <cassert>
