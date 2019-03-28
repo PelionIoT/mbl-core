@@ -934,7 +934,6 @@ MblError DBusAdapterImpl::send_mailbox_msg(MailboxMsg& msg_to_send)
     MblError status = mailbox_in_.send_msg(msg_to_send);
     if (status != MblError::None) {
         TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
-        return MblError::DBA_SdEventCallFailure;
     }
     return status;
 }

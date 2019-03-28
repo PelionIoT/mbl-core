@@ -35,7 +35,7 @@ ResourceBrokerTester::ResourceBrokerTester(bool use_mock_dbus_adapter)
     assert(orig_mbed_client_manager);
     delete orig_mbed_client_manager;
 
-    ccrb_.mbed_client_manager_ = std::make_unique<MbedClientManagerMock>(ccrb_);
+    ccrb_.mbed_client_manager_ = std::make_unique<MbedClientManagerMock>();
 
     if(use_mock_dbus_adapter) {
         // Init resource broker ipc to be DBusAdapterMock:
@@ -110,7 +110,7 @@ void ResourceBrokerTester::mbed_client_register_update_callback_test(
             access_token.c_str());
         
         // Next calls doesn't check sending and receiving of mailbox messages as this is tested elsewhere
-        ccrb_.handle_resources_registration_failed_internal_message(
+        ccrb_.handle_mbed_client_error_internal_message(
             mbl::MblError::ConnectInvalidParameters);  // This error require action!
     }
 
@@ -136,7 +136,7 @@ void* ResourceBrokerTester::mbed_client_mock_thread_func(void* data)
     if(registration_data->simulate_registration_success) {
         registration_data->tester->ccrb_.resources_registration_succeeded();
     } else {
-        registration_data->tester->ccrb_.resources_registration_failed(
+        registration_data->tester->ccrb_.handle_mbed_client_error(
             mbl::MblError::Unknown);
     }
     sleep(1); // Allow mailbox to call resource broker to handle above messages

@@ -22,19 +22,37 @@
 #include "MblError.h"
 #include "update_handlers.h"
 
+#include <memory>
 #include <functional>
 #include <atomic>
 
 namespace mbl {
 
-class ResourceBroker;
-
 class MbedClientManager {
+
+typedef std::function<void()> ResourcesRegistrationSucceededCallback;
+typedef std::function<void(MblError)> MbedClientErrorCallback;
 
 public:
 
-    MbedClientManager(ResourceBroker& ccrb);
+    MbedClientManager();
     virtual ~MbedClientManager();
+
+    /**
+     * @brief Set the on resources registration succeeded callback
+     * 
+     * @param callback_func - callback function
+     */
+    void on_resources_registration_succeeded(
+        ResourcesRegistrationSucceededCallback callback_func
+    );
+
+    /**
+     * @brief Set the on Mbed client error callback
+     * 
+     * @param callback_func - callback function
+     */
+    void on_mbed_client_error(MbedClientErrorCallback callback_func);
 
     /**
      * @brief Create mbed client
@@ -51,20 +69,18 @@ public:
      * @return MblError - Error::ConnectUnknownError - is case mbed client register operation failed
      *                  - Error::None in case of success
      */
-    virtual MblError init_mbed_client();
+    virtual MblError init();
 
     /**
      * @brief Deinit mbed client
      * Called after unregister client is finished as part of deinit operation
-     * Erase mbed client that was created in init_mbed_client()
+     * Erase mbed client that was created in init()
      * Stop the mbed event loop thread so no callbacks will be fired
      */
-    virtual void deinit_mbed_client();
+    virtual void deinit();
 
     /**
-     * @brief Unregister mbed client
-     * This will set an atomic enum state to signal main loop that unregister is started
-     * Unregister operation ends when a callback is called by mbed client.
+     * @brief Unregister mbed client (device resources)
      * This function is called when terminate signal arrive.
      */
     virtual void unregister_mbed_client();
@@ -101,23 +117,23 @@ public:
 
 protected:
 
-    // Mbed client (device) states
+    // Mbed client device states
     // These states represent the devices registration states against Pelion
     // Only when Mbed client (device) state is registered - an application can register
     // its own resources using resource broker APIs
-    enum MbedClientState
+    enum MbedClientDeviceState
     {
-        State_ClientUnregisterInProgress,
-        State_ClientUnregistered,
-        State_ClientRegisterInProgress,
-        State_ClientRegistered
+        State_DeviceUnregisterInProgress,
+        State_DeviceUnregistered,
+        State_DeviceRegisterInProgress,
+        State_DeviceRegistered
     };
 
     /**
      * @brief Atomic enum to signal which state mbed_client is in
      * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
      */
-    std::atomic<MbedClientState> mbed_client_state_;    
+    std::atomic<MbedClientDeviceState> mbed_client_state_;    
 
 private:
 
@@ -125,14 +141,18 @@ private:
     // initialized in MbedClientManager c'tor
     static MbedClientManager* s_instance;
 
-    // Reference to the Cloud Conect Resource Broker (CCRB) which acts as the upper layer
-    ResourceBroker& ccrb_;    
-
     // Mbed cloud client
-    MbedCloudClient* cloud_client_;
+    std::unique_ptr<MbedCloudClient> cloud_client_;
 
     // Dummy network interface needed by cloud_client_->setup API (used only in MbedOS)
     static uint32_t dummy_network_interface_;
+
+    // Callback function pointer to be called when resource registration succeeded
+    ResourcesRegistrationSucceededCallback resources_registration_succeeded_callback_func_;
+
+    // Callback function pointer to be called when resource registration failed
+    MbedClientErrorCallback mbed_client_error_callback_func_;
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback functions that are being called by Mbed client
@@ -168,13 +188,23 @@ private:
     void handle_mbed_client_registration_updated();
 
     /**
+     * @brief Determain if error is fatal
+     * In case of fatal error - move to unregistered state
+     * 
+     * @param mbed_client_error - Mbed client error code
+     * @return true - in case of fatal error
+     * @return false - in case error is not fatal
+     */
+    bool fatal_error(MblError mbed_client_error);
+
+    /**
      * @brief Determain if an action is needed based on mbed client error code
      * 
      * @param mbed_client_error - Mbed client error code
      * @return true - in case action is needed
      * @return false - in case action is not needed
      */
-    bool is_action_needed_for_error(MblError mbed_client_error);
+    bool action_needed_for_error(MblError mbed_client_error);
 
     /**
      * @brief - Error callback function

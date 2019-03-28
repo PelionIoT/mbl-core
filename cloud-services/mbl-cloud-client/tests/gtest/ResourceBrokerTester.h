@@ -33,24 +33,24 @@ class MbedClientManagerMock : public mbl::MbedClientManager
 
 public:
 
-    MbedClientManagerMock(mbl::ResourceBroker &ccrb)
-        :  MbedClientManager(ccrb)
-        {
-            // Set initial state to register to simulate successful device registration
-            mbed_client_state_.store(mbl::MbedClientManager::State_ClientRegistered);
-        }
+    MbedClientManagerMock()
+    {
+        // Set initial state to register to simulate successful device registration
+        mbed_client_state_.store(mbl::MbedClientManager::State_DeviceRegistered);
+    }
+
     ~MbedClientManagerMock(){}
 
     /**
      * @brief init mbed client mock function (does nothing)
      * @return MblError - Error::None in case of success
      */
-    mbl::MblError init_mbed_client() override {return mbl::MblError::None;}
+    mbl::MblError init() override {return mbl::MblError::None;}
 
     /**
      * @brief Deinit mbed client mock function (does nothing)
      */
-    void deinit_mbed_client() override {}
+    void deinit() override {}
 
     /**
      * @brief Unregister mbed client mock function (does nothing)

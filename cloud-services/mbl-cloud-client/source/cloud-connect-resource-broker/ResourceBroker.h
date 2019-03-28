@@ -139,7 +139,7 @@ protected:
      * @param mbed_client_error - mbed client error code
      * @return MblError - MblError::None in case of success or error reason otherwise
      */
-    MblError handle_resources_registration_failed_internal_message(MblError mbed_client_error);
+    MblError handle_mbed_client_error_internal_message(MblError mbed_client_error);
 
     /**
      * @brief Handle mbed client registration updated message
@@ -177,7 +177,7 @@ protected:
      * 
      * @param cloud_client_error - Mbed cloud client error
      */
-    void resources_registration_failed(MblError cloud_client_error);
+    void handle_mbed_client_error(MblError cloud_client_error);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // APIs to be used by DBusAdapter class
@@ -510,7 +510,7 @@ private:
      * Lifecycle:
      * Created in register_resources() API
      * Erased in one of the following:
-     *      handle_resources_registration_failed_internal_message - in case register update failed
+     *      handle_mbed_client_error_internal_message - in case register update failed
      *      handle_resources_registration_succeeded_internal_message - in case register update succeeded
      *      notify_connection_closed - in case the register record of this access token does not
      *          have any valid connection (this register record is also being erased)

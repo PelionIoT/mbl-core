@@ -58,7 +58,7 @@ MblError ResourceBroker::main()
     TR_DEBUG_ENTER;
     ResourceBroker resource_broker;
 
-    // Note: start() will init mbed client and state_ is moved to State_ClientRegisterInProgress.
+    // Note: start() will init mbed client and state_ is moved to State_DeviceRegisterInProgress.
     const MblError ccrb_start_err = resource_broker.start();
     if (Error::None != ccrb_start_err) {
         TR_ERR("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
@@ -100,7 +100,7 @@ MblError ResourceBroker::main()
 ResourceBroker::ResourceBroker()
     : init_sem_initialized_(false),
       ipc_adapter_(nullptr),
-      mbed_client_manager_(std::make_unique<MbedClientManager>(*this))
+      mbed_client_manager_(std::make_unique<MbedClientManager>())
 {
     TR_DEBUG_ENTER;
 }
@@ -248,6 +248,11 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* 
     UNUSED(s); // Can't call unref_event_source as this event should be keep on comming
     assert(ev);
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
+    if (nullptr == periodic_ev) {
+        TR_ERR("Invalid periodic event (null)");
+        return MblError::SystemCallFailed;
+    }
+
     TR_DEBUG("%s event", periodic_ev->get_description().c_str());
 
     auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>(sizeof(EventData_Keepalive));
@@ -295,9 +300,18 @@ MblError ResourceBroker::init()
     }
 
     // Init Mbed cloud client
-    const MblError init_mbed_clinet_status = mbed_client_manager_->init_mbed_client();
+    mbed_client_manager_->on_resources_registration_succeeded(
+        std::bind(&ResourceBroker::resources_registration_succeeded, this));
+
+    mbed_client_manager_->on_mbed_client_error(std::bind(
+        static_cast<void (ResourceBroker::*)(MblError)>(&ResourceBroker::handle_mbed_client_error),
+        this,
+        std::placeholders::_1));
+
+    const MblError init_mbed_clinet_status = mbed_client_manager_->init();
     if (Error::None != init_mbed_clinet_status) {
-        TR_ERR("init_mbed_client failed with error %s", MblError_to_str(init_mbed_clinet_status));
+        TR_ERR("mbed_client_manager_->init() failed with error %s",
+               MblError_to_str(init_mbed_clinet_status));
         return init_mbed_clinet_status;
     }
 
@@ -335,7 +349,7 @@ MblError ResourceBroker::deinit()
     ipc_adapter_.reset(nullptr);
 
     // This is done after device is unregistered (no mbed client callbacks will arrive)
-    mbed_client_manager_->deinit_mbed_client();
+    mbed_client_manager_->deinit();
 
     return status;
 }
@@ -421,9 +435,7 @@ ResourceBroker::get_registration_record(const std::string& access_token)
 // Mailbox messages related functions
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Need to figure out if this can be called as a result of other operations
-MblError
-ResourceBroker::handle_resources_registration_failed_internal_message(MblError mbed_client_error)
+MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
 {
     // Check if this callback is caused by an application trying to register resources
     // (only one application can be in registration update state at a time)
@@ -538,7 +550,7 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
             TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
             return Error::DBA_MailBoxInvalidMsg;
         }
-        return handle_resources_registration_failed_internal_message(message.status);
+        return handle_mbed_client_error_internal_message(message.status);
     }
 
     // This should never happen
@@ -564,7 +576,7 @@ void ResourceBroker::resources_registration_succeeded()
     }
 }
 
-void ResourceBroker::resources_registration_failed(MblError cloud_client_error)
+void ResourceBroker::handle_mbed_client_error(MblError cloud_client_error)
 {
     TR_DEBUG_ENTER;
 
