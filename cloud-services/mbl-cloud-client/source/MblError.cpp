@@ -61,6 +61,9 @@ const char* MblError_to_str(const MblError error)
         case Error::UpdateErrorUserActionRequired: return "UpdateErrorUserActionRequired";
         case Error::UpdateFatalRebootRequired: return "UpdateFatalRebootRequired";
         case Error::UpdateErrorInvalidHash: return "UpdateErrorInvalidHash";
+        case Error::UpdateWarningBadKeytable: return "UpdateWarningBadKeytable";
+        case Error::UpdateCertificateInsertion: return "UpdateCertificateInsertion";
+        case Error::UpdateErrorConnection: return "UpdateErrorConnection";
 
         case Error::EnrollmentErrorBase: return "EnrollmentErrorBase";
         case Error::EnrollmentErrorEnd: return "EnrollmentErrorEnd";
@@ -104,6 +107,9 @@ MblError CloudClientError_to_MblError(MbedCloudClient::Error error)
         case MbedCloudClient::UpdateErrorUserActionRequired: return Error::UpdateErrorUserActionRequired;
         case MbedCloudClient::UpdateFatalRebootRequired: return Error::UpdateFatalRebootRequired;
         case MbedCloudClient::UpdateErrorInvalidHash: return Error::UpdateErrorInvalidHash;
+        case MbedCloudClient::UpdateWarningBadKeytable: return Error::UpdateWarningBadKeytable;
+        case MbedCloudClient::UpdateCertificateInsertion: return Error::UpdateCertificateInsertion;
+        case MbedCloudClient::UpdateErrorConnection: return Error::UpdateErrorConnection;
     
         case MbedCloudClient::EnrollmentErrorBase: return Error::EnrollmentErrorBase;
         case MbedCloudClient::EnrollmentErrorEnd: return Error::EnrollmentErrorEnd;

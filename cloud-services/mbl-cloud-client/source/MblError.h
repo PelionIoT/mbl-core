@@ -63,6 +63,9 @@ enum Type {
     UpdateErrorUserActionRequired       = 0x020c,
     UpdateFatalRebootRequired           = 0x020d,
     UpdateErrorInvalidHash              = 0x020e,
+    UpdateWarningBadKeytable            = 0x020f,
+    UpdateCertificateInsertion          = 0x0210,
+    UpdateErrorConnection               = 0x0211,
 
     EnrollmentErrorBase                 = 0x0300,
     EnrollmentErrorEnd                  = 0x0301
