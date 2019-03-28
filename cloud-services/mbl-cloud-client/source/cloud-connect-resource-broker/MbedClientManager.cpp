@@ -123,8 +123,6 @@ void MbedClientManager::register_resources(const M2MObjectList& object_list)
 
 bool MbedClientManager::is_device_registered()
 {
-    TR_DEBUG_ENTER;
-
     if (State_ClientRegistered == mbed_client_state_.load()) {
         return true;
     }
@@ -133,8 +131,6 @@ bool MbedClientManager::is_device_registered()
 
 bool MbedClientManager::is_device_unregistered()
 {
-    TR_DEBUG_ENTER;
-
     if (State_ClientUnregistered == mbed_client_state_.load()) {
         return true;
     }
