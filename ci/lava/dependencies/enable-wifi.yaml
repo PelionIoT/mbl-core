@@ -1,0 +1,16 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: "Lava-Test Test Definition 1.0"
+    name: Enable WiFi on DUT
+    description: "Enable WiFi on DUT"
+
+run:
+    steps:
+        - connmanctl enable wifi
+        - connmanctl scan wifi
+        - connmanctl connect wifi_60f18946624c_47756573742d4163636573734e47_managed_none
+
+
