@@ -7,7 +7,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-VERBOSITY_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+LOG_FORMAT = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
 
 def set_log_verbosity(increase_verbosity):
@@ -15,4 +15,4 @@ def set_log_verbosity(increase_verbosity):
     log_level = logging.DEBUG if increase_verbosity else logging.INFO
 
     log.setLevel(log_level)
-    logging.basicConfig(level=log_level, format=VERBOSITY_FORMAT)
+    logging.basicConfig(level=log_level, format=LOG_FORMAT)
