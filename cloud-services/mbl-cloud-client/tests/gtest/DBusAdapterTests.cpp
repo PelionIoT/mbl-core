@@ -18,10 +18,11 @@
 #include "MailboxMsg.h"
 #include "MblError.h"
 #include "ResourceBroker.h"
-
+#include "ResourceBrokerMockBase.h"
 #include "TestInfra.h"
 #include "TestInfraAppThread.h"
 #include "TestInfra_DBusAdapterTester.h"
+#include "ResourceBrokerTester.h"
 
 #include <gtest/gtest.h>
 
@@ -135,7 +136,8 @@ TEST_F(MailBoxTestFixture, send_rcv_msg_single_thread)
         // check that sent data equal received data
         MailboxMsg_Raw rcv_data;
         MblError status;
-        std::tie(status, rcv_data) = ret_pair.second.unpack_data<MailboxMsg_Raw>();
+        std::tie(status, rcv_data) =
+            ret_pair.second.unpack_data<MailboxMsg_Raw>(sizeof(MailboxMsg_Raw));
 
         ASSERT_EQ(status, MblError::None);
         ASSERT_EQ(memcmp(&send_payload, &rcv_data, random_str.length()), 0);
@@ -166,7 +168,8 @@ void* MailBoxTestFixture::reader_thread_start(void* mailbox)
 
         MailboxMsg_Raw rcv_data;
         MblError status;
-        std::tie(status, rcv_data) = ret_pair.second.unpack_data<MailboxMsg_Raw>();
+        std::tie(status, rcv_data) =
+            ret_pair.second.unpack_data<MailboxMsg_Raw>(sizeof(MailboxMsg_Raw));
         if (status != MblError::None)
         {
             pthread_exit((void*) -1010);
@@ -292,7 +295,7 @@ MblError EventManagerTestFixture::basic_no_adapter_callback(sd_event_source* s, 
     MblError status = MblError::None;
     static std::vector<bool> event_arrive_flag(NUM_ITERATIONS, true);
 
-    std::tie(status, event_data) = ev->unpack_data<EventData_Raw>();
+    std::tie(status, event_data) = ev->unpack_data<EventData_Raw>(sizeof(EventData_Raw));
     if (status != MblError::None) {
         sd_event_exit(event_loop_handle_, MblError::DBA_InvalidValue);
         return status;
@@ -389,8 +392,8 @@ MblError EventManagerTestFixture::basic_no_adapter_periodic_callback(sd_event_so
     milliseconds arrive_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
     EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(const_cast<Event*>(ev));
     uint64_t period_millisec = periodic_ev->get_period_millisec();
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
 
     // in case gtest_repeat > 1, it is not enough to initialize static send_time variable on its
@@ -520,7 +523,6 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////// DBusAdapeter ////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
-
 /**
  * @brief Class fixture for all DBusAdapeter tests
  *
@@ -528,14 +530,18 @@ TEST_F(EventManagerTestFixture, basic_no_adapter_event_periodic)
 class DBusAdapeterTestFixture1 : public ::testing::Test
 {
 public:
-    DBusAdapeterTestFixture1() : adapter_(ccrb_), tester_(adapter_){};
+
+    DBusAdapeterTestFixture1() : adapter_(ccrb_mock_), tester_(adapter_)
+    {
+        ccrb_mock_.set_ipc_adapter(&adapter_);
+    };
 
     static int validate_service_exist(AppThread* app_thread, void* user_data);
     static void* mbl_cloud_client_thread(void* adapter);
     static int event_loop_request_stop(sd_event_source* s, void* userdata);
     static sem_t semaphore_;
 
-    ResourceBroker ccrb_;
+    ResourceBrokerMockBase ccrb_mock_;
     DBusAdapter adapter_;
     TestInfra_DBusAdapterTester tester_;
 };
@@ -635,7 +641,6 @@ void* DBusAdapeterTestFixture1::mbl_cloud_client_thread(void* adapter_)
 TEST_F(DBusAdapeterTestFixture1, run_stop_with_external_exit_msg)
 {
     GTEST_LOG_START_TEST;
-    ResourceBroker ccrb;
     pthread_t tid;
     void* retval;
 
@@ -650,7 +655,7 @@ TEST_F(DBusAdapeterTestFixture1, run_stop_with_external_exit_msg)
         ASSERT_EQ(sem_wait(&semaphore_), 0);
 
         // child is ready - request stop and join it.
-        ASSERT_EQ(adapter_.stop(MblError::None), MblError::None);
+        ASSERT_EQ(ccrb_mock_.send_adapter_stop_message(), MblError::None);
         ASSERT_EQ(pthread_join(tid, &retval), 0);
 
         // check success status
@@ -728,7 +733,7 @@ DBusAdapterWithEventImmediateTestFixture::adapter_immidiate_event_callback(
     MblError result = MblError::None;
     int n;
 
-    std::tie(result, event_data) = ev->unpack_data<EventData_Raw>();
+    std::tie(result, event_data) = ev->unpack_data<EventData_Raw>(sizeof(EventData_Raw));
     if (result != MblError::None) {
         sd_event_exit(sd_event_source_get_event(s), (int) result);
         return result;
@@ -778,8 +783,8 @@ TEST_F(DBusAdapterWithEventImmediateTestFixture, adapter_immediate_event)
     GTEST_LOG_START_TEST;
     EventData_Raw event_data = { 0 };
     MblError stop_status;
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
 
     // initialize adapter
@@ -818,7 +823,7 @@ class DBusAdapterWithEventPeriodicTestFixture : public ::testing::Test
 public:
     static const uint64_t NUM_ITERATIONS = 10;
 
-    static MblError adapter_periodic_event_callback(sd_event_source* s, const Event* ev);
+    static MblError adapter_periodic_event_callback(sd_event_source* s, Event* ev);
 
     void SetUp() override
     {
@@ -836,12 +841,12 @@ milliseconds DBusAdapterWithEventPeriodicTestFixture::send_time_(0);
 
 MblError
 DBusAdapterWithEventPeriodicTestFixture::adapter_periodic_event_callback(sd_event_source* s,
-                                                                         const Event* ev)
+                                                                         Event* ev)
 {
     TR_DEBUG_ENTER;
 
     milliseconds arrive_time = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-    const EventPeriodic* periodic_ev = dynamic_cast<const EventPeriodic*>(ev);
+    const EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
     uint64_t period_millisec = periodic_ev->get_period_millisec();
     OneSetMblError error;
     uint64_t delay_milliseconds = 0;
@@ -934,8 +939,8 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
     GTEST_LOG_START_TEST;
     EventData_Raw event_data = { DATA_VAL };
     MblError stop_status;
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
     // random  100 millisec <= microseconds <= 1099 millisec
     uint64_t period_millisec = (rand() % EventPeriodic::millisec_per_sec) +
@@ -968,8 +973,8 @@ TEST_F(DBusAdapterWithEventPeriodicTestFixture, adapter_periodic_event)
 TEST(DBusAdapter, AccessTokenGenerating_check_non_repeating)
 {
     const ssize_t NUM_ITERATIONS = 100000;
-    ResourceBroker broker;
-    DBusAdapter adapter(broker);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     //use and unordered set - prefer speed
     std::unordered_set<std::string> generated_access_tokens;
 
@@ -986,8 +991,8 @@ TEST(DBusAdapter, AccessTokenGenerating_check_non_repeating)
 
 TEST(DBusAdapter, enforce_single_connection_unit_test)
 {   
-    ResourceBroker broker;    
-    DBusAdapter adapter(broker);    
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     TestInfra_DBusAdapterTester tester(adapter);
   
     ASSERT_EQ(adapter.init(), MblError::None);
@@ -1033,7 +1038,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_periodic_callback(sd_event_s
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
     MblError status = MblError::None;
 
-    std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
+    std::tie(status, user_data) =
+        ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(sizeof(DBusAdapeterTestFixture2::DBusAdapterPtr));
 
     user_data.adapter->stop(status);
     
@@ -1045,7 +1051,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { nullptr };
     MblError status = MblError::None;
 
-    std::tie(status, user_data) = ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>();
+    std::tie(status, user_data) = 
+        ev->unpack_data<DBusAdapeterTestFixture2::DBusAdapterPtr>(sizeof(DBusAdapeterTestFixture2::DBusAdapterPtr));
     if (status != MblError::None){
         TR_ERR("send_event_periodic failed!");
         user_data.adapter->stop(status);
@@ -1068,8 +1075,8 @@ MblError DBusAdapeterTestFixture2::basic_send_event_immidiate_callback(sd_event_
 // a pointer to adapter as the user data
 TEST(DBusAdapter, basic_send_event)
 {
-    ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerTester ccrb_tester(false); // false = dont use mock adapter
+    DBusAdapter adapter(ccrb_tester.get_ccrb());
     DBusAdapeterTestFixture2::DBusAdapterPtr user_data { &adapter };
 
     ASSERT_EQ(adapter.init(), MblError::None);

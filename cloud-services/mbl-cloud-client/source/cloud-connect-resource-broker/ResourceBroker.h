@@ -9,20 +9,20 @@
 
 #include "DBusAdapter.h"
 #include "RegistrationRecord.h"
-
 #include <pthread.h>
 #include <cinttypes>
 #include <memory>
 #include <semaphore.h>
 #include <queue>
-#include <atomic>
-#include <functional>
 
+extern "C" void resource_broker_shutdown_handler(int signal);
 
 class ResourceBrokerTester;
 namespace mbl {
 
+class MbedClientManager;
 class IpcConnection;
+class MailboxMsg;
 
 /**
  * @brief Class implements functionality of Mbl Cloud Connect Resource 
@@ -34,49 +34,37 @@ class ResourceBroker {
 
 friend ::ResourceBrokerTester;
 friend DBusAdapterImpl;
+friend MbedClientManager;
 
 public:
-    ResourceBroker();
-    virtual ~ResourceBroker();
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // API to be used by MblCloudClient class
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Starts CCRB.
-     * In details: 
-     * - initializes CCRB instance and runs event-loop.
+     * @brief Set a shutdown termination flag
+     * Will be handled in main loop
+     * Note: This is temporary until we will move signal handling to dbus event loop
      * 
-     * Note: This function should be called before ResourceBroker::stop().  
-     * 
-     * @param cloud_client - mbed cloud client
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStartFailed otherwise. 
+     * @param signal received 
      */
-    virtual MblError start(MbedCloudClient* cloud_client);
+    void resource_broker_shutdown_handler(int signal);
+
 
     /**
-     * @brief Stops CCRB.
-     * In details: 
-     * - stops CCRB event-loop.
-     * - deinitializes CCRB instance.
+     * @brief Main loop that create ResourceBroker, initialize and start all components
+     * When terminate signal is arrived - stop function will be called, mbed client unregister
+     * operation will start, and when unregister callback is called - deinit ResourceBroker.
      * 
-     * Note: This function should be called only after ResourceBroker::start() being called.
-     *       This function should be called only from the same thread as ResourceBroker::start() 
-     *       was called.
-     *
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStopFailed otherwise. 
+     * @return MblError returns value Error::ShutdownRequested if function terminated due to
+     *         shutdown signal that was handled correctly, 
+     *         or Error::CCRBStartFailed in case start failed.
      */
-    virtual MblError stop();
+    static MblError main();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // API to be used by DBusAdapter class
+    // APIs to be used by DBusAdapter class
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Starts asynchronous registration request of the resource set 
+     * @brief Start asynchronous registration request of the resource set 
      * in the Cloud.  
      * This function parses the input json file, and creates resource objects 
      * from it. Created objects pends for the registration to the Cloud. 
@@ -98,7 +86,7 @@ public:
                        const std::string &app_resource_definition);
 
     /**
-     * @brief Starts asynchronous deregistration request of the resource set 
+     * @brief Start asynchronous deregistration request of the resource set 
      * from the Cloud.  
      * This function starts deregistration procedure of all resources that are
      * "owned" by access_token. CCRB will send the final status of the 
@@ -117,7 +105,7 @@ public:
         const std::string &access_token);
 
     /**
-     * @brief Starts resource instances addition asynchronous request to 
+     * @brief Start resource instances addition asynchronous request to 
      * the Cloud.  
      * This function starts resource instances addition procedure of all 
      * resources instances that are provided in resource_instance_ids. 
@@ -144,7 +132,7 @@ public:
         const std::vector<uint16_t> &resource_instance_ids);
 
     /**
-     * @brief Starts resource instances remove asynchronous request 
+     * @brief Start resource instances remove asynchronous request 
      * from the Cloud.  
      * This function starts resource instances remove procedure of all 
      * resources instances that are provided in resource_instance_ids. 
@@ -170,7 +158,6 @@ public:
         const std::string &resource_path, 
         const std::vector<uint16_t> &resource_instance_ids);
 
-   
     /**
      * @brief Set resources values for multiple resources. 
      *  
@@ -181,7 +168,7 @@ public:
      * @param inout_set_operations vector of structures that provide all input and 
      *        output parameters to perform setting operation. 
      *        Each entry in inout_set_operations contains:
-     * 
+     * handle_authorize
      *        input fields: 
      *        - input_data is the data that includes resources's path type and value 
      *          of the corresponding resource.
@@ -199,7 +186,6 @@ public:
         IpcConnection source,
         const std::string &access_token, 
         std::vector<ResourceSetOperation> &inout_set_operations);
-
 
     /**
      * @brief Get resources values from multiple resources. 
@@ -231,43 +217,63 @@ public:
     virtual CloudConnectStatus get_resources_values(
         IpcConnection source,
         const std::string &access_token, 
-        std::vector<ResourceGetOperation> &inout_get_operations);
-
+        std::vector<ResourceGetOperation> &inout_get_operations);    
 
 protected:
 
+    ResourceBroker();
+    virtual ~ResourceBroker();
+
     /**
-     * @brief Initializes CCRB instance.
+     * @brief Starts CCRB.
+     * In details: 
+     * - initializes CCRB instance and runs event-loop.
      * 
+     * Note: This function should be called before ResourceBroker::stop().  
+     * 
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or Error::CCRBStartFailed otherwise. 
+     */
+    virtual MblError start();
+
+    /**
+     * @brief Stops CCRB.
+     * In details: 
+     * - stops CCRB event-loop.
+     * - deinitialize CCRB instance.
+     * 
+     * Note: This function should be called only after ResourceBroker::start() being called.
+     *       This function should be called only from the same thread as ResourceBroker::start() 
+     *       was called.
+     *
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or Error::CCRBStopFailed otherwise. 
+     */
+    virtual MblError stop();
+
+    /**
+     * @brief Initialize CCRB instance.
+     * Initialize mbed client using init_mbed_client() API
      * @return MblError returns value Error::None if function succeeded, 
      *         or error code otherwise.
      */
     virtual MblError init();
 
     /**
-     * @brief Deinitializes CCRB instance.
-     * 
+     * @brief Deinitialize CCRB instance.
+     * Deinitialize mbed client using deinit_mbed_client() API
      * @return MblError returns value Error::None if function succeeded, 
      *         or error code otherwise.
      */
     virtual MblError deinit();
 
     /**
-     * @brief Runs CCRB event-loop.
+     * @brief Run CCRB event-loop.
      * 
-     * @return MblError returns value Error::None if function succeeded, 
+     * @return MblError returns value Error::None if function succeedhandle_authorizeed, 
      *         or error code otherwise.
      */
     virtual MblError run();
-
-    /**
-     * @brief Inform CCRB that a connection has been closed
-     * This is a one-side notification. Nothing is expected to be returned. 
-     * (No operation is requested by caller so the internal outcomes are irrelevant for the caller)
-     * 
-     * @param source - connection which has been closed
-     */    
-    virtual void notify_connection_closed(IpcConnection source);
 
     /**
      * @brief CCRB thread main function.
@@ -279,31 +285,95 @@ protected:
      * @return void* thread output status. CCRB thread status(MblError enum) returned by value. 
      */
     static void *ccrb_main(void *ccrb);
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Mailbox messages related functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Handle mbed client error message
+     * When mbed client error callback is called (mbed client thread) - an internal message is sent 
+     * to mailbox in order to handle it in internal thread in this function.
+
+     * @param mbed_client_error - mbed client error code
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
+    MblError handle_mbed_client_error_internal_message(MblError mbed_client_error);
+
+    /**
+     * @brief Handle mbed client registration updated message
+     * When mbed client registration updated callback is called (mbed client thread) - an internal 
+     * message is sent to mailbox in order to handle it in internal thread in this function
+     * 
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
+    MblError handle_resources_registration_succeeded_internal_message();
+
+    /**
+     * @brief Process mailbox messages
+     * Messages are being sent to mailbox from external thread (e.g. mbed client callbacks), 
+     * and processed using this function in internal thread.
+     * This will prevent accessing data members from two threads.
+     * 
+     * @param msg - Mailbox message to proccess
+     * @return MblError - Error::None for success running the loop, otherwise the failure reason.
+     */
+    virtual MblError process_mailbox_message(MailboxMsg& msg);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Callback functions that are being called by Mbed client
+    // APIs to be used by Mbed client manager class
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * @brief Register callback function that will be called directly by Mbed cloud client
-     * 
+     * @brief - Resources registration succeeded
+     * Called by MbedClientManager (Mbed client thread).
      */
-    void regsiter_callback_handlers();
+    void resources_registration_succeeded();
 
     /**
-     * @brief - Registration update callback.
-     * Called by Mdeb cloud client to indicate last mbed-cloud-client registration update was successful.
+     * @brief - Resources registration failed
+     * Called by MbedClientManager (Mbed client thread).
      * 
+     * @param cloud_client_error - Mbed cloud client error
      */
-    void handle_registration_updated_cb();
+    void handle_mbed_client_error(MblError cloud_client_error);
 
     /**
-     * @brief - Error callback function
-     * Called by Mdeb Cloud Client to indicate last mbed-cloud-client operation failure
+     * @brief Inform CCRB that a connection has been closed
+     * This is a one-side notification. Nothing is expected to be returned. 
+     * (No operation is requested by caller so the internal outcomes are irrelevant for the caller)
      * 
-     * @param cloud_client_code - Mbed cloud client error code for the last register / deregister operations.
+     * @param source - connection which has been closed
+     */    
+    virtual void notify_connection_closed(IpcConnection source);
+
+private:
+
+    // No copying or moving 
+    // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
+    ResourceBroker(const ResourceBroker&) = delete;
+    ResourceBroker & operator = (const ResourceBroker&) = delete;
+    ResourceBroker(ResourceBroker&&) = delete;
+    ResourceBroker& operator = (ResourceBroker&&) = delete;
+
+    /**
+     * @brief Keepalive periodic event data
+     * 
      */
-    void handle_error_cb(const int cloud_client_code);
+    struct EventData_Keepalive
+    {
+        ResourceBroker* ccrb_this;
+    };
+
+    /**
+     * @brief Periodic keepalive callback to notify Mbed cloud client that device is alive
+     * 
+     * @param s - event source
+     * @param ev - event data
+     * @return Error::None in case of success
+     */
+    static MblError periodic_keepalive_callback(sd_event_source* s, Event* ev);
+
 
     typedef std::shared_ptr<RegistrationRecord> RegistrationRecord_ptr;
     typedef std::map<std::string, RegistrationRecord_ptr> RegistrationRecordMap;
@@ -400,9 +470,8 @@ protected:
     void get_resource_value(const RegistrationRecord_ptr registration_record,
                             ResourceData& resource_data);
 
-
     /**
-     * @brief Return registration record using acceess token
+     * @brief Return registration record using access token
      * 
      * @param access_token - access token arrived from ipc adapter
      * @return Registration record
@@ -415,46 +484,38 @@ protected:
     // register_resource API.
     RegistrationRecordMap registration_records_;
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////    
-
-    // No copying or moving 
-    // (see https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md#cdefop-default-operations)
-    ResourceBroker(const ResourceBroker&) = delete;
-    ResourceBroker & operator = (const ResourceBroker&) = delete;
-    ResourceBroker(ResourceBroker&&) = delete;
-    ResourceBroker& operator = (ResourceBroker&&) = delete;
-
     // thread id of the IPC thread
     pthread_t ipc_thread_id_ = 0;
 
     // FIXME: init_sem_ and init_sem_initialized_ should be removed in IOTMBL-1707.      
     // semaphore for the initialization procedure syncronization.
     sem_t init_sem_;
+
     // flag that marks if the init_sem_ was intialized and requires destroy.
     std::atomic_bool init_sem_initialized_;
 
     // pointer to ipc binder instance
-    std::unique_ptr<DBusAdapter> ipc_adapter_ = nullptr;
+    std::unique_ptr<DBusAdapter> ipc_adapter_;
 
-    MbedCloudClient* cloud_client_;
+    // pointer to mbed client manager
+    std::unique_ptr<MbedClientManager> mbed_client_manager_;
 
-    // Atomic boolean to signal that rgistration is in progress
-    // Use to limit only one allowed registration at a time
-    // This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
-    std::atomic_bool registration_in_progress_;
-
-    // Access token of the current operation against Mbed client
-    std::string in_progress_access_token_;
-
-    // register_update function pointer
-    // Mbl cloud client use it to point to Mbed cloud client register_update API
-    // Gtests will use it to point to mock function
-    std::function<void()> register_update_func_;
-    
-    // add_objects function pointer
-    // Mbl cloud client use it to point to Mbed cloud client add_objects API
-    // Gtests will use it to point to mock function
-    std::function<void(const M2MObjectList& object_list)> add_objects_func_;
+    /**
+     * @brief In progress register update access token
+     * Only one application can be in progress of register update of its resources
+     * Only when register update is finished (either successful or failed) - this member will be
+     * cleared.
+     * If this member is not empty - it means register update is in progress.
+     * Lifecycle:
+     * Created in register_resources() API
+     * Erased in one of the following:
+     *      handle_mbed_client_error_internal_message - in case register update failed
+     *      handle_resources_registration_succeeded_internal_message - in case register update succeeded
+     *      notify_connection_closed - in case the register record of this access token does not
+     *          have any valid connection (this register record is also being erased)
+     * Note: this member is used only from internal thread so there are no race conditions.
+     */
+    std::string reg_update_in_progress_access_token_;
 };
 
 } // namespace mbl

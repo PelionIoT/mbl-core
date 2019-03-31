@@ -16,10 +16,8 @@
  */
 
 #include "signals.h"
-
-#include "MblCloudClient.h"
+#include "cloud-connect-resource-broker/ResourceBroker.h"
 #include "log.h"
-
 #include "mbed-trace/mbed_trace.h"
 
 #include <cerrno>
@@ -36,7 +34,7 @@ MblError signals_init()
     // Shutdown
     struct sigaction shutdown_sa;
     std::memset(&shutdown_sa, 0, sizeof(shutdown_sa));
-    shutdown_sa.sa_handler = mbl_shutdown_handler;
+    shutdown_sa.sa_handler = resource_broker_shutdown_handler;
     shutdown_sa.sa_flags = 0;
     if (sigaction(SIGTERM, &shutdown_sa, 0) != 0) {
         tr_error("Failed to set SIGTERM signal handler: %s", std::strerror(errno));
@@ -44,6 +42,14 @@ MblError signals_init()
     }
     if (sigaction(SIGINT, &shutdown_sa, 0) != 0) {
         tr_error("Failed to set SIGINT signal handler: %s", std::strerror(errno));
+        return Error::SignalsInitSigaction;
+    }
+    if (sigaction(SIGHUP, &shutdown_sa, 0) != 0) {
+        tr_error("Failed to set SIGHUP signal handler: %s", std::strerror(errno));
+        return Error::SignalsInitSigaction;
+    }
+    if (sigaction(SIGQUIT, &shutdown_sa, 0) != 0) {
+        tr_error("Failed to set SIGQUIT signal handler: %s", std::strerror(errno));
         return Error::SignalsInitSigaction;
     }
 

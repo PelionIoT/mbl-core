@@ -25,6 +25,7 @@
 #include <string>
 #include <memory>
 #include <functional>
+#include <atomic>
 
 class RegistrationRecordTester;
 
@@ -98,26 +99,33 @@ public:
     std::pair<MblError, M2MResource*> get_m2m_resource(const std::string& path);
 
     /**
-     * @brief Set registered status
-     * 
-     * @param registered - true if registered, false if not registered.
-     */
-    inline void set_registered(bool registered) {registered_ = registered;}
-
-    /**
-     * @brief Return registration ipc connection
+     * @brief Return registration IPC connection
      * 
      * @return ipc request handle
      */
     const IpcConnection& get_registration_source() const { return registration_source_; }
 
+    // Registration state of application resources
+    enum RegistrationState
+    {
+        State_Unregistered, // Resources not registered
+        State_RegistrationInProgress, // Resources registration in progress
+        State_Registered // Resources registered
+    };
+
     /**
-     * @brief Return registered status
+     * @brief Return Registration state of application resources
      * 
-     * @return true if registered
-     * @return false if not registered
+     * @return RegistrationState - Registration state
      */
-    inline bool is_registered() const {return registered_;}
+    inline RegistrationState get_registration_state() const {return state_.load();};
+
+    /**
+     * @brief Set registration state
+     * 
+     * @param state  - Registration state
+     */
+    inline void set_registration_state(RegistrationState state) {state_.store(state);}
 
     /**
      * @brief Return m2m object list object
@@ -148,9 +156,15 @@ private:
 
     IpcConnection registration_source_;
     std::vector<IpcConnection> ipc_connections_;
-    bool registered_;
 
-    M2MObjectList m2m_object_list_; // Cloud client M2M object list used for registration
+    /**
+     * @brief Atomic enum to signal which state we are in
+     * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
+     */
+    std::atomic<RegistrationState> state_;
+
+    // Cloud client M2M object list used for registration
+    M2MObjectList m2m_object_list_; 
 };
 
 } // namespace mbl

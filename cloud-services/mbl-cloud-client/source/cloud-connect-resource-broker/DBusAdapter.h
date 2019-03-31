@@ -24,6 +24,7 @@ namespace mbl
 class ResourceBroker;
 class DBusAdapterImpl;
 class IpcConnection;
+class MailboxMsg;
 
 /**
  * @brief Implements an interface to the D-Bus IPC.
@@ -71,7 +72,8 @@ public:
     /**
      * @brief Stops IPC event-loop.
      * @param stop_status is used in order to understand the reason for stoping the adapter
-     *  use MblError::DBUS_ADAPTER_STOP_STATUS_NO_ERROR by default (no error)
+     *        use MblError::DBUS_ADAPTER_STOP_STATUS_NO_ERROR by default (no error)
+     * Note: Allowed to be called only from internal thread (initializer thread).
      * @return MblError returns value Error::None if function succeeded,
      *         or error code otherwise.
      */
@@ -162,6 +164,17 @@ public:
                                                       Event::UserCallback callback,
                                                       uint64_t period_millisec,
                                                       const std::string& description = "");
+
+    /**
+     * @brief send a message to CCRB thread event loop by an external thread. In the normal
+     * operation, the callling thread shouldn't be blocked at all, no competitors and only a
+     * pointer is written. The thread will poll on the WRITE pipe side
+     * and exit with error if timeout occurred.
+     *
+     * @param msg - a message to be sent
+     * @return MblError - return MblError - Error::None for success, therwise the failure reason
+     */
+    MblError send_mailbox_msg(MailboxMsg& msg_to_send);
 
     /**
     * @brief Generate unique access token using sd_id128_randomize
