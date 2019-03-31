@@ -30,6 +30,25 @@
 
 using namespace mbl;
 
+static int aaa (int signal)
+{
+    TR_DEBUG_ENTER;
+    sigset_t mask;
+    sigset_t orig_mask;
+    sigemptyset (&mask);
+	sigaddset (&mask, signal);
+ 
+    //int r = sigprocmask(SIG_BLOCK, &mask, &orig_mask);
+    int r = pthread_sigmask(SIG_BLOCK, &mask, &orig_mask); 
+	if (r < 0) {
+		TR_ERR("sigprocmask failed with error: %d - %s",
+            r,
+            strerror(-r)
+        );
+	}
+    return r;
+}
+
 int main()
 {
     const int daemon_err = daemon(0 /* nochdir */, 0 /* noclose */);
@@ -57,6 +76,11 @@ int main()
         return 1;
     }
 
+
+    aaa(SIGTERM);
+    aaa(SIGUSR1);
+    aaa(SIGUSR2);
+    
     const MblError sig_err = signals_init();
     if (sig_err != Error::None) {
         tr_err("Signal handler initialization failed (%s), exiting application!",

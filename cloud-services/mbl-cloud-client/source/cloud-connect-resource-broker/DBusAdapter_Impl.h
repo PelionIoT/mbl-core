@@ -324,6 +324,17 @@ private:
     // The pthread_t thread ID of the initializing thread (CCRB thread)
     pthread_t initializer_thread_id_;
 
+    //TODO: ADD documentation
+    //signalfd_siginfo structure containing information about the received signal. See
+    //signalfd(2) for further information.
+    static int sd_event_signal_handler(
+        sd_event_source *s,
+        const struct signalfd_siginfo *si,
+ 	    void *userdata);
+
+    //TODO: ADD documentation
+    int set_signal_handler(int signal);    
+
 public:
     /*
     == Getters ==
