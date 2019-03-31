@@ -35,7 +35,7 @@ MbedClientManager::MbedClientManager()
       cloud_client_(nullptr),
       resources_registration_succeeded_callback_func_(nullptr),
       mbed_client_error_callback_func_(nullptr),
-      initializer_thread_id_(0)
+      initializer_thread_id_(pthread_self())
 {
     TR_DEBUG_ENTER;
 
