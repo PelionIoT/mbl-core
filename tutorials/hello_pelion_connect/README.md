@@ -5,8 +5,6 @@ The purpose of the hello-pelion-connect sample application is to demonstrate Pel
 
 # Mbed Linux OS hello-pelion-connect sample application 
 
-<span class="notes">**Note**: Mbed Linux OS (MBL) is currently in limited preview. If you would like access to the code repositories, [please request to join the preview](https://os.mbed.com/linux-os/).</span>
-
 This tutorial creates a user application that runs on MBL devices. It is an application written in Python, which demonstrates how an application should call the Pelion Connect D-Bus API methods.
 
 <span class="notes">**Note:** Your device must already be running an MBL image. Please [follow the tutorial](https://os.mbed.com/docs/linux-os/v0.5/getting-started/tutorial-building-an-image.html) if you don't have an MBL image yet.</span>
@@ -37,7 +35,7 @@ sh scripts/dockerize-hello-pelion-connect-app.sh
 ```
 The script builds a docker image which includes an installation of the hello-pelion-connect application. The filesystem contained in the image is then exported and extracted to `release/runtime-bundle-filesystem`. The script builds a Docker image with dockcross, adding the `opkg-utils` utility. 
 
-The final artifact of the [`dockerize-hello-pelion-connect-app.sh`](scripts/dockerize-hello-pelion-connect-app.sh) script is the OCI container image that is packed in the IPK file at `release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk`.
+The final artifact of the [`dockerize-hello-pelion-connect-app.sh`](scripts/dockerize-hello-pelion-connect-app.sh) script is the OCI bundle that is packed in the IPK file at `release/ipk/hello-pelion-connect_1.0_armv7vet2hf-neon.ipk`.
 
 ## Cleaning the build artifacts
 
