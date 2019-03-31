@@ -82,7 +82,7 @@ std::pair<CloudConnectStatus, std::string> ResourceBrokerMockBase::register_reso
     const std::string &)
 {
     TR_DEBUG_ENTER; 
-    return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "");        
+    return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "Token");        
 }
 
 } //namespace mbl

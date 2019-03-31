@@ -9,7 +9,6 @@
 
 #include "DBusAdapter.h"
 #include "RegistrationRecord.h"
-
 #include <pthread.h>
 #include <cinttypes>
 #include <memory>
@@ -59,125 +58,6 @@ public:
      *         or Error::CCRBStartFailed in case start failed.
      */
     static MblError main();
-
-protected:
-
-    ResourceBroker();
-    virtual ~ResourceBroker();
-
-    /**
-     * @brief Starts CCRB.
-     * In details: 
-     * - initializes CCRB instance and runs event-loop.
-     * 
-     * Note: This function should be called before ResourceBroker::stop().  
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStartFailed otherwise. 
-     */
-    virtual MblError start();
-
-    /**
-     * @brief Stops CCRB.
-     * In details: 
-     * - stops CCRB event-loop.
-     * - deinitialize CCRB instance.
-     * 
-     * Note: This function should be called only after ResourceBroker::start() being called.
-     *       This function should be called only from the same thread as ResourceBroker::start() 
-     *       was called.
-     *
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStopFailed otherwise. 
-     */
-    virtual MblError stop();
-
-    /**
-     * @brief Initialize CCRB instance.
-     * Initialize mbed client using init_mbed_client() API
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError init();
-
-    /**
-     * @brief Deinitialize CCRB instance.
-     * Deinitialize mbed client using deinit_mbed_client() API
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or error code otherwise.
-     */
-    virtual MblError deinit();
-
-    /**
-     * @brief Run CCRB event-loop.
-     * 
-     * @return MblError returns value Error::None if function succeedhandle_authorizeed, 
-     *         or error code otherwise.
-     */
-    virtual MblError run();
-
-    /**
-     * @brief CCRB thread main function.
-     * In details: 
-     * - initializes CCRB module.
-     * - runs CCRB main functionality loop.  
-     * 
-     * @param ccrb address of CCRB instance that should run. 
-     * @return void* thread output status. CCRB thread status(MblError enum) returned by value. 
-     */
-    static void *ccrb_main(void *ccrb);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Mailbox messages related functions
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * @brief Handle mbed client error message
-     * When mbed client error callback is called (mbed client thread) - an internal message is sent 
-     * to mailbox in order to handle it in internal thread in this function.
-
-     * @param mbed_client_error - mbed client error code
-     * @return MblError - MblError::None in case of success or error reason otherwise
-     */
-    MblError handle_mbed_client_error_internal_message(MblError mbed_client_error);
-
-    /**
-     * @brief Handle mbed client registration updated message
-     * When mbed client registration updated callback is called (mbed client thread) - an internal 
-     * message is sent to mailbox in order to handle it in internal thread in this function
-     * 
-     * @return MblError - MblError::None in case of success or error reason otherwise
-     */
-    MblError handle_resources_registration_succeeded_internal_message();
-
-    /**
-     * @brief Process mailbox messages
-     * Messages are being sent to mailbox from external thread (e.g. mbed client callbacks), 
-     * and processed using this function in internal thread.
-     * This will prevent accessing data members from two threads.
-     * 
-     * @param msg - Mailbox message to proccess
-     * @return MblError - Error::None for success running the loop, otherwise the failure reason.
-     */
-    virtual MblError process_mailbox_message(MailboxMsg& msg);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // APIs to be used by Mbed client manager class
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * @brief - Resources registration succeeded
-     * Called by MbedClientManager (Mbed client thread).
-     */
-    void resources_registration_succeeded();
-
-    /**
-     * @brief - Resources registration failed
-     * Called by MbedClientManager (Mbed client thread).
-     * 
-     * @param cloud_client_error - Mbed cloud client error
-     */
-    void handle_mbed_client_error(MblError cloud_client_error);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // APIs to be used by DBusAdapter class
@@ -337,7 +217,126 @@ protected:
     virtual CloudConnectStatus get_resources_values(
         IpcConnection source,
         const std::string &access_token, 
-        std::vector<ResourceGetOperation> &inout_get_operations);
+        std::vector<ResourceGetOperation> &inout_get_operations);    
+
+protected:
+
+    ResourceBroker();
+    virtual ~ResourceBroker();
+
+    /**
+     * @brief Starts CCRB.
+     * In details: 
+     * - initializes CCRB instance and runs event-loop.
+     * 
+     * Note: This function should be called before ResourceBroker::stop().  
+     * 
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or Error::CCRBStartFailed otherwise. 
+     */
+    virtual MblError start();
+
+    /**
+     * @brief Stops CCRB.
+     * In details: 
+     * - stops CCRB event-loop.
+     * - deinitialize CCRB instance.
+     * 
+     * Note: This function should be called only after ResourceBroker::start() being called.
+     *       This function should be called only from the same thread as ResourceBroker::start() 
+     *       was called.
+     *
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or Error::CCRBStopFailed otherwise. 
+     */
+    virtual MblError stop();
+
+    /**
+     * @brief Initialize CCRB instance.
+     * Initialize mbed client using init_mbed_client() API
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError init();
+
+    /**
+     * @brief Deinitialize CCRB instance.
+     * Deinitialize mbed client using deinit_mbed_client() API
+     * @return MblError returns value Error::None if function succeeded, 
+     *         or error code otherwise.
+     */
+    virtual MblError deinit();
+
+    /**
+     * @brief Run CCRB event-loop.
+     * 
+     * @return MblError returns value Error::None if function succeedhandle_authorizeed, 
+     *         or error code otherwise.
+     */
+    virtual MblError run();
+
+    /**
+     * @brief CCRB thread main function.
+     * In details: 
+     * - initializes CCRB module.
+     * - runs CCRB main functionality loop.  
+     * 
+     * @param ccrb address of CCRB instance that should run. 
+     * @return void* thread output status. CCRB thread status(MblError enum) returned by value. 
+     */
+    static void *ccrb_main(void *ccrb);
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Mailbox messages related functions
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Handle mbed client error message
+     * When mbed client error callback is called (mbed client thread) - an internal message is sent 
+     * to mailbox in order to handle it in internal thread in this function.
+
+     * @param mbed_client_error - mbed client error code
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
+    MblError handle_mbed_client_error_internal_message(MblError mbed_client_error);
+
+    /**
+     * @brief Handle mbed client registration updated message
+     * When mbed client registration updated callback is called (mbed client thread) - an internal 
+     * message is sent to mailbox in order to handle it in internal thread in this function
+     * 
+     * @return MblError - MblError::None in case of success or error reason otherwise
+     */
+    MblError handle_resources_registration_succeeded_internal_message();
+
+    /**
+     * @brief Process mailbox messages
+     * Messages are being sent to mailbox from external thread (e.g. mbed client callbacks), 
+     * and processed using this function in internal thread.
+     * This will prevent accessing data members from two threads.
+     * 
+     * @param msg - Mailbox message to proccess
+     * @return MblError - Error::None for success running the loop, otherwise the failure reason.
+     */
+    virtual MblError process_mailbox_message(MailboxMsg& msg);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // APIs to be used by Mbed client manager class
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief - Resources registration succeeded
+     * Called by MbedClientManager (Mbed client thread).
+     */
+    void resources_registration_succeeded();
+
+    /**
+     * @brief - Resources registration failed
+     * Called by MbedClientManager (Mbed client thread).
+     * 
+     * @param cloud_client_error - Mbed cloud client error
+     */
+    void handle_mbed_client_error(MblError cloud_client_error);
 
     /**
      * @brief Inform CCRB that a connection has been closed
