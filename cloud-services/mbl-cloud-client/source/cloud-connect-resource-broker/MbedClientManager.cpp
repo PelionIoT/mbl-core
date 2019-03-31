@@ -55,7 +55,7 @@ void MbedClientManager::set_resources_registration_succeeded_callback(
 {
     // Must be first! only CCRB initializer thread should call this function
     // This will prevent changing callbacks accidentally from unauthorized places
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);    
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
     resources_registration_succeeded_callback_func_ = callback_func;
 }
 
@@ -63,7 +63,7 @@ void MbedClientManager::set_mbed_client_error_callback(MbedClientErrorCallback c
 {
     // Must be first! only CCRB initializer thread should call this function
     // This will prevent changing callbacks accidentally from unauthorized places
-    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);    
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
     mbed_client_error_callback_func_ = callback_func;
 }
 
@@ -123,7 +123,7 @@ MblError MbedClientManager::register_mbed_client()
     }
 
     mbed_client_state_.store(State_DeviceRegisterInProgress);
-    return Error::None;    
+    return Error::None;
 }
 
 void MbedClientManager::unregister_mbed_client()
