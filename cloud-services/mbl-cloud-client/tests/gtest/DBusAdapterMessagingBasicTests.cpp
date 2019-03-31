@@ -11,7 +11,7 @@
 #include "DBusCloudConnectNames.h"
 #include "MbedCloudClient.h"
 #include "MblError.h"
-#include "ResourceBroker.h"
+#include "ResourceBrokerMockBase.h"
 #include "TestInfra.h"
 #include "TestInfraAppThread.h"
 #include "TestInfra_DBusAdapterTester.h"
@@ -24,6 +24,20 @@
 #define TRACE_GROUP "ccrb-dbus-gtest"
 
 using namespace mbl;
+
+/**
+ * @brief This function send stop message to mailbox
+ * 
+ * @param adapter pointer
+ */
+static MblError send_adapter_stop_message(DBusAdapter *adapter)
+{
+    assert(adapter);
+    MailboxMsg_Exit message_exit;
+    message_exit.stop_status = MblError::None;
+    MailboxMsg msg(message_exit, sizeof(message_exit));
+    return adapter->send_mailbox_msg(msg);
+}
 
 // string value used in Set/Get resources values tests
 static const std::string string_value = "string_value";
@@ -41,9 +55,8 @@ struct AdapterParameterizedData
     DBusAdapter& adapater_;
     size_t test_array_index_;
 };
-
-class MessageReplyTest_ResourceBroker : public ResourceBroker
-{
+ 
+class MessageReplyTest_ResourceBroker: public ResourceBrokerMockBase {
 
 public:
     MessageReplyTest_ResourceBroker(ResourceDataType data_type = STRING,
@@ -313,9 +326,9 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread* app_thread
 
     // we stop adapter event loop from this thread instead of having one more additional thread
     DBusAdapter& adapter = adapter_param_data->adapater_;
-    MblError adapter_finish_status = adapter.stop(MblError::None);
+    MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 
@@ -331,8 +344,9 @@ INSTANTIATE_TEST_CASE_P(AdapterParameterizedTest,
 TEST_P(ValidateRegisterResources, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;
-    MessageReplyTest_ResourceBroker ccrb;
-    DBusAdapter adapter(ccrb);
+    MessageReplyTest_ResourceBroker ccrb_mock;
+    DBusAdapter adapter(ccrb_mock);
+    ccrb_mock.set_ipc_adapter(&adapter);
     ASSERT_EQ(adapter.init(), MblError::None);
 
     AdapterParameterizedData userdata(adapter, (size_t) GetParam());
@@ -434,10 +448,10 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 
 //     // we stop adapter event loop from this thread instead of having one more additional thread
 //     DBusAdapter &adapter = adapter_param_data->adapater_;
-//     MblError adapter_finish_status = adapter.stop(MblError::None);
+//     MblError adapter_finish_status = send_adapter_stop_message(&adapter);
 //     if(MblError::None != adapter_finish_status)
 //     {
-//         TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+//         TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
 //         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
 //     }
 
@@ -473,17 +487,6 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 // DBusAdapter Validate maximal allowed connections enforced
 /////////////////////////////////////////////////////////////////////////////
 
-class ResourceBrokerMock1 : public ResourceBroker
-{
-public:
-    virtual std::pair<CloudConnectStatus, std::string>
-    register_resources(IpcConnection, const std::string&) override
-    {
-        TR_DEBUG_ENTER;
-        return std::make_pair(CloudConnectStatus::STATUS_SUCCESS, "token");
-    }
-};
-
 static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_thread,
                                                                  void* userdata)
 {
@@ -505,7 +508,7 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_
                                "resources_definition_file_1");
     if (r < 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", r, strerror(-r));
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-r));
     }
 
@@ -518,12 +521,12 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_
     r = sd_bus_open_user(&second_connection_handle);
     if (r < 0) {
         TR_ERR("sd_bus_open_user failed with r=%d (%s)", r, strerror(-r));
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-r));
     }
     if (nullptr == second_connection_handle) {
         TR_ERR("sd_bus_open_user failed (second_connection_handle is NULL)");
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-1000));
     }
 
@@ -544,14 +547,14 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_
                r,
                strerror(-r),
                bus_error.name);
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-1001));
     }
 
     // we stop adapter event loop from this thread instead of having one more additional thread
-    MblError status = adapter->stop(MblError::None);
+    MblError status = send_adapter_stop_message(adapter);
     if (MblError::None != status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(status));
         pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
@@ -562,8 +565,10 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_
 TEST(DBusAdapter, enforce_single_connection_single_app_2_connections)
 {
     GTEST_LOG_START_TEST;
-    ResourceBrokerMock1 ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerMockBase ccrb_mock;
+    DBusAdapter adapter(ccrb_mock);
+    ccrb_mock.set_ipc_adapter(&adapter);
+
     ASSERT_EQ(adapter.init(), MblError::None);
 
     // Start an application thread which simulates 2 connections.
@@ -583,7 +588,7 @@ TEST(DBusAdapter, enforce_single_connection_single_app_2_connections)
 }
 
 /////////////////////////////////////////////////////////////////////////////
-// DBusAdapter validate disconnection noification sent to CCRB
+// DBusAdapter validate disconnection notification sent to CCRB
 /////////////////////////////////////////////////////////////////////////////
 
 /**
@@ -624,7 +629,7 @@ TestResult DBusAdapaterFixture::test_result_ = TEST_FAILED;
 sem_t DBusAdapaterFixture::semaphore_;
 
 // Overrides CCRB notify_connection_closed and register_resources
-class ResourceBrokerMock2 : public ResourceBroker
+class ResourceBrokerMock2 : public ResourceBrokerMockBase
 {
 public:
     // Chckes that the reported closed source connection is equal to the actual unique connection id
@@ -695,7 +700,7 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
                                "resources_definition_file_1");
     if (r < 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", r, strerror(-r));
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-r));
     }
 
@@ -707,14 +712,14 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
     r = sem_wait(&DBusAdapaterFixture::semaphore_);
     if (r != 0) {
         TR_ERR("sd_bus_call_method failed with r=%d (%s)", errno, strerror(errno));
-        adapter->stop(MblError::None);
+        send_adapter_stop_message(adapter);
         pthread_exit(reinterpret_cast<void*>(-errno));
     }
 
     // we stop adapter event loop from this thread instead of having one more additional thread
-    MblError status = adapter->stop(MblError::None);
+    MblError status = send_adapter_stop_message(adapter);
     if (MblError::None != status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(status));
         pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
@@ -724,8 +729,10 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
 TEST(DBusAdapter, validate_client_disconnection_notification)
 {
     GTEST_LOG_START_TEST;
-    ResourceBrokerMock2 ccrb;
-    DBusAdapter adapter(ccrb);
+    ResourceBrokerMock2 ccrb_mock;
+    DBusAdapter adapter(ccrb_mock);
+    ccrb_mock.set_ipc_adapter(&adapter);
+
     ASSERT_EQ(adapter.init(), MblError::None);
 
     // Start an application thread which will register to service, then close the connection.
@@ -928,9 +935,9 @@ static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thre
 
     // we stop adapter event loop from this thread instead of having one more additional thread
     DBusAdapter& adapter = adapter_param_data->adapater_;
-    MblError adapter_finish_status = adapter.stop(MblError::None);
+    MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 
@@ -948,9 +955,10 @@ TEST_P(ValidateSetResourcesValues, BasicMethodReply)
     GTEST_LOG_START_TEST;
 
     const SetResourcesValues_entry& test_data = SetResourcesValues_test_array[(size_t) GetParam()];
-    MessageReplyTest_ResourceBroker ccrb(
+    MessageReplyTest_ResourceBroker ccrb_mock(
         test_data.input_format, test_data.input_resource_path, test_data.input_resource_value);
-    DBusAdapter adapter(ccrb);
+    DBusAdapter adapter(ccrb_mock);
+    ccrb_mock.set_ipc_adapter(&adapter);    
     ASSERT_EQ(adapter.init(), MblError::None);
 
     AdapterParameterizedData userdata(adapter, (size_t) GetParam());
@@ -1178,9 +1186,9 @@ static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thre
 
     // we stop adapter event loop from this thread instead of having one more additional thread
     DBusAdapter& adapter = adapter_param_data->adapater_;
-    MblError adapter_finish_status = adapter.stop(MblError::None);
+    MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 
@@ -1197,10 +1205,11 @@ TEST_P(ValidateGetResourcesValues, BasicMethodReply)
 {
     GTEST_LOG_START_TEST;
     const GetResourcesValues_entry& test_data = GetResourcesValues_test_array[(size_t) GetParam()];
-    MessageReplyTest_ResourceBroker ccrb(
+    MessageReplyTest_ResourceBroker ccrb_mock(
         test_data.type, test_data.input_resource_path, test_data.input_resource_value);
+    DBusAdapter adapter(ccrb_mock);
+    ccrb_mock.set_ipc_adapter(&adapter);
 
-    DBusAdapter adapter(ccrb);
     ASSERT_EQ(adapter.init(), MblError::None);
 
     AdapterParameterizedData userdata(adapter, (size_t) GetParam());

@@ -221,12 +221,11 @@ MblError Mailbox::send_msg(MailboxMsg& msg_to_send, int timeout_milliseconds)
         // write was successful!, write to log and release the unique ptr .
         // be carefull not to dereference the unique_ptr, it might be free!
 
-        TR_INFO("Message sent via %s mailbox. sequence_num_=%" PRIu64 " padata_len_yload_len_=%zu"
-                " type=%s",
-                get_name(),
-                msg_to_send.sequence_num_,
-                msg_to_send.data_len_,
-                msg_to_send.data_type_name_.c_str());
+        TR_DEBUG("Message sent via mailbox. sequence_num: %" PRIu64 " data_len: %zu"
+                 " type: %s",
+                 msg_to_send.sequence_num_,
+                 msg_to_send.data_len_,
+                 msg_to_send.data_type_name_.c_str());
 
         // FIXME - remove later (keep for debug)
         // TR_DEBUG("Message ptr_to_write=%p", ptr_to_write);
@@ -311,10 +310,9 @@ std::pair<MblError, MailboxMsg> Mailbox::receive_msg(int timeout_milliseconds)
     }
     assert(MailboxMsg::MSG_PROTECTION_FIELD == msg_->protection_field_);
 
-    TR_INFO("Message received via %s mailbox.sequence_num=%" PRIu64 " data_len_=%zu",
-            get_name(),
-            msg_->sequence_num_,
-            msg_->data_len_);
+    TR_DEBUG("Message received via mailbox. sequence_num=%" PRIu64 " data_len_=%zu",
+             msg_->sequence_num_,
+             msg_->data_len_);
 
     // FIXME - remove later (keep for debug)
     // TR_DEBUG("msg_=%p", msg_);

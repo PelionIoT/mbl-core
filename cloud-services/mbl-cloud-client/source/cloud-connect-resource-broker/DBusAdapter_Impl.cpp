@@ -13,7 +13,6 @@
 #include "DBusMessage.h"
 #include "DBusMessagesFactory.h"
 #include "DBusService.h"
-#include "MailboxMsg.h"
 #include "ResourceBroker.h"
 
 #include <systemd/sd-id128.h>
@@ -387,43 +386,10 @@ int DBusAdapterImpl::incoming_mailbox_message_callback_impl(sd_event_source* s,
     }
 
     // Process message
-    MailboxMsg& msg = ret_pair.second;
-    auto data_type_name = msg.get_data_type_name();
-    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
-        // EXIT message
-
-        // validate length (sanity check).In this case the length must be equal the actual length
-        if (msg.get_data_len() != sizeof(MailboxMsg_Exit)) {
-            TR_ERR("Unexpected MailboxMsg_Exit message length %zu (expected %zu),"
-                   " returning error=%s",
-                   msg.get_data_len(),
-                   sizeof(MailboxMsg_Exit),
-                   MblError_to_str(MblError::DBA_MailBoxInvalidMsg));
-            return (-EBADMSG);
-        }
-
-        // External thread request to stop event loop
-        MblError status;
-        MailboxMsg_Exit message_exit;
-        std::tie(status, message_exit) = msg.unpack_data<MailboxMsg_Exit>();
-        TR_INFO("receive message MailboxMsg_Exit sending stop request to event loop with stop"
-                " status=%s",
-                MblError_to_str(message_exit.stop_status));
-        if (status != MblError::None) {
-            TR_ERR("msg.unpack_data failed with error %s - returing -EBADMSG",
-                   MblError_to_str(status));
-            return (-EBADMSG);
-        }
-        int r = event_loop_request_stop(message_exit.stop_status);
-        if (r < 0) {
-            TR_ERR("event_loop_request_stop() failed with error %s (r=%d)", strerror(-r), r);
-            return r;
-        }
-    }
-    else
-    {
-        // This should never happen
-        TR_ERR("Unexpected message type %s.. Ignoring..", data_type_name.c_str());
+    const MblError status = ccrb_.process_mailbox_message(ret_pair.second);
+    if (Error::None != status) {
+        TR_ERR("process_mailbox_message failed with error: %s", MblError_to_str(status));
+        return (-EBADMSG);
     }
 
     return 0; // success
@@ -815,7 +781,6 @@ MblError DBusAdapterImpl::run(MblError& stop_status)
 MblError DBusAdapterImpl::stop(MblError stop_status)
 {
     TR_DEBUG_ENTER;
-    MblError status = MblError::Unknown;
 
     if (state_.is_equal(DBusAdapterState::UNINITALIZED)) {
         TR_ERR("Unexpected state (expected %s), returning error %s",
@@ -824,45 +789,20 @@ MblError DBusAdapterImpl::stop(MblError stop_status)
         return MblError::DBA_IllegalState;
     }
 
-    if (pthread_equal(pthread_self(), initializer_thread_id_) != 0) {
-        // This section is for self exit request, use event_loop_request_stop
-        // current thread id ==  initializer_thread_id_
-        int r = event_loop_request_stop(stop_status);
-        if (r < 0) {
-            status = MblError::DBA_SdEventExitRequestFailure;
-            TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
-                   strerror(-r),
-                   r,
-                   MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
-            // continue
-        }
-        else
-        {
-            TR_INFO("Sent self request to exit sd-event loop!");
-        }
-    }
-    else
-    {
-        // This section is for external threads exit requests - send EXIT message to mailbox_in_
-        // Thread shouldn't block here, but we still supply a maximum timeout of
-        // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
-        MailboxMsg_Exit message_exit;
-        message_exit.stop_status = stop_status;
-        MailboxMsg msg(message_exit, sizeof(message_exit));
+    // This API is allowed to be called only from internal (initializer) thread
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);
 
-        status = mailbox_in_.send_msg(msg);
-        if (status != MblError::None) {
-            TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
-            status = MblError::DBA_SdEventCallFailure;
-            // continue
-        }
-        else
-        {
-            TR_INFO("Sent request to stop CCRB thread inside sd-event loop!");
-        }
+    // Self exit request, use event_loop_request_stop
+    int r = event_loop_request_stop(stop_status);
+    if (r < 0) {
+        TR_ERR("event_loop_request_stop() failed with error %s (r=%d) - set error %s",
+               strerror(-r),
+               r,
+               MblError_to_str(MblError::DBA_SdEventExitRequestFailure));
+        return MblError::DBA_SdEventExitRequestFailure;
     }
-
-    return status;
+    TR_INFO("Sent self request to exit sd-event loop!");
+    return MblError::None;
 }
 
 /**
@@ -985,6 +925,17 @@ bool DBusAdapterImpl::State::is_equal(eState state)
 bool DBusAdapterImpl::State::is_not_equal(eState state)
 {
     return (current_ != state);
+}
+
+MblError DBusAdapterImpl::send_mailbox_msg(MailboxMsg& msg_to_send)
+{
+    TR_DEBUG_ENTER;
+
+    MblError status = mailbox_in_.send_msg(msg_to_send);
+    if (status != MblError::None) {
+        TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
+    }
+    return status;
 }
 
 } // namespace mbl

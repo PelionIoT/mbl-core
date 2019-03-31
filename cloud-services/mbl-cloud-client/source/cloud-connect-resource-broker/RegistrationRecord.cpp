@@ -39,7 +39,7 @@ namespace mbl
 {
 
 RegistrationRecord::RegistrationRecord(IpcConnection& registration_source)
-    : registration_source_(registration_source), registered_(false)
+    : registration_source_(registration_source), state_(State_Unregistered)
 {
     TR_DEBUG_ENTER;
     track_ipc_connection(registration_source_, TrackOperation::ADD); // Add to ipc connections

@@ -7,19 +7,102 @@
 #include "ResourceBroker.h"
 #include "CloudConnectTrace.h"
 #include "CloudConnectTypes.h"
-#include "mbed-cloud-client/MbedCloudClient.h"
+#include "DBusAdapter.hpp"
+#include "MailboxMsg.h"
+#include "MbedClientManager.h"
 
 #include <cassert>
 #include <time.h>
+#include <unistd.h>
 
 #define TRACE_GROUP "ccrb"
+
+static volatile sig_atomic_t g_shutdown_signal_once = 0;
+
+// This is temporary until we will move signal handling to dbus event loop
+extern "C" void resource_broker_shutdown_handler(int signal)
+{
+    g_shutdown_signal_once = signal;
+}
 
 namespace mbl
 {
 
-// Currently, this constructor is called from MblCloudClient thread.
+// Period between re-registrations with the LWM2M server.
+// MBED_CLOUD_CLIENT_LIFETIME (seconds) is how long we should stay registered after each
+// re-registration (keepalive)
+static const uint64_t g_keepalive_period_miliseconds = (MBED_CLOUD_CLIENT_LIFETIME / 2) * 1000;
+
+/**
+ * @brief Mailbox message for mbed client RegistrationUpdated callback
+ * This message is sent to mailbox when mbed client RegistrationUpdated callback is called
+ * In order to handle the callback in internal therad and not mbed client thread
+ */
+struct MailboxMsg_RegistrationUpdated
+{
+    MblError status;
+};
+
+/**
+ * @brief Mailbox message for mbed client error callback
+ * This message is sent to mailbox when mbed client error callback is called
+ * In order to handle the callback in internal therad and not mbed client thread
+ */
+struct MailboxMsg_MbedClientError
+{
+    MblError status;
+};
+
+MblError ResourceBroker::main()
+{
+    TR_DEBUG_ENTER;
+    ResourceBroker resource_broker;
+
+    // Note: start() will init mbed client and state_ is moved to State_DeviceRegisterInProgress.
+    const MblError ccrb_start_err = resource_broker.start();
+    if (Error::None != ccrb_start_err) {
+        TR_ERR("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
+        return ccrb_start_err;
+    }
+    TR_INFO("ResourceBroker started successfully");
+
+    for (;;) {
+
+        if (0 != g_shutdown_signal_once) {
+
+            TR_WARN("Received signal: %s, Un-registering device...",
+                    strsignal(g_shutdown_signal_once));
+            resource_broker.mbed_client_manager_->unregister_mbed_client();
+            g_shutdown_signal_once = 0;
+        }
+
+        if (MbedClientManager::State_DeviceUnregistered ==
+            resource_broker.mbed_client_manager_->get_device_state())
+        {
+
+            TR_DEBUG("State is unregistered - stop ccrb_main thread");
+            // Unregister device is finished - stop resource broker
+            // This will close ccrb_main thread, and deinit will be called
+            const MblError ccrb_stop_err = resource_broker.stop();
+            if (Error::None != ccrb_stop_err) {
+                TR_ERR("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
+                return ccrb_stop_err;
+            }
+
+            return Error::ShutdownRequested;
+        }
+
+        sleep(1);
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// This constructor is called from main function
 ResourceBroker::ResourceBroker()
-    : init_sem_initialized_(false), cloud_client_(nullptr), registration_in_progress_(false)
+    : init_sem_initialized_(false),
+      ipc_adapter_(nullptr),
+      mbed_client_manager_(std::make_unique<MbedClientManager>())
 {
     TR_DEBUG_ENTER;
 }
@@ -29,14 +112,12 @@ ResourceBroker::~ResourceBroker()
     TR_DEBUG_ENTER;
 }
 
-MblError ResourceBroker::start(MbedCloudClient* cloud_client)
+MblError ResourceBroker::start()
 {
     // FIXME: This function should be refactored  in IOTMBL-1707.
     // Initialization of the semaphore and call to the sem_timedwait will be removed.
 
     TR_DEBUG_ENTER;
-    // assert(cloud_client);     // TODO: uncomment after solving PAL issues on Linux Desktop
-    cloud_client_ = cloud_client;
 
     // initialize init semaphore
     int ret = sem_init(&init_sem_,
@@ -104,15 +185,19 @@ MblError ResourceBroker::stop()
 
     assert(ipc_adapter_);
 
-    // try sending stop signal to ipc (pass no error)
-    const MblError ipc_stop_err = ipc_adapter_->stop(MblError::None);
-    if (Error::None != ipc_stop_err) {
-        TR_ERR("ipc::stop failed! (%s)", MblError_to_str(ipc_stop_err));
-
-        // FIXME: Currently, if ipc was not successfully signalled, we return error.
-        //        Required to add "release resources best effort" functionality.
-        return ipc_stop_err;
+    // Send EXIT message to mailbox
+    // Thread shouldn't block here, but we still supply default maximum timeout of
+    // MSG_SEND_ASYNC_TIMEOUT_MILLISECONDS
+    MailboxMsg_Exit message;
+    message.stop_status = MblError::None;
+    MailboxMsg msg(message, sizeof(message));
+    const MblError status = ipc_adapter_->send_mailbox_msg(msg);
+    if (status != MblError::None) {
+        TR_ERR("mailbox_in_.send_msg failed with error %s", MblError_to_str(status));
+        return status;
     }
+
+    TR_INFO("Sent request to stop CCRB thread inside sd-event loop!");
 
     // about thread_status: thread_status is the variable that will contain ccrb_main status.
     // ccrb_main returns MblError type. pthread_join will assign the value returned via
@@ -159,6 +244,49 @@ MblError ResourceBroker::stop()
     return ret_value.get();
 }
 
+MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* ev)
+{
+    TR_DEBUG_ENTER;
+    UNUSED(s); // Can't call unref_event_source as this event should be keep on comming
+    assert(ev);
+    EventPeriodic* periodic_ev = dynamic_cast<EventPeriodic*>(ev);
+    if (nullptr == periodic_ev) {
+        TR_ERR("Invalid periodic event type");
+        return MblError::SystemCallFailed;
+    }
+
+    TR_DEBUG("%s event", periodic_ev->get_description().c_str());
+
+    auto unpack_pair = periodic_ev->unpack_data<EventData_Keepalive>(sizeof(EventData_Keepalive));
+    if (unpack_pair.first != Error::None) {
+        TR_ERR("Unpack of periodic event failed with error %s", MblError_to_str(unpack_pair.first));
+        return unpack_pair.first;
+    }
+
+    ResourceBroker* const this_ccrb = unpack_pair.second.ccrb_this;
+    assert(this_ccrb);
+
+    // Keep alive is only needed when device is registered
+    if (MbedClientManager::State_DeviceRegistered !=
+        this_ccrb->mbed_client_manager_->get_device_state())
+    {
+        TR_DEBUG("Device is not registered.");
+        return Error::None;
+    }
+
+    // Check if application register update is in progress
+    // if yes - do nothing as register update will act as keep alive
+    if (!this_ccrb->reg_update_in_progress_access_token_.empty()) {
+        TR_DEBUG("Application registration update is in progress- no need for keepalive.");
+        return Error::None;
+    }
+
+    TR_DEBUG("Call cloud_client_->register_update for (keepalive)");
+    this_ccrb->mbed_client_manager_->keepalive();
+
+    return Error::None;
+}
+
 MblError ResourceBroker::init()
 {
     TR_DEBUG_ENTER;
@@ -169,41 +297,51 @@ MblError ResourceBroker::init()
     // create ipc instance and pass ccrb instance to constructor
     ipc_adapter_ = std::make_unique<DBusAdapter>(*this);
 
-    OneSetMblError status(ipc_adapter_->init());
-    if (Error::None != status.get()) {
-        TR_ERR("ipc::init failed with error %s", status.get_status_str());
+    const MblError ipc_adapter_init_status = ipc_adapter_->init();
+    if (Error::None != ipc_adapter_init_status) {
+        TR_ERR("ipc::init failed with error %s", MblError_to_str(ipc_adapter_init_status));
+        return ipc_adapter_init_status;
     }
 
-    // Set function pointers to point to mbed_client functions
-    // In gtest our friend test class will override these pointers to get all the
-    // calls
-    register_update_func_ = std::bind(&MbedCloudClient::register_update, cloud_client_);
-    add_objects_func_ = std::bind(
-        static_cast<void (MbedCloudClient::*)(const M2MObjectList&)>(&MbedCloudClient::add_objects),
-        cloud_client_,
-        std::placeholders::_1);
+    mbed_client_manager_->init();
 
-    // Register Cloud client callback:
-    regsiter_callback_handlers();
+    // Init Mbed cloud client
+    mbed_client_manager_->set_resources_registration_succeeded_callback(
+        std::bind(&ResourceBroker::resources_registration_succeeded, this));
 
-    //////////////////////////////////////////////////////////////////
-    // PAY ATTENTION: This should be the last action in this function!
-    //////////////////////////////////////////////////////////////////
-    // signal to the semaphore that initialization was finished
-    const int ret = sem_post(&init_sem_);
-    if (0 != ret) {
-        // semaphore post failed, print errno value and exit
-        TR_ERRNO("sem_post", errno);
-        status.set(Error::IpcProcedureFailed);
+    mbed_client_manager_->set_mbed_client_error_callback(std::bind(
+        static_cast<void (ResourceBroker::*)(MblError)>(&ResourceBroker::handle_mbed_client_error),
+        this,
+        std::placeholders::_1));
+
+    const MblError register_mbed_client_status = mbed_client_manager_->register_mbed_client();
+    if (Error::None != register_mbed_client_status) {
+        TR_ERR("mbed_client_manager_->register_mbed_client() failed with error %s",
+               MblError_to_str(register_mbed_client_status));
+        return register_mbed_client_status;
     }
 
-    return status.get();
+    // Set keepalive periodic event
+    EventData_Keepalive event_data = {this};
+    auto ret_pair = ipc_adapter_->send_event_periodic<EventData_Keepalive>(
+        event_data,
+        sizeof(event_data),
+        ResourceBroker::periodic_keepalive_callback,
+        g_keepalive_period_miliseconds,
+        std::string("Mbed cloud client keep-alive"));
+
+    if (Error::None != ret_pair.first) {
+        TR_ERR("send_event_periodic keep-alive failed with error %s",
+               MblError_to_str(ret_pair.first));
+        return ret_pair.first;
+    }
+
+    return Error::None;
 }
 
 MblError ResourceBroker::deinit()
 {
     TR_DEBUG_ENTER;
-
     assert(ipc_adapter_);
 
     // FIXME: Currently we call ipc_adapter_->deinit unconditionally.
@@ -215,6 +353,9 @@ MblError ResourceBroker::deinit()
     }
 
     ipc_adapter_.reset(nullptr);
+
+    // This is done after device is unregistered (no mbed client callbacks will arrive)
+    mbed_client_manager_->deinit();
 
     return status;
 }
@@ -229,58 +370,62 @@ MblError ResourceBroker::run()
     MblError status = ipc_adapter_->run(stop_status);
     if (Error::None != status) {
         TR_ERR("ipc::run failed with error %s", MblError_to_str(status));
+        return status;
     }
-    else
-    {
-        TR_ERR("ipc::run stopped with status %s", MblError_to_str(stop_status));
-    }
-
+    TR_DEBUG("ipc::run successfully stopped");
     return status;
 }
 
 void* ResourceBroker::ccrb_main(void* ccrb)
 {
     TR_DEBUG_ENTER;
-
     assert(ccrb);
-
     ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ccrb);
 
-    const MblError init_status = this_ccrb->init();
-    if (Error::None != init_status) {
-        TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", MblError_to_str(init_status));
-        uintptr_t int_init_status = static_cast<uintptr_t>(init_status);
-        pthread_exit(reinterpret_cast<void*>(int_init_status)); // NOLINT
+    OneSetMblError status(this_ccrb->init());
+    if (Error::None != status.get()) {
+        // Not returning as we want to call deinit below
+        TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", status.get_status_str());
     }
 
-    const MblError run_status = this_ccrb->run();
-    if (Error::None != run_status) {
-        TR_ERR("CCRB::run failed with error %s. Exit CCRB thread.", MblError_to_str(run_status));
-        // continue to deinit and return status
+    // Signal to the semaphore that initialization was finished
+    const int ret = sem_post(&this_ccrb->init_sem_);
+    if (0 != ret) {
+        TR_ERRNO("semaphore post failed ", errno);
+        status.set(Error::IpcProcedureFailed); // continue to deinit and return status
+    }
+
+    // Call ccrb->run only if init succeeded
+    if (Error::None == status.get()) {
+        const MblError run_status = this_ccrb->run();
+        if (Error::None != run_status) {
+            TR_ERR("CCRB::run failed with error %s. Exit CCRB thread.",
+                   MblError_to_str(run_status));
+            status.set(run_status); // continue to deinit and return status
+        }
     }
 
     const MblError deinit_status = this_ccrb->deinit();
     if (Error::None != deinit_status) {
         TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.",
                MblError_to_str(deinit_status));
-        uintptr_t int_deinit_status = static_cast<uintptr_t>(deinit_status);
-        pthread_exit(reinterpret_cast<void*>(int_deinit_status)); // NOLINT
+        status.set(deinit_status);
     }
 
-    TR_INFO("CCRB thread function finished. CCRB::run status %s.", MblError_to_str(run_status));
-    uintptr_t int_run_status = static_cast<uintptr_t>(run_status);
-
-    // pthread_exit does "return"
-    pthread_exit(reinterpret_cast<void*>(int_run_status)); // NOLINT
+    TR_INFO("CCRB thread function finished with status: %s", status.get_status_str());
+    uintptr_t final_status = static_cast<uintptr_t>(status.get());
+    pthread_exit(reinterpret_cast<void*>(final_status)); // NOLINT
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Callback functions that are being called by Mbed client
-////////////////////////////////////////////////////////////////////////////////////////////////////
 ResourceBroker::RegistrationRecord_ptr
 ResourceBroker::get_registration_record(const std::string& access_token)
 {
     TR_DEBUG_ENTER;
+
+    if (access_token.empty()) {
+        TR_ERR("access_token is empty");
+        return nullptr;
+    }
 
     auto itr = registration_records_.find(access_token);
     if (registration_records_.end() == itr) {
@@ -292,124 +437,168 @@ ResourceBroker::get_registration_record(const std::string& access_token)
     return itr->second;
 }
 
-void ResourceBroker::regsiter_callback_handlers()
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mailbox messages related functions
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+MblError ResourceBroker::handle_mbed_client_error_internal_message(MblError mbed_client_error)
 {
-    TR_DEBUG_ENTER;
+    // Check if this callback is caused by an application trying to register resources
+    // (only one application can be in registration update state at a time)
+    RegistrationRecord_ptr registration_record =
+        get_registration_record(reg_update_in_progress_access_token_);
+    if (nullptr != registration_record) {
 
-    // Resource broker will now get Mbed cloud client callbacks on the following
-    // cases:
-    // 1. Registration update
-    // 2. Error occurred
+        TR_ERR("Registration (access_token: %s) failed with error: %s",
+               reg_update_in_progress_access_token_.c_str(),
+               MblError_to_str(mbed_client_error));
 
-    if (nullptr != cloud_client_) {
-        // GTest unit test might set cloud_client_ member to nullptr
-        cloud_client_->on_registration_updated(this,
-                                               &ResourceBroker::handle_registration_updated_cb);
-        cloud_client_->on_error(this, &ResourceBroker::handle_error_cb);
-    }
-}
-
-void ResourceBroker::handle_registration_updated_cb()
-{
-    TR_DEBUG_ENTER;
-
-    // TODO: need to handle cases when mbed client does not call any callback
-    // during registration - IOTMBL-1700
-
-    if (registration_in_progress_.load()) {
-
-        RegistrationRecord_ptr registration_record =
-            get_registration_record(in_progress_access_token_);
-        if (nullptr == registration_record) {
-            // Could not found registration record
-            TR_ERR("Registration record (access_token: %s) does not exist.",
-                   in_progress_access_token_.c_str());
-            // Mark that registration is finished (using atomic flag), even if it was failed
-            registration_in_progress_.store(false);
-            return;
+        const MblError update_status = ipc_adapter_->update_registration_status(
+            registration_record->get_registration_source(), CloudConnectStatus::ERR_INTERNAL_ERROR);
+        if (Error::None != update_status) {
+            TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
+                   MblError_to_str(update_status));
         }
 
-        TR_DEBUG("Registration record (access_token: %s) registered successfully.",
-                 in_progress_access_token_.c_str());
+        TR_DEBUG("Erase registration record (access_token: %s)",
+                 reg_update_in_progress_access_token_.c_str());
 
-        registration_record->set_registered(true);
+        auto itr = registration_records_.find(reg_update_in_progress_access_token_);
+        registration_records_.erase(itr); // Erase registration record as regitsration failed
+        reg_update_in_progress_access_token_.clear();
+        return update_status;
+    }
+
+    // Keepalive:
+    TR_ERR("Keepalive request failed with error: %s", MblError_to_str(mbed_client_error));
+    return MblError::None;
+}
+
+MblError ResourceBroker::handle_resources_registration_succeeded_internal_message()
+{
+    TR_DEBUG_ENTER;
+
+    // This function can be called as a result of:
+    // 1. application requested to register resources
+    // 2. keep alive (does not occur during #1)
+
+    // Only one application can be in registration update state - check if there is such...
+    RegistrationRecord_ptr registration_record =
+        get_registration_record(reg_update_in_progress_access_token_);
+    if (nullptr != registration_record) {
+
+        TR_DEBUG("Registration record (access_token: %s) registered successfully.",
+                 reg_update_in_progress_access_token_.c_str());
+
+        registration_record->set_registration_state(RegistrationRecord::State_Registered);
 
         // Send the response to adapter:
-        CloudConnectStatus reg_status = CloudConnectStatus::STATUS_SUCCESS;
         const MblError status = ipc_adapter_->update_registration_status(
-            registration_record->get_registration_source(), reg_status);
+            registration_record->get_registration_source(), CloudConnectStatus::STATUS_SUCCESS);
         if (Error::None != status) {
             TR_ERR("update_registration_status failed with error: %s", MblError_to_str(status));
         }
+        reg_update_in_progress_access_token_.clear();
+        return status;
+    }
 
-        // Mark that registration is finished (using atomic flag)
-        registration_in_progress_.store(false);
-    }
-    else
-    {
-        TR_DEBUG("handle_registration_updated_cb was called as a result of keep-alive request");
-    }
+    TR_DEBUG("Keepalive finished successfully");
+    return Error::None;
 }
 
-// TODO: this callback is related to the following scenarios which are not yet implemented:
-// keep alive, deregistration, add resource instances and remove resource instances.
-void ResourceBroker::handle_error_cb(const int cloud_client_code)
+MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
 {
     TR_DEBUG_ENTER;
 
-    const MblError mbl_code =
-        CloudClientError_to_MblError(static_cast<MbedCloudClient::Error>(cloud_client_code));
-    TR_ERR("Error occurred: %d: %s", mbl_code, MblError_to_str(mbl_code));
+    auto data_type_name = msg.get_data_type_name();
 
-    // If registration is in progress - update adapter
-    if (registration_in_progress_.load()) {
-
-        TR_DEBUG("Registration (access_token: %s) failed.", in_progress_access_token_.c_str());
-
-        RegistrationRecord_ptr registration_record =
-            get_registration_record(in_progress_access_token_);
-        if (nullptr == registration_record) {
-            // Could not found registration record
-            TR_ERR("Registration record (access_token: %s) does not exist.",
-                   in_progress_access_token_.c_str());
-            // Mark that registration is finished (using atomic flag), even if it was failed
-            registration_in_progress_.store(false);
-            return;
+    // Exit message
+    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
+        TR_INFO("Process message MailboxMsg_Exit");
+        MblError status;
+        MailboxMsg_Exit message;
+        std::tie(status, message) = msg.unpack_data<MailboxMsg_Exit>(sizeof(MailboxMsg_Exit));
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
         }
 
-        // Send the response to adapter:
-        if (!registration_record->is_registered()) {
-            // Registration record is not registered yet, which means the error is for register
-            // request
-            const MblError status = ipc_adapter_->update_registration_status(
-                registration_record->get_registration_source(),
-                CloudConnectStatus::ERR_INTERNAL_ERROR);
-            if (Error::None != status) {
-                TR_ERR("ipc_adapter_->update_registration_status failed with error: %s",
-                       MblError_to_str(status));
-            }
-
-            TR_DEBUG("Erase registration record (access_token: %s)",
-                     in_progress_access_token_.c_str());
-            auto itr = registration_records_.find(in_progress_access_token_);
-            registration_records_.erase(itr); // Erase registration record as regitsration failed
+        TR_INFO("Call ipc_adapter_->stop(status: %s)", MblError_to_str(message.stop_status));
+        const MblError ipc_stop_err = ipc_adapter_->stop(message.stop_status);
+        if (Error::None != ipc_stop_err) {
+            TR_ERR("ipc_adapter_->stop failed with error: %s", MblError_to_str(ipc_stop_err));
         }
-        else
-        {
-            // TODO: add call to update_deregistration_status when deregister is implemented
-            TR_ERR("Registration record (access_token: %s) is already registered.",
-                   in_progress_access_token_.c_str());
-        }
-        // Mark that registration is finished (using atomic flag) (even if it was failed)
-        registration_in_progress_.store(false);
+        return ipc_stop_err;
     }
-    else
-    {
-        TR_DEBUG("handle_error_cb was called as a result of keep-alive request");
+
+    // Mbed Client Registration Updated
+    if (data_type_name == typeid(MailboxMsg_RegistrationUpdated).name()) {
+        TR_INFO("Process message MailboxMsg_RegistrationUpdated");
+        MblError status;
+        MailboxMsg_RegistrationUpdated message;
+        std::tie(status, message) =
+            msg.unpack_data<MailboxMsg_RegistrationUpdated>(sizeof(MailboxMsg_RegistrationUpdated));
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+        return handle_resources_registration_succeeded_internal_message();
+    }
+
+    // Mbed Client Error
+    if (data_type_name == typeid(MailboxMsg_MbedClientError).name()) {
+        TR_INFO("Process message MailboxMsg_MbedClientError");
+        MblError status;
+        MailboxMsg_MbedClientError message;
+        std::tie(status, message) =
+            msg.unpack_data<MailboxMsg_MbedClientError>(sizeof(MailboxMsg_MbedClientError));
+        if (status != MblError::None) {
+            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
+            return Error::DBA_MailBoxInvalidMsg;
+        }
+        return handle_mbed_client_error_internal_message(message.status);
+    }
+
+    // This should never happen
+    TR_WARN("Unexpected message type %s, Ignoring...", data_type_name.c_str());
+    return Error::None;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// APIs to be used by Mbed client manager class
+////////////////////////////////////////////////////////////////////////////////////////////////////
+void ResourceBroker::resources_registration_succeeded()
+{
+    TR_DEBUG_ENTER;
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_RegistrationUpdated registration_updated_msg;
+    registration_updated_msg.status = MblError::None;
+    MailboxMsg msg(registration_updated_msg, sizeof(registration_updated_msg));
+    TR_ERR("send_mailbox_msg for register update");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
+    }
+}
+
+void ResourceBroker::handle_mbed_client_error(MblError cloud_client_error)
+{
+    TR_DEBUG_ENTER;
+
+    // Send mailbox message (will be handled in process_mailbox_message API)
+    MailboxMsg_MbedClientError mbed_client_error_msg;
+    mbed_client_error_msg.status = cloud_client_error;
+    MailboxMsg msg(mbed_client_error_msg, sizeof(mbed_client_error_msg));
+    TR_ERR("send_mailbox_msg for mbed client error");
+    const MblError send_status = ipc_adapter_->send_mailbox_msg(msg);
+    if (send_status != MblError::None) {
+        TR_ERR("send_mailbox_msg failed with error %s", MblError_to_str(send_status));
     }
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// APIs to be used by DBusAdapter class
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::pair<CloudConnectStatus, std::string>
@@ -420,9 +609,15 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
                                                         std::string());
 
-    if (registration_in_progress_.load()) {
-        // We only allow one registration request at a time.
-        TR_ERR("Registration is already in progress.");
+    if (MbedClientManager::State_DeviceRegistered != mbed_client_manager_->get_device_state()) {
+        TR_ERR("Client is not registered.");
+        ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
+        return ret_pair;
+    }
+
+    // Only one register update request is allowed at a time:
+    if (!reg_update_in_progress_access_token_.empty()) {
+        TR_ERR("Registration of resources is already in progress.");
         ret_pair.first = CloudConnectStatus::ERR_REGISTRATION_ALREADY_IN_PROGRESS;
         return ret_pair;
     }
@@ -458,27 +653,24 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
         return ret_pair;
     }
 
-    // Set atomic flag for registration in progress
-    registration_in_progress_.store(true);
+    // Set atomic flag for application register update in progress
+    registration_record->set_registration_state(RegistrationRecord::State_RegistrationInProgress);
 
     // Fill ret_pair with generated access token
     ret_pair.second = ret_pair_generate_access_token.second;
-    in_progress_access_token_ = ret_pair_generate_access_token.second;
+    reg_update_in_progress_access_token_ = ret_pair_generate_access_token.second;
 
     // Add registration_record to map
-    registration_records_[in_progress_access_token_] = registration_record;
+    registration_records_[reg_update_in_progress_access_token_] = registration_record;
 
     // Call Mbed cloud client to start registration update
-    add_objects_func_(registration_record->get_m2m_object_list());
-    register_update_func_();
-
+    mbed_client_manager_->register_resources(registration_record->get_m2m_object_list());
     return ret_pair;
 }
 
 CloudConnectStatus ResourceBroker::deregister_resources(IpcConnection /*source*/,
                                                         const std::string& /*access_token*/)
 {
-
     TR_DEBUG_ENTER;
     return CloudConnectStatus::ERR_NOT_SUPPORTED;
 }
@@ -509,8 +701,7 @@ ResourceBroker::validate_resource_data(const RegistrationRecord_ptr registration
     TR_DEBUG_ENTER;
 
     std::string resource_path = resource_data.get_path();
-    std::pair<MblError, M2MResource*> ret_pair =
-        registration_record->get_m2m_resource(resource_path);
+    auto ret_pair = registration_record->get_m2m_resource(resource_path);
     if (Error::None != ret_pair.first) {
         TR_ERR("get_m2m_resource failed with error: %s", MblError_to_str(ret_pair.first));
         return (ret_pair.first == Error::CCRBInvalidResourcePath)
@@ -570,7 +761,7 @@ ResourceBroker::set_resource_value(const RegistrationRecord_ptr registration_rec
     const std::string path = resource_data.get_path();
 
     // No need to check ret_pair as we already did a validity check and we know it exists
-    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    auto ret_pair = registration_record->get_m2m_resource(path);
     M2MResource* m2m_resource = ret_pair.second;
 
     switch (resource_data.get_data_type())
@@ -617,6 +808,12 @@ ResourceBroker::set_resources_values(IpcConnection source,
                                      std::vector<ResourceSetOperation>& inout_set_operations)
 {
     TR_DEBUG("access_token: %s", access_token.c_str());
+
+    // It is allowed to set resource value only after device is registered
+    if (MbedClientManager::State_DeviceRegistered != mbed_client_manager_->get_device_state()) {
+        TR_ERR("Client is not registered.");
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
+    }
 
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
@@ -671,7 +868,7 @@ void ResourceBroker::get_resource_value(const RegistrationRecord_ptr registratio
     const std::string path = resource_data.get_path();
 
     // No need to check ret_pair as we already did a validity check and we know it exists
-    std::pair<MblError, M2MResource*> ret_pair = registration_record->get_m2m_resource(path);
+    auto ret_pair = registration_record->get_m2m_resource(path);
     M2MResource* m2m_resource = ret_pair.second;
 
     switch (resource_data.get_data_type())
@@ -704,6 +901,12 @@ ResourceBroker::get_resources_values(IpcConnection source,
     TR_DEBUG_ENTER;
 
     TR_DEBUG("access_token: %s", access_token.c_str());
+
+    // It is allowed to get resource value only after device is registered
+    if (MbedClientManager::State_DeviceRegistered != mbed_client_manager_->get_device_state()) {
+        TR_ERR("Client is not registered.");
+        return CloudConnectStatus::ERR_INTERNAL_ERROR;
+    }
 
     RegistrationRecord_ptr registration_record = get_registration_record(access_token);
     if (nullptr == registration_record) {
@@ -738,25 +941,25 @@ void ResourceBroker::notify_connection_closed(IpcConnection source)
 {
     TR_DEBUG_ENTER;
 
-    if (registration_in_progress_.load()) {
-        TR_WARN("Connection closed during registration (access token: %s)",
-                in_progress_access_token_.c_str());
-    }
-
-    // TODO: Currently we support only one application so setting registration_in_progress_ to false
-    // is ok. this will have to be changed when supported multiple applications
-
-    // Mark that registration is finished (using atomic flag)
-    registration_in_progress_.store(false);
-
     auto itr = registration_records_.begin();
     while (itr != registration_records_.end()) {
         // Call track_ipc_connection, and in case registration record does not have any other
         // ipc connections - erase from registration_records_
+        // this is safe as all related operation on registration_records_ are done in internal
+        // thread.
         const MblError status =
             itr->second->track_ipc_connection(source, RegistrationRecord::TrackOperation::REMOVE);
+        // Check if Registration record does not have any more valid connections - if yes
+        // erase from map
         if (Error::CCRBNoValidConnection == status) {
-            // Registration record does not have any more valid connections - erase from map
+            // Check if registration record is in progress of register update its resources
+            // if yes - clear reg_update_in_progress_access_token_ member
+            if (itr->first == reg_update_in_progress_access_token_) {
+                TR_WARN("Erase registration record (access_token: %s) during register of resources",
+                        itr->first.c_str());
+                reg_update_in_progress_access_token_.clear();
+            }
+
             TR_DEBUG("Erase registration record (access_token: %s)", itr->first.c_str());
             itr = registration_records_.erase(itr); // supported since C++11
         }

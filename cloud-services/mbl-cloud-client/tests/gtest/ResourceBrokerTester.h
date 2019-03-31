@@ -20,6 +20,82 @@
 #define ResourceBrokerTester_h_
 
 #include "ResourceBroker.h"
+#include "MbedClientManager.h"
+class ConnectorClientEndpointInfo;
+
+/**
+ * @brief Mbed client mock class
+ * Does almost nothing as we don't check it...
+ * 
+ */
+class MbedClientManagerMock : public mbl::MbedClientManager
+{
+
+public:
+
+    MbedClientManagerMock()
+    {
+    }
+
+    ~MbedClientManagerMock(){}
+
+    void init() override {}
+
+    /**
+     * @brief Deinit mbed client mock function (does nothing)
+     */
+    void deinit() override {}
+
+    /**
+     * @brief Set the on resources registration succeeded callback
+     * 
+     * @param callback_func - callback function
+     */
+    void set_resources_registration_succeeded_callback(
+        ResourcesRegistrationSucceededCallback
+    ) override {}
+
+    /**
+     * @brief Set the on Mbed client error callback
+     * 
+     * @param callback_func - callback function
+     */
+    void set_mbed_client_error_callback(MbedClientErrorCallback) override {}
+
+
+    /**
+     * @brief Register mbed client mock function (does nothing)
+     */
+    mbl::MblError register_mbed_client() override {return mbl::MblError::None;}
+
+    /**
+     * @brief Unregister mbed client mock function (does nothing)
+     */
+    void unregister_mbed_client() override {}
+
+    /**
+     * @brief return mbed client device state
+     * 
+     * @return State_DeviceRegistered - mocks registration success
+     */
+    MbedClientDeviceState get_device_state() override 
+    {
+        return State_DeviceRegistered;
+    }
+
+    /**
+     * @brief Perform keepalive to mbed client
+     * 
+     */
+    void keepalive() override {}
+
+    /**
+     * @brief Register resources
+     * 
+     * @param object_list - resources to be registered
+     */
+    void register_resources(const M2MObjectList&) override {}
+};
 
 /**
  * @brief This class tests ResourceBroker functionality
@@ -32,7 +108,13 @@ class ResourceBrokerTester {
 
 public:
     
-    ResourceBrokerTester();
+    /**
+     * @brief C'tor
+     * 
+     * @param use_mock_dbus_adapter - if true - init ResourceAdapter's debus_ipc to mock ipc
+     */
+    ResourceBrokerTester(bool use_mock_dbus_adapter = true);
+
     ~ResourceBrokerTester();
 
     /**
@@ -79,6 +161,20 @@ public:
     void mbed_client_register_update_callback_test(
         const std::string& access_token,
         CloudConnectStatus dbus_adapter_expected_status);
+
+    /**
+     * @brief This function create a new thread that simulate mbed client thread
+     * and pass the expected behaviour of mbed client thread (registration fail or success)
+     * Then it check the result of this mbed client simulation in terms of expected result in
+     * Resource broker.
+     * 
+     * @param access_token - access token of the registration operation
+     * @param simulate_registration_success - if true - simulate success
+     *                                        if false - simulate failure
+     */
+    void simulate_mbed_client_register_update_callback_test(
+        const std::string& access_token,
+        bool simulate_registration_success);
 
     /**
      * @brief Get resource by path and compare to expected status
@@ -172,6 +268,13 @@ public:
         std::vector<mbl::ResourceGetOperation>& inout_get_operations,
         const std::vector<mbl::ResourceGetOperation> expected_inout_get_operations,
         const CloudConnectStatus expected_out_status);
+		
+    /**
+     * @brief Call ResourceBroker start and then stop functions several times
+     * 
+     * @param times to call ResourceBroker start and then stop functions
+     */
+    void resourceBroker_start_stop_test(size_t times);		
 
     /**
      * @brief Test that ResourceBroker track IPC connections as expected
@@ -188,39 +291,51 @@ public:
     void notify_connection_closed_test_multiple_reg_records();
 
     /**
-     * @brief Call resource_broker_.notify_connection_closed() API
+     * @brief Call ccrb_.notify_connection_closed() API
      * 
      * @param source - connection which has been closed
      */
     void notify_connection_closed(mbl::IpcConnection source);
 
+    /**
+     * @brief Return internal ccrb
+     * This function is used for tests that need ccrb reference as they can't create it
+     * because ccrb c'tor is private (this class is friend of it so it can be done)
+     * 
+     * @return mbl::ResourceBroker& 
+     */
+    inline mbl::ResourceBroker& get_ccrb() {return ccrb_;}
+
+    /**
+     * @brief Start ccrb thread and init adapter
+     * 
+     */
+    void start_ccrb();
+
+    /**
+     * @brief Stop ccrb thread and deinit adapter
+     * 
+     */
+    void stop_ccrb();
+
 private:
 
     /**
-     * @brief Mock Mbed client function that ads a list of objects that the application wants to 
-     * register to the LWM2M server.
+     * @brief Mbed client mock thread that simulates calls to resource broker's callback functions
+     * Based on expected behaviour input thread params
      * 
-     * This function is used tp override the function pointer in ResourceBroker so the call will be sent 
-     * to this class instead of to Mbed cloud client.
-     * 
-     * @param object_list - Objects that contain information about the
-     * client attempting to register to the LWM2M server.
+     * @param data - struct passed from thread creator that includes pointer to tester and expected
+     *               registration result (fail/success). based on that data the right callback will
+     *               be called
+     * @return void* - thread result
      */
-    void add_objects(const M2MObjectList& object_list);
-
-    /**
-     * \brief Mock Mbed client function that sends a registration update message to the Cloud.
-     * 
-     * This function is used tp override the function pointer in ResourceBroker so the call will be sent 
-     * to this class instead of to Mbed cloud client.
-     */
-    void register_update();
+    static void* mbed_client_mock_thread_func(void* data);
 
     /**
      * @brief ResourceBroker module to be tested
      * 
      */
-    mbl::ResourceBroker resource_broker_;
+    mbl::ResourceBroker ccrb_;
 };
 
 #endif // ResourceBrokerTester_h_

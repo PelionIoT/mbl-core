@@ -86,6 +86,13 @@ MblError DBusAdapter::update_deregistration_status(const IpcConnection& destinat
         destination, DBUS_CC_DEREGISTER_RESOURCES_STATUS_SIGNAL_NAME, dereg_status);
 }
 
+MblError DBusAdapter::send_mailbox_msg(MailboxMsg& msg_to_send)
+{
+    TR_DEBUG_ENTER;
+    assert(impl_);
+    return impl_->send_mailbox_msg(msg_to_send);
+}
+
 std::pair<MblError, std::string> DBusAdapter::generate_access_token()
 {
     TR_DEBUG_ENTER;
