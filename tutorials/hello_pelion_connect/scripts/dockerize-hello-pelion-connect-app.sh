@@ -12,7 +12,7 @@
 set -e
 
 # Current directory absolute path
-SCRIPT_DIR="$( cd "$( dirname "$0" )" >/dev/null && pwd )"
+SCRIPT_DIR="$(realpath $( dirname "${0}"))"
 
 # clean
 if [ "$1" = "clean" ]; then

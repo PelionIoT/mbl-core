@@ -65,12 +65,15 @@
         },
         {
             "destination": "/tmp",
-            "type": "ext4",
-            "source": "/tmp",
+            "type": "tmpfs",
+            "source": "tmpfs",
             "options": [
-                "rw",
-                "bind"
+            "nosuid",
+            "strictatime",
+            "mode=755",
+            "size=65536k"
             ]
+            
         },
         {
             "destination": "/dev",
