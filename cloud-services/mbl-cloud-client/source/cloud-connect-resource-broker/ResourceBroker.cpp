@@ -76,7 +76,8 @@ MblError ResourceBroker::main()
             g_shutdown_signal_once = 0;
         }
 
-        if (resource_broker.mbed_client_manager_->is_device_unregistered()) {
+        if (MbedClientManager::State_DeviceUnregistered == 
+            resource_broker.mbed_client_manager_->get_device_state()) {
 
             TR_DEBUG("State is unregistered - stop ccrb_main thread");
             // Unregister device is finished - stop resource broker
@@ -265,7 +266,8 @@ MblError ResourceBroker::periodic_keepalive_callback(sd_event_source* s, Event* 
     assert(this_ccrb);
 
     // Keep alive is only needed when device is registered
-    if (!this_ccrb->mbed_client_manager_->is_device_registered()) {
+    if (MbedClientManager::State_DeviceRegistered != 
+            this_ccrb->mbed_client_manager_->get_device_state()) {
         TR_DEBUG("Device is not registered.");
         return Error::None;
     }
@@ -299,6 +301,8 @@ MblError ResourceBroker::init()
         return ipc_adapter_init_status;
     }
 
+    mbed_client_manager_->init();
+
     // Init Mbed cloud client
     mbed_client_manager_->set_resources_registration_succeeded_callback(
         std::bind(&ResourceBroker::resources_registration_succeeded, this));
@@ -308,11 +312,11 @@ MblError ResourceBroker::init()
         this,
         std::placeholders::_1));
 
-    const MblError init_mbed_clinet_status = mbed_client_manager_->init();
-    if (Error::None != init_mbed_clinet_status) {
-        TR_ERR("mbed_client_manager_->init() failed with error %s",
-               MblError_to_str(init_mbed_clinet_status));
-        return init_mbed_clinet_status;
+    const MblError register_mbed_client_status = mbed_client_manager_->register_mbed_client();
+    if (Error::None != register_mbed_client_status) {
+        TR_ERR("mbed_client_manager_->register_mbed_client() failed with error %s",
+               MblError_to_str(register_mbed_client_status));
+        return register_mbed_client_status;
     }
 
     // Set keepalive periodic event
@@ -603,7 +607,8 @@ ResourceBroker::register_resources(IpcConnection source, const std::string& app_
     std::pair<CloudConnectStatus, std::string> ret_pair(CloudConnectStatus::STATUS_SUCCESS,
                                                         std::string());
 
-    if (!mbed_client_manager_->is_device_registered()) {
+    if (MbedClientManager::State_DeviceRegistered != 
+            mbed_client_manager_->get_device_state()) {
         TR_ERR("Client is not registered.");
         ret_pair.first = CloudConnectStatus::ERR_INTERNAL_ERROR;
         return ret_pair;
@@ -804,7 +809,8 @@ ResourceBroker::set_resources_values(IpcConnection source,
     TR_DEBUG("access_token: %s", access_token.c_str());
 
     // It is allowed to set resource value only after device is registered
-    if (!mbed_client_manager_->is_device_registered()) {
+    if (MbedClientManager::State_DeviceRegistered != 
+            mbed_client_manager_->get_device_state()) {
         TR_ERR("Client is not registered.");
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }
@@ -897,7 +903,8 @@ ResourceBroker::get_resources_values(IpcConnection source,
     TR_DEBUG("access_token: %s", access_token.c_str());
 
     // It is allowed to get resource value only after device is registered
-    if (!mbed_client_manager_->is_device_registered()) {
+    if (MbedClientManager::State_DeviceRegistered != 
+            mbed_client_manager_->get_device_state()) {
         TR_ERR("Client is not registered.");
         return CloudConnectStatus::ERR_INTERNAL_ERROR;
     }

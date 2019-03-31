@@ -35,17 +35,11 @@ public:
 
     MbedClientManagerMock()
     {
-        // Set initial state to register to simulate successful device registration
-        mbed_client_state_.store(mbl::MbedClientManager::State_DeviceRegistered);
     }
 
     ~MbedClientManagerMock(){}
 
-    /**
-     * @brief init mbed client mock function (does nothing)
-     * @return MblError - Error::None in case of success
-     */
-    mbl::MblError init() override {return mbl::MblError::None;}
+    void init() override {}
 
     /**
      * @brief Deinit mbed client mock function (does nothing)
@@ -53,21 +47,53 @@ public:
     void deinit() override {}
 
     /**
+     * @brief Set the on resources registration succeeded callback
+     * 
+     * @param callback_func - callback function
+     */
+    void set_resources_registration_succeeded_callback(
+        ResourcesRegistrationSucceededCallback
+    ) override {}
+
+    /**
+     * @brief Set the on Mbed client error callback
+     * 
+     * @param callback_func - callback function
+     */
+    void set_mbed_client_error_callback(MbedClientErrorCallback) override {}
+
+
+    /**
+     * @brief Register mbed client mock function (does nothing)
+     */
+    mbl::MblError register_mbed_client() override {return mbl::MblError::None;}
+
+    /**
      * @brief Unregister mbed client mock function (does nothing)
      */
-    void unregister_mbed_client() {}
+    void unregister_mbed_client() override {}
 
-    bool is_device_registered() override 
+    /**
+     * @brief return mbed client device state
+     * 
+     * @return State_DeviceRegistered - mocks registration success
+     */
+    MbedClientDeviceState get_device_state() override 
     {
-        return true;
+        return State_DeviceRegistered;
     }
 
-    bool is_device_unregistered() override 
-    {
-        return false;
-    }
-
+    /**
+     * @brief Perform keepalive to mbed client
+     * 
+     */
     void keepalive() override {}
+
+    /**
+     * @brief Register resources
+     * 
+     * @param object_list - resources to be registered
+     */
     void register_resources(const M2MObjectList&) override {}
 };
 

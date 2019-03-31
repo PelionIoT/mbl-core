@@ -328,7 +328,7 @@ static int AppThreadCb_validate_adapter_register_resources(AppThread* app_thread
     DBusAdapter& adapter = adapter_param_data->adapater_;
     MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 
@@ -448,10 +448,10 @@ TEST_P(ValidateRegisterResources, BasicMethodReply)
 
 //     // we stop adapter event loop from this thread instead of having one more additional thread
 //     DBusAdapter &adapter = adapter_param_data->adapater_;
-//     MblError adapter_finish_status = adapter.stop(MblError::None);
+//     MblError adapter_finish_status = send_adapter_stop_message(&adapter);
 //     if(MblError::None != adapter_finish_status)
 //     {
-//         TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+//         TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
 //         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
 //     }
 
@@ -554,7 +554,7 @@ static int AppThreadCb_validate_max_allowed_connections_enforced(AppThread* app_
     // we stop adapter event loop from this thread instead of having one more additional thread
     MblError status = send_adapter_stop_message(adapter);
     if (MblError::None != status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(status));
         pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
@@ -719,7 +719,7 @@ int DBusAdapaterFixture::AppThreadCb_validate_client_disconnection_notification(
     // we stop adapter event loop from this thread instead of having one more additional thread
     MblError status = send_adapter_stop_message(adapter);
     if (MblError::None != status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(status));
         pthread_exit(reinterpret_cast<void*>(-1002));
     }
 
@@ -937,7 +937,7 @@ static int AppThreadCb_validate_adapter_set_resources_values(AppThread* app_thre
     DBusAdapter& adapter = adapter_param_data->adapater_;
     MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 
@@ -1186,9 +1186,9 @@ static int AppThreadCb_validate_adapter_get_resources_values(AppThread* app_thre
 
     // we stop adapter event loop from this thread instead of having one more additional thread
     DBusAdapter& adapter = adapter_param_data->adapater_;
-    MblError adapter_finish_status = adapter.stop(MblError::None);
+    MblError adapter_finish_status = send_adapter_stop_message(&adapter);
     if (MblError::None != adapter_finish_status) {
-        TR_ERR("adapter->stop failed(err=%s)", MblError_to_str(adapter_finish_status));
+        TR_ERR("send_adapter_stop_message(err=%s)", MblError_to_str(adapter_finish_status));
         set_test_result(test_result, TEST_FAILED_ADAPTER_METHOD_FAILED);
     }
 

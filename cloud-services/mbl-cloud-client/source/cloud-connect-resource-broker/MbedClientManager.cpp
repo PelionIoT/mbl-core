@@ -34,7 +34,8 @@ MbedClientManager::MbedClientManager()
     : mbed_client_state_(State_DeviceUnregistered),
       cloud_client_(nullptr),
       resources_registration_succeeded_callback_func_(nullptr),
-      mbed_client_error_callback_func_(nullptr)
+      mbed_client_error_callback_func_(nullptr),
+      initializer_thread_id_(0)
 {
     TR_DEBUG_ENTER;
 
@@ -52,19 +53,29 @@ MbedClientManager::~MbedClientManager()
 void MbedClientManager::set_resources_registration_succeeded_callback(
     ResourcesRegistrationSucceededCallback callback_func)
 {
+    // Must be first! only CCRB initializer thread should call this function
+    // This will prevent changing callbacks accidentally from unauthorized places
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);    
     resources_registration_succeeded_callback_func_ = callback_func;
 }
 
 void MbedClientManager::set_mbed_client_error_callback(MbedClientErrorCallback callback_func)
 {
+    // Must be first! only CCRB initializer thread should call this function
+    // This will prevent changing callbacks accidentally from unauthorized places
+    assert(pthread_equal(pthread_self(), initializer_thread_id_) != 0);    
     mbed_client_error_callback_func_ = callback_func;
 }
 
-MblError MbedClientManager::init()
+void MbedClientManager::init()
 {
     TR_DEBUG_ENTER;
 
     assert(nullptr == cloud_client_);
+
+    // Record initializer thread ID, that should be CCRB main thread
+    initializer_thread_id_ = pthread_self();
+
     cloud_client_ = std::make_unique<MbedCloudClient>();
 
     // Register mbed client callback:
@@ -75,7 +86,30 @@ MblError MbedClientManager::init()
     cloud_client_->set_update_progress_handler(&update_handlers::handle_download_progress);
     cloud_client_->set_update_authorize_handler(&handle_mbed_client_authorize);
     cloud_client_->on_error(this, &MbedClientManager::handle_mbed_client_error);
+}
 
+void MbedClientManager::deinit()
+{
+    TR_DEBUG_ENTER;
+
+    // Must call unregister_mbed_client() before deinit!
+    // This also assure that no more callbacks will be called unexpectedly
+    assert(State_DeviceUnregistered == mbed_client_state_.load());
+
+    if (cloud_client_) {
+        TR_INFO("Erase mbed client");
+        MbedCloudClient* cloud_client_obj = cloud_client_.release();
+        assert(cloud_client_obj);
+        delete cloud_client_obj;
+        cloud_client_ = nullptr;
+
+        TR_INFO("Stop the PAL event loop thread");
+        ns_event_loop_thread_stop();
+    }
+}
+
+MblError MbedClientManager::register_mbed_client()
+{
     // Register Device Default Resources
     M2MObjectList objs; // Using empty ObjectList
     cloud_client_->add_objects(objs);
@@ -89,24 +123,7 @@ MblError MbedClientManager::init()
     }
 
     mbed_client_state_.store(State_DeviceRegisterInProgress);
-
-    return Error::None;
-}
-
-void MbedClientManager::deinit()
-{
-    TR_DEBUG_ENTER;
-
-    if (cloud_client_) {
-        TR_INFO("Erase mbed client");
-        MbedCloudClient* cloud_client_obj = cloud_client_.release();
-        assert(cloud_client_obj);
-        delete cloud_client_obj;
-        cloud_client_ = nullptr;
-
-        TR_INFO("Stop the PAL event loop thread");
-        ns_event_loop_thread_stop();
-    }
+    return Error::None;    
 }
 
 void MbedClientManager::unregister_mbed_client()
@@ -136,22 +153,9 @@ void MbedClientManager::register_resources(const M2MObjectList& object_list)
     cloud_client_->register_update();
 }
 
-bool MbedClientManager::is_device_registered()
+MbedClientManager::MbedClientDeviceState MbedClientManager::get_device_state()
 {
-    bool ret = false;
-    if (State_DeviceRegistered == mbed_client_state_.load()) {
-        ret = true;
-    }
-    return ret;
-}
-
-bool MbedClientManager::is_device_unregistered()
-{
-    bool ret = false;
-    if (State_DeviceUnregistered == mbed_client_state_.load()) {
-        ret = true;
-    }
-    return ret;
+    return mbed_client_state_.load();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

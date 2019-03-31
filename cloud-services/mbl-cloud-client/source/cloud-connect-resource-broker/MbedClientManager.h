@@ -43,7 +43,7 @@ public:
      * 
      * @param callback_func - callback function
      */
-    void set_resources_registration_succeeded_callback(
+    virtual void set_resources_registration_succeeded_callback(
         ResourcesRegistrationSucceededCallback callback_func
     );
 
@@ -52,7 +52,7 @@ public:
      * 
      * @param callback_func - callback function
      */
-    void set_mbed_client_error_callback(MbedClientErrorCallback callback_func);
+    virtual void set_mbed_client_error_callback(MbedClientErrorCallback callback_func);
 
     /**
      * @brief Create mbed client
@@ -65,11 +65,8 @@ public:
      *    Callback function for occurred error in the above scenariohandle_authorize
      * Start mbed client register operation (register device defaulthandle_authorizeresources)
      * Set internal state to mark that register is in progress
-     * 
-     * @return MblError - Error::ConnectUnknownError - is case mbed client register operation failed
-     *                  - Error::None in case of success
      */
-    virtual MblError init();
+    virtual void init();
 
     /**
      * @brief Deinit mbed client
@@ -82,29 +79,17 @@ public:
     virtual void deinit();
 
     /**
+     * @brief Register mbed client (device resources)
+     */
+    virtual MblError register_mbed_client();
+
+    /**
      * @brief Unregister mbed client (device resources)
      * This function is called when terminate signal arrive.
      * After this call need to wait for change in state to Unregister as mbed client callback is
      * called later on.
      */
     virtual void unregister_mbed_client();
-
-    /**
-     * @brief Return true if device is registered
-     * 
-     * @return true if device is registered
-     * @return false if device is not registered (e.g. registration in progress is NOT registered)
-     */
-    virtual bool is_device_registered();
-
-    /**
-     * @brief Return true if device is unregistered
-     * 
-     * @return true if device is unregistered
-     * @return false if device is not unregistered 
-     * (e.g. un-registration in progress is NOT registered)
-     */
-    virtual bool is_device_unregistered();
 
     /**
      * @brief Perform keepalive to mbed client
@@ -119,8 +104,6 @@ public:
      */
     virtual void register_resources(const M2MObjectList& object_list);
 
-protected:
-
     // Mbed client device states
     // These states represent the devices registration states against Pelion
     // Only when Mbed client (device) state is registered - an application can register
@@ -134,12 +117,19 @@ protected:
     };
 
     /**
+     * @brief Return mbed client device state
+     * 
+     * @return MbedClientDeviceState - mbed client device state
+     */
+    virtual MbedClientDeviceState get_device_state();
+
+private:
+
+    /**
      * @brief Atomic enum to signal which state mbed_client is in
      * This member is accessed from CCRB thread and from Mbed client thread (using callbacks)
      */
     std::atomic<MbedClientDeviceState> mbed_client_state_;    
-
-private:
 
     // pointer to a static MbedClientManager instance to be used by callbacks
     // initialized in MbedClientManager c'tor
@@ -157,6 +147,8 @@ private:
     // Callback function pointer to be called when resource registration failed
     MbedClientErrorCallback mbed_client_error_callback_func_;
 
+    // The pthread_t thread ID of the initializing thread (CCRB thread)
+    pthread_t initializer_thread_id_;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Callback functions that are being called by Mbed client
