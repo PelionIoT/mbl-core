@@ -215,8 +215,9 @@ void MbedClientManager::handle_mbed_client_registration_updated()
     // during registration of resources - IOTMBL-1700
 
     // Notify resource broker that resources registration is finished
-    if (resources_registration_succeeded_callback_func_) {
-        resources_registration_succeeded_callback_func_();
+    auto callback = resources_registration_succeeded_callback_func_;
+    if (callback) {
+        callback();
     }
 }
 
@@ -328,8 +329,9 @@ void MbedClientManager::handle_mbed_client_error(const int cloud_client_code)
     // Notify resource broker as we are in one of the following cases:
     // 1. application requested to register resources
     // 2. keep alive (does not occur during #1)
-    if (mbed_client_error_callback_func_) {
-        mbed_client_error_callback_func_(mbl_code);
+    auto callback = mbed_client_error_callback_func_;
+    if (callback) {
+        callback(mbl_code);
     }
 }
 
