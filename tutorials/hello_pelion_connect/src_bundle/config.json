@@ -64,7 +64,7 @@
             "source": "proc"
         },
         {
-            "destination": "/tmpC",
+            "destination": "/tmp",
             "type": "ext4",
             "source": "/tmp",
             "options": [

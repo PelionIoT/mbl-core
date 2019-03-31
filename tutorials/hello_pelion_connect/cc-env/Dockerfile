@@ -1,4 +1,4 @@
-# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
@@ -10,4 +10,4 @@ RUN wget http://git.yoctoproject.org/cgit/cgit.cgi/opkg-utils/snapshot/opkg-util
 	rm -rf opkg-utils-0.3.6 opkg-utils-0.3.6.tar.gz
 
 ENTRYPOINT ["/hello_pelion_connect/scripts/container_entry_point.sh"]
-CMD ["make -C /hello_pelion_connect release"]
+CMD ["make -C /hello_pelion_connect all"]
