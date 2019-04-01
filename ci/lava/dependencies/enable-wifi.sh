@@ -39,7 +39,7 @@ else
 
 
     # Enable WiFi
-    $mbl_command put /root/.accessng-service.config /config/user/connman/accessng-service.config'
+    $mbl_command put /root/.accessng-service.config /config/user/connman/accessng-service.config
 
 
     # Enable WiFi
