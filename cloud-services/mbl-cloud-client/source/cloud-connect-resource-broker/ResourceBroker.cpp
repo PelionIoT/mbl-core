@@ -53,37 +53,9 @@ struct MailboxMsg_MbedClientError
     MblError status;
 };
 
-static int aaa (int signal)
-{
-    TR_DEBUG_ENTER;
-    sigset_t mask;
-    sigset_t orig_mask;
-    sigemptyset (&mask);
-	sigaddset (&mask, signal);
- 
-    //int r = sigprocmask(SIG_BLOCK, &mask, &orig_mask);
-    int r = pthread_sigmask(SIG_BLOCK, &mask, &orig_mask); 
-	if (r < 0) {
-		TR_ERR("sigprocmask failed with error: %d - %s",
-            r,
-            strerror(-r)
-        );
-	}
-    return r;
-}
-#include "signals.h"
 MblError ResourceBroker::main()
 {
     TR_DEBUG_ENTER;
-
-    // const MblError sig_err = signals_init();
-    // if (sig_err != Error::None) {
-    //     tr_err("Signal handler initialization failed (%s), exiting application!",
-    //         MblError_to_str(sig_err));
-    //     return 1;
-    // }
-
-
     ResourceBroker resource_broker;
 
     // Note: start() will init mbed client and state_ is moved to State_DeviceRegisterInProgress.
@@ -147,10 +119,6 @@ MblError ResourceBroker::start()
 
     TR_DEBUG_ENTER;
 
-    aaa(SIGTERM);
-    aaa(SIGUSR1);
-    aaa(SIGUSR2);
-    
     // initialize init semaphore
     int ret = sem_init(&init_sem_,
                        0 /* semaphore is used between threads in the process */,
