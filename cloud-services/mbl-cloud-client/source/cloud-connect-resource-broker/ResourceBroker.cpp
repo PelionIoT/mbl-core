@@ -379,25 +379,6 @@ MblError ResourceBroker::process_mailbox_message(MailboxMsg& msg)
 
     auto data_type_name = msg.get_data_type_name();
 
-    // Exit message
-    if (data_type_name == typeid(MailboxMsg_Exit).name()) {
-        TR_INFO("Process message MailboxMsg_Exit");
-        MblError status;
-        MailboxMsg_Exit message;
-        std::tie(status, message) = msg.unpack_data<MailboxMsg_Exit>(sizeof(MailboxMsg_Exit));
-        if (status != MblError::None) {
-            TR_ERR("msg.unpack_data failed with error: %s", MblError_to_str(status));
-            return Error::DBA_MailBoxInvalidMsg;
-        }
-
-        TR_INFO("Call ipc_adapter_->stop(status: %s)", MblError_to_str(message.stop_status));
-        const MblError ipc_stop_err = ipc_adapter_->stop(message.stop_status);
-        if (Error::None != ipc_stop_err) {
-            TR_ERR("ipc_adapter_->stop failed with error: %s", MblError_to_str(ipc_stop_err));
-        }
-        return ipc_stop_err;
-    }
-
     // Mbed Client Registration Updated
     if (data_type_name == typeid(MailboxMsg_RegistrationUpdated).name()) {
         TR_INFO("Process message MailboxMsg_RegistrationUpdated");
