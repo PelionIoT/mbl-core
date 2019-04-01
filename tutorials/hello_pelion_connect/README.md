@@ -19,7 +19,7 @@ The application is contained as a sub-project within `mbl-core` at [`mbl-core/tu
 The sub-project has the following:
 - The source code of the application
 - [Dockerfile](https://github.com/ARMmbed/mbl-core/tree/master/tutorials/hello_pelion_connect/Dockerfile) to containerize the application.
-- Helper scripts that to facilitate the creation of the containerized application.
+- Helper scripts to facilitate the creation of the containerized application.
 - [Dockerfile](https://github.com/ARMmbed/mbl-core/tree/master/tutorials/hello_pelion_connect/cc-env/Dockerfile) to create a container where the tools to create an IPK are installed.
 - Makefile which uses the container mentioned above to create an IPK containing the containerized application.
 - OPKG configuration file which is required for IPK generation. OPKG configuration file is located under `src_opkg` folder.
@@ -55,7 +55,7 @@ sh scripts/dockerize-hello-pelion-connect-app.sh clean
 
 To install the application on the device:
 
-* [Send the application as an over-the-air firmware update with Device Management](https://os.mbed.com/docs/linux-os/v0.5/getting-started/tutorial-updating-mbl-devices-and-applications.html).
+* [Send the application as an over-the-air firmware update with Device Management](https://os.mbed.com/docs/mbed-linux-os/master/update/index.html).
 * [Flash the application over USB with MBL CLI](https://os.mbed.com/docs/linux-os/v0.5/tools/device-update.html#update-an-application).
 
 After installation, and after every reboot, the application is started.
