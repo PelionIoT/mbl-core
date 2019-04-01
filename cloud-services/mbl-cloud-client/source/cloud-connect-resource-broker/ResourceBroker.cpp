@@ -58,42 +58,49 @@ MblError ResourceBroker::main()
     TR_DEBUG_ENTER;
     ResourceBroker resource_broker;
 
-    // Note: start() will init mbed client and state_ is moved to State_DeviceRegisterInProgress.
-    const MblError ccrb_start_err = resource_broker.start();
-    if (Error::None != ccrb_start_err) {
-        TR_ERR("CCRB module start() failed! (%s)", MblError_to_str(ccrb_start_err));
-        return ccrb_start_err;
+    TR_INFO("Init CCRB");
+    OneSetMblError status(resource_broker.init());
+    if (Error::None != status.get()) {
+        // Not returning as we want to call deinit below
+        TR_ERR("CCRB::init failed with error %s", status.get_status_str());
     }
-    TR_INFO("ResourceBroker started successfully");
 
-    for (;;) {
+    // Call ccrb->run only if init succeeded
+    if (Error::None == status.get()) {
+        
+        assert(resource_broker.ipc_adapter_);
+        
+        MblError stop_status = Error::None;
+        TR_INFO("Run IPC adapter");
+        status.set(resource_broker.ipc_adapter_->run(stop_status));
+        if (Error::None != status.get()) {
+            TR_ERR("Run IPC adapter failed with error %s", status.get_status_str());
+        } else {
 
-        if (0 != g_shutdown_signal_once) {
+            TR_INFO("Run IPC adapter successfully stopped");
 
-            TR_WARN("Received signal: %s, Un-registering device...",
-                    strsignal(g_shutdown_signal_once));
             resource_broker.mbed_client_manager_->unregister_mbed_client();
-            g_shutdown_signal_once = 0;
-        }
 
-        if (MbedClientManager::State_DeviceUnregistered ==
-            resource_broker.mbed_client_manager_->get_device_state())
-        {
-
-            TR_DEBUG("State is unregistered - stop ccrb_main thread");
-            // Unregister device is finished - stop resource broker
-            // This will close ccrb_main thread, and deinit will be called
-            const MblError ccrb_stop_err = resource_broker.stop();
-            if (Error::None != ccrb_stop_err) {
-                TR_ERR("CCRB module stop() failed! (%s)", MblError_to_str(ccrb_stop_err));
-                return ccrb_stop_err;
+            // Wait for mbed client manager to finish device unregistration
+            for (;;) {
+                if (MbedClientManager::State_DeviceUnregistered ==
+                    resource_broker.mbed_client_manager_->get_device_state())
+                {
+                    break;
+                }
+                sleep(1);
             }
-
-            return Error::ShutdownRequested;
         }
-
-        sleep(1);
     }
+
+    TR_INFO("Deinit CCRB");
+    const MblError deinit_status = resource_broker.deinit();
+    if (Error::None != deinit_status) {
+        TR_ERR("Deinit CCRB failed with error %s", MblError_to_str(deinit_status));
+        status.set(deinit_status);
+    }
+
+    return Error::ShutdownRequested;
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -278,14 +278,15 @@ MblError DBusAdapterImpl::bus_deinit()
 
 int DBusAdapterImpl::sd_event_signal_handler(sd_event_source* /*s*/,
                                              const struct signalfd_siginfo* /*si*/,
-                                             void* /*userdata*/)
+                                             void* userdata)
 {
     TR_DEBUG_ENTER;
 
     TR_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
-    // assert(userdata);
-    // DBusAdapterImpl* const this_adapter = static_cast<DBusAdapterImpl*>(userdata);
-    // this_adapter->stop(MblError::ShutdownRequested);
+    assert(userdata);
+    DBusAdapterImpl* const this_adapter = static_cast<DBusAdapterImpl*>(userdata);
+    TR_INFO("Call stop");
+    this_adapter->stop(MblError::ShutdownRequested);
 
     /*
        signalfd_siginfo structure containing information about the received signal. See
