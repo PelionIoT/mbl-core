@@ -276,33 +276,34 @@ MblError DBusAdapterImpl::bus_deinit()
     return MblError::None;
 }
 
-int DBusAdapterImpl::sd_event_signal_handler(sd_event_source* /*s*/,
-                                             const struct signalfd_siginfo* /*si*/,
+int DBusAdapterImpl::sd_event_signal_handler_callback(sd_event_source* /*s*/,
+                                             const struct signalfd_siginfo* si,
                                              void* userdata)
 {
     TR_DEBUG_ENTER;
 
-    TR_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");
+    TR_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");              ////////////////////////////// REMOVE BEFORE PR
+    TR_INFO("Received Signal: %s from pid: %d", strsignal(si->ssi_signo), si->ssi_pid);
+    
     assert(userdata);
     DBusAdapterImpl* const this_adapter = static_cast<DBusAdapterImpl*>(userdata);
     TR_INFO("Call stop");
-    this_adapter->stop(MblError::ShutdownRequested);
+    const MblError stop_status = this_adapter->stop(MblError::ShutdownRequested);
+    if(MblError::None != stop_status) {
+        TR_ERR("Stop adapter failed with error: %s", MblError_to_str(stop_status));
+    }
 
-    /*
-       signalfd_siginfo structure containing information about the received signal. See
-       signalfd(2) for further information.
-       By default, the event source is enabled permanently (SD_EVENT_ON), but this may be changed
-       with sd_event_source_set_enabled(3). If the handler function returns a negative error
-       code, it will be disabled after the invocation, even if the SD_EVENT_ON mode was requested
-       before.
-    */
+    // By default, the event source is enabled permanently (SD_EVENT_ON), but this may be changed
+    // with sd_event_source_set_enabled(3). 
+    // If the handler function returns a negative error code, it will be disabled after 
+    // the invocation, even if the SD_EVENT_ON mode was requested before.
     return 0;
 }
 
 int DBusAdapterImpl::set_signal_handler(int signal)
 {
     TR_DEBUG_ENTER;
-    TR_DEBUG("Set signal handler for signal: %d", signal);
+    TR_DEBUG("Set signal handler for signal: %s", strsignal(signal));
     
     sigset_t mask;
     sigset_t orig_mask;
@@ -320,10 +321,14 @@ int DBusAdapterImpl::set_signal_handler(int signal)
     r = sd_event_add_signal(event_loop_handle_,
  	    nullptr,
  	    signal,
- 	    sd_event_signal_handler,
+ 	    sd_event_signal_handler_callback,
  	    this);
     if (r < 0) {
-        TR_ERR("sd_event_add_signal for %d failed with error: %d - %s",signal ,r ,strerror(-r));
+        TR_ERR("sd_event_add_signal for %s failed with error: %d - %s",
+            strsignal(signal),
+            r,
+            strerror(-r)
+        );
         return r;
     }
 
