@@ -15,8 +15,6 @@
 #include <semaphore.h>
 #include <queue>
 
-extern "C" void resource_broker_shutdown_handler(int signal);
-
 class ResourceBrokerTester;
 namespace mbl {
 
@@ -38,16 +36,7 @@ friend MbedClientManager;
 
 public:
 
-    /**
-     * @brief Set a shutdown termination flag
-     * Will be handled in main loop
-     * Note: This is temporary until we will move signal handling to dbus event loop
-     * 
-     * @param signal received 
-     */
-    void resource_broker_shutdown_handler(int signal);
-
-
+    //TODO: fix documentation
     /**
      * @brief Main loop that create ResourceBroker, initialize and start all components
      * When terminate signal is arrived - stop function will be called, mbed client unregister
@@ -223,33 +212,6 @@ protected:
 
     ResourceBroker();
     virtual ~ResourceBroker();
-
-    /**
-     * @brief Starts CCRB.
-     * In details: 
-     * - initializes CCRB instance and runs event-loop.
-     * 
-     * Note: This function should be called before ResourceBroker::stop().  
-     * 
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStartFailed otherwise. 
-     */
-    virtual MblError start();
-
-    /**
-     * @brief Stops CCRB.
-     * In details: 
-     * - stops CCRB event-loop.
-     * - deinitialize CCRB instance.
-     * 
-     * Note: This function should be called only after ResourceBroker::start() being called.
-     *       This function should be called only from the same thread as ResourceBroker::start() 
-     *       was called.
-     *
-     * @return MblError returns value Error::None if function succeeded, 
-     *         or Error::CCRBStopFailed otherwise. 
-     */
-    virtual MblError stop();
 
     /**
      * @brief Initialize CCRB instance.

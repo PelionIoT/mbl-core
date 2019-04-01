@@ -32,17 +32,11 @@
 
 static const char g_log_path[] = "/var/log/mbl-cloud-client.log";
 static FILE* g_log_stream = 0;
-static volatile sig_atomic_t g_log_need_reopen = 0;
 
 // Format the time prefix strings like "YYYY-mm-DDTHH:MM:ss+HHMM " (one of the
 // ISO 8601 formats). That's 25 chars + nul.
 static const char g_time_prefix_format[] = "%FT%T%z ";
 static const size_t g_time_prefix_buffer_size = 26;
-
-extern "C" void mbl_log_reopen_signal_handler(int)
-{
-    g_log_need_reopen = 1;
-}
 
 static void strncpy_with_nul(char* const dest, const char* const src, const size_t n)
 {
@@ -83,18 +77,17 @@ extern "C" void mbl_trace_print_handler(const char* const str)
 {
     // Assuming that mbed-trace will synchronize calls to this function.
 
-    if (!g_log_stream || g_log_need_reopen) {
+    if (!g_log_stream) {
         if (g_log_stream) {
             std::fclose(g_log_stream);
         }
         g_log_stream = std::fopen(g_log_path, "a");
-        g_log_need_reopen = 0;
         if (g_log_stream) {
             // We can't use mbed-trace to log here because it doesn't expect to
             // be used from within its own print handler
             char buffer[g_time_prefix_buffer_size];
             std::fprintf(g_log_stream,
-                         "%s[INFO][mbl ]: Log file reopened\n",
+                         "%s[INFO][mbl ]: Log file opened\n",
                          make_time_prefix(buffer, sizeof(buffer)));
         }
     }

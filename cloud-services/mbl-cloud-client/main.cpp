@@ -18,7 +18,6 @@
 #include "application_init.h"
 #include "log.h"
 #include "cloud-connect-resource-broker/ResourceBroker.h"
-#include "signals.h"
 
 #include "mbed-trace/mbed_trace.h"
 
@@ -76,18 +75,10 @@ int main()
         return 1;
     }
 
-    block_signal_handling(SIGTERM);
+    block_signal_handling(SIGTERM);  //////////////// TRY TO MOVE TO BROKER
     block_signal_handling(SIGINT);
     block_signal_handling(SIGQUIT);
     
-    const MblError sig_err = signals_init();
-    if (sig_err != Error::None) {
-        tr_err("Signal handler initialization failed (%s), exiting application!",
-            MblError_to_str(sig_err));
-        return 1;
-    }
-
-
     if (!application_init()) {
         tr_err("Cloud Client library initialization failed, exiting application.");
         return 1;
