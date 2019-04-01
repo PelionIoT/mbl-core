@@ -297,55 +297,56 @@ int DBusAdapterImpl::sd_event_signal_handler(sd_event_source* /*s*/,
     */
     return 0;
 }
-#include <signal.h>
 
 int DBusAdapterImpl::set_signal_handler(int signal)
 {
     TR_DEBUG_ENTER;
-    //assert(sigprocmask_many(SIG_BLOCK, NULL, SIGTERM, SIGINT, -1) >= 0);
+    TR_DEBUG("Set signal handler for signal: %d", signal);
+    
     sigset_t mask;
     sigset_t orig_mask;
     sigemptyset (&mask);
 	sigaddset (&mask, signal);
- 
-    TR_DEBUG("Set signal handler foi signal: %d", signal);
 
-    //int r = sigprocmask(SIG_BLOCK, &mask, &orig_mask);
+    // Block signal arrival until a new handler is set
     int r = pthread_sigmask(SIG_BLOCK, &mask, &orig_mask); 
 	if (r < 0) {
-		TR_ERR("sigprocmask failed with error: %d - %s",
-            r,
-            strerror(-r)
-        );
+		TR_ERR("sigprocmask failed with error: %d - %s", r, strerror(-r));
         return r;
 	}
 
-    TR_INFO("sd_event_add_signal...");
-    // TODO: use vector of signal and do a loop
-    // Register signals
+    // Set signal handler
     r = sd_event_add_signal(event_loop_handle_,
  	    nullptr,
  	    signal,
  	    sd_event_signal_handler,
  	    this);
     if (r < 0) {
-        TR_ERR("sd_event_add_signal for %d failed with error: %d - %s",
-            signal,
-            r,
-            strerror(-r)
-        );
+        TR_ERR("sd_event_add_signal for %d failed with error: %d - %s",signal ,r ,strerror(-r));
         return r;
     }
 
-    TR_INFO("sigprocmask...");
+    // Unblock signal arrival as it can be handled now
     r = sigprocmask(SIG_SETMASK, &orig_mask, NULL);
 	if (r < 0) {
-		TR_ERR("sigprocmask failed with error: %d - %s",
-            r,
-            strerror(-r)
-        );
+		TR_ERR("sigprocmask failed with error: %d - %s", r, strerror(-r));
 	}    
     return r;
+}
+
+MblError DBusAdapterImpl::set_signal_handlers()
+{
+    TR_DEBUG_ENTER;
+    
+    const static std::vector<int> signals = {SIGTERM, SIGINT, SIGQUIT};
+    for (auto& itr : signals) {
+        int r = set_signal_handler(itr);
+        if (r < 0) {
+            TR_ERR("set_signal_handler failed with error: %d - %s", r, strerror(-r));
+            return MblError::DBA_SdEventCallFailure;
+        }    
+    }
+    return MblError::None;
 }
 
 MblError DBusAdapterImpl::event_loop_init()
@@ -363,12 +364,13 @@ MblError DBusAdapterImpl::event_loop_init()
     }
     assert(event_loop_handle_);
 
-    set_signal_handler(SIGTERM);
-    // set_signal_handler(SIGINT);
-    // set_signal_handler(SIGHUP);
-    // set_signal_handler(SIGQUIT);
-    set_signal_handler(SIGUSR1);
-    set_signal_handler(SIGUSR2);
+    // Set signal handlers
+    const MblError set_signal_handlers_status = set_signal_handlers();
+    if(MblError::None != set_signal_handlers_status) {
+        TR_ERR("set_signal_handlers failed with error: %s",
+            MblError_to_str(set_signal_handlers_status));
+        return set_signal_handlers_status;
+    }
 
     // FIXME - remove later (keep for debug)
     // TR_DEBUG("Acquired an event loop object! (event_loop_handle_=%p)", event_loop_handle_);

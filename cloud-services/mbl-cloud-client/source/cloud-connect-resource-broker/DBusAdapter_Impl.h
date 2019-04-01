@@ -332,8 +332,21 @@ private:
         const struct signalfd_siginfo *si,
  	    void *userdata);
 
-    //TODO: ADD documentation
-    int set_signal_handler(int signal);    
+    /**
+     * @brief Set signal handler
+     * 
+     * @param signal - Signal to set handler for
+     * @return int - 0 if success, negative number in case of failure
+     */
+    int set_signal_handler(int signal);
+
+    /**
+     * @brief Set signal handlers for several signals (e.g. SIGTERM, SIGINT, ...)
+     * 
+     * @return MblError - MblError::None in case of success
+     *                  - MblError::DBA_SdEventCallFailure in case of failure
+     */
+    MblError set_signal_handlers();
 
 public:
     /*
