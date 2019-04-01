@@ -4,7 +4,7 @@
 
 FROM resin/armhf-alpine:3.6
 
-# We use cross-platform build to build ARM image on a 
+# We use cross-platform build to build an ARM Docker image on a 
 # non-ARM development PC architecture 
 RUN [ "cross-build-start" ]
 

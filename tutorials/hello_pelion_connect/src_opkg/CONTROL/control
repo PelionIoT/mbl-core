@@ -1,6 +1,6 @@
 Package: hello-pelion-connect
 Version: 1.0
-Architecture: armv7vet2hf-neon
+Architecture: any
 Maintainer: Mbed Linux OS team <mbed-linux-team@arm.com>
 Section: admin
 Priority: optional

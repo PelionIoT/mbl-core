@@ -1,6 +1,6 @@
 # Purpose
 
-The purpose of the hello-pelion-connect sample application is to demonstrate Pelion Connect D-Bus service methods' invocation from the containerized application which runs on the device. Demonstrated methods:
+The purpose of the `hello-pelion-connect` sample application is to demonstrate Pelion Connect D-Bus service methods' invocation from a containerized application which runs on the device. Demonstrated methods:
 1. RegisterResources - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.
 
 # Mbed Linux OS hello-pelion-connect sample application 
