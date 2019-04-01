@@ -8,7 +8,7 @@ RSYNC := rsync -a
 OPKG_BUILD := opkg-build -Z "xz" -g root -o root
 
 RUNTIME_BUNDLE_FILESYSTEM := runtime-bundle-filesystem
-MACHINE := armv7vet2hf-neon
+MACHINE := any
 PACKAGE_VER := 1.0
 IPK_PACKAGE := hello-pelion-connect_$(PACKAGE_VER)_$(MACHINE).ipk
 
