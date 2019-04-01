@@ -1,6 +1,6 @@
 # Pelion Connect hello-world application
 
-The Pelion Connect hello-world application may run in a Python3 virtual environment on a device. This application demonstrates different Pelion Connect D-Bus API methods invocation. Demonstrated methods:
+The Python Pelion Connect hello-world application demonstrates different Pelion Connect D-Bus API methods invocation. Demonstrated methods:
 1. RegisterResources - Pelion Connect D-Bus API method which registers LwM2M resources provided by the application in the Device Management Portal.
 
 ## Prerequisites   
@@ -13,14 +13,17 @@ The Pelion Connect hello-world application may run in a Python3 virtual environm
 1. Make sure your device has Update Resources file. For more information see [this page][update-resources-file].
 
 ## Setting up Pelion Connect hello-world application
-To set up the Python virtual environment, perform the following steps:
+The Pelion Connect hello-world application runs inside an OCI container. The description, how the application can be containerized please see in [the following readme][../README.md]. 
+
+## Setting up Pelion Connect hello-world application for debug
+The Pelion Connect hello-world application can be easily debugged if it runs in the Python virtual environment. To set up the Python virtual environment, perform the following steps:
 
 1. Copy application subtree `<mbl-core>/tutorials/hello_pelion_connect`
    to the device under the `/scratch` partition.
 
 1. Set the current directory as follows:
    ```shell
-    cd /scratch/hello_pelion_connect
+   cd /scratch/hello_pelion_connect/hello-pelion-connect/
    ```
    
 1. Create a Python virtual environment:
@@ -35,18 +38,15 @@ To set up the Python virtual environment, perform the following steps:
 
 1. Upgrade pip to the latest version
     ```
-    pip install --upgrade pip
+    pip install --upgrade pip setuptools
     ```
     
 1. Install all the necessary packages in the virtual environment:
    ```shell
-   pip install -r requirements.txt
+   pip install vext vext.gi pydbus
    pip install . --upgrade
    ```
-
-## Running the Pelion Connect hello-world application
-
-* Run the application:
+1. Run Pelion Connect hello-world application
    ```shell
    hello_pelion_connect
    ```
