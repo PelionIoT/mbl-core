@@ -47,9 +47,9 @@ else
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>\n"
     else
-        cd /tmp/resources
-        cp root/.mbed_cloud_config.json .
-        manifest-tool update device --device-id $device_id --payload /tmp/payload.tar 
+        cd /tmp/update-resources || exit
+        cp /root/.mbed_cloud_config.json /tmp/update-resources
+        manifest-tool update device --device-id $device_id --payload /tmp/user-sample-app-package_1.0_any.ipk.tar
     fi
 
 fi
