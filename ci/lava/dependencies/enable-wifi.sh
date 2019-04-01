@@ -39,11 +39,11 @@ else
 
 
     # Enable WiFi
-    $mbl_command shell 'cp /root/.accessng-service.config /config/user/connman/accessng-service.config'
+    $mbl_command put /root/.accessng-service.config /config/user/connman/accessng-service.config'
 
 
     # Enable WiFi
-    $mbl_command shell 'enable wifi'
+    $mbl_command shell 'connmanctl enable wifi'
 
 
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
