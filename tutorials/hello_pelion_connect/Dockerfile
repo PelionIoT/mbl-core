@@ -14,7 +14,7 @@ ADD hello-pelion-connect /hello-pelion-connect
 # Install Python3 and hello-pelion-connect application
 RUN apk add --no-cache python3 py3-gobject3 && \
     pip3 install --upgrade pip setuptools && \
-    pip3 install pydbus PyGObject /hello-pelion-connect && \
+    pip3 install -r /hello-pelion-connect/requirements.txt /hello-pelion-connect && \
     rm -r /root/.cache && \
     rm -r /.dockerenv && \
     rm -r /hello-pelion-connect && \
