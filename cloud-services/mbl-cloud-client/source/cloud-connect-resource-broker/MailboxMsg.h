@@ -15,17 +15,6 @@
 namespace mbl
 {
 
-/**
- * @brief This message type is used for an external thread to request an exit from sd-event loop
- * of CCRB thread
- *
- */
-struct MailboxMsg_Exit
-{
-    // The reason for the exit, MblError::None if stop is done in normal way
-    MblError stop_status;
-};
-
 class MailboxMsg
 {
     // Mailbox class is strongly coupled with MailboxMsg

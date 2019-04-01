@@ -283,10 +283,12 @@ int DBusAdapterImpl::sd_event_signal_handler_callback(sd_event_source* /*s*/,
     TR_DEBUG_ENTER;
 
     TR_INFO("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@");              ////////////////////////////// REMOVE BEFORE PR
+    assert(si);
     TR_INFO("Received Signal: %s from pid: %d", strsignal(si->ssi_signo), si->ssi_pid);
     
     assert(userdata);
     DBusAdapterImpl* const this_adapter = static_cast<DBusAdapterImpl*>(userdata);
+    
     TR_INFO("Call stop");
     const MblError stop_status = this_adapter->stop(MblError::ShutdownRequested);
     if(MblError::None != stop_status) {
