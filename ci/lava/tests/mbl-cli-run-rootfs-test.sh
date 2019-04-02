@@ -5,8 +5,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# This script must have 2 parameters passed, the test stage (UPDATE or
-# POST_CHECK) and the image_url of the wic file.
+# This script must have 3 parameters passed:
+#  - the test stage (UPDATE or POST_CHECK)
+#  - the image_url of the wic file
+#  - the update method (PELION or MBL-CLI)
+#
+# Optionally a 4th parameter can be specified to provide the name of the DUT
+
+
 #
 # Set the local variables:
 # $test_stage contains the stage
@@ -18,24 +24,38 @@ test_stage=$1
 # Perform global substitution
 rootfs_image=${2//wic.gz/tar.xz}
 
+pelion_update=$3
+
+
 # Find and select the device to talk to
 
+# If a parameter is passed in then assume it is a pattern to identify the
+# target board, otherwise find something with "mbed-linux-os" in it.
+if [ -z "$4" ]
+then
+    pattern="mbed-linux-os"
+else
+    pattern=$4
+fi
+
+# Find the address of the first device found by the mbl-cli containing the
+# pattern
 mbl-cli list > device_list
 cat device_list
 
-dut_address=$(grep "mbed-linux-os" device_list | cut -d":" -f3-)
+dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
 
 rm device_list
 
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=RootFS_Update RESULT=fail>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_RootFS_Update RESULT=fail>\n" $pelion_update
 else
 
     mbl_command="mbl-cli -a $dut_address"
 
-    # Work out current active partition. 
+    # Work out current active partition.
     active_partition=$($mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}')
 
     printf "Active Partition: %s\n" "$active_partition"
@@ -47,9 +67,9 @@ else
         # should be cleanly flashed.
         if [ "$active_partition" = "rootfs1" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=pass>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=pass>\n" $pelion_update
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs1_selected RESULT=fail>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=fail>\n" $pelion_update
         fi
 
         # Update the hostname of the DUT to contain "lava-". This is so the
@@ -83,35 +103,58 @@ else
         fi
 
         if [ $retVal -eq 0 ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=pass>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=pass>\n" $pelion_update
             # Tar it up in the expected manner. Take the url of the tar file
             # specified in rootfs_image and remove everything upto and
             # including the final "/"
             tar -cf payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
 
-            # Now copy the tar file to the DUT
-            $mbl_command put payload.tar /scratch
 
-            # Now update the rootfs - the -s prevents the automatic reboot
-            $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
 
-            # Now reboot the board and get the result of the reboot command
-            $mbl_command shell 'su -l -c "reboot || echo $?"'
+            if [ $pelion_update -eq "PELION" ]; then
+
+                $mbl_command get /var/log/mbl-cloud-client.log /tmp/mbl-cloud-client.log
+
+                device_id=$(grep -i "device id"  /tmp/mbl-cloud-client.log | tail -1 | cut -d":" -f5)
+
+                if [ -z "$device_id" ]
+                then
+                    printf "ERROR - mbl-cli failed to find MBL device\n"
+                    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_pelion-app-update RESULT=fail>\n" $pelion_update
+                else
+
+                    cd /tmp/update-resources || exit
+                    cp /root/.mbed_cloud_config.json /tmp/update-resources
+                    manifest-tool update device --device-id $device_id --payload payload.tar
+                fi
+
+            else
+
+
+                # Now copy the tar file to the DUT
+                $mbl_command put payload.tar /scratch
+
+                # Now update the rootfs - the -s prevents the automatic reboot
+                $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
+
+                # Now reboot the board and get the result of the reboot command
+                $mbl_command shell 'su -l -c "reboot || echo $?"'
+            fi
 
             # Sleep to allow the reboot to happen. This is nasty but is long enough
             # for the DUT to shut down but not long enough for it to fully restart.
             sleep 40
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs_download RESULT=fail>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=fail>\n" $pelion_update
         fi
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
         if [ "$active_partition" = "rootfs2" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=pass>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=pass>\n" $pelion_update
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=rootfs2_selected RESULT=fail>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=fail>\n" $pelion_update
         fi
     fi
 

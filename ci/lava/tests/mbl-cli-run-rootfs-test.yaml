@@ -13,11 +13,15 @@ params:
     #
     test_stage:
 
-    # image_url: specifies the url of the test image in order to extract the 
+    # image_url: specifies the url of the test image in order to extract the
     #            root_fs image
     #
     image_url:
 
+    # pelion_update : specifies the update mechanism - PELION or MBL_CLI
+    #
+    pelion_update:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url
+        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url $pelion_update
