@@ -50,6 +50,29 @@ else
         cd /tmp/update-resources || exit
         cp /root/.mbed_cloud_config.json /tmp/update-resources
         manifest-tool update device --device-id $device_id --payload /tmp/user-sample-app-package_1.0_any.ipk.tar
+        # Now copy the package and python checker script to the DUT
+        $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
+
+        # Check it is executing as expected
+        $mbl_command shell "python3 /tmp/check_container.py user-sample-app-package"
+
+        # Extract the log file from the device. Note that the parsing of the log
+        # file could be done on the DUT but doing it this way tests the mbl-cli get
+        # functionality.
+        $mbl_command get /var/log/app/user-sample-app-package.log /tmp/
+
+        # Echo it to the test run
+        cat /tmp/user-sample-app-package.log
+
+        # Count the number of times "Hello World" appears in the log. Anything other than 10 is a failure
+        count_hello_world=$(grep -c "Hello, world" /tmp/user-sample-app-package.log)
+        if [ "$count_hello_world" = 10 ]
+        then
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=pass>"
+        else
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>"
+        fi
+
     fi
 
 fi
