@@ -192,7 +192,7 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     # at this point other than rebooting.
     systemctl restart mbl-cloud-client
 
-    exit 0
+    exit "$?"
 
 elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
 
