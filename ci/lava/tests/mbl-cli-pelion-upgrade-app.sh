@@ -47,7 +47,7 @@ else
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>\n"
     else
-        # Now copy the package and python checker script to the DUT
+        # Now copy the python checker script to the DUT
         $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
 
         cd /tmp/update-resources || exit
