@@ -47,11 +47,12 @@ else
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>\n"
     else
+        # Now copy the package and python checker script to the DUT
+        $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
+
         cd /tmp/update-resources || exit
         cp /root/.mbed_cloud_config.json /tmp/update-resources
         manifest-tool update device --device-id $device_id --payload /tmp/user-sample-app-package_1.0_any.ipk.tar
-        # Now copy the package and python checker script to the DUT
-        $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
 
         # Check it is executing as expected
         $mbl_command shell "python3 /tmp/check_container.py user-sample-app-package"
