@@ -111,7 +111,7 @@ else
 
 
 
-            if [ $pelion_update -eq "PELION" ]; then
+            if [ "$pelion_update" = "PELION" ]; then
 
                 $mbl_command get /var/log/mbl-cloud-client.log /tmp/mbl-cloud-client.log
 
