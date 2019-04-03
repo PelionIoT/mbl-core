@@ -119,13 +119,17 @@ else
 
                 if [ -z "$device_id" ]
                 then
-                    printf "ERROR - mbl-cli failed to find MBL device\n"
+                    printf "ERROR - mbl-cli failed to find MBL device in the mbl-cloud-client.log\n"
                     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_pelion-app-update RESULT=fail>\n" $pelion_update
                 else
 
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
                     manifest-tool update device --device-id $device_id --payload /tmp/payload.tar
+
+                    # Sleep to allow the reboot to happen. This is nasty but is long enough
+                    # for the DUT to shut down but not long enough for it to fully restart.
+                    sleep 30
                 fi
 
             else
@@ -139,11 +143,11 @@ else
 
                 # Now reboot the board and get the result of the reboot command
                 $mbl_command shell 'su -l -c "reboot || echo $?"'
-            fi
 
-            # Sleep to allow the reboot to happen. This is nasty but is long enough
-            # for the DUT to shut down but not long enough for it to fully restart.
-            sleep 40
+                # Sleep to allow the reboot to happen. This is nasty but is long enough
+                # for the DUT to shut down but not long enough for it to fully restart.
+                sleep 40
+            fi
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=fail>\n" $pelion_update
         fi
