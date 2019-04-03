@@ -107,7 +107,7 @@ else
             # Tar it up in the expected manner. Take the url of the tar file
             # specified in rootfs_image and remove everything upto and
             # including the final "/"
-            tar -cf payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
+            tar -cf /tmp/payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
 
 
 
@@ -125,14 +125,14 @@ else
 
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
-                    manifest-tool update device --device-id $device_id --payload payload.tar
+                    manifest-tool update device --device-id $device_id --payload /tmp/payload.tar
                 fi
 
             else
 
 
                 # Now copy the tar file to the DUT
-                $mbl_command put payload.tar /scratch
+                $mbl_command put /tmp/payload.tar /scratch
 
                 # Now update the rootfs - the -s prevents the automatic reboot
                 $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
