@@ -24,7 +24,10 @@
 
 void pal_plat_osApplicationReboot(void)
 {
-    // Hack application reboot for demo, this should ne changed later on when we have the information about the type of update in the manifest
+    // Prevent reboot in case of application update (indicated by the presence
+    // of the `do_not_reboot` file at `/tmp`).
+    // It is a temporary solution until component update is supported and the
+    // type of update package is provided in the manifest.
     FILE *fp = fopen ("/tmp/do_not_reboot", "r");
     if (fp != NULL)
     {
