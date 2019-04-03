@@ -126,10 +126,6 @@ else
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
                     manifest-tool update device --device-id $device_id --payload /tmp/payload.tar
-
-                    # Sleep to allow the reboot to happen. This is nasty but is long enough
-                    # for the DUT to shut down but not long enough for it to fully restart.
-                    sleep 30
                 fi
 
             else
