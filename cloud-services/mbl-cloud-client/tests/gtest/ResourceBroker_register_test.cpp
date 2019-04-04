@@ -87,7 +87,7 @@ TEST(Resource_Broker_Positive, advanced_registration_success)
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
-    resource_broker_tester.start_ccrb(); // Will fail test is start fails
+    pthread_t resource_broker_main_thread_id = resource_broker_tester.start_ccrb();
 
     resource_broker_tester.register_resources_test(
         mbl::IpcConnection("source1"),
@@ -102,7 +102,7 @@ TEST(Resource_Broker_Positive, advanced_registration_success)
         out_access_token,
         true); // true = simulatate successful registration
 
-    resource_broker_tester.stop_ccrb(); // Will fail test is stop fails
+    resource_broker_tester.stop_ccrb(resource_broker_main_thread_id);
 }
 
 /**
@@ -404,7 +404,7 @@ TEST(Resource_Broker_Negative, advanced_registration_failure)
     CloudConnectStatus cloud_connect_out_status;
     std::string out_access_token;
 
-    resource_broker_tester.start_ccrb(); // Will fail test is start fails
+    pthread_t resource_broker_main_thread_id = resource_broker_tester.start_ccrb();
 
     resource_broker_tester.register_resources_test(
         mbl::IpcConnection("source1"),
@@ -419,6 +419,6 @@ TEST(Resource_Broker_Negative, advanced_registration_failure)
         out_access_token,
         false); // false = simulatate failed registration
 
-    resource_broker_tester.stop_ccrb(); // Will fail test is stop fails
+    resource_broker_tester.stop_ccrb(resource_broker_main_thread_id);
 }
 

@@ -77,6 +77,26 @@ inline bool is_file_exist (const std::string& path) {
     return ( access( path.c_str(), F_OK ) != -1 );
 }
 
+//TODO: ADD documentation
+static int block_signal_handling (int signal)
+{
+    TR_DEBUG_ENTER;
+
+    sigset_t mask;
+    sigset_t orig_mask;
+    sigemptyset (&mask);
+	sigaddset (&mask, signal);
+ 
+    int r = pthread_sigmask(SIG_BLOCK, &mask, &orig_mask); 
+	if (r < 0) {
+		TR_ERR("sigprocmask failed with error: %d - %s",
+            r,
+            strerror(-r)
+        );
+	}
+    return r;
+}
+
 /**
  * @brief Initialize gtest environment for mbl-cloud-client-gtest :
  * * Stop mbl-cloud-client if exist
@@ -112,9 +132,11 @@ static int mbl_cloud_client_gtest_init()
         return -1;
     }
 
-    // Make sure that trace level is debug as we want as much information posibble when running tests
-    // in case error occured. This ovvirides mbl-cloud-client default trace level.
+    // Make sure that trace level is debug as we want as much information possible when running tests
+    // in case error occurred. This overrides mbl-cloud-client default trace level.
     mbed_trace_config_set(TRACE_ACTIVE_LEVEL_DEBUG);
+
+    block_signal_handling(SIGUSR1);
 
     return 0;
 }

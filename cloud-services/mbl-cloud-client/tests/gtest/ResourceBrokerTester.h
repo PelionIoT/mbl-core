@@ -34,6 +34,7 @@ class MbedClientManagerMock : public mbl::MbedClientManager
 public:
 
     MbedClientManagerMock()
+    : device_state_(State_DeviceUnregistered)
     {
     }
 
@@ -66,12 +67,19 @@ public:
     /**
      * @brief Register mbed client mock function (does nothing)
      */
-    mbl::MblError register_mbed_client() override {return mbl::MblError::None;}
+    mbl::MblError register_mbed_client() override 
+    {
+        device_state_ = State_DeviceRegistered;
+        return mbl::MblError::None;
+    }
 
     /**
      * @brief Unregister mbed client mock function (does nothing)
      */
-    void unregister_mbed_client() override {}
+    void unregister_mbed_client() override 
+    {
+        device_state_ = State_DeviceUnregistered;
+    }
 
     /**
      * @brief return mbed client device state
@@ -80,7 +88,7 @@ public:
      */
     MbedClientDeviceState get_device_state() override 
     {
-        return State_DeviceRegistered;
+        return device_state_;
     }
 
     /**
@@ -95,6 +103,10 @@ public:
      * @param object_list - resources to be registered
      */
     void register_resources(const M2MObjectList&) override {}
+
+private:
+
+    MbedClientDeviceState device_state_;    
 };
 
 /**
@@ -306,17 +318,21 @@ public:
      */
     inline mbl::ResourceBroker& get_ccrb() {return ccrb_;}
 
+    //TODO: DOCS
+    static void* resource_broker_main_thread_func(void* tester);
+
     /**
      * @brief Start ccrb thread and init adapter
      * 
      */
-    void start_ccrb();
+    pthread_t start_ccrb();
 
+    //TODO: DOCS
     /**
      * @brief Stop ccrb thread and deinit adapter
      * 
      */
-    void stop_ccrb();
+    void stop_ccrb(pthread_t resource_broker_main_thread_id);
 
 private:
 

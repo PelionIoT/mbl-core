@@ -49,14 +49,40 @@ ResourceBrokerTester::~ResourceBrokerTester()
     TR_DEBUG_ENTER;
 }
 
-void ResourceBrokerTester::start_ccrb()
+void* ResourceBrokerTester::resource_broker_main_thread_func(void* tester)
 {
-    ASSERT_TRUE(mbl::MblError::None == ccrb_.start());
+    TR_DEBUG_ENTER;
+
+    ResourceBrokerTester* this_tester = static_cast<ResourceBrokerTester*>(tester);
+
+    this_tester->ccrb_.run(); // CHECK RETURN VALUE//////////////////////////////////////////////////////////////
+    pthread_exit((void*) 0);
 }
 
-void ResourceBrokerTester::stop_ccrb()
+pthread_t ResourceBrokerTester::start_ccrb() ///////////////////////////////////////////////////////////////////RENAME TO RUN
 {
-    ASSERT_TRUE(mbl::MblError::None == ccrb_.stop());
+    pthread_t resource_broker_main_thread_id = 0;
+    pthread_create(&resource_broker_main_thread_id,
+                    nullptr, // thread is created with default attributes
+                    ResourceBrokerTester::resource_broker_main_thread_func,
+                    this);
+    // Wait until mbed client is registered to mark when init is done
+    for(;;) {
+        if (mbl::MbedClientManager::State_DeviceRegistered ==
+                ccrb_.mbed_client_manager_->get_device_state())
+        {
+            break;
+        }
+        sleep(1);
+    }
+    return resource_broker_main_thread_id;    
+}
+
+void ResourceBrokerTester::stop_ccrb(pthread_t resource_broker_main_thread_id)
+{
+    kill(getpid(),SIGUSR1); ///check ret val /////////////////////////////////////////////////////////////////
+    void* retval;
+    ASSERT_EQ(pthread_join(resource_broker_main_thread_id, &retval), 0);
 }
 
 void ResourceBrokerTester::register_resources_test(
@@ -306,8 +332,8 @@ void ResourceBrokerTester::get_resources_values_test(
 void ResourceBrokerTester::resourceBroker_start_stop_test(size_t times)
 {
      for( size_t i = 0; i < times; ++i){
-        ASSERT_EQ(mbl::Error::None, ccrb_.start());
-        ASSERT_EQ(mbl::Error::None, ccrb_.stop());
+        // ASSERT_EQ(mbl::Error::None, ccrb_.start());
+        // ASSERT_EQ(mbl::Error::None, ccrb_.stop());
     }
 }
 

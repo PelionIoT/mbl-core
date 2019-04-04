@@ -290,7 +290,7 @@ int DBusAdapterImpl::sd_event_signal_handler_callback(sd_event_source* /*s*/,
     DBusAdapterImpl* const this_adapter = static_cast<DBusAdapterImpl*>(userdata);
     
     TR_INFO("Call stop");
-    const MblError stop_status = this_adapter->stop(MblError::ShutdownRequested);
+    const MblError stop_status = this_adapter->stop(MblError::None);
     if(MblError::None != stop_status) {
         TR_ERR("Stop adapter failed with error: %s", MblError_to_str(stop_status));
     }
@@ -346,7 +346,7 @@ MblError DBusAdapterImpl::set_signal_handlers()
 {
     TR_DEBUG_ENTER;
     
-    const static std::vector<int> signals = {SIGTERM, SIGINT, SIGQUIT};
+    const static std::vector<int> signals = {SIGTERM, SIGINT, SIGQUIT, SIGUSR1}; //////////////////////// find a common place for this list
     for (auto& itr : signals) {
         int r = set_signal_handler(itr);
         if (r < 0) {
