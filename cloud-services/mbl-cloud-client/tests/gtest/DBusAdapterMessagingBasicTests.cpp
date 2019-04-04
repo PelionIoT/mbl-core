@@ -20,7 +20,7 @@
 #include <semaphore.h>
 #include <stdlib.h>
 #include <string>
-
+#include <unistd.h>//////////////////////////////////////////////////////////////////////////////////////////////
 #define TRACE_GROUP "ccrb-dbus-gtest"
 
 using namespace mbl;
@@ -30,13 +30,16 @@ using namespace mbl;
  * 
  * @param adapter pointer
  */
-static MblError send_adapter_stop_message(DBusAdapter *adapter)
+static MblError send_adapter_stop_message(DBusAdapter * /*adapter*/)
 {
-    assert(adapter);
+/*    assert(adapter);
     MailboxMsg_Exit message_exit;
     message_exit.stop_status = MblError::None;
     MailboxMsg msg(message_exit, sizeof(message_exit));
     return adapter->send_mailbox_msg(msg);
+*/
+    kill(getpid(),SIGUSR1);
+    return MblError::None;
 }
 
 // string value used in Set/Get resources values tests

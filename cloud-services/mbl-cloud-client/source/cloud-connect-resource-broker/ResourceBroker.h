@@ -36,17 +36,19 @@ friend MbedClientManager;
 
 public:
 
+    ResourceBroker();
+    virtual ~ResourceBroker();
+
     //TODO: fix documentation
     /**
      * @brief Main loop that create ResourceBroker, initialize and start all components
      * When terminate signal is arrived - stop function will be called, mbed client unregister
      * operation will start, and when unregister callback is called - deinit ResourceBroker.
      * 
-     * @return MblError returns value Error::ShutdownRequested if function terminated due to
-     *         shutdown signal that was handled correctly, 
+     * @return MblError returns value Error::None if function terminated successfully
      *         or Error::CCRBStartFailed in case start failed.
      */
-    static MblError main();
+    MblError run();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // APIs to be used by DBusAdapter class
@@ -210,9 +212,6 @@ public:
 
 protected:
 
-    ResourceBroker();
-    virtual ~ResourceBroker();
-
     /**
      * @brief Initialize CCRB instance.
      * Initialize mbed client using init_mbed_client() API
@@ -228,25 +227,6 @@ protected:
      *         or error code otherwise.
      */
     virtual MblError deinit();
-
-    /**
-     * @brief Run CCRB event-loop.
-     * 
-     * @return MblError returns value Error::None if function succeedhandle_authorizeed, 
-     *         or error code otherwise.
-     */
-    virtual MblError run();
-
-    /**
-     * @brief CCRB thread main function.
-     * In details: 
-     * - initializes CCRB module.
-     * - runs CCRB main functionality loop.  
-     * 
-     * @param ccrb address of CCRB instance that should run. 
-     * @return void* thread output status. CCRB thread status(MblError enum) returned by value. 
-     */
-    static void *ccrb_main(void *ccrb);
     
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Mailbox messages related functions

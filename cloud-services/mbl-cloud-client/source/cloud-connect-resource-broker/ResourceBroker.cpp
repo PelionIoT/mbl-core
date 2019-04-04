@@ -45,13 +45,12 @@ struct MailboxMsg_MbedClientError
     MblError status;
 };
 
-MblError ResourceBroker::main()
+MblError ResourceBroker::run()
 {
     TR_DEBUG_ENTER;
-    ResourceBroker resource_broker;
 
     TR_INFO("Init CCRB");
-    OneSetMblError status(resource_broker.init());
+    OneSetMblError status(init());
     if (Error::None != status.get()) {
         // Not returning as we want to call deinit below
         TR_ERR("CCRB::init failed with error %s", status.get_status_str());
@@ -60,39 +59,42 @@ MblError ResourceBroker::main()
     // Call ccrb->run only if init succeeded
     if (Error::None == status.get()) {
         
-        assert(resource_broker.ipc_adapter_);
+        assert(ipc_adapter_);
         
         MblError stop_status = Error::None;
         TR_INFO("Run IPC adapter");
-        status.set(resource_broker.ipc_adapter_->run(stop_status));
+        status.set(ipc_adapter_->run(stop_status));
         if (Error::None != status.get()) {
             TR_ERR("Run IPC adapter failed with error %s", status.get_status_str());
         } else {
+            TR_INFO("Run IPC adapter stopped successfully");
+        }
 
-            TR_INFO("Run IPC adapter successfully stopped");
+        // Unregister Mbed client
+        // When unregistered is finished - Mbed client will call mbed_client_manager_ callback
+        // function, and mbed_client_manager_ state will be changed to State_DeviceUnregistered
+        mbed_client_manager_->unregister_mbed_client();
 
-            resource_broker.mbed_client_manager_->unregister_mbed_client();
-
-            // Wait for mbed client manager to finish device unregistration
-            for (;;) {
-                if (MbedClientManager::State_DeviceUnregistered ==
-                    resource_broker.mbed_client_manager_->get_device_state())
-                {
-                    break;
-                }
-                sleep(1);
+        // Wait for mbed client manager to finish device unregistration
+        // and changed it's state to State_DeviceUnregistered
+        for (;;) {
+            if (MbedClientManager::State_DeviceUnregistered ==
+                mbed_client_manager_->get_device_state())
+            {
+                break;
             }
+            sleep(1);
         }
     }
 
     TR_INFO("Deinit CCRB");
-    const MblError deinit_status = resource_broker.deinit();
+    const MblError deinit_status = deinit();
     if (Error::None != deinit_status) {
         TR_ERR("Deinit CCRB failed with error %s", MblError_to_str(deinit_status));
         status.set(deinit_status);
     }
 
-    return Error::ShutdownRequested;
+    return status.get();
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -225,63 +227,6 @@ MblError ResourceBroker::deinit()
     mbed_client_manager_->deinit();
 
     return status;
-}
-
-MblError ResourceBroker::run()
-{
-    TR_DEBUG_ENTER;
-    MblError stop_status;
-
-    assert(ipc_adapter_);
-
-    MblError status = ipc_adapter_->run(stop_status);
-    if (Error::None != status) {
-        TR_ERR("ipc::run failed with error %s", MblError_to_str(status));
-        return status;
-    }
-    TR_DEBUG("ipc::run successfully stopped");
-    return status;
-}
-
-void* ResourceBroker::ccrb_main(void* ccrb)
-{
-    TR_DEBUG_ENTER;
-    assert(ccrb);
-    ResourceBroker* const this_ccrb = static_cast<ResourceBroker*>(ccrb);
-
-    OneSetMblError status(this_ccrb->init());
-    if (Error::None != status.get()) {
-        // Not returning as we want to call deinit below
-        TR_ERR("CCRB::init failed with error %s. Exit CCRB thread.", status.get_status_str());
-    }
-
-    // Signal to the semaphore that initialization was finished
-    const int ret = sem_post(&this_ccrb->init_sem_);
-    if (0 != ret) {
-        TR_ERRNO("semaphore post failed ", errno);
-        status.set(Error::IpcProcedureFailed); // continue to deinit and return status
-    }
-
-    // Call ccrb->run only if init succeeded
-    if (Error::None == status.get()) {
-        const MblError run_status = this_ccrb->run();
-        if (Error::None != run_status) {
-            TR_ERR("CCRB::run failed with error %s. Exit CCRB thread.",
-                   MblError_to_str(run_status));
-            status.set(run_status); // continue to deinit and return status
-        }
-    }
-
-    const MblError deinit_status = this_ccrb->deinit();
-    if (Error::None != deinit_status) {
-        TR_ERR("CCRB::deinit failed with error %s. Exit CCRB thread.",
-               MblError_to_str(deinit_status));
-        status.set(deinit_status);
-    }
-
-    TR_INFO("CCRB thread function finished with status: %s", status.get_status_str());
-    uintptr_t final_status = static_cast<uintptr_t>(status.get());
-    pthread_exit(reinterpret_cast<void*>(final_status)); // NOLINT
 }
 
 ResourceBroker::RegistrationRecord_ptr
