@@ -92,7 +92,7 @@ def install_fmw_from_package(update_pkg, reboot=False):
     if reboot:
         cmd.append("-r")
     print("Executing command: {}".format(cmd))
-    return subprocess.run(cmd, check=False).returncode
+    return subprocess.run(cmd).returncode
 
 
 @pytest.fixture
@@ -123,7 +123,7 @@ def terminate_app(app_name):
     print("Terminating user application `{}`".format(app_name))
     cmd = ["mbl-app-lifecycle-manager", "-v", "terminate", app_name]
     print("Executing command: {}".format(cmd))
-    return subprocess.run(cmd, check=False)
+    return subprocess.run(cmd)
 
 
 def remove_app(app_name, app_path):
@@ -132,4 +132,4 @@ def remove_app(app_name, app_path):
     print("Remove {} from {}".format(app_name, app_path))
     cmd = ["mbl-app-manager", "-v", "remove", app_name, app_path]
     print("Executing command: {}".format(cmd))
-    return subprocess.run(cmd, check=False).returncode
+    return subprocess.run(cmd).returncode
