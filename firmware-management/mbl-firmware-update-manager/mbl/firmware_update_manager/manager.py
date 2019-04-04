@@ -31,7 +31,7 @@ class FirmwareUpdateManager:
     def __init__(self, update_pkg):
         """Create a firmware update package handler."""
         self.update_pkg = update_pkg
-        self.header_data = None
+        self.header_data = bytearray()
 
     def install(self, reboot=False):
         """Install the firmware from the update package.
