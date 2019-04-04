@@ -1,115 +1,89 @@
-#!/usr/bin/env python3
-# Copyright (c) 2018 Arm Limited and Contributors. All rights reserved.
+# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 """Simple command line interface for mbl firmware update manager."""
 
-import sys
 import argparse
-import os
-import subprocess
 import logging
-import tarfile
+import os
+import sys
 from enum import Enum
-import mbl.firmware_update_manager.firmware_update_manager as fum
+
+from .manager import FmwUpdateManager
+from .utils import log, set_log_verbosity
 
 
-__version__ = "1.0.0"
+class ReturnCode(Enum):
+    """Application return codes."""
+
+    SUCCESS = 0
+    ERROR = 1
+    INVALID_OPTIONS = 2
 
 
-class StoreValidFile(argparse.Action):
-    """Utility class used in CLI argument parser scripts."""
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        """Perform file validity checks."""
-        prospective_file = values
-        if not os.path.isfile(prospective_file):
-            raise argparse.ArgumentTypeError(
-                "file: {} not found".format(prospective_file)
-            )
-        if not os.access(prospective_file, os.R_OK):
-            raise argparse.ArgumentTypeError(
-                "file: {} is not a readable file".format(prospective_file)
-            )
-        setattr(namespace, self.dest, os.path.abspath(prospective_file))
-
-
-def get_argument_parser():
-    """
-    Return argument parser.
-
-    :return: parser
-    """
-    parser = argparse.ArgumentParser(
+def parse_args():
+    """Parse the command line args."""
+    parser = ArgumentParserWithDefaultHelp(
+        description="MBL firmware update manager",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-        description="Firmware update manager",
     )
 
     parser.add_argument(
-        "-i",
-        "--install-firmware",
-        metavar="UPDATE_FIRMWARE_TAR_FILE",
-        required=True,
-        action=StoreValidFile,
-        help="Install firmware from a firmware update tar file and reboot",
+        "update_package",
+        metavar="<update-package>",
+        type=str,
+        help="update package containing firmware to install",
     )
 
     parser.add_argument(
-        "-s",
-        "--skip-reboot",
-        help="Skip reboot after firmware update",
+        "-r",
+        "--reboot",
         action="store_true",
+        help="reboot after firmware update",
     )
 
     parser.add_argument(
         "-v",
         "--verbose",
-        help="Increase output verbosity",
         action="store_true",
+        help="Increase output verbosity",
     )
 
-    return parser
+    return parser.parse_args()
+
+
+def run_mbl_firmware_update_manager():
+    """Application main algorithm."""
+    args = parse_args()
+
+    set_log_verbosity(args.verbose)
+
+    log.info("Starting mbl-firmware-update-manager")
+    log.debug("Command line arguments:{}".format(args))
+
+    handler = FmwUpdateManager(args.update_package)
+    handler.create_header_data()
+    handler.append_header_data_to_header_file()
+    handler.install(args.reboot)
 
 
 def _main():
-    parser = get_argument_parser()
+    """Run mbl-firmware-update-manager."""
     try:
-        args = parser.parse_args()
-    except SystemExit:
-        return fum.Error.ERR_INVALID_ARGS.value
-
-    info_level = logging.DEBUG if args.verbose else logging.INFO
-
-    logging.basicConfig(
-        level=info_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    )
-    logger = logging.getLogger("mbl-firmware-update-manager")
-    logger.info("Starting ARM FIRMWARE UPDATE MANAGER: {}".format(__version__))
-    logger.info("Command line arguments:{}".format(args))
-
-    ret = fum.Error.ERR_OPERATION_FAILED
-    try:
-        firmware_update_manager = fum.FirmwareUpdateManager()
-        ret = firmware_update_manager.update_firmware(
-            args.install_firmware, args.skip_reboot
-        )
-    except subprocess.CalledProcessError as e:
-        logger.exception(
-            "Operation failed with subprocess error code: {}".format(
-                e.returncode
-            )
-        )
-        return fum.Error.ERR_OPERATION_FAILED.value
-    except OSError:
-        logger.exception("Operation failed with OSError")
-        return fum.Error.ERR_OPERATION_FAILED.value
-    except Exception:
-        logger.exception("Operation failed exception")
-        return fum.Error.ERR_OPERATION_FAILED.value
-    if ret == fum.Error.SUCCESS:
-        logger.info("Operation successful")
+        run_mbl_firmware_update_manager()
+    except Exception as error:
+        print(error)
+        return ReturnCode.ERROR.value
     else:
-        logger.error("Operation failed: {}".format(ret))
-    return ret.value
+        return ReturnCode.SUCCESS.value
+
+
+class ArgumentParserWithDefaultHelp(argparse.ArgumentParser):
+    """Subclass that always shows the help message on invalid arguments."""
+
+    def error(self, message):
+        """Error handler."""
+        sys.stderr.write("error: {}".format(message))
+        self.print_help()
+        raise SystemExit(ReturnCode.INVALID_OPTIONS.value)

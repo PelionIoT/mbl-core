@@ -92,8 +92,8 @@ else
             # Now copy the tar file to the DUT
             $mbl_command put payload.tar /scratch
 
-            # Now update the rootfs - the -s prevents the automatic reboot
-            $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
+            # Now update the rootfs without rebooting
+            $mbl_command shell 'su -l -c "mbl-firmware-update-manager /scratch/payload.tar -v"'
 
             # Now reboot the board and get the result of the reboot command
             $mbl_command shell 'su -l -c "reboot || echo $?"'
