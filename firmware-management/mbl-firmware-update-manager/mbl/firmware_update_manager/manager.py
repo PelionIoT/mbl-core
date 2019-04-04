@@ -19,7 +19,7 @@ UPDATE_ACTIVATION_SHELL_SCRIPT = os.path.join(
 HEADER_FILE = os.path.join(os.sep, "scratch", "firmware_update_header_file")
 
 
-class FmwUpdateManager:
+class FirmwareUpdateManager:
     """
     Responsible for handling firmware package.
 

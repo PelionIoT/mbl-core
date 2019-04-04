@@ -10,7 +10,7 @@ import os
 import sys
 from enum import Enum
 
-from .manager import FmwUpdateManager
+from .manager import FirmwareUpdateManager
 from .utils import log, set_log_verbosity
 
 
@@ -62,7 +62,7 @@ def run_mbl_firmware_update_manager():
     log.info("Starting mbl-firmware-update-manager")
     log.debug("Command line arguments:{}".format(args))
 
-    handler = FmwUpdateManager(args.update_package)
+    handler = FirmwareUpdateManager(args.update_package)
     handler.create_header_data()
     handler.append_header_data_to_header_file()
     handler.install(args.reboot)
