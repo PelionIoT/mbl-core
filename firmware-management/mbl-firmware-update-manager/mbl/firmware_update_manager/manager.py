@@ -33,7 +33,14 @@ class FirmwareUpdateManager:
         self.update_pkg = update_pkg
         self.header_data = bytearray()
 
-    def install(self, reboot=False):
+    # ---------------------------- Public Methods -----------------------------
+
+    def install_header(self):
+        """Install a header file containing information about the update."""
+        self._create_header_data()
+        self._append_header_data_to_header_file()
+
+    def install_firmware(self, reboot=False):
         """Install the firmware from the update package.
 
         The caller has the option to request a reboot if requested.
@@ -75,7 +82,9 @@ class FirmwareUpdateManager:
             log.info("Firmware installed, rebooting device...")
             os.system("reboot")
 
-    def create_header_data(self):
+    # --------------------------- Private Methods -----------------------------
+
+    def _create_header_data(self):
         """
         Create update HEADER file data.
 
@@ -103,7 +112,7 @@ class FirmwareUpdateManager:
                 " error: '{}'".format(str(error))
             )
 
-    def append_header_data_to_header_file(self):
+    def _append_header_data_to_header_file(self):
         """Append a generate header data to the header file."""
         try:
             with open(HEADER_FILE, "wb") as header_file:

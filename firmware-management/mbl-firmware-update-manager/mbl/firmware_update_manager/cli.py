@@ -63,9 +63,8 @@ def run_mbl_firmware_update_manager():
     log.debug("Command line arguments:{}".format(args))
 
     handler = FirmwareUpdateManager(args.update_package)
-    handler.create_header_data()
-    handler.append_header_data_to_header_file()
-    handler.install(args.reboot)
+    handler.install_header()
+    handler.install_firmware(args.reboot)
 
 
 def _main():
