@@ -5,8 +5,6 @@
 """Simple command line interface for mbl firmware update manager."""
 
 import argparse
-import logging
-import os
 import sys
 from enum import Enum
 
