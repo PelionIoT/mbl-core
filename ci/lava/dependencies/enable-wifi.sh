@@ -8,16 +8,17 @@
 
 device_type=$1
 
-if [ $device_type =  imx7s-warp-mbl ]
+if [ $device_type =  "imx7s-warp-mbl" ]
 then
 
-    # If a parameter is passed in then assume it is a pattern to identify the
-    # target board, otherwise find something with "mbed-linux-os" in it.
-    if [ -z "$1" ]
+    # If a second parameter is passed in then assume it is a pattern to 
+    # identify the target board, otherwise find something with "mbed-linux-os"
+    # in it.
+    if [ -z "$2" ]
     then
         pattern="mbed-linux-os"
     else
-        pattern=$1
+        pattern=$2
     fi
 
     # Find the address of the first device found by the mbl-cli containing the
