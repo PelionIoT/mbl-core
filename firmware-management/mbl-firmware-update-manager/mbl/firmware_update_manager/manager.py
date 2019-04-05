@@ -53,9 +53,9 @@ class FirmwareUpdateManager:
             HEADER_FILE,
         ]
 
-        log.debug("Executing command: {}".format(cmd))
-
         try:
+            log.info("Delegating update package's content installation...")
+            log.debug("Executing command: {}".format(cmd))
             subprocess.run(
                 cmd,
                 check=True,
@@ -75,11 +75,13 @@ class FirmwareUpdateManager:
                 )
             )
             raise FmwInstallError(msg)
+        else:
+            log.info("Content of update package installed")
         finally:
             os.remove(HEADER_FILE)
 
         if reboot:
-            log.info("Firmware installed, rebooting device...")
+            log.info("Rebooting device...")
             os.system("reboot")
 
     # --------------------------- Private Methods -----------------------------
@@ -98,6 +100,7 @@ class FirmwareUpdateManager:
         try:
             header = mfuh.FirmwareUpdateHeader()
             header.firmware_version = int(time.time())
+            log.info("Creating HEADER file data from update package...")
             with open(self.update_pkg, "rb") as payload:
                 header.firmware_hash = mfuh.calculate_firmware_hash(payload)
             self.header_data = header.pack()
@@ -111,10 +114,13 @@ class FirmwareUpdateManager:
                 "FormatError when creating HEADER file data,"
                 " error: '{}'".format(str(error))
             )
+        else:
+            log.info("Header file data created")
 
     def _append_header_data_to_header_file(self):
         """Append a generate header data to the header file."""
         try:
+            log.info("Appending HEADER file data to HEADER file...")
             with open(HEADER_FILE, "wb") as header_file:
                 header_file.write(self.header_data)
         except IOError as error:
@@ -122,6 +128,8 @@ class FirmwareUpdateManager:
                 "Failed to write header data to header file '{}',"
                 " error: '{}'".format(HEADER_FILE, str(error))
             )
+        else:
+            log.info("HEADER file data appended to HEADER file")
 
 
 class HeaderFileError(Exception):
