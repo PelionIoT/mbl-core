@@ -50,7 +50,7 @@ rm device_list
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_RootFS_Update RESULT=fail>\n" $pelion_update
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_RootFS_Update RESULT=fail>\n" "$pelion_update"
 else
 
     mbl_command="mbl-cli -a $dut_address"
@@ -67,9 +67,9 @@ else
         # should be cleanly flashed.
         if [ "$active_partition" = "rootfs1" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=pass>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=pass>\n" "$pelion_update"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=fail>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs1_selected RESULT=fail>\n" "$pelion_update"
         fi
 
         # Update the hostname of the DUT to contain "lava-". This is so the
@@ -103,7 +103,7 @@ else
         fi
 
         if [ $retVal -eq 0 ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=pass>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=pass>\n" "$pelion_update"
             # Tar it up in the expected manner. Take the url of the tar file
             # specified in rootfs_image and remove everything upto and
             # including the final "/"
@@ -120,12 +120,12 @@ else
                 if [ -z "$device_id" ]
                 then
                     printf "ERROR - mbl-cli failed to find MBL device in the mbl-cloud-client.log\n"
-                    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_pelion-app-update RESULT=fail>\n" $pelion_update
+                    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_pelion-app-update RESULT=fail>\n" "$pelion_update"
                 else
 
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
-                    manifest-tool update device --device-id $device_id --payload /tmp/payload.tar
+                    manifest-tool update device --device-id "$device_id" --payload /tmp/payload.tar
                 fi
 
             else
@@ -145,16 +145,16 @@ else
                 sleep 40
             fi
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=fail>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=fail>\n" "$pelion_update"
         fi
 
     else # The POST_CHECK
         # At the end rootfs2 should be the active partition.
         if [ "$active_partition" = "rootfs2" ]
         then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=pass>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=pass>\n" "$pelion_update"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=fail>\n" $pelion_update
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs2_selected RESULT=fail>\n" "$pelion_update"
         fi
     fi
 
