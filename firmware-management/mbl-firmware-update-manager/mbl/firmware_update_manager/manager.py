@@ -92,21 +92,26 @@ class FirmwareUpdateManager:
             with open(self.update_pkg, "rb") as payload:
                 header.firmware_hash = mfuh.calculate_firmware_hash(payload)
             self.header_data = header.pack()
-        except IOError:
-            raise HeaderFileError("IOError when creating HEADER file data")
-        except mfuh.FormatError:
-            raise HeaderFileError("FormatError when creating HEADER file data")
+        except IOError as error:
+            raise HeaderFileError(
+                "IOError when creating HEADER file data,"
+                " error: '{}'".format(str(error))
+            )
+        except mfuh.FormatError as error:
+            raise HeaderFileError(
+                "FormatError when creating HEADER file data,"
+                " error: '{}'".format(str(error))
+            )
 
     def append_header_data_to_header_file(self):
         """Append a generate header data to the header file."""
         try:
             with open(HEADER_FILE, "wb") as header_file:
                 header_file.write(self.header_data)
-        except IOError:
+        except IOError as error:
             raise HeaderFileError(
-                'Failed to write header data to header file "{}"'.format(
-                    HEADER_FILE
-                )
+                "Failed to write header data to header file '{}',"
+                " error: '{}'".format(HEADER_FILE, str(error))
             )
 
 

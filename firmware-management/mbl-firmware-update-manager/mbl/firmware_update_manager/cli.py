@@ -73,7 +73,7 @@ def _main():
     try:
         run_mbl_firmware_update_manager()
     except Exception as error:
-        print(error)
+        print(error, file=sys.stderr)
         return ReturnCode.ERROR.value
     else:
         return ReturnCode.SUCCESS.value
