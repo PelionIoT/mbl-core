@@ -50,6 +50,8 @@ positional arguments:
 optional arguments:
   -h, --help        show this help message and exit
   -r, --reboot      reboot after firmware update (default: False)
+  --no-cleanup      do not delete the update package from the device when done
+                    (default: False)
   -v, --verbose     Increase output verbosity (default: False)
 ```
 

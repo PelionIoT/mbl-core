@@ -42,6 +42,12 @@ def parse_args():
     )
 
     parser.add_argument(
+        "--no-cleanup",
+        action="store_true",
+        help="do not delete the update package from the device when done",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         action="store_true",
@@ -62,7 +68,7 @@ def run_mbl_firmware_update_manager():
 
     handler = FirmwareUpdateManager(args.update_package)
     handler.install_header()
-    handler.install_firmware(args.reboot)
+    handler.install_firmware(args.reboot, args.no_cleanup)
 
 
 def _main():

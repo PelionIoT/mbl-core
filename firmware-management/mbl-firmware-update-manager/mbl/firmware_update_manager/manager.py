@@ -40,7 +40,7 @@ class FirmwareUpdateManager:
         self._create_header_data()
         self._append_header_data_to_header_file()
 
-    def install_firmware(self, reboot=False):
+    def install_firmware(self, reboot=False, no_cleanup=False):
         """Install the firmware from the update package.
 
         The caller has the option to request a reboot if requested.
@@ -77,8 +77,18 @@ class FirmwareUpdateManager:
             raise FmwInstallError(msg)
         else:
             log.info("Content of update package installed")
+            if not no_cleanup:
+                log.debug(
+                    "Removing update package '{}'...".format(self.update_pkg)
+                )
+                os.remove(self.update_pkg)
+                log.debug(
+                    "Update package '{}' removed".format(self.update_pkg)
+                )
         finally:
+            log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
             os.remove(HEADER_FILE)
+            log.debug("HEADER file '{}' removed".format(HEADER_FILE))
 
         if reboot:
             log.info("Rebooting device...")
