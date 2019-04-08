@@ -125,7 +125,7 @@ else
 
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
-                    manifest-tool update device --device-id "$device_id" --payload /tmp/payload.tar
+                    "manifest-tool update device --device-id $device_id --payload /tmp/payload.tar"
                 fi
 
             else
