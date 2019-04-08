@@ -27,6 +27,7 @@
 #include <cstring>
 #include <sys/time.h>
 #include <csignal>
+#include <ctime>
 
 #define TRACE_GROUP "mbl"
 
