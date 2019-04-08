@@ -115,7 +115,7 @@ else
 
                 $mbl_command get /var/log/mbl-cloud-client.log /tmp/mbl-cloud-client.log
 
-                device_id=$(grep -i "device id"  /tmp/mbl-cloud-client.log | tail -1 | cut -d":" -f5)
+                device_id=$(grep -i "device id"  /tmp/mbl-cloud-client.log | tail -1 | cut -d":" -f5 | cut -c2-)
 
                 if [ -z "$device_id" ]
                 then
@@ -125,7 +125,7 @@ else
 
                     cd /tmp/update-resources || exit
                     cp /root/.mbed_cloud_config.json /tmp/update-resources
-                    "manifest-tool update device --device-id $device_id --payload /tmp/payload.tar"
+                    manifest-tool update device --device-id "$device_id" --payload /tmp/payload.tar
                 fi
 
             else
