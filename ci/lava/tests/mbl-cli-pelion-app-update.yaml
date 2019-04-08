@@ -4,9 +4,9 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run Pelion App upgrade test
-    description: "Run the Pelion App Upgrade test"
+    name: Run Pelion App update test
+    description: "Run the Pelion App Update test"
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-pelion-upgrade-app.sh
+        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh

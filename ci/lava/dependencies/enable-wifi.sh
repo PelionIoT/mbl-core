@@ -8,7 +8,10 @@
 
 device_type=$1
 
-if [ $device_type =  "imx7s-warp-mbl" ]
+# Enable WiFi if the device under test needs it.
+# Currently only Warp7 needs WiFi enabled.
+
+if [ "$device_type" =  "imx7s-warp-mbl" ]
 then
 
     # If a second parameter is passed in then assume it is a pattern to 
@@ -57,6 +60,7 @@ then
 
     fi
 else
+    # WiFi not needed/supported on the device so skip the test.
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skipped>\n"
 fi
 

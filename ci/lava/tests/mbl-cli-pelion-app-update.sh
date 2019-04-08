@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Run the Pelion provisioning tests and confirm they are functioning correctly
+# Run the Pelion App Update test and check that it is successful.
 
 # If a parameter is passed in then assume it is a pattern to identify the
 # target board, otherwise find something with "mbed-linux-os" in it.

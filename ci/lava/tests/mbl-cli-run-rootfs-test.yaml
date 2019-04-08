@@ -4,12 +4,12 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run RootFS Upgrade Test
+    name: Run RootFS Update Test
     description: "MBL Core Tests behaviour"
 
 params:
     # test_stage: specifies which stage of the test we are running - the
-    #             upgrade or the post check
+    #             update or the post check
     #
     test_stage:
 
