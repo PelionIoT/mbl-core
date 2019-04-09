@@ -86,17 +86,17 @@ class TestMblFirmwareUpdateManager:
 
 def install_fmw_from_package(update_pkg, reboot=False):
     """Install firmware."""
-    # usage: mbl-firmware-update-manager [-h] [--no-ask] [--no-cleanup]
+    # usage: mbl-firmware-update-manager [-h] [--assume-yes] [--keep]
     #                                 [--no-reboot] [-v]
     #                                 <update-package>
     print("Update firmware contained in `{}`".format(update_pkg))
-    cmd = [
+    cmd = (
         "mbl-firmware-update-manager",
         "-v",
         update_pkg,
-        "--no-cleanup",
+        "--keep",
         "--no-reboot",
-    ]
+    )
     print("Executing command: {}".format(cmd))
     return subprocess.run(cmd).returncode
 
@@ -127,7 +127,7 @@ def terminate_app(app_name):
     # usage: mbl-app-lifecycle-manager terminate [-h] -n NAME
     #            [-t SIGTERM_TIMEOUT] [-k SIGKILL_TIMEOUT]
     print("Terminating user application `{}`".format(app_name))
-    cmd = ["mbl-app-lifecycle-manager", "-v", "terminate", app_name]
+    cmd = ("mbl-app-lifecycle-manager", "-v", "terminate", app_name)
     print("Executing command: {}".format(cmd))
     return subprocess.run(cmd)
 
@@ -136,6 +136,6 @@ def remove_app(app_name, app_path):
     """Remove application."""
     # usage: mbl-app-manager remove [-h] app_name app_path
     print("Remove {} from {}".format(app_name, app_path))
-    cmd = ["mbl-app-manager", "-v", "remove", app_name, app_path]
+    cmd = ("mbl-app-manager", "-v", "remove", app_name, app_path)
     print("Executing command: {}".format(cmd))
     return subprocess.run(cmd).returncode

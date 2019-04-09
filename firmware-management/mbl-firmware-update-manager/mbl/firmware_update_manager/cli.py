@@ -36,7 +36,7 @@ def parse_args():
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
-        "--no-ask",
+        "--assume-yes",
         action="store_true",
         help=(
             "do not ask for confirmation of reboot if it is"
@@ -45,7 +45,7 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--no-cleanup",
+        "--keep",
         action="store_true",
         help=(
             "do not delete the update package or the"
@@ -80,7 +80,7 @@ def run_mbl_firmware_update_manager():
 
     handler = FirmwareUpdateManager(args.update_package)
     handler.install_header()
-    handler.install_firmware(args.no_cleanup, args.no_ask, args.no_reboot)
+    handler.install_firmware(args.keep, args.assume_yes, args.no_reboot)
 
 
 def _main():

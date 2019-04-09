@@ -42,7 +42,7 @@ class FirmwareUpdateManager:
         self._append_header_data_to_header_file()
 
     def install_firmware(
-        self, no_cleanup=False, no_ask=False, no_reboot=False
+        self, keep=False, assume_yes=False, no_reboot=False
     ):
         """Install the firmware from the update package."""
         cmd = [
@@ -77,7 +77,7 @@ class FirmwareUpdateManager:
             raise FmwInstallError(msg)
         else:
             log.info("Content of update package installed")
-            if not no_cleanup:
+            if not keep:
                 log.debug(
                     "Removing update package '{}'...".format(self.update_pkg)
                 )
@@ -86,14 +86,14 @@ class FirmwareUpdateManager:
                     "Update package '{}' removed".format(self.update_pkg)
                 )
         finally:
-            if not no_cleanup:
+            if not keep:
                 log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
                 os.remove(HEADER_FILE)
                 log.debug("HEADER file '{}' removed".format(HEADER_FILE))
 
         if not os.path.isfile(DONT_REBOOT_FLAG) and not no_reboot:
             print("\nThe device will be restarted.")
-            while not no_ask and True:
+            while not assume_yes:
                 user_input = input("\nProceed (y/n)?")
                 if user_input.lower() == "y":
                     break

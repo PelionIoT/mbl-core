@@ -29,7 +29,7 @@ pip install .
 ## Usage
 
 ```
-usage: mbl-firmware-update-manager [-h] [--no-ask] [--no-cleanup]
+usage: mbl-firmware-update-manager [-h] [--assume-yes] [--keep]
                                    [--no-reboot] [-v]
                                    <update-package>
 
@@ -53,9 +53,9 @@ positional arguments:
 ```
 optional arguments:
   -h, --help        show this help message and exit
-  --no-ask          do not ask for confirmation of reboot if it is required
+  --assume-yes      do not ask for confirmation of reboot if it is required
                     after the update (default: False)
-  --no-cleanup      do not delete the update package or the header file from
+  --keep            do not delete the update package or the header file from
                     the device when done (default: False)
   --no-reboot       do not reboot the device even if required after the update
                     (default: False)
