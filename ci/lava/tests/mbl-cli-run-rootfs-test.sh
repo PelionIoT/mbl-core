@@ -93,7 +93,7 @@ else
             $mbl_command put payload.tar /scratch
 
             # Now update the rootfs without rebooting
-            $mbl_command shell 'su -l -c "mbl-firmware-update-manager /scratch/payload.tar -v --no-cleanup"'
+            $mbl_command shell 'su -l -c "mbl-firmware-update-manager /scratch/payload.tar -v --no-cleanup --no-reboot"'
 
             # Now reboot the board and get the result of the reboot command
             $mbl_command shell 'su -l -c "reboot || echo $?"'

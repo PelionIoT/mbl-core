@@ -11,7 +11,7 @@ The update package may be delivered via Pelion Device management or via some oth
 * creating the header data from the update package
 * add the header data to an header file
 * delegate the installation of the content of the update package
-* reboot the device after a successful update if requested
+* reboot the device after a successful update if required
 
 `mbl-firmware-update-manager` requires the following Python packages to be installed on Mbed Linux OS:
 * [`mbl-app-update-manager`](../mbl-app-update-manager)
@@ -27,13 +27,17 @@ pip install .
 ```
 
 ## Usage
+
 ```
-usage: mbl-firmware-update-manager [-h] [-r] [-v] <update-package>
+usage: mbl-firmware-update-manager [-h] [--no-ask] [--no-cleanup]
+                                   [--no-reboot] [-v]
+                                   <update-package>
 
 MBL firmware update manager
 
 positional arguments:
-  <update-package>  update package containing firmware to install
+  <update-package>      update package containing firmware to install
+
 ```
 
 ## Return code
@@ -49,8 +53,11 @@ positional arguments:
 ```
 optional arguments:
   -h, --help        show this help message and exit
-  -r, --reboot      reboot after firmware update (default: False)
-  --no-cleanup      do not delete the update package from the device when done
+  --no-ask          do not ask for confirmation of reboot if it is required
+                    after the update (default: False)
+  --no-cleanup      do not delete the update package or the header file from
+                    the device when done (default: False)
+  --no-reboot       do not reboot the device even if required after the update
                     (default: False)
   -v, --verbose     Increase output verbosity (default: False)
 ```

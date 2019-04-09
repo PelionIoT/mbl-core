@@ -34,17 +34,29 @@ def parse_args():
         help="update package containing firmware to install",
     )
 
-    parser.add_argument(
-        "-r",
-        "--reboot",
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--no-ask",
         action="store_true",
-        help="reboot after firmware update",
+        help=(
+            "do not ask for confirmation of reboot if it is"
+            " required after the update"
+        ),
     )
 
     parser.add_argument(
         "--no-cleanup",
         action="store_true",
-        help="do not delete the update package from the device when done",
+        help=(
+            "do not delete the update package or the"
+            " header file from the device when done"
+        ),
+    )
+
+    group.add_argument(
+        "--no-reboot",
+        action="store_true",
+        help="do not reboot the device even if required after the update",
     )
 
     parser.add_argument(
@@ -68,7 +80,7 @@ def run_mbl_firmware_update_manager():
 
     handler = FirmwareUpdateManager(args.update_package)
     handler.install_header()
-    handler.install_firmware(args.reboot, args.no_cleanup)
+    handler.install_firmware(args.no_cleanup, args.no_ask, args.no_reboot)
 
 
 def _main():

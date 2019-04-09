@@ -17,6 +17,7 @@ UPDATE_ACTIVATION_SHELL_SCRIPT = os.path.join(
     os.sep, "opt", "arm", "arm_update_activate.sh"
 )
 HEADER_FILE = os.path.join(os.sep, "scratch", "firmware_update_header_file")
+DONT_REBOOT_FLAG = os.path.join(os.sep, "tmp", "do_not_reboot")
 
 
 class FirmwareUpdateManager:
@@ -40,11 +41,10 @@ class FirmwareUpdateManager:
         self._create_header_data()
         self._append_header_data_to_header_file()
 
-    def install_firmware(self, reboot=False, no_cleanup=False):
-        """Install the firmware from the update package.
-
-        The caller has the option to request a reboot if requested.
-        """
+    def install_firmware(
+        self, no_cleanup=False, no_ask=False, no_reboot=False
+    ):
+        """Install the firmware from the update package."""
         cmd = [
             UPDATE_ACTIVATION_SHELL_SCRIPT,
             "--firmware",
@@ -86,11 +86,24 @@ class FirmwareUpdateManager:
                     "Update package '{}' removed".format(self.update_pkg)
                 )
         finally:
-            log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
-            os.remove(HEADER_FILE)
-            log.debug("HEADER file '{}' removed".format(HEADER_FILE))
+            if not no_cleanup:
+                log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
+                os.remove(HEADER_FILE)
+                log.debug("HEADER file '{}' removed".format(HEADER_FILE))
 
-        if reboot:
+        if not os.path.isfile(DONT_REBOOT_FLAG) and not no_reboot:
+            print("\nThe device will be restarted.")
+            while not no_ask and True:
+                user_input = input("\nProceed (y/n)?")
+                if user_input.lower() == "y":
+                    break
+                elif user_input.lower() == "n":
+                    return
+                else:
+                    print(
+                        "Your response ('{}') was not of the"
+                        " expected responses: y, n".format(user_input)
+                    )
             log.info("Rebooting device...")
             os.system("reboot")
 
