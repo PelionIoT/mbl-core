@@ -109,8 +109,6 @@ else
             # including the final "/"
             tar -cf /tmp/payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
 
-
-
             if [ "$pelion_update" = "PELION" ]; then
 
                 $mbl_command get /var/log/mbl-cloud-client.log /tmp/mbl-cloud-client.log
