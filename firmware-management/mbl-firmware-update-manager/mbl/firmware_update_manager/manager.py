@@ -41,9 +41,7 @@ class FirmwareUpdateManager:
         self._create_header_data()
         self._append_header_data_to_header_file()
 
-    def install_firmware(
-        self, keep=False, assume_yes=False, assume_no=False
-    ):
+    def install_firmware(self, keep=False, assume_yes=False, assume_no=False):
         """Install the firmware from the update package."""
         cmd = [
             UPDATE_ACTIVATION_SHELL_SCRIPT,

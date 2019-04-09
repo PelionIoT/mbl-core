@@ -41,7 +41,7 @@ def parse_args():
         help=(
             "Automatic no to prompts. Assume 'no' as answer to all prompts"
             " and run non-interactively."
-        )
+        ),
     )
     group.add_argument(
         "--assume-yes",
