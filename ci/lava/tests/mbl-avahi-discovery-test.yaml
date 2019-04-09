@@ -9,4 +9,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-run-avahi-discovery.sh
+        - ./ci/lava/tests/mbl-avahi-discovery-test.sh
