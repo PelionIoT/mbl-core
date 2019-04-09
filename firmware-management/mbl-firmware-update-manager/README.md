@@ -36,7 +36,8 @@ usage: mbl-firmware-update-manager [-h] [--assume-no | --assume-yes] [--keep]
 MBL firmware update manager
 
 positional arguments:
-  <update-package>  update package containing firmware to install
+  <update-package>  full path of the update package containing firmware to
+                    install
 ```
 
 ## Return code

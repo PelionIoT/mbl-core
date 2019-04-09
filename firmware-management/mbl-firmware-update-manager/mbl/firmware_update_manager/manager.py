@@ -63,9 +63,8 @@ class FirmwareUpdateManager:
             )
         except subprocess.CalledProcessError as error:
             msg = (
-                "Failed to update firmware '{}' from update package '{}',"
+                "Failed to update firmware from update package '{}',"
                 " error: '{}'".format(
-                    HEADER_FILE,
                     self.update_pkg,
                     error.stdout.decode()
                     if error.stdout

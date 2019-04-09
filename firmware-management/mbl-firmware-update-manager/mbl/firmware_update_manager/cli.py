@@ -31,7 +31,7 @@ def parse_args():
         "update_package",
         metavar="<update-package>",
         type=str,
-        help="update package containing firmware to install",
+        help="full path of the update package containing firmware to install",
     )
 
     group = parser.add_mutually_exclusive_group()
