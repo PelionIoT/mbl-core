@@ -99,7 +99,7 @@ class FirmwareUpdateManager:
                     return
                 else:
                     print(
-                        "Your response ('{}') was not of the"
+                        "Your response ('{}') was not one of the"
                         " expected responses: y, n".format(user_input)
                     )
             log.info("Rebooting device...")
