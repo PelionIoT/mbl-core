@@ -11,6 +11,7 @@ import os
 import re
 import sys
 from junitparser import JUnitXml
+from junitparser import Skipped
 
 
 def setup_parser():
@@ -42,7 +43,10 @@ def CreateLavaOutputText(testcase):
     name = testcase.classname.split(".")[-1]
 
     if testcase.result is not None:
-        result = "fail"
+        if isinstance(testcase.result, Skipped):
+            result = "skip"
+        else:
+            result = "fail"
     else:
         result = "pass"
 
