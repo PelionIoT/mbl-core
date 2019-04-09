@@ -42,7 +42,7 @@ class FirmwareUpdateManager:
         self._append_header_data_to_header_file()
 
     def install_firmware(
-        self, keep=False, assume_yes=False, no_reboot=False
+        self, keep=False, assume_yes=False, assume_no=False
     ):
         """Install the firmware from the update package."""
         cmd = [
@@ -91,7 +91,7 @@ class FirmwareUpdateManager:
                 os.remove(HEADER_FILE)
                 log.debug("HEADER file '{}' removed".format(HEADER_FILE))
 
-        if not os.path.isfile(DONT_REBOOT_FLAG) and not no_reboot:
+        if not os.path.isfile(DONT_REBOOT_FLAG) and not assume_no:
             print("\nThe device will be restarted.")
             while not assume_yes:
                 user_input = input("\nProceed (y/n)?")

@@ -29,15 +29,14 @@ pip install .
 ## Usage
 
 ```
-usage: mbl-firmware-update-manager [-h] [--assume-yes] [--keep]
-                                   [--no-reboot] [-v]
+usage: mbl-firmware-update-manager [-h] [--assume-no | --assume-yes] [--keep]
+                                   [-v]
                                    <update-package>
 
 MBL firmware update manager
 
 positional arguments:
-  <update-package>      update package containing firmware to install
-
+  <update-package>  update package containing firmware to install
 ```
 
 ## Return code
@@ -53,12 +52,12 @@ positional arguments:
 ```
 optional arguments:
   -h, --help        show this help message and exit
-  --assume-yes      do not ask for confirmation of reboot if it is required
-                    after the update (default: False)
+  --assume-no       Automatic no to prompts. Assume 'no' as answer to all
+                    prompts and run non-interactively. (default: False)
+  --assume-yes      Automatic yes to prompts. Assume 'yes' as answer to all
+                    prompts and run non-interactively. (default: False)
   --keep            do not delete the update package or the header file from
                     the device when done (default: False)
-  --no-reboot       do not reboot the device even if required after the update
-                    (default: False)
   -v, --verbose     Increase output verbosity (default: False)
 ```
 

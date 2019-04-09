@@ -36,11 +36,19 @@ def parse_args():
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
+        "--assume-no",
+        action="store_true",
+        help=(
+            "Automatic no to prompts. Assume 'no' as answer to all prompts"
+            " and run non-interactively."
+        )
+    )
+    group.add_argument(
         "--assume-yes",
         action="store_true",
         help=(
-            "do not ask for confirmation of reboot if it is"
-            " required after the update"
+            "Automatic yes to prompts. Assume 'yes' as answer to all prompts"
+            " and run non-interactively."
         ),
     )
 
@@ -51,12 +59,6 @@ def parse_args():
             "do not delete the update package or the"
             " header file from the device when done"
         ),
-    )
-
-    group.add_argument(
-        "--no-reboot",
-        action="store_true",
-        help="do not reboot the device even if required after the update",
     )
 
     parser.add_argument(
@@ -80,7 +82,7 @@ def run_mbl_firmware_update_manager():
 
     handler = FirmwareUpdateManager(args.update_package)
     handler.install_header()
-    handler.install_firmware(args.keep, args.assume_yes, args.no_reboot)
+    handler.install_firmware(args.keep, args.assume_yes, args.assume_no)
 
 
 def _main():

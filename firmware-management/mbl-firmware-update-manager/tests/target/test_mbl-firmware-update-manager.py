@@ -86,16 +86,17 @@ class TestMblFirmwareUpdateManager:
 
 def install_fmw_from_package(update_pkg, reboot=False):
     """Install firmware."""
-    # usage: mbl-firmware-update-manager [-h] [--assume-yes] [--keep]
-    #                                 [--no-reboot] [-v]
-    #                                 <update-package>
+    # usage: mbl-firmware-update-manager [-h] [--assume-no | --assume-yes]
+    #                                [--keep]
+    #                                [-v]
+    #                                <update-package>
     print("Update firmware contained in `{}`".format(update_pkg))
     cmd = (
         "mbl-firmware-update-manager",
         "-v",
         update_pkg,
         "--keep",
-        "--no-reboot",
+        "--assume-no",
     )
     print("Executing command: {}".format(cmd))
     return subprocess.run(cmd).returncode
