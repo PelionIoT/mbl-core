@@ -10,8 +10,7 @@ import argparse
 import os
 import re
 import sys
-from junitparser import JUnitXml
-from junitparser import Skipped
+from junitparser import JUnitXml, Skipped, Failure, Error
 
 
 def setup_parser():
@@ -30,6 +29,20 @@ def setup_parser():
     return parser
 
 
+def FormatResult(suite, case, result):
+    """Process a Line of results data and turn it into LAVA speak.
+
+    :return: string containing the LAVA formatted result
+
+    """
+    lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
+    result_str = "RESULT="
+
+    return "{}{}::{} {}{}{}".format(
+        lava_signal, suite, case, result_str, result, ">"
+    )
+
+
 def CreateLavaOutputText(testcase):
     """Process a Line of results data and turn it into LAVA speak.
 
@@ -38,26 +51,21 @@ def CreateLavaOutputText(testcase):
     """
     lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
     result_str = "RESULT="
-    terminator = ">"
 
     name = testcase.classname.split(".")[-1]
 
-    if testcase.result is not None:
-        if isinstance(testcase.result, Skipped):
-            result = "skip"
-        else:
-            result = "fail"
-    else:
+    if testcase.result is None:
         result = "pass"
+    elif isinstance(testcase.result, Skipped):
+        result = "skip"
+    elif isinstance(testcase.result, Failure) or isinstance(
+        testcase.result, Error
+    ):
+        result = "fail"
+    else:
+        result = "fail"
 
-    return "{}{}::{} {}{}{}".format(
-        lava_signal,
-        name,
-        testcase.name.replace(" ", "_"),
-        result_str,
-        result,
-        terminator,
-    )
+    return FormatResult(name, testcase.name.replace(" ", "_"), result)
 
 
 def main():
@@ -92,15 +100,7 @@ def main():
         print("Input File not found")
 
     if len(results) == 0:
-        print(
-            "{}{} {}{}{}".format(
-                "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=",
-                "NoResultsFound",
-                "RESULT=",
-                "skip",
-                ">",
-            )
-        )
+        print(FormatResult("NoResultsFound", "NoResultsFound", "skip"))
     else:
         for result in results:
             print(result)
