@@ -38,18 +38,12 @@ def parse_args():
     group.add_argument(
         "--assume-no",
         action="store_true",
-        help=(
-            "Automatic no to prompts. Assume 'no' as answer to all prompts"
-            " and run non-interactively."
-        ),
+        help="automatic 'no' to reboot prompt and run non-interactively",
     )
     group.add_argument(
         "--assume-yes",
         action="store_true",
-        help=(
-            "Automatic yes to prompts. Assume 'yes' as answer to all prompts"
-            " and run non-interactively."
-        ),
+        help="automatic 'yes' to reboot prompt and run non-interactively",
     )
 
     parser.add_argument(

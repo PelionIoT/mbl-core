@@ -53,10 +53,10 @@ positional arguments:
 ```
 optional arguments:
   -h, --help        show this help message and exit
-  --assume-no       Automatic no to prompts. Assume 'no' as answer to all
-                    prompts and run non-interactively. (default: False)
-  --assume-yes      Automatic yes to prompts. Assume 'yes' as answer to all
-                    prompts and run non-interactively. (default: False)
+  --assume-no       automatic 'no' to reboot prompt and run non-interactively
+                    (default: False)
+  --assume-yes      automatic 'yes' to reboot prompt and run non-interactively
+                    (default: False)
   --keep            do not delete the update package or the header file from
                     the device when done (default: False)
   -v, --verbose     Increase output verbosity (default: False)
