@@ -29,43 +29,41 @@ def setup_parser():
     return parser
 
 
-def FormatResult(suite, case, result):
+def format_result(suite, case, result):
     """Process a Line of results data and turn it into LAVA speak.
 
     :return: string containing the LAVA formatted result
 
     """
-    lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-    result_str = "RESULT="
-
-    return "{}{}::{} {}{}{}".format(
-        lava_signal, suite, case, result_str, result, ">"
+    return "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID={}::{} RESULT={}>".format(
+        suite, case, result
     )
 
 
-def CreateLavaOutputText(testcase):
+def create_lava_output_text(testcase):
     """Process a Line of results data and turn it into LAVA speak.
 
     :return: string containing the LAVA formatted result
 
     """
-    lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-    result_str = "RESULT="
-
     name = testcase.classname.split(".")[-1]
+
+    # In the junit xml file format, tests that "pass" contain no message to
+    # indicate this. In order to differentiate between a pass and the various
+    # failure cases we check the presence of the result first.
+    # For the failure cases, skipped tests are marked accordingly.
+    # Everything else is a fail.
 
     if testcase.result is None:
         result = "pass"
     elif isinstance(testcase.result, Skipped):
         result = "skip"
-    elif isinstance(testcase.result, Failure) or isinstance(
-        testcase.result, Error
-    ):
+    elif isinstance(testcase.result, (Failure, Error)):
         result = "fail"
     else:
         result = "fail"
 
-    return FormatResult(name, testcase.name.replace(" ", "_"), result)
+    return format_result(name, testcase.name.replace(" ", "_"), result)
 
 
 def main():
@@ -92,15 +90,15 @@ def main():
                 # So iterate the testcases inside the testsuite
                 myIter2 = iter(item)
                 for case in myIter2:
-                    results.append(CreateLavaOutputText(case))
+                    results.append(create_lava_output_text(case))
             else:
                 # Iterate the tescases directly
-                results.append(CreateLavaOutputText(item))
+                results.append(create_lava_output_text(item))
     else:
         print("Input File not found")
 
     if len(results) == 0:
-        print(FormatResult("NoResultsFound", "NoResultsFound", "skip"))
+        print(format_result("NoResultsFound", "NoResultsFound", "skip"))
     else:
         for result in results:
             print(result)
