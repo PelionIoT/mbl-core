@@ -29,7 +29,7 @@ monitor_process() {
 avahi-browse -tr _ssh._tcp > device_list &
 monitor_process $! 60 &
 wait
-mbl_device=$(grep "=" device_list | grep "mbed-linux-os" device_list)
+mbl_device=$(grep "=" device_list | grep "mbed-linux-os")
 
 # list the devices for debug
 cat device_list
