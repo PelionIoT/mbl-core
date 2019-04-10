@@ -6,10 +6,19 @@
 
 # Run the Pelion provisioning tests and confirm they are functioning correctly
 
-# Find the address of the first device found by the mbl-cli. This will only
-# work correctly if there is a point to point connection between lxc and target.
+# If a parameter is passed in then assume it is a pattern to identify the
+# target board, otherwise find something with "mbed-linux-os" in it.
+if [ -z "$1" ]
+then
+    pattern="mbed-linux-os"
+else
+    pattern=$1
+fi
+
+# Find the address of the first device found by the mbl-cli containing the
+# pattern
 mbl-cli list > device_list
-dut_address=$(grep "mbed-linux-os" device_list | head -1 | cut -d":" -f3-)
+dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
 
 # list the devices for debug
 cat device_list
