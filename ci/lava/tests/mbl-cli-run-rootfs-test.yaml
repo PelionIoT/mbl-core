@@ -4,20 +4,24 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run RootFS Upgrade Test
+    name: Run RootFS Update Test
     description: "MBL Core Tests behaviour"
 
 params:
     # test_stage: specifies which stage of the test we are running - the
-    #             upgrade or the post check
+    #             update or the post check
     #
     test_stage:
 
-    # image_url: specifies the url of the test image in order to extract the 
+    # image_url: specifies the url of the test image in order to extract the
     #            root_fs image
     #
     image_url:
 
+    # pelion_update : specifies the update mechanism - PELION or MBL_CLI
+    #
+    pelion_update:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url
+        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url $pelion_update
