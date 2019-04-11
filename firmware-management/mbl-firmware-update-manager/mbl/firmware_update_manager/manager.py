@@ -17,6 +17,7 @@ UPDATE_ACTIVATION_SHELL_SCRIPT = os.path.join(
     os.sep, "opt", "arm", "arm_update_activate.sh"
 )
 HEADER_FILE = os.path.join(os.sep, "scratch", "firmware_update_header_file")
+DONT_REBOOT_FLAG = os.path.join(os.sep, "tmp", "do_not_reboot")
 
 
 class FirmwareUpdateManager:
@@ -40,11 +41,8 @@ class FirmwareUpdateManager:
         self._create_header_data()
         self._append_header_data_to_header_file()
 
-    def install_firmware(self, reboot=False, no_cleanup=False):
-        """Install the firmware from the update package.
-
-        The caller has the option to request a reboot if requested.
-        """
+    def install_firmware(self, keep=False, assume_yes=False, assume_no=False):
+        """Install the firmware from the update package."""
         cmd = [
             UPDATE_ACTIVATION_SHELL_SCRIPT,
             "--firmware",
@@ -65,9 +63,8 @@ class FirmwareUpdateManager:
             )
         except subprocess.CalledProcessError as error:
             msg = (
-                "Failed to update firmware '{}' from update package '{}',"
+                "Failed to update firmware from update package '{}',"
                 " error: '{}'".format(
-                    HEADER_FILE,
                     self.update_pkg,
                     error.stdout.decode()
                     if error.stdout
@@ -77,7 +74,7 @@ class FirmwareUpdateManager:
             raise FmwInstallError(msg)
         else:
             log.info("Content of update package installed")
-            if not no_cleanup:
+            if not keep:
                 log.debug(
                     "Removing update package '{}'...".format(self.update_pkg)
                 )
@@ -86,11 +83,24 @@ class FirmwareUpdateManager:
                     "Update package '{}' removed".format(self.update_pkg)
                 )
         finally:
-            log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
-            os.remove(HEADER_FILE)
-            log.debug("HEADER file '{}' removed".format(HEADER_FILE))
+            if not keep:
+                log.debug("Removing HEADER file '{}'...".format(HEADER_FILE))
+                os.remove(HEADER_FILE)
+                log.debug("HEADER file '{}' removed".format(HEADER_FILE))
 
-        if reboot:
+        if not os.path.isfile(DONT_REBOOT_FLAG) and not assume_no:
+            print("\nThe device will be restarted.")
+            while not assume_yes:
+                user_input = input("\nProceed (y/n)?")
+                if user_input.lower() == "y":
+                    break
+                elif user_input.lower() == "n":
+                    return
+                else:
+                    print(
+                        "Your response ('{}') was not one of the"
+                        " expected responses: y, n".format(user_input)
+                    )
             log.info("Rebooting device...")
             os.system("reboot")
 
