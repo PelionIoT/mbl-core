@@ -9,4 +9,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-avahi-discovery-test.sh
+        - ./ci/lava/tests/mbl-avahi-discovery-test.sh || lava-test-raise "avahi discovery failed"
