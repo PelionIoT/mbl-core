@@ -83,13 +83,10 @@ def main():
         # The important information is in the testcase elements. Everything
         # else can be skipped
 
-        myiter = iter(rootElement)
-
-        for item in myiter:
+        for item in rootElement:
             if item._tag == "testsuite":
                 # So iterate the testcases inside the testsuite
-                myIter2 = iter(item)
-                for case in myIter2:
+                for case in item:
                     results.append(create_lava_output_text(case))
             else:
                 # Iterate the tescases directly
