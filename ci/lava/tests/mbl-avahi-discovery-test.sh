@@ -42,6 +42,7 @@ if [ -z "$mbl_device" ]
 then
     echo "ERROR - avahi-browse failed to find an MBL device"
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=fail>"
+    exit 255
 else
     echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=pass>"
 fi
