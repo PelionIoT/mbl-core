@@ -112,7 +112,7 @@ else
             if [ "$pelion_update" = "PELION" ]; then
 
                 $mbl_command get /var/log/mbl-cloud-client.log /tmp/mbl-cloud-client.log
-
+cat /tmp/mbl-cloud-client.log
                 device_id=$(grep -i "device id"  /tmp/mbl-cloud-client.log | tail -1 | cut -d":" -f5 | cut -c2-)
 
                 if [ -z "$device_id" ]
