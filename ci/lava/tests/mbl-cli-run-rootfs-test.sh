@@ -133,7 +133,7 @@ else
                 $mbl_command put /tmp/payload.tar /scratch
 
                 # Now update the rootfs - the -s prevents the automatic reboot
-                $mbl_command shell 'su -l -c "mbl-firmware-update-manager -i /scratch/payload.tar -v -s"'
+                $mbl_command shell 'su -l -c "mbl-firmware-update-manager /scratch/payload.tar -v --keep --assume-no"'
 
                 # Now reboot the board and get the result of the reboot command
                 $mbl_command shell 'su -l -c "reboot || echo $?"'

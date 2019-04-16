@@ -31,20 +31,28 @@ def parse_args():
         "update_package",
         metavar="<update-package>",
         type=str,
-        help="update package containing firmware to install",
+        help="full path of the update package containing firmware to install",
+    )
+
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
+        "--assume-no",
+        action="store_true",
+        help="automatic 'no' to reboot prompt and run non-interactively",
+    )
+    group.add_argument(
+        "--assume-yes",
+        action="store_true",
+        help="automatic 'yes' to reboot prompt and run non-interactively",
     )
 
     parser.add_argument(
-        "-r",
-        "--reboot",
+        "--keep",
         action="store_true",
-        help="reboot after firmware update",
-    )
-
-    parser.add_argument(
-        "--no-cleanup",
-        action="store_true",
-        help="do not delete the update package from the device when done",
+        help=(
+            "do not delete the update package or the"
+            " header file from the device when done"
+        ),
     )
 
     parser.add_argument(
@@ -68,7 +76,7 @@ def run_mbl_firmware_update_manager():
 
     handler = FirmwareUpdateManager(args.update_package)
     handler.install_header()
-    handler.install_firmware(args.reboot, args.no_cleanup)
+    handler.install_firmware(args.keep, args.assume_yes, args.assume_no)
 
 
 def _main():
