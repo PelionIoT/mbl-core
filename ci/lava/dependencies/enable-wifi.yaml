@@ -1,0 +1,17 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: "Lava-Test Test Definition 1.0"
+    name: Enable WiFi
+    description: "Enable WiFi"
+
+params:
+    # device_type: specifies the device the test is running on
+    #
+    device_type:
+
+run:
+    steps:
+        - ./ci/lava/dependencies/enable-wifi.sh $device_type

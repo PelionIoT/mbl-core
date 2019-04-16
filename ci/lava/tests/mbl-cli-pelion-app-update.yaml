@@ -4,9 +4,9 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run Avahi Device Discovery Test
-    description: "Run a test to discover connected devices using avahi-browse."
+    name: Run Pelion App update test
+    description: "Run the Pelion App Update test"
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-avahi-discovery-test.sh
+        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh
