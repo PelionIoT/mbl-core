@@ -45,7 +45,7 @@ else
     $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
 
     # Now install the package - this should cause it to run
-    $mbl_command shell "mbl-firmware-update-manager /tmp/user-sample-app-package_1.0_any.ipk.tar -v --keep --assume-no""
+    $mbl_command shell "mbl-firmware-update-manager /tmp/user-sample-app-package_1.0_any.ipk.tar -v --keep --assume-no"
 
     # Check it is executing as expected
     $mbl_command shell "python3 /tmp/check_container.py user-sample-app-package"
