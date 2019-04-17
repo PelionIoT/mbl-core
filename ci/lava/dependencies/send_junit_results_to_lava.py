@@ -10,7 +10,7 @@ import argparse
 import os
 import re
 import sys
-from junitparser import JUnitXml
+from junitparser import JUnitXml, Skipped, Failure, Error
 
 
 def setup_parser():
@@ -29,31 +29,41 @@ def setup_parser():
     return parser
 
 
-def CreateLavaOutputText(testcase):
+def format_result(suite, case, result):
     """Process a Line of results data and turn it into LAVA speak.
 
     :return: string containing the LAVA formatted result
 
     """
-    lava_signal = "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-    result_str = "RESULT="
-    terminator = ">"
+    return "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID={}::{} RESULT={}>".format(
+        suite, case, result
+    )
 
+
+def create_lava_output_text(testcase):
+    """Process a Line of results data and turn it into LAVA speak.
+
+    :return: string containing the LAVA formatted result
+
+    """
     name = testcase.classname.split(".")[-1]
 
-    if testcase.result is not None:
+    # In the junit xml file format, tests that "pass" contain no message to
+    # indicate this. In order to differentiate between a pass and the various
+    # failure cases we check the presence of the result first.
+    # For the failure cases, skipped tests are marked accordingly.
+    # Everything else is a fail.
+
+    if testcase.result is None:
+        result = "pass"
+    elif isinstance(testcase.result, Skipped):
+        result = "skip"
+    elif isinstance(testcase.result, (Failure, Error)):
         result = "fail"
     else:
-        result = "pass"
+        result = "fail"
 
-    return "{}{}::{} {}{}{}".format(
-        lava_signal,
-        name,
-        testcase.name.replace(" ", "_"),
-        result_str,
-        result,
-        terminator,
-    )
+    return format_result(name, testcase.name.replace(" ", "_"), result)
 
 
 def main():
@@ -73,30 +83,19 @@ def main():
         # The important information is in the testcase elements. Everything
         # else can be skipped
 
-        myiter = iter(rootElement)
-
-        for item in myiter:
+        for item in rootElement:
             if item._tag == "testsuite":
                 # So iterate the testcases inside the testsuite
-                myIter2 = iter(item)
-                for case in myIter2:
-                    results.append(CreateLavaOutputText(case))
+                for case in item:
+                    results.append(create_lava_output_text(case))
             else:
                 # Iterate the tescases directly
-                results.append(CreateLavaOutputText(item))
+                results.append(create_lava_output_text(item))
     else:
         print("Input File not found")
 
     if len(results) == 0:
-        print(
-            "{}{} {}{}{}".format(
-                "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=",
-                "NoResultsFound",
-                "RESULT=",
-                "skip",
-                ">",
-            )
-        )
+        print(format_result("NoResultsFound", "NoResultsFound", "skip"))
     else:
         for result in results:
             print(result)
