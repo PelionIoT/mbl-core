@@ -27,10 +27,7 @@
   ],
   "executables": [
     {
-      "executable": "/usr/sbin/avahi-daemon"
-    },
-    {
-      "executable": "/usr/sbin/avahi-autoipd"
+      "executable": "/lib/systemd/systemd-resolved"
     },
     {
       "executable": "/bin/busybox.nosuid"
