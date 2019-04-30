@@ -6,7 +6,26 @@
 
 # Enable WiFi
 
-device_type=$1
+# Parse the inputs
+#
+# The Python virtual environment will be cactivated if provided.
+# The device under test can also be specified.
+
+# Default to any device
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        source  $1/activate
+                        ;;
+        -d | --dev )    shift
+                        device_type=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Enable WiFi if the device under test needs it.
 # Currently only Warp7 needs WiFi enabled.
@@ -61,7 +80,7 @@ then
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skipped>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skip>\n"
 fi
 
 

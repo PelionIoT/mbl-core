@@ -10,8 +10,9 @@ metadata:
 params:
     # device_type: specifies the device the test is running on
     #
-    device_type:
+   device_type:
+   virtual_env_path:
 
 run:
     steps:
-        - ./ci/lava/dependencies/enable-wifi.sh $device_type
+        - ./ci/lava/dependencies/enable-wifi.sh --dev $device_type --venv $virtual_env_path
