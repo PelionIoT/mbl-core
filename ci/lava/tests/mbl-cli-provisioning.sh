@@ -16,14 +16,14 @@ pattern="mbed-linux-os"
 
 while [ "$1" != "" ]; do
     case $1 in
-        -v | --venv-path )      shift
-                                source  $1/activate
-                                ;;
-        -d | --dut )            shift
-                                pattern=$1
-                                ;;
-        * )                     echo "Invalid Parameter"
-                                exit 1
+        -v | --venv )   shift
+                        source  $1/activate
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
     esac
     shift
 done
