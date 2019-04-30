@@ -15,4 +15,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-provisioning.sh $virtual_env_path
+        - ./ci/lava/tests/mbl-cli-provisioning.sh --venv $virtual_env_path
