@@ -11,7 +11,7 @@
 # The optional second parameter is the pattern to identify the 
 # target board, otherwise find something with "mbed-linux-os" in it.
 
-cli-path=$1
+cli_path=$1
 
 if [ -z "$2" ]
 then
@@ -22,7 +22,7 @@ fi
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern
-$cli-path/mbl-cli list > device_list
+$cli_path/mbl-cli list > device_list
 dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
 
 # list the devices for debug
@@ -31,7 +31,7 @@ cat device_list
 # Tidy up
 rm device_list
 
-mbl_command="$cli-path/mbl-cli -a $dut_address"
+mbl_command="$cli_path/mbl-cli -a $dut_address"
 
 
 # Only proceed if a device has been found
@@ -45,7 +45,7 @@ else
     overall_result="pass"
 
     # Install the manifest-tool.
-    $cli-path/pip3 -qqq install manifest-tool
+    $cli_path/pip3 -qqq install manifest-tool
 
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
@@ -55,7 +55,7 @@ else
     mkdir /tmp/update-resources
     cd /tmp/update-resources || exit
 
-    if $cli-path/manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
+    if $cli_path/manifest-tool init -q -d arm.com -m dev-device >& /tmp/manifest-init
     then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=manifest-init RESULT=pass>\n"
     else
@@ -66,7 +66,7 @@ else
 
 
     # Attempt to save an invalid key and check the result is as expected.
-    $cli-path/mbl-cli save-api-key invalid_key >& /tmp/invalid_key
+    $cli_path/mbl-cli save-api-key invalid_key >& /tmp/invalid_key
     invalid_rejected_ok=$(grep -c "API key not recognised by Pelion Device Management." /tmp/invalid_key)
 
     if [ "$invalid_rejected_ok" -eq 1 ]
