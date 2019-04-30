@@ -7,6 +7,11 @@ metadata:
     name: Run Hello World Test
     description: "Run the helloworld application on the target using mbl-cli"
 
+    params:
+        #
+        # virtual-env-path: specifies the path to the Python virtual environment
+        #
+        virtual_env_path:
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-helloworld.sh
+        - ./ci/lava/tests/mbl-cli-run-helloworld.sh --venv $virtual_env_path

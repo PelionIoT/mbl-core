@@ -6,14 +6,27 @@
 
 # Run the hello world test and confirm it is functioning correctly
 
-# If a parameter is passed in then assume it is a pattern to identify the
-# target board, otherwise find something with "mbed-linux-os" in it.
-if [ -z "$1" ]
-then
-    pattern="mbed-linux-os"
-else
-    pattern=$1
-fi
+# Parse the inputs
+#
+# The Python virtual environment will be cactivated if provided.
+# The device under test can also be specified.
+
+# Default to any device
+pattern="mbed-linux-os"
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        source  $1/activate
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern

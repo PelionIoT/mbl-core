@@ -5,38 +5,37 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 
-# This script must have 3 parameters passed:
-#  - the test stage (UPDATE or POST_CHECK)
-#  - the image_url of the wic file
-#  - the update method (PELION or MBL-CLI)
+# Parse the inputs
 #
-# Optionally a 4th parameter can be specified to provide the name of the DUT
+# The Python virtual environment will be cactivated if provided.
+# The device under test can also be specified.
 
+# Default to any device
+pattern="mbed-linux-os"
 
-#
-# Set the local variables:
-# $test_stage contains the stage
-# $rootfs_image is the image name with the "wic.gz" replaced by "tar.xz"
-#
-
-test_stage=$1
-
-# Perform global substitution
-rootfs_image=${2//wic.gz/tar.xz}
-
-pelion_update=$3
-
-
-# Find and select the device to talk to
-
-# If a parameter is passed in then assume it is a pattern to identify the
-# target board, otherwise find something with "mbed-linux-os" in it.
-if [ -z "$4" ]
-then
-    pattern="mbed-linux-os"
-else
-    pattern=$4
-fi
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        source  $1/activate
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        -s | --stage )  shift
+                        test_stage=$1
+                        ;;
+        -i | --image )  shift
+                        # $rootfs_image is the image name with the "wic.gz" replaced by "tar.xz"
+                        rootfs_image=${1//wic.gz/tar.xz}
+                        ;;
+        -u | --update ) shift
+                        ;;
+                        pelion_update=$1
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern

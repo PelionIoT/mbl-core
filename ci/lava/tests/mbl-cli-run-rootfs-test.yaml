@@ -22,6 +22,11 @@ params:
     #
     pelion_update:
 
+    #
+    # virtual-env-path: specifies the path to the Python virtual environment
+    #
+    virtual_env_path:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url $pelion_update
+        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh --venv $virtual_env_path --stage $test_stage --image $image_url --update $pelion_update
