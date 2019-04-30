@@ -7,10 +7,12 @@ metadata:
     name: Run mbl-cli provisioning test
     description: "Run the Pelion provisioning tests"
 
-params:
-    # virtual-env-path: specifies the path to the Python virtual environment
-    #
-    virtual-env-path::
+    params:
+        #
+        # virtual-env-path: specifies the path to the Python virtual environment
+        #
+        virtual_env_path:
+
 run:
     steps:
         - ./ci/lava/tests/mbl-cli-provisioning.sh $virtual-env-path
