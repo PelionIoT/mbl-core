@@ -29,8 +29,8 @@ while [ "$1" != "" ]; do
                         rootfs_image=${1//wic.gz/tar.xz}
                         ;;
         -u | --update ) shift
-                        ;;
                         pelion_update=$1
+                        ;;
         * )             echo "Invalid Parameter"
                         exit 1
     esac
