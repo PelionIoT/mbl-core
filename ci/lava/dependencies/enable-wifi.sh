@@ -61,6 +61,17 @@ then
 elif [ "$device_type" =  "imx7d-pico-mbl" ]
 then
 
+    # If a second parameter is passed in then assume it is a pattern to 
+    # identify the target board, otherwise find something with "mbed-linux-os"
+    # in it.
+    if [ -z "$2" ]
+    then
+        pattern="mbed-linux-os"
+    else
+        pattern=$2
+    fi
+
+    # Find the address of the first device found by the mbl-cli containing the
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
     mbl-cli list > device_list
