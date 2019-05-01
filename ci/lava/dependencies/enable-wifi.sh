@@ -8,7 +8,7 @@
 
 # Parse the inputs
 #
-# The Python virtual environment will be cactivated if provided.
+# The Python virtual environment will be activated if provided.
 # The device under test can also be specified.
 
 # Default to any device
@@ -16,10 +16,14 @@
 while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
-                        source  $1/activate
+                        # shellcheck source=/dev/null
+                        source  "$1"/activate
                         ;;
-        -d | --dev )    shift
+        -t | --dev )    shift
                         device_type=$1
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
                         ;;
         * )             echo "Invalid Parameter"
                         exit 1
@@ -32,16 +36,6 @@ done
 
 if [ "$device_type" =  "imx7s-warp-mbl" ]
 then
-
-    # If a second parameter is passed in then assume it is a pattern to 
-    # identify the target board, otherwise find something with "mbed-linux-os"
-    # in it.
-    if [ -z "$2" ]
-    then
-        pattern="mbed-linux-os"
-    else
-        pattern=$2
-    fi
 
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
