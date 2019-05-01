@@ -16,7 +16,8 @@ pattern="mbed-linux-os"
 while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
-                        source  $1/activate
+                        # shellcheck source=/dev/null
+                        source  "$1"/activate
                         ;;
         -d | --dut )    shift
                         pattern=$1
