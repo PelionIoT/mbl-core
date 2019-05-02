@@ -99,10 +99,17 @@ then
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
         # Enable WiFi
-        $mbl_command shell '/opt/arm/populate_rootfs_qca.sh --auto-accept'
+        wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
+        $mbl_command put firmware-qca-2.0.3.bin /tmp
 
+
+        $mbl_command shell 'ls  /'
+        $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
+        $mbl_command shell 'cp -v -r /tmp/firmware-qca-2.0.31PJ_QCA9377-3_LEA_2.0/* /'
+
+        $mbl_command shell 'ls  /'
         $mbl_command shell 'ls -R  /lib/modules/'
-        $mbl_command shell 'insmod /lib/modules/4.14.103mbl\+ga71c476/extra/qca9377.ko'
+        $mbl_command shell 'modprobe qca9733'
         sleep 60
 
         # Enable WiFi
