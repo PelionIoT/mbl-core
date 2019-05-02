@@ -38,6 +38,16 @@ done
 if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
 then
 
+    # If a second parameter is passed in then assume it is a pattern to
+    # identify the target board, otherwise find something with "mbed-linux-os"
+    # in it.
+    if [ -z "$2" ]
+    then
+        pattern="mbed-linux-os"
+    else
+        pattern=$2
+    fi
+
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
     mbl-cli list > device_list
@@ -113,6 +123,7 @@ then
 
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
+            sleep 120
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
