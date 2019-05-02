@@ -109,7 +109,7 @@ then
 
             $mbl_command shell 'ls  /'
             $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
-            $mbl_command shell 'cp -v -r /tmp/firmware-qca-2.0.31PJ_QCA9377-3_LEA_2.0/* /'
+            $mbl_command shell 'cp -v -r /tmp/firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
 
             $mbl_command shell 'ls  /'
             $mbl_command shell 'ls -R  /lib/modules/'
@@ -119,7 +119,6 @@ then
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
             sleep 60
-
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
