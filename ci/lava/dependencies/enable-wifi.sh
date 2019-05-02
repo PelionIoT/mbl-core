@@ -109,11 +109,11 @@ then
 
             $mbl_command shell 'ls  /'
             $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
-            $mbl_command shell 'cp -v -r /tmp/firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
+            $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
 
             $mbl_command shell 'ls  /'
             $mbl_command shell 'ls -R  /lib/modules/'
-            $mbl_command shell 'modprobe qca9733'
+            $mbl_command shell 'su -l -c "modprobe qca9733"'
             sleep 60
 
             # Enable WiFi
