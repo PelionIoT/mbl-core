@@ -10,7 +10,7 @@ device_type=$1
 
 # Enable WiFi if the device under test needs it.
 
-if [ "$device_type" =  "imx7s-warp-mbl" ]
+if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
 then
 
     # If a second parameter is passed in then assume it is a pattern to
@@ -53,6 +53,7 @@ then
         # Enable WiFi
         $mbl_command shell 'connmanctl enable wifi'
 
+        sleep 60
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
