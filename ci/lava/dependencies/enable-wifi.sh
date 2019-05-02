@@ -112,7 +112,8 @@ then
             $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
 
             $mbl_command shell 'ls -R  /lib/modules/'
-            $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103mbl\+ga71c476/extra/qca9377.ko"'
+            $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103xmbl\+ga71c476/extra/qca9377.ko"'
+            $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103-fslc\+g75401b0/extra/qca9377.ko"'
             sleep 60
 
             # Enable WiFi
