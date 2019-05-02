@@ -99,9 +99,11 @@ then
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
         # Enable WiFi
-        wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
-        $mbl_command put firmware-qca-2.0.3.bin /tmp
+        apt-get install -q -q --yes wget
 
+        wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
+
+        $mbl_command put firmware-qca-2.0.3.bin /tmp
 
         $mbl_command shell 'ls  /'
         $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
