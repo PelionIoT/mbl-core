@@ -13,7 +13,7 @@ device_type=$1
 if [ "$device_type" =  "imx7s-warp-mbl" ]
 then
 
-    # If a second parameter is passed in then assume it is a pattern to 
+    # If a second parameter is passed in then assume it is a pattern to
     # identify the target board, otherwise find something with "mbed-linux-os"
     # in it.
     if [ -z "$2" ]
@@ -61,7 +61,7 @@ then
 elif [ "$device_type" =  "imx7d-pico-mbl" ]
 then
 
-    # If a second parameter is passed in then assume it is a pattern to 
+    # If a second parameter is passed in then assume it is a pattern to
     # identify the target board, otherwise find something with "mbed-linux-os"
     # in it.
     if [ -z "$2" ]
@@ -112,13 +112,12 @@ then
             $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
 
             $mbl_command shell 'ls -R  /lib/modules/'
-            $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103xmbl\+ga71c476/extra/qca9377.ko"'
             $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103-fslc\+g75401b0/extra/qca9377.ko"'
-            sleep 60
+            sleep 120
 
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
-            sleep 60
+            sleep 120
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
