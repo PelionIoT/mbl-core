@@ -124,7 +124,7 @@ then
             # Now reboot the board and get the result of the reboot command
             $mbl_command shell 'echo lava-"$(hostname)" > /config/user/hostname'
             $mbl_command shell 'su -l -c "reboot || echo $?"'
-            sleep 40
+            sleep 25
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
