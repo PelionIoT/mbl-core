@@ -118,6 +118,8 @@ then
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
             sleep 120
+            $mbl_command shell 'connmanctl scan wifi'
+            $mbl_command shell 'connmanctl services'
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
