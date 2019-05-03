@@ -18,7 +18,6 @@ while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
                         printf "Activating virtual environment: %s\n" $1
-                        prinlliit
                         # shellcheck source=/dev/null
                         source  "$1"/bin/activate
                         ;;
@@ -33,6 +32,7 @@ done
 
 echo $PATH
 pip3 freeze
+which mbl-cli
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern
