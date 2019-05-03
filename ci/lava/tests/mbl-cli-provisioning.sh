@@ -17,6 +17,8 @@ pattern="mbed-linux-os"
 while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
+                        printf "Activating virtual environment: %s\n" $1
+                        prinlliit
                         # shellcheck source=/dev/null
                         source  "$1"/bin/activate
                         ;;
@@ -28,6 +30,9 @@ while [ "$1" != "" ]; do
     esac
     shift
 done
+
+echo $PATH
+pip3 freeze
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern
