@@ -7,7 +7,7 @@ metadata:
     name: Run Hello World Test
     description: "Run the helloworld application on the target using mbl-cli"
 
-    params:
+    parameters:
         #
         # virtual_env: specifies the Python virtual environment
         #

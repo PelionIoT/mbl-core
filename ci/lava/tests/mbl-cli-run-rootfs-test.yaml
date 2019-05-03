@@ -7,7 +7,7 @@ metadata:
     name: Run RootFS Update Test
     description: "MBL Core Tests behaviour"
 
-params:
+parameters:
     # test_stage: specifies which stage of the test we are running - the
     #             update or the post check
     #

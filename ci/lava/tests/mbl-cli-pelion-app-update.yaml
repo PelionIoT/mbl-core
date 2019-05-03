@@ -7,7 +7,7 @@ metadata:
     name: Run Pelion App update test
     description: "Run the Pelion App Update test"
 
-    params:
+    parameters:
         #
         # virtual_env: specifies the Python virtual environment
         #
