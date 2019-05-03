@@ -17,7 +17,7 @@ while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
                         # shellcheck source=/dev/null
-                        source  "$1"/activate
+                        source  "$1"/bin/activate
                         ;;
         -t | --dev )    shift
                         device_type=$1

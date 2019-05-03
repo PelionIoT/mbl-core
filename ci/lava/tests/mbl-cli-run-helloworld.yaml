@@ -9,9 +9,9 @@ metadata:
 
     params:
         #
-        # virtual-env-path: specifies the path to the Python virtual environment
+        # virtual_env: specifies the Python virtual environment
         #
-        virtual_env_path:
+        virtual_env:
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-helloworld.sh --venv $virtual_env_path
+        - ./ci/lava/tests/mbl-cli-run-helloworld.sh --venv $virtual_env

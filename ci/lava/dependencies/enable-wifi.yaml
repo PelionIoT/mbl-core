@@ -11,8 +11,11 @@ params:
     # device_type: specifies the device the test is running on
     #
    device_type:
-   virtual_env_path:
+
+    # virtual_env: specifies the Python virtual environment to be used
+    #
+   virtual_env:
 
 run:
     steps:
-        - ./ci/lava/dependencies/enable-wifi.sh --dev $device_type --venv $virtual_env_path
+        - ./ci/lava/dependencies/enable-wifi.sh --dev $device_type --venv $virtual_env
