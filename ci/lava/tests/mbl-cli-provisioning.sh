@@ -30,10 +30,6 @@ while [ "$1" != "" ]; do
     shift
 done
 
-echo $PATH
-pip3 freeze
-which mbl-cli
-
 # Find the address of the first device found by the mbl-cli containing the
 # pattern
 mbl-cli list > device_list
@@ -59,7 +55,7 @@ else
     overall_result="pass"
 
     # Install the manifest-tool.
-    pip3 -qqq install manifest-tool
+    pip3 install manifest-tool --progress-bar off
 
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.
