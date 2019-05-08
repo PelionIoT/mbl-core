@@ -6,23 +6,38 @@
 
 # Enable WiFi
 
-device_type=$1
+# Parse the inputs
+#
+# The Python virtual environment will be activated if provided.
+# The device under test can also be specified.
+
+# Default to any device
+
+pattern="mbed-linux-os"
+§
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        # shellcheck source=/dev/null
+                        source  "$1"/bin/activate
+                        ;;
+        -t | --dev )    shift
+                        device_type=$1
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Enable WiFi if the device under test needs it.
 # Currently only Warp7 needs WiFi enabled.
 
 if [ "$device_type" =  "imx7s-warp-mbl" ]
 then
-
-    # If a second parameter is passed in then assume it is a pattern to 
-    # identify the target board, otherwise find something with "mbed-linux-os"
-    # in it.
-    if [ -z "$2" ]
-    then
-        pattern="mbed-linux-os"
-    else
-        pattern=$2
-    fi
 
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
@@ -61,7 +76,7 @@ then
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skipped>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skip>\n"
 fi
 
 
