@@ -6,23 +6,38 @@
 
 # Enable WiFi
 
-device_type=$1
+# Parse the inputs
+#
+# The Python virtual environment will be activated if provided.
+# The device under test can also be specified.
+
+# Default to any device
+
+pattern="mbed-linux-os"
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        # shellcheck source=/dev/null
+                        source  "$1"/bin/activate
+                        ;;
+        -t | --dev )    shift
+                        device_type=$1
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Enable WiFi if the device under test needs it.
 
 if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
 then
 
-    # If a second parameter is passed in then assume it is a pattern to
-    # identify the target board, otherwise find something with "mbed-linux-os"
-    # in it.
-    if [ -z "$2" ]
-    then
-        pattern="mbed-linux-os"
-    else
-        pattern=$2
-    fi
-
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
     mbl-cli list > device_list
@@ -36,7 +51,6 @@ then
 
     mbl_command="mbl-cli -a $dut_address"
 
-
     # Only proceed if a device has been found
 
     if [ -z "$dut_address" ]
@@ -44,36 +58,17 @@ then
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
     else
-
 
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
-
         # Enable WiFi
         $mbl_command shell 'connmanctl enable wifi'
 
-        sleep 60
-        $mbl_command shell 'connmanctl scan wifi'
-        $mbl_command shell 'connmanctl services'
-        sleep 60
-
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
-
-
     fi
 elif [ "$device_type" =  "imx7d-pico-mbl" ]
 then
-
-    # If a second parameter is passed in then assume it is a pattern to
-    # identify the target board, otherwise find something with "mbed-linux-os"
-    # in it.
-    if [ -z "$2" ]
-    then
-        pattern="mbed-linux-os"
-    else
-        pattern=$2
-    fi
 
     # Find the address of the first device found by the mbl-cli containing the
     # Find the address of the first device found by the mbl-cli containing the
@@ -97,8 +92,6 @@ then
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
     else
-
-
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
@@ -117,18 +110,9 @@ then
 
             $mbl_command shell 'ls -R  /lib/modules/'
             $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103-fslc\+g75401b0/extra/qca9377.ko"'
-            sleep 120
 
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
-            sleep 120
-            $mbl_command shell 'connmanctl scan wifi'
-            $mbl_command shell 'connmanctl services'
-
-            # Now reboot the board and get the result of the reboot command
-            $mbl_command shell 'echo lava-"$(hostname)" > /config/user/hostname'
-            $mbl_command shell 'su -l -c "reboot || echo $?"'
-            sleep 25
 
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
