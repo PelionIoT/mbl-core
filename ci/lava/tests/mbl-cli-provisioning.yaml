@@ -7,6 +7,12 @@ metadata:
     name: Run mbl-cli provisioning test
     description: "Run the Pelion provisioning tests"
 
+    parameters:
+        #
+        # virtual_env: specifies the Python virtual environment
+        #
+        virtual_env:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-provisioning.sh
+        - ./ci/lava/tests/mbl-cli-provisioning.sh --venv $virtual_env

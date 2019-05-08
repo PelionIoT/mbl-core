@@ -6,14 +6,28 @@
 
 # Run the Pelion provisioning tests and confirm they are functioning correctly
 
-# If a parameter is passed in then assume it is a pattern to identify the
-# target board, otherwise find something with "mbed-linux-os" in it.
-if [ -z "$1" ]
-then
-    pattern="mbed-linux-os"
-else
-    pattern=$1
-fi
+# Parse the inputs
+#
+# The Python virtual environment will be cactivated if provided.
+# The device under test can also be specified.
+
+# Default to any device
+pattern="mbed-linux-os"
+
+while [ "$1" != "" ]; do
+    case $1 in
+        -v | --venv )   shift
+                        # shellcheck source=/dev/null
+                        source  "$1"/bin/activate
+                        ;;
+        -d | --dut )    shift
+                        pattern=$1
+                        ;;
+        * )             echo "Invalid Parameter"
+                        exit 1
+    esac
+    shift
+done
 
 # Find the address of the first device found by the mbl-cli containing the
 # pattern
@@ -40,7 +54,7 @@ else
     overall_result="pass"
 
     # Install the manifest-tool.
-    pip3 -qqq install manifest-tool
+    pip3 install manifest-tool --progress-bar off
 
     # Work out a unique certificate id - the first part of the path is the lava 
     # job number.

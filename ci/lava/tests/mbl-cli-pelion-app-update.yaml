@@ -7,6 +7,12 @@ metadata:
     name: Run Pelion App update test
     description: "Run the Pelion App Update test"
 
+    parameters:
+        #
+        # virtual_env: specifies the Python virtual environment
+        #
+        virtual_env:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh
+        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh --venv $virtual_env

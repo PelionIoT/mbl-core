@@ -7,7 +7,7 @@ metadata:
     name: Run RootFS Update Test
     description: "MBL Core Tests behaviour"
 
-params:
+parameters:
     # test_stage: specifies which stage of the test we are running - the
     #             update or the post check
     #
@@ -22,6 +22,11 @@ params:
     #
     pelion_update:
 
+    #
+    # virtual_env: specifies the Python virtual environment
+    #
+    virtual_env:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh $test_stage $image_url $pelion_update
+        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh --venv $virtual_env --stage $test_stage --image $image_url --update $pelion_update
