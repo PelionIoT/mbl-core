@@ -7,11 +7,15 @@ metadata:
     name: Enable WiFi
     description: "Enable WiFi"
 
-params:
+parameters:
     # device_type: specifies the device the test is running on
     #
     device_type:
 
+    # virtual_env: specifies the Python virtual environment to be used
+    #
+    virtual_env:
+
 run:
     steps:
-        - ./ci/lava/dependencies/enable-wifi.sh $device_type
+        - ./ci/lava/dependencies/enable-wifi.sh --dev $device_type --venv $virtual_env

@@ -7,7 +7,7 @@ metadata:
     name: Build Hello World Test
     description: "Build Hello World in an LXC container"
 
-params:
+parameters:
     # arm_arch: specifies the architecture of the UUT (armv7 or arm64)
     #
     arm_arch:
