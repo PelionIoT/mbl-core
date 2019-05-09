@@ -121,6 +121,8 @@ then
             $mbl_command shell 'ls -R  /lib/modules/'
             $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.103-fslc\+g75401b0/extra/qca9377.ko"'
 
+            sleep 60
+
             # Enable WiFi
             $mbl_command shell 'connmanctl enable wifi'
             sleep 120
@@ -134,7 +136,7 @@ then
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skipped>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skip>\n"
 fi
 
 
