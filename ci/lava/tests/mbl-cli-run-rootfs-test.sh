@@ -137,10 +137,6 @@ else
 
                 # Now reboot the board and get the result of the reboot command
                 $mbl_command shell 'su -l -c "reboot || echo $?"'
-
-                # Sleep to allow the reboot to happen. This is nasty but is long enough
-                # for the DUT to shut down but not long enough for it to fully restart.
-                sleep 40
             fi
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_rootfs_download RESULT=fail>\n" "$pelion_update"
