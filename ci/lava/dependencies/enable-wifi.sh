@@ -33,33 +33,24 @@ while [ "$1" != "" ]; do
     shift
 done
 
+# Find the address of the first device found by the mbl-cli containing the
+# pattern
+mbl-cli list > device_list
+dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
+
+# list the devices for debug
+cat device_list
+
+# Tidy up
+rm device_list
+
+mbl_command="mbl-cli -a $dut_address"
+
+
 # Enable WiFi if the device under test needs it.
 
 if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
 then
-
-    # If a second parameter is passed in then assume it is a pattern to
-    # identify the target board, otherwise find something with "mbed-linux-os"
-    # in it.
-    if [ -z "$2" ]
-    then
-        pattern="mbed-linux-os"
-    else
-        pattern=$2
-    fi
-
-    # Find the address of the first device found by the mbl-cli containing the
-    # pattern
-    mbl-cli list > device_list
-    dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
-
-    # list the devices for debug
-    cat device_list
-
-    # Tidy up
-    rm device_list
-
-    mbl_command="mbl-cli -a $dut_address"
 
     # Only proceed if a device has been found
 
@@ -79,20 +70,6 @@ then
     fi
 elif [ "$device_type" =  "imx7d-pico-mbl" ]
 then
-
-    # Find the address of the first device found by the mbl-cli containing the
-    # Find the address of the first device found by the mbl-cli containing the
-    # pattern
-    mbl-cli list > device_list
-    dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
-
-    # list the devices for debug
-    cat device_list
-
-    # Tidy up
-    rm device_list
-
-    mbl_command="mbl-cli -a $dut_address"
 
 
     # Only proceed if a device has been found
