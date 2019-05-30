@@ -14,7 +14,7 @@
 # Default to any device
 
 pattern="mbed-linux-os"
-§
+
 while [ "$1" != "" ]; do
     case $1 in
         -v | --venv )   shift
