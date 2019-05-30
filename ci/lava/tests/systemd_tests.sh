@@ -51,7 +51,6 @@ run_systemd_test()
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${systemctl_action// /_}"
     else
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${systemctl_action// /_}"
-        overall_result="fail"
         if [ "$show_fail" == "true" ]; then
             eval "$mbl_cli_shell 'systemctl --no-pager --failed'"
         fi
@@ -65,8 +64,6 @@ then
     printf "ERROR - mbl-cli failed to find MBL device\n"
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemd_tests RESULT=fail>\n"
 else
-    overall_result="pass"
-
     run_systemd_test "is-system-running" "true"
 
     actions=(
@@ -93,8 +90,5 @@ else
     for action in "${actions[@]}"; do
         run_systemd_test "$action"
     done
-
-    # Output overall result
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemd_tests RESULT=%s>\n" $overall_result
 fi
 
