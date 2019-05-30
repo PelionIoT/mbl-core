@@ -53,7 +53,6 @@ run_systemd_test()
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${systemctl_action// /_}"
         overall_result="fail"
         if [ "$show_fail" == "true" ]; then
-            local systemctl_action="--failed"
             eval "$mbl_cli_shell 'systemctl --no-pager --failed'"
         fi
     fi
@@ -70,11 +69,30 @@ else
 
     run_systemd_test "is-system-running" "true"
 
-    run_systemd_test "status mbl-app-update-manager"
+    actions=(
+        "status boot.mount"
+        "status config-factory.mount"
+        "status config-user.mount"
+        "status home.mount"
+        "status mnt-flags.mount"
+        "status scratch.mount"
+        "status tmp.mount"
+        "status var-log.mount"
+        "status connman.service"
+        "status dbus.service"
+        "status mbl-app-update-manager.service"
+        "status mbl-cloud-client.service"
+        "status mbl-dbus-cloud.service"
+        "status mbl-hostname.service"
+        "status ofono.service"
+        "status rngd.service"
+        "status tee-supplicant.service"
+        "status wpa-supplicant.service"
+    )
 
-    run_systemd_test "status connman"
-
-    run_systemd_test "status dbus"
+    for action in "${actions[@]}"; do
+        run_systemd_test "$action"
+    done
 
     # Output overall result
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemd_tests RESULT=%s>\n" $overall_result
