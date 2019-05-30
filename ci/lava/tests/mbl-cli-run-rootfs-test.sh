@@ -56,7 +56,7 @@ else
     mbl_command="mbl-cli -a $dut_address"
 
     # Work out current active partition.
-    active_partition=$($mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | awk '$1=="/" {print $2}')
+    active_partition=$($mbl_command shell 'lsblk --noheadings --output "MOUNTPOINT,LABEL"' | grep "^/ " | awk '{print $2}')
 
     printf "Active Partition: %s\n" "$active_partition"
 
