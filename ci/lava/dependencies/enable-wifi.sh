@@ -68,7 +68,7 @@ then
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
     fi
-elif [ "$device_type" =  "imx7d-pico-mbl" ]
+elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ] 
 then
 
 
