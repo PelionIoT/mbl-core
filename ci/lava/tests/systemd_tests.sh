@@ -6,7 +6,7 @@
 
 # Parse the inputs
 #
-# The Python virtual environment will be cactivated if provided.
+# The Python virtual environment will be activated if provided.
 # The device under test can also be specified.
 
 # Default to any device
