@@ -33,20 +33,24 @@ run_ping_test()
     local test_command="ping -c 1 -I $1 $2"
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
     local expected_result=$3
+    local result="not tested"
 
     if eval "$mbl_cli_command"; then
+        result="pass"
         if [ $expected_result == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
         fi
     else
+        result="fail"
         if [ $expected_result == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
         fi
     fi
+    printf "Attempted to ping %s using interface %s. Expected result is %s. Actual result is %s.\n" $2 $1 $3 $result
 }
 
 disable_interface()
