@@ -32,7 +32,13 @@ run_ping_test()
 {
     local test_command="ping -c 1 -I $1 $2"
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
-    eval $mbl_cli_command
+
+
+    if eval "$mbl_cli_command"; then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+    fi
 }
 
 disable_interface()
