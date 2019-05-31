@@ -32,12 +32,20 @@ run_ping_test()
 {
     local test_command="ping -c 1 -I $1 $2"
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
-
+    local expected_result=$3
 
     if eval "$mbl_cli_command"; then
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+        if [ $expected_result == "pass" ]; then
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+        else
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+        fi
     else
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+        if [ $expected_result == "pass" ]; then
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+        else
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+        fi
     fi
 }
 
@@ -87,27 +95,29 @@ else
         set +e
         $mbl_cli_shell 'su -l -c "ifconfig"'
         $mbl_cli_shell 'su -l -c "route"'
-        run_ping_test "eth0" "8.8.8.8"
-        run_ping_test "eth0" "www.google.com"
+        run_ping_test "eth0" "8.8.8.8" "pass"
+        run_ping_test "eth0" "www.google.com" "pass"
 
         disable_interface "eth0"
 
         sleep 10
         $mbl_cli_shell 'su -l -c "ifconfig"'
         $mbl_cli_shell 'su -l -c "route"'
-        run_ping_test "wlan0" "8.8.8.8"
-        run_ping_test "wlan0" "www.google.com"
-        run_ping_test "eth0" "8.8.8.8"
-        run_ping_test "eth0" "www.google.com"
+        run_ping_test "wlan0" "8.8.8.8" "pass"
+        run_ping_test "wlan0" "www.google.com" "pass"
+        run_ping_test "eth0" "8.8.8.8" "fail"
+        run_ping_test "eth0" "www.google.com" "fail"
+
         enable_interface "eth0"
 
         sleep 10
         $mbl_cli_shell 'su -l -c "ifconfig"'
         $mbl_cli_shell 'su -l -c "route"'
-        run_ping_test "wlan0" "8.8.8.8"
-        run_ping_test "wlan0" "www.google.com"
-        run_ping_test "eth0" "8.8.8.8"
-        run_ping_test "eth0" "www.google.com"
+
+        run_ping_test "wlan0" "8.8.8.8" "fail"
+        run_ping_test "wlan0" "www.google.com" "fail"
+        run_ping_test "eth0" "8.8.8.8" "pass"
+        run_ping_test "eth0" "www.google.com" "pass"
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wired_wifi_test RESULT=pass>\n"
     fi
