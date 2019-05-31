@@ -75,7 +75,7 @@ else
     rm device_list
 
     mbl_cli_shell="mbl-cli -a $dut_address shell"
-set -x
+
     # Only proceed if a device has been found
 
     if [ -z "$dut_address" ]
