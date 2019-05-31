@@ -28,6 +28,27 @@ while [ "$1" != "" ]; do
     shift
 done
 
+run_ping_test()
+{
+    local test_command="ping -c 1 -I $1 $2"
+    local mbl_cli_command="$mbl_cli_shell '$test_command'"
+    eval $mbl_cli_command
+}
+
+disable_interface()
+{
+    local test_command="su -l -c \"ip link set $1 down\""
+    local mbl_cli_command="$mbl_cli_shell '$test_command'"
+    eval $mbl_cli_command
+}
+
+enable_interface()
+{
+    local test_command="su -l -c \"ip link set $1 up\""
+    local mbl_cli_command="$mbl_cli_shell '$test_command'"
+    eval $mbl_cli_command
+}
+
 if [ "$device_type" =  "imx7s-warp-mbl" ]
 then
 
@@ -47,8 +68,8 @@ else
     # Tidy up
     rm device_list
 
-    mbl_shell="mbl-cli -a $dut_address shell"
-
+    mbl_cli_shell="mbl-cli -a $dut_address shell"
+set -x
     # Only proceed if a device has been found
 
     if [ -z "$dut_address" ]
@@ -58,21 +79,29 @@ else
     else
 
         set +e
-        $mbl_shell 'su -l -c "ifconfig"'
-        $mbl_shell 'su -l -c "route"'
-        $mbl_shell 'su -l -c "ping -c 1 -I eth0 8.8.8.8"'
-        $mbl_shell 'su -l -c "ip link set eth0 down"'
+        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "route"'
+        run_ping_test "eth0" "8.8.8.8"
+        run_ping_test "eth0" "www.google.com"
+
+        disable_interface "eth0"
+
         sleep 10
-        $mbl_shell 'su -l -c "ifconfig"'
-        $mbl_shell 'su -l -c "route"'
-        $mbl_shell 'su -l -c "ping -c 1 -I wlan0 8.8.8.8"'
-        $mbl_shell 'su -l -c "ping -c 1 -I eth0 8.8.8.8"'
-        $mbl_shell 'su -l -c "ip link set eth0 up"'
+        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "route"'
+        run_ping_test "wlan0" "8.8.8.8"
+        run_ping_test "wlan0" "www.google.com"
+        run_ping_test "eth0" "8.8.8.8"
+        run_ping_test "eth0" "www.google.com"
+        enable_interface "eth0"
+
         sleep 10
-        $mbl_shell 'su -l -c "ifconfig"'
-        $mbl_shell 'su -l -c "route"'
-        $mbl_shell 'su -l -c "ping -c 1 -I wlan0 8.8.8.8"'
-        $mbl_shell 'su -l -c "ping -c 1 -I eth0 8.8.8.8"'
+        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "route"'
+        run_ping_test "wlan0" "8.8.8.8"
+        run_ping_test "wlan0" "www.google.com"
+        run_ping_test "eth0" "8.8.8.8"
+        run_ping_test "eth0" "www.google.com"
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wired_wifi_test RESULT=pass>\n"
     fi
