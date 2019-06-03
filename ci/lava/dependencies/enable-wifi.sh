@@ -79,6 +79,9 @@ then
         printf "ERROR - mbl-cli failed to find MBL device\n"
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
     else
+        $mbl_command shell 'sed -i "s/#NetworkInterfaceBlacklist/NetworkInterfaceBlacklist=p2p/" /config/user/connman/main.conf'
+        $mbl_command shell 'su -l -c "systemctl restart connman"'
+
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
