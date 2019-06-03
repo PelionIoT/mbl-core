@@ -84,7 +84,7 @@ else
         "status ofono.service"
         "status rngd.service"
         "status tee-supplicant.service"
-        "status wpa-supplicant.service"
+        "status wpa_supplicant.service"
     )
 
     for action in "${actions[@]}"; do
