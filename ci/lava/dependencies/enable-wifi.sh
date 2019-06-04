@@ -92,7 +92,7 @@ then
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
-        if [ $mbl_command shell 'lsmod' | grep -c qca9377 = 0 ]
+        if [ "$mbl_command shell 'lsmod' | grep -c qca9377" = 0 ]
         then
 
             # Enable WiFi
