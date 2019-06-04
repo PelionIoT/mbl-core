@@ -58,6 +58,7 @@ disable_interface()
     local test_command="su -l -c \"ip link set $1 down\""
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
     eval $mbl_cli_command
+    sleep 30
 }
 
 enable_interface()
@@ -65,6 +66,7 @@ enable_interface()
     local test_command="su -l -c \"ip link set $1 up\""
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
     eval $mbl_cli_command
+    sleep 30
 }
 
 if [ "$device_type" =  "imx7s-warp-mbl" ]
@@ -104,7 +106,6 @@ else
 
         disable_interface "eth0"
 
-        sleep 10
         $mbl_cli_shell 'su -l -c "ifconfig"'
         $mbl_cli_shell 'su -l -c "route"'
         run_ping_test "wlan0" "8.8.8.8" "pass"
@@ -114,7 +115,6 @@ else
 
         enable_interface "eth0"
 
-        sleep 10
         $mbl_cli_shell 'su -l -c "ifconfig"'
         $mbl_cli_shell 'su -l -c "route"'
 
