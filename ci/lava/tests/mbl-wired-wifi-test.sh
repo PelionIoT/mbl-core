@@ -99,14 +99,18 @@ else
     else
 
         set +e
-        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "ifconfig -a"'
         $mbl_cli_shell 'su -l -c "route"'
         run_ping_test "eth0" "8.8.8.8" "pass"
         run_ping_test "eth0" "www.google.com" "pass"
 
         disable_interface "eth0"
+        if [ "$device_type" =  "imx8eemvk-mbl" ]
+        then
+            sleep 300
+        fi
 
-        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "ifconfig -a"'
         $mbl_cli_shell 'su -l -c "route"'
         run_ping_test "wlan0" "8.8.8.8" "pass"
         run_ping_test "wlan0" "www.google.com" "pass"
@@ -115,7 +119,7 @@ else
 
         enable_interface "eth0"
 
-        $mbl_cli_shell 'su -l -c "ifconfig"'
+        $mbl_cli_shell 'su -l -c "ifconfig -a"'
         $mbl_cli_shell 'su -l -c "route"'
 
         run_ping_test "wlan0" "8.8.8.8" "fail"

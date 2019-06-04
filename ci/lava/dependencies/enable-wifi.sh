@@ -123,6 +123,12 @@ then
                 printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
             fi
         else
+
+           if [ "$device_type" =  "imx8mmevk-mbl" ] 
+           then
+               sleep 300
+           fi
+
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
         fi
 
