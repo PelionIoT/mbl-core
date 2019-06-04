@@ -37,27 +37,27 @@ run_ping_test()
 
     if eval "$mbl_cli_command"; then
         result="pass"
-        if [ $expected_result == "pass" ]; then
+        if [ "$expected_result" == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
         fi
     else
         result="fail"
-        if [ $expected_result == "pass" ]; then
+        if [ "$expected_result" == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
         fi
     fi
-    printf "Attempted to ping %s using interface %s. Expected result is %s. Actual result is %s.\n" $2 $1 $3 $result
+    printf "Attempted to ping %s using interface %s. Expected result is %s. Actual result is %s.\n" "$2" "$1" "$3" "$result"
 }
 
 disable_interface()
 {
     local test_command="su -l -c \"ip link set $1 down\""
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
-    eval $mbl_cli_command
+    eval "$mbl_cli_command"
     sleep 30
 }
 
@@ -65,7 +65,7 @@ enable_interface()
 {
     local test_command="su -l -c \"ip link set $1 up\""
     local mbl_cli_command="$mbl_cli_shell '$test_command'"
-    eval $mbl_cli_command
+    eval "$mbl_cli_command"
     sleep 30
 }
 
@@ -105,10 +105,6 @@ else
         run_ping_test "eth0" "www.google.com" "pass"
 
         disable_interface "eth0"
-        if [ "$device_type" =  "imx8mmevk-mbl" ]
-        then
-            sleep 300
-        fi
 
         $mbl_cli_shell 'su -l -c "ifconfig -a"'
         $mbl_cli_shell 'su -l -c "route"'

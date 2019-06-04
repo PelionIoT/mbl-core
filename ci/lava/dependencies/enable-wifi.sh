@@ -92,8 +92,11 @@ then
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
-        if [ "$mbl_command shell 'lsmod' | grep -c qca9377" = 0 ]
+        # Check to see if the module is already loaded.
+        if [ "$($mbl_command shell 'lsmod' | grep -c qca9377)" = 0 ]
         then
+
+            # Not loaded so fetch the firmware and install it.
 
             # Enable WiFi
             apt-get install -q -q --yes wget
@@ -113,26 +116,17 @@ then
 
                 sleep 60
 
-                # Enable WiFi
-                $mbl_command shell 'connmanctl enable wifi'
-                sleep 120
-
                 printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
 
             else
                 printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
             fi
         else
-
-           if [ "$device_type" =  "imx8mmevk-mbl" ] 
-           then
-                $mbl_command shell 'connmanctl enable wifi'
-               sleep 300
-           fi
-
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
         fi
 
+        # Enable WiFi
+        $mbl_command shell 'connmanctl enable wifi'
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
