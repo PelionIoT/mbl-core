@@ -126,6 +126,7 @@ then
 
            if [ "$device_type" =  "imx8mmevk-mbl" ] 
            then
+                $mbl_command shell 'connmanctl enable wifi'
                sleep 300
            fi
 
