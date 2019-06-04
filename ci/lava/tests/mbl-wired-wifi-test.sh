@@ -105,7 +105,7 @@ else
         run_ping_test "eth0" "www.google.com" "pass"
 
         disable_interface "eth0"
-        if [ "$device_type" =  "imx8eemvk-mbl" ]
+        if [ "$device_type" =  "imx8mmevk-mbl" ]
         then
             sleep 300
         fi
