@@ -92,32 +92,38 @@ then
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
-        # Enable WiFi
-        apt-get install -q -q --yes wget
-
-        wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
-        if [ -f firmware-qca-2.0.3.bin ]; then
-            chmod +x firmware-qca-2.0.3.bin
-
-            $mbl_command put firmware-qca-2.0.3.bin /tmp
-
-            $mbl_command shell 'ls -R  /lib/modules/'
-            $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
-            $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
-
-            $mbl_command shell 'ls -R  /lib/modules/'
-            $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.112-fslc+gf7f7fda/extra/qca9377.ko"'
-
-            sleep 60
+        if [ $mbl_command shell 'lsmod' | grep -c qca9377 = 0 ]
+        then
 
             # Enable WiFi
-            $mbl_command shell 'connmanctl enable wifi'
-            sleep 120
+            apt-get install -q -q --yes wget
 
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+            wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
+            if [ -f firmware-qca-2.0.3.bin ]; then
+                chmod +x firmware-qca-2.0.3.bin
 
+                $mbl_command put firmware-qca-2.0.3.bin /tmp
+
+                $mbl_command shell 'ls -R  /lib/modules/'
+                $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
+                $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
+
+                $mbl_command shell 'ls -R  /lib/modules/'
+                $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.112-fslc+gf7f7fda/extra/qca9377.ko"'
+
+                sleep 60
+
+                # Enable WiFi
+                $mbl_command shell 'connmanctl enable wifi'
+                sleep 120
+
+                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+
+            else
+                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+            fi
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
         fi
 
     fi
