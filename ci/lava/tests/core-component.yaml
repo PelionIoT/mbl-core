@@ -1,0 +1,53 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Core components
+    description: Core component Tests
+
+parameters:
+    # COMPONENT specifies the folder that pytest runs in. If this is not
+    #           provided by the test submission pytest will run over the
+    #           entire repository.
+    #
+    COMPONENT:
+
+    # SETUP     performs whatever steps are necessary to set conditions prior
+    #           to the test. If this isn't provided by the test submission no
+    #           setup actions are performed.
+    SETUP:
+
+    # TEARDOWN  performs whatever steps are necessary to clean up after the
+    #           test has executed. If this isn't provided by the test
+    #           submission no teardown actions are performed.
+    TEARDOWN:
+
+run:
+    steps:
+        # Activate virtual environment
+        - source /tmp/test_venv/bin/activate
+
+        # Perform optional SETUP actions
+        - $SETUP
+
+        # A Test FAIL means that pytest returns an error code.
+        # This in turn causes the shell to immediatly exit.
+        # Prevent this with the "set +e" option
+        - set +e
+
+        # Run pytest
+        - pytest --verbose --color=no --junitxml=./$COMPONENT.xml ./$COMPONENT
+
+        # Turn the pytest results into a format the LAVA requires
+        - python3 ./ci/lava/dependencies/send_junit_results_to_lava.py ./$COMPONENT.xml
+
+        # Reenable the "-e" option
+        - set -e
+
+        # Perform optional TEARDOWN actions
+        - $TEARDOWN
+
+        # Cleanup
+        - /bin/rm ./$COMPONENT.xml
