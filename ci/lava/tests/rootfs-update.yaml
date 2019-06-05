@@ -5,7 +5,7 @@
 metadata:
     format: Lava-Test Test Definition 1.0
     name: RootFS update
-    description: RootFS update 
+    description: RootFS update
 
 parameters:
     # test_stage: specifies which stage of the test we are running - the
