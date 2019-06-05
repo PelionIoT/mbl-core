@@ -80,6 +80,7 @@ then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
     else
         # Blacklist the p2p interface
+        $mbl_command shell 'grep -i "NetworkInterfaceBlacklist" /config/user/connman/main.conf'
         $mbl_command shell 'sed -i "s/#NetworkInterfaceBlacklist=/NetworkInterfaceBlacklist=p2p/" /config/user/connman/main.conf'
         # Force reload of the file
         $mbl_command shell 'su -l -c "systemctl daemon-reload"'
@@ -92,7 +93,7 @@ then
         # Enable WiFi
         $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
-        # Check to see if the module is already loaded.
+        # Check to see if the firmware is already loaded.
         if [ "$($mbl_command shell 'lsmod' | grep -c qca9377)" = 0 ]
         then
 
