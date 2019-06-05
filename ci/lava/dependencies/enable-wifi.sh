@@ -80,10 +80,11 @@ then
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
     else
         # Blacklist the p2p interface
-        $mbl_command shell 'grep -i "NetworkInterfaceBlacklist" /config/user/connman/main.conf'
         $mbl_command shell 'sed -i "s/#NetworkInterfaceBlacklist=/NetworkInterfaceBlacklist=p2p/" /config/user/connman/main.conf'
+
         # Force reload of the file
         $mbl_command shell 'su -l -c "systemctl daemon-reload"'
+
         # Restart connman
         $mbl_command shell 'su -l -c "systemctl restart connman"'
 
@@ -108,13 +109,13 @@ then
 
                 $mbl_command put firmware-qca-2.0.3.bin /tmp
 
-                $mbl_command shell 'ls -R  /lib/modules/'
                 $mbl_command shell '/tmp/firmware-qca-2.0.3.bin --auto-accept'
                 $mbl_command shell 'cp -v -r firmware-qca-2.0.3/1PJ_QCA9377-3_LEA_2.0/* /'
 
-                $mbl_command shell 'ls -R  /lib/modules/'
-                $mbl_command shell 'su -l -c "insmod /lib/modules/4.14.112-fslc+gf7f7fda/extra/qca9377.ko"'
+                # Need to use a wildcard to locate the module because it is not fixed
+                $mbl_command shell "su -l -c 'insmod /lib/modules/*/extra/qca9377.ko'"
 
+                # Wait for the module to be loaded.
                 sleep 60
 
                 printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
