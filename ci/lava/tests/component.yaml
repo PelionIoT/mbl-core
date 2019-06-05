@@ -4,7 +4,7 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: MBL Core Tests
+    name: Core components 
     description: "MBL Core Tests behaviour"
 
 parameters:

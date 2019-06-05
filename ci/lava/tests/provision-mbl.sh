@@ -48,7 +48,7 @@ mbl_command="mbl-cli -a $dut_address"
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=fail>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=provision-mbl RESULT=fail>\n"
 else
 
     overall_result="pass"
@@ -130,7 +130,7 @@ else
 
 
     # Output overall result
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=mbl-cli-provisioning RESULT=%s>\n" $overall_result
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=provision-mbl RESULT=%s>\n" $overall_result
 
 
 fi

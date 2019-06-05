@@ -14,4 +14,4 @@ metadata:
         virtual_env:
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-helloworld.sh --venv $virtual_env
+        - ./ci/lava/tests/helloworld-update.sh --venv $virtual_env

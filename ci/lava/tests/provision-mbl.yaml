@@ -4,8 +4,8 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run Pelion App update test
-    description: "Run the Pelion App Update test"
+    name: Provision MBL
+    description: "MBL Pelion provisioning"
 
     parameters:
         #
@@ -15,4 +15,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh --venv $virtual_env
+        - ./ci/lava/tests/provision-mbl.sh --venv $virtual_env

@@ -4,8 +4,8 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: systemd tests
-    description: "systemd tests"
+    name: systemd
+    description: "Check integrity of systemd services"
 
     parameters:
         #
@@ -15,4 +15,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/systemd_tests.sh --venv $virtual_env
+        - ./ci/lava/tests/systemd.sh --venv $virtual_env

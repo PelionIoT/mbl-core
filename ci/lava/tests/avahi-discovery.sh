@@ -13,7 +13,7 @@ monitor_process() {
     do
         if [[ $counter -eq 0 ]]; then
             # avahi has stalled. Kill it and fail the test.
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=fail>"
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=avahi-discovery RESULT=fail>"
             kill -9 "$pid"
             exit 255
         fi
@@ -41,8 +41,8 @@ rm device_list
 if [ -z "$mbl_device" ]
 then
     echo "ERROR - avahi-browse failed to find an MBL device"
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=fail>"
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=avahi-discovery RESULT=fail>"
     exit 255
 else
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=AVAHI-DISCOVERY RESULT=pass>"
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=avahi-discovery RESULT=pass>"
 fi

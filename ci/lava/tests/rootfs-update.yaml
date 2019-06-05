@@ -4,7 +4,7 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run RootFS Update Test
+    name: RootFS Update
     description: "MBL Core Tests behaviour"
 
 parameters:
@@ -29,4 +29,4 @@ parameters:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-rootfs-test.sh --venv $virtual_env --stage $test_stage --image $image_url --update $pelion_update
+        - ./ci/lava/tests/rootfs-update.sh --venv $virtual_env --stage $test_stage --image $image_url --update $pelion_update

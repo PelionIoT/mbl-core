@@ -4,7 +4,7 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Build Hello World Test
+    name: Build Helloworld
     description: "Build Hello World in an LXC container"
 
 parameters:
@@ -18,4 +18,4 @@ run:
         # Give the directory write permisions so that the images can be written
         - chmod a+w tutorials/helloworld
         # Build the Hello World sample app.
-        - su ubuntu -c "./ci/lava/tests/lxc-build-helloworld.sh $arm_arch"
+        - su ubuntu -c "./ci/lava/tests/build-helloworld.sh $arm_arch"

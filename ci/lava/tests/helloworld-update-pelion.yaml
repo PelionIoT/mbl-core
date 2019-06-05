@@ -4,8 +4,8 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run mbl-cli provisioning test
-    description: "Run the Pelion provisioning tests"
+    name: Helloworld Update Pelion
+    description: "Update Helloworld app via Pelion"
 
     parameters:
         #
@@ -15,4 +15,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-provisioning.sh --venv $virtual_env
+        - ./ci/lava/tests/helloworld-update-pelion.sh --venv $virtual_env
