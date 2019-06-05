@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: Build Helloworld
-    description: "Build Hello World in an LXC container"
+    format: Lava-Test Test Definition 1.0
+    name: Build helloworld
+    description: Build helloworld in an LXC container
 
 parameters:
     # arm_arch: specifies the architecture of the UUT (armv7 or arm64)

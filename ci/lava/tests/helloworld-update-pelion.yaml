@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: Helloworld Update Pelion
-    description: "Update Helloworld app via Pelion"
+    format: Lava-Test Test Definition 1.0
+    name: Helloworld update pelion
+    description: Update helloworld app via Pelion
 
     parameters:
         #

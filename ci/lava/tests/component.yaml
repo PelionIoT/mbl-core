@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: Core components 
-    description: "MBL Core Tests behaviour"
+    format: Lava-Test Test Definition 1.0
+    name: Core components
+    description: Core component Tests
 
 parameters:
     # COMPONENT specifies the folder that pytest runs in. If this is not

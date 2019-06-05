@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: systemd
-    description: "Check integrity of systemd services"
+    format: Lava-Test Test Definition 1.0
+    name: Systemd
+    description: Check integrity of systemd services
 
     parameters:
         #

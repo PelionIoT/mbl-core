@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: Run Hello World Test
-    description: "Run the helloworld application on the target using mbl-cli"
+    format: Lava-Test Test Definition 1.0
+    name: Helloworld update
+    description: Run the helloworld application on the target using mbl-cli
 
     parameters:
         #
