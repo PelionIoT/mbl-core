@@ -58,7 +58,7 @@ then
     if [ -z "$dut_address" ]
     then
         printf "ERROR - mbl-cli failed to find MBL device\n"
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=fail>\n"
     else
 
 
@@ -70,13 +70,13 @@ then
         $mbl_command shell 'connmanctl enable wifi'
 
 
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
 
 
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skip>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=skip>\n"
 fi
 
 

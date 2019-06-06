@@ -48,9 +48,9 @@ run_systemd_test()
     local mbl_cli_command="$mbl_cli_shell '$systemctl_command'"
 
     if eval "$mbl_cli_command"; then
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemctl-%s RESULT=pass>\n" "${systemctl_action// /_}"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemctl-%s RESULT=pass>\n" "${systemctl_action// /-}"
     else
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemctl-%s RESULT=fail>\n" "${systemctl_action// /_}"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemctl-%s RESULT=fail>\n" "${systemctl_action// /-}"
         if [ "$show_fail" == "true" ]; then
             eval "$mbl_cli_shell 'systemctl --no-pager --failed'"
         fi
@@ -62,7 +62,7 @@ run_systemd_test()
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemd_tests RESULT=fail>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=systemd RESULT=fail>\n"
 else
     run_systemd_test "is-system-running" "true"
 
