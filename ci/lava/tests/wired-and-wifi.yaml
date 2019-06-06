@@ -4,8 +4,8 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run mbl-wifi tests
-    description: "Run the mbl wired and wifi tests"
+    name: wired and wifi tests
+    description: "Run the wired and wifi tests"
 
 parameters:
     # device_type: specifies the device the test is running on
@@ -18,4 +18,4 @@ parameters:
 
 run:
     steps:
-        - ./ci/lava/tests/mbl-wired-wifi-test.sh --dev $device_type --venv $virtual_env
+        - ./ci/lava/tests/wired-and-wifi-test.sh --dev $device_type --venv $virtual_env
