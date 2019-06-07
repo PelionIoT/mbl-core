@@ -95,6 +95,7 @@ cat device_list
 rm device_list
 
 mbl_cli_shell="mbl-cli -a $dut_address shell"
+mbl_command="mbl-cli -a $dut_address"
 
 # Only proceed if a device has been found
 
