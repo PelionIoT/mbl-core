@@ -118,6 +118,7 @@ else
 
     # Enable WiFi
     $mbl_command put /root/.wifi-open-access.config /config/user/connman/wifi-access.config
+    $mbl_cli_shell 'connmanctl enable wifi'
 
     run_ping_test "wlan0" "echo.mbedcloudtesting.com" "pass"
 
