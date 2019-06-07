@@ -61,8 +61,7 @@ then
     else
 
         # Enable WiFi
-        $mbl_command put /root/.wifi-open-access.config /config/user/connman/wifi-access.config
-        #$mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
+        $mbl_command put /root/.wifi-access.config /config/user/connman/wifi-access.config
 
         # Enable WiFi
         $mbl_command shell 'connmanctl enable wifi'
