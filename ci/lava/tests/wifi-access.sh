@@ -69,18 +69,6 @@ disable_interface()
     sleep 30
 }
 
-# Function to enable an interface
-# The interface in in $1
-#
-enable_interface()
-{
-    local test_command="su -l -c \"ip link set $1 up\""
-    local mbl_cli_command="$mbl_cli_shell '$test_command'"
-    eval "$mbl_cli_command"
-    # Wait for the interface to be removed and the routing tables etc to be updated
-    sleep 30
-}
-
 # Run the test
 
 # Find the address of the first device found by the mbl-cli containing the
