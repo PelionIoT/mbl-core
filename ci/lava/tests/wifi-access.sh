@@ -123,6 +123,10 @@ else
 
     # Wait for WiFi to be re-enabled
     sleep 30
+    $mbl_cli_shell 'connmanctl scan wifi'
+    $mbl_cli_shell 'connmanctl services'
+    $mbl_cli_shell 'route'
+    $mbl_cli_shell 'ifconfig -a'
 
     run_ping_test "wlan0" "echo.mbedcloudtesting.com" "pass"
 
