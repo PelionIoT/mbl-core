@@ -115,6 +115,8 @@ else
     sleep 60
 
     # Check status
+    $mbl_cli_shell 'connmanctl scan wifi'
+    $mbl_cli_shell 'connmanctl services'
     $mbl_cli_shell 'su -l -c "ifconfig -a"'
     $mbl_cli_shell 'su -l -c "route"'
 
@@ -137,6 +139,7 @@ else
     sleep 60
 
     # Check status
+    $mbl_cli_shell 'connmanctl scan wifi'
     $mbl_cli_shell 'connmanctl services'
     $mbl_cli_shell 'su -l -c "ifconfig -a"'
     $mbl_cli_shell 'su -l -c "route"'
