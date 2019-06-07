@@ -18,4 +18,4 @@ parameters:
 
 run:
     steps:
-        - ./ci/lava/tests/wired-and-wifi-test.sh --dev $device_type --venv $virtual_env
+        - ./ci/lava/tests/wired-and-wifi.sh --dev $device_type --venv $virtual_env
