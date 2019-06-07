@@ -125,8 +125,8 @@ else
     sleep 30
     $mbl_cli_shell 'connmanctl scan wifi'
     $mbl_cli_shell 'connmanctl services'
-    $mbl_cli_shell 'route'
-    $mbl_cli_shell 'ifconfig -a'
+    $mbl_cli_shell 'su -l -c "ifconfig -a"'
+    $mbl_cli_shell 'su -l -c "route"'
 
     run_ping_test "wlan0" "echo.mbedcloudtesting.com" "pass"
 
