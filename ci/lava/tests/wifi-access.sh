@@ -110,6 +110,11 @@ else
         # Bring down the wired interface
         disable_interface "eth0"
     fi
+
+    # Wait to allow the interface to properly be enabled with a routing tables etc.
+    sleep 60
+
+    # Check status
     $mbl_cli_shell 'su -l -c "ifconfig -a"'
     $mbl_cli_shell 'su -l -c "route"'
 
@@ -117,15 +122,21 @@ else
     run_ping_test "wlan0" "8.8.8.8" "pass"
     run_ping_test "wlan0" "www.google.com" "pass"
 
+    # Swap to the open Network.
+
+    # Disable WiFi
     $mbl_cli_shell 'connmanctl disable wifi'
 
-    # Enable WiFi
+    # Provide open access configuration
     $mbl_command put /root/.wifi-open-access.config /config/user/connman/wifi-access.config
+
+    # Enable WiFi
     $mbl_cli_shell 'connmanctl enable wifi'
 
-    # Wait for WiFi to be re-enabled
-    sleep 30
-    $mbl_cli_shell 'connmanctl scan wifi'
+    # Wait for WiFi to be re-enabled and routing tables etc.
+    sleep 60
+
+    # Check status
     $mbl_cli_shell 'connmanctl services'
     $mbl_cli_shell 'su -l -c "ifconfig -a"'
     $mbl_cli_shell 'su -l -c "route"'
