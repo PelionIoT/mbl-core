@@ -42,16 +42,16 @@ run_ping_test()
     if eval "$mbl_cli_command"; then
         result="pass"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
         fi
     else
         result="fail"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=fail>\n" "${test_command// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s RESULT=pass>\n" "${test_command// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         fi
     fi
     printf "Attempted to ping %s using interface %s. Expected result is %s. Actual result is %s.\n" "$2" "$1" "$3" "$result"
@@ -120,6 +120,9 @@ else
     # Enable WiFi
     $mbl_command put /root/.wifi-open-access.config /config/user/connman/wifi-access.config
     $mbl_cli_shell 'connmanctl enable wifi'
+
+    # Wait for WiFi to be re-enabled
+    sleep 30
 
     run_ping_test "wlan0" "echo.mbedcloudtesting.com" "pass"
 
