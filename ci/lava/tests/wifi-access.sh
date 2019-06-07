@@ -110,6 +110,8 @@ else
         # Bring down the wired interface
         disable_interface "eth0"
     fi
+    $mbl_cli_shell 'su -l -c "ifconfig -a"'
+    $mbl_cli_shell 'su -l -c "route"'
 
     # Check we can ping using the wifi interface, using both forms of addressing.
     run_ping_test "wlan0" "8.8.8.8" "pass"
