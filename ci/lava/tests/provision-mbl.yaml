@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: systemd tests
-    description: "systemd tests"
+    format: Lava-Test Test Definition 1.0
+    name: Provision MBL
+    description: MBL Pelion provisioning
 
     parameters:
         #
@@ -15,4 +15,4 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/systemd_tests.sh --venv $virtual_env
+        - ./ci/lava/tests/provision-mbl.sh --venv $virtual_env
