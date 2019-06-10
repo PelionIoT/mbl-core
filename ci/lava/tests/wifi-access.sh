@@ -45,11 +45,13 @@ run_ping_test()
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            overall_result="fail"
         fi
     else
         result="fail"
         if [ "$expected_result" == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            overall_result="fail"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         fi
@@ -92,6 +94,8 @@ then
     printf "ERROR - mbl-cli failed to find MBL device\n"
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=fail>\n"
 else
+
+    overall_result="pass"
 
     if [ "$device_type" !=  "imx7s-warp-mbl" ]
     then
@@ -137,5 +141,6 @@ else
     run_ping_test "wlan0" "8.8.8.8" "pass"
     run_ping_test "wlan0" "www.google.com" "pass"
 
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=pass>\n"
+    # Output overall result
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=%s>\n" $overall_result
 fi

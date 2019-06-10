@@ -45,11 +45,13 @@ run_ping_test()
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            overall_result="fail"
         fi
     else
         result="fail"
         if [ "$expected_result" == "pass" ]; then
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            overall_result="fail"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         fi
@@ -91,6 +93,7 @@ then
 
 else
 
+    overall_result="pass"
     # Find the address of the first device found by the mbl-cli containing the
     # pattern
     mbl-cli list > device_list
@@ -142,6 +145,7 @@ else
         run_ping_test "eth0" "8.8.8.8" "pass"
         run_ping_test "eth0" "www.google.com" "pass"
 
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wired_and_wifi RESULT=pass>\n"
+        # Output overall result
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wired_and_wifi RESULT=%s>\n" $overall_result
     fi
 fi
