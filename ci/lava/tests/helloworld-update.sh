@@ -45,7 +45,7 @@ rm device_list
 if [ -z "$dut_address" ]
 then
     echo "ERROR - mbl-cli failed to find MBL device"
-    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
+    echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update RESULT=fail>"
 else
 
     mbl_command="mbl-cli -a $dut_address"
@@ -76,9 +76,9 @@ else
     count_hello_world=$(grep -c "Hello, world" /tmp/user-sample-app-package.log)
     if [ "$count_hello_world" = 10 ]
     then
-        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=pass>"
+        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update RESULT=pass>"
     else
-        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=HelloWorld RESULT=fail>"
+        echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update RESULT=fail>"
     fi
 
 

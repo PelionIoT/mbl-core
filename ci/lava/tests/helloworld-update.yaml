@@ -3,16 +3,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 metadata:
-    format: "Lava-Test Test Definition 1.0"
-    name: Run Pelion App update test
-    description: "Run the Pelion App Update test"
+    format: Lava-Test Test Definition 1.0
+    name: Helloworld update
+    description: Run the helloworld application on the target using mbl-cli
 
     parameters:
         #
         # virtual_env: specifies the Python virtual environment
         #
         virtual_env:
-
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-pelion-app-update.sh --venv $virtual_env
+        - ./ci/lava/tests/helloworld-update.sh --venv $virtual_env
