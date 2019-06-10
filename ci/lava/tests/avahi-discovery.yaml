@@ -1,0 +1,12 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Avahi discovery
+    description: Run a test to discover connected devices using avahi-browse.
+
+run:
+    steps:
+        - ./ci/lava/tests/avahi-discovery.sh || lava-test-raise "avahi discovery failed"
