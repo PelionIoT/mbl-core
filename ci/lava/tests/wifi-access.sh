@@ -132,10 +132,10 @@ else
     $mbl_cli_shell 'su -l -c "ifconfig -a"'
     $mbl_cli_shell 'su -l -c "route"'
 
+    # Check we can ping using the wifi interface, using both forms of addressing.
     run_ping_test "wlan0" "echo.mbedcloudtesting.com" "pass"
-
-    run_ping_test "wlan0" "8.8.8.8" "fail"
-    run_ping_test "wlan0" "www.google.com" "fail"
+    run_ping_test "wlan0" "8.8.8.8" "pass"
+    run_ping_test "wlan0" "www.google.com" "pass"
 
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=pass>\n"
 fi
