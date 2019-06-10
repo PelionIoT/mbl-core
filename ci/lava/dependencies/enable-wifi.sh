@@ -52,6 +52,7 @@ mbl_command="mbl-cli -a $dut_address"
 if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
 then
 
+
     # Only proceed if a device has been found
 
     if [ -z "$dut_address" ]

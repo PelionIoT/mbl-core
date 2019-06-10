@@ -4,14 +4,15 @@
 
 metadata:
     format: "Lava-Test Test Definition 1.0"
-    name: Run Hello World Test
-    description: "Run the helloworld application on the target using mbl-cli"
+    name: systemd tests
+    description: "systemd tests"
 
     parameters:
         #
         # virtual_env: specifies the Python virtual environment
         #
         virtual_env:
+
 run:
     steps:
-        - ./ci/lava/tests/mbl-cli-run-helloworld.sh --venv $virtual_env
+        - ./ci/lava/tests/systemd_tests.sh --venv $virtual_env
