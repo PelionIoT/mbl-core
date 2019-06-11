@@ -50,7 +50,7 @@ run_ping_test()
     else
         result="fail"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=fail>\n" "${test_command// /-}" "${expected_result// /-}"
             overall_result="fail"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=pass>\n" "${test_command// /-}" "${expected_result// /-}"
