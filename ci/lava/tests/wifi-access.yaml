@@ -4,7 +4,7 @@
 
 metadata:
     format: Lava-Test Test Definition 1.0
-    name: wifi access test
+    name: wifi access
     description: wifi access test
 
 parameters:
