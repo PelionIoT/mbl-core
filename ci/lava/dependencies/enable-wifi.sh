@@ -104,9 +104,11 @@ then
             # Enable WiFi
             apt-get install -q -q --yes wget
 
+
             wget https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin
             if [ -f firmware-qca-2.0.3.bin ]; then
                 chmod +x firmware-qca-2.0.3.bin
+
 
                 $mbl_command put firmware-qca-2.0.3.bin /tmp
 

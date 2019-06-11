@@ -48,7 +48,7 @@ mbl_command="mbl-cli -a $dut_address"
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update  RESULT=fail>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update-pelion  RESULT=fail>\n"
 else
 
 
@@ -59,7 +59,7 @@ else
     if [ -z "$device_id" ]
     then
         printf "ERROR - mbl-cli failed to find MBL device\n"
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update-pelion RESULT=fail>\n"
     else
         # Now copy the python checker script to the DUT
         $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
@@ -83,9 +83,9 @@ else
         count_hello_world=$(grep -c "Hello, world" /tmp/user-sample-app-package.log)
         if [ "$count_hello_world" = 10 ]
         then
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=pass>"
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update-pelion RESULT=pass>"
         else
-            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=pelion-app-update RESULT=fail>"
+            echo "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=helloworld-update-pelion RESULT=fail>"
         fi
 
     fi
