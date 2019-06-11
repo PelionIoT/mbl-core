@@ -5,7 +5,7 @@
 metadata:
     format: Lava-Test Test Definition 1.0
     name: wifi access test
-    description: "wifi access test"
+    description: wifi access test
 
 parameters:
     # device_type: specifies the device the test is running on
