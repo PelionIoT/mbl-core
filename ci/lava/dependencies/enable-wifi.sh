@@ -58,7 +58,7 @@ then
     if [ -z "$dut_address" ]
     then
         printf "ERROR - mbl-cli failed to find MBL device\n"
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=fail>\n"
     else
 
         # Enable WiFi
@@ -67,7 +67,7 @@ then
         # Enable WiFi
         $mbl_command shell 'connmanctl enable wifi'
 
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
     fi
 elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ] 
 then
@@ -78,7 +78,7 @@ then
     if [ -z "$dut_address" ]
     then
         printf "ERROR - mbl-cli failed to find MBL device\n"
-        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=fail>\n"
     else
         # Blacklist the p2p interface
         $mbl_command shell 'sed -i "s/#NetworkInterfaceBlacklist=/NetworkInterfaceBlacklist=p2p/" /config/user/connman/main.conf'
@@ -119,13 +119,13 @@ then
                 # Wait for the module to be loaded.
                 sleep 60
 
-                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
 
             else
-                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=fail>\n"
+                printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=fail>\n"
             fi
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=pass>\n"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
         fi
 
         # Enable WiFi
@@ -133,7 +133,7 @@ then
     fi
 else
     # WiFi not needed/supported on the device so skip the test.
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable_wifi RESULT=skip>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=skip>\n"
 fi
 
 

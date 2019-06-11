@@ -42,18 +42,18 @@ run_ping_test()
     if eval "$mbl_cli_command"; then
         result="pass"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
             overall_result="fail"
         fi
     else
         result="fail"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
             overall_result="fail"
         else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s_expected_%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
         fi
     fi
     printf "Attempted to ping %s using interface %s. Expected result is %s. Actual result is %s.\n" "$2" "$1" "$3" "$result"
@@ -92,7 +92,7 @@ mbl_command="mbl-cli -a $dut_address"
 if [ -z "$dut_address" ]
 then
     printf "ERROR - mbl-cli failed to find MBL device\n"
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=fail>\n"
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi-access RESULT=fail>\n"
 else
 
     overall_result="pass"
@@ -142,5 +142,5 @@ else
     run_ping_test "wlan0" "www.google.com" "pass"
 
     # Output overall result
-    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi_access RESULT=%s>\n" $overall_result
+    printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=wifi-access RESULT=%s>\n" $overall_result
 fi
