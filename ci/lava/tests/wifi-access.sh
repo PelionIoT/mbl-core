@@ -42,7 +42,7 @@ run_ping_test()
     if eval "$mbl_cli_command"; then
         result="pass"
         if [ "$expected_result" == "pass" ]; then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=pass>\n" "${test_command// /_}" "${expected_result// /_}"
+            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=pass>\n" "${test_command// /-}" "${expected_result// /-}"
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-expected-%s RESULT=fail>\n" "${test_command// /_}" "${expected_result// /_}"
             overall_result="fail"
