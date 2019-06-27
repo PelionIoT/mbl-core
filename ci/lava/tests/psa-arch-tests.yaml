@@ -1,0 +1,20 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: PSA arch tests
+    description: Run PSA arch tests
+
+    parameters:
+        #
+        # virtual_env: specifies the Python virtual environment
+        #
+        virtual_env:
+
+run:
+    steps:
+        - . $virtual_env/bin/activate
+        - ./ci/lava/tests/psa-arch-tests.py || lava-test-raise "psa-arch-tests failed"
+
