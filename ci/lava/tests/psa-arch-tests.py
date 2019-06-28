@@ -3,21 +3,19 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-""" Script to run psa-arch-tests.
+"""
+Script to run psa-arch-tests.
 
 The actual tests should already be on the target, this script just runs them
 via mbl-cli and translates the output into something LAVA can understand.
 """
-
 import re
 import subprocess
 import sys
 
-SUITES = [ "crypto" ]
+SUITES = ["crypto"]
 
-EXPECTED_FAILS = {
-    "239_Testing_crypto_asymmetric_APIs": True,
-}
+EXPECTED_FAILS = {"239_Testing_crypto_asymmetric_APIs": True}
 
 
 def _get_id_from_line(line):
@@ -27,8 +25,10 @@ def _get_id_from_line(line):
     numeric_id, description = match.group("numeric_id", "description")
     return "{}_{}".format(
         match.group("numeric_id"),
-        _get_id_from_line.subs_pattern.sub("_", match.group("description"))
+        _get_id_from_line.subs_pattern.sub("_", match.group("description")),
     )
+
+
 _get_id_from_line.match_pattern = re.compile(
     r"""
         ^ \s*
@@ -37,18 +37,22 @@ _get_id_from_line.match_pattern = re.compile(
         DESCRIPTION: \s* (?P<description>.*\S)
         \s* $
     """,
-    flags=re.VERBOSE
+    flags=re.VERBOSE,
 )
 _get_id_from_line.subs_pattern = re.compile("[^A-Za-z0-9_]+")
+
 
 def _get_result_from_line(line):
     match = _get_result_from_line.pattern.match(line)
     if not match:
         return None
     return match.group("result")
+
+
 _get_result_from_line.pattern = re.compile(
     r"^\s*TEST RESULT:\s*(?P<result>PASS|FAIL|SKIP)"
 )
+
 
 def _check_expected_fails(current_id, result):
     """
@@ -67,6 +71,7 @@ def _check_expected_fails(current_id, result):
             return "fail"
     return result
 
+
 def _report_result(current_id, result):
     if not current_id:
         current_id = "unknown"
@@ -75,15 +80,14 @@ def _report_result(current_id, result):
 
     print(
         "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID={} RESULT={}>".format(
-            current_id,
-            result
+            current_id, result
         )
     )
 
+
 def _get_dut_addr():
     list_output = subprocess.check_output(
-        ["mbl-cli", "list"],
-        universal_newlines=True
+        ["mbl-cli", "list"], universal_newlines=True
     )
     for line in list_output.splitlines():
         print(line)
@@ -91,14 +95,23 @@ def _get_dut_addr():
         if match:
             return match.group("address")
     return None
+
+
 _get_dut_addr.pattern = re.compile(r"\s*1:[^:]+:\s+(?P<address>\S+)")
+
 
 def _run_suite(suite, dut_addr):
     with subprocess.Popen(
-        ["mbl-cli", "--address", dut_addr, "shell", "psa-arch-{}-tests".format(suite)],
+        [
+            "mbl-cli",
+            "--address",
+            dut_addr,
+            "shell",
+            "psa-arch-{}-tests".format(suite),
+        ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        universal_newlines=True
+        universal_newlines=True,
     ) as proc:
         current_id = None
         for line in proc.stdout:
@@ -112,6 +125,7 @@ def _run_suite(suite, dut_addr):
             if result:
                 _report_result(current_id, result)
                 current_id = None
+
 
 dut_addr = _get_dut_addr()
 if not dut_addr:
