@@ -15,7 +15,16 @@ import sys
 
 SUITES = ["crypto"]
 
-EXPECTED_FAILS = {"239_Testing_crypto_asymmetric_APIs": True}
+# Tests that we know will fail.
+#
+# These will be reported to Lava as skipped when they fail so that engineers
+# don't waste time investigating the failures. If the tests actually pass then
+# they will be reported to Lava as failures so that we notice and update this
+# list.
+EXPECTED_FAILS = {
+    # Bug in mbed-crypto: https://github.com/ARMmbed/mbed-crypto/issues/126
+    "239_Testing_crypto_asymmetric_APIs": True
+}
 
 
 def _get_id_from_line(line):
