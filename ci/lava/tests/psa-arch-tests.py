@@ -28,39 +28,33 @@ EXPECTED_FAILS = {
 
 
 def _get_id_from_line(line):
-    match = _get_id_from_line.match_pattern.match(line)
+    match_pattern = re.compile(
+        r"""
+            ^ \s*
+            TEST: \s* (?P<numeric_id>\d+)
+            \s* \| \s*
+            DESCRIPTION: \s* (?P<description>.*\S)
+            \s* $
+        """,
+        flags=re.VERBOSE,
+    )
+    match = match_pattern.match(line)
     if not match:
         return None
     numeric_id, description = match.group("numeric_id", "description")
+    subs_pattern = re.compile("[^A-Za-z0-9_]+")
     return "{}_{}".format(
         match.group("numeric_id"),
-        _get_id_from_line.subs_pattern.sub("_", match.group("description")),
+        subs_pattern.sub("_", match.group("description")),
     )
 
 
-_get_id_from_line.match_pattern = re.compile(
-    r"""
-        ^ \s*
-        TEST: \s* (?P<numeric_id>\d+)
-        \s* \| \s*
-        DESCRIPTION: \s* (?P<description>.*\S)
-        \s* $
-    """,
-    flags=re.VERBOSE,
-)
-_get_id_from_line.subs_pattern = re.compile("[^A-Za-z0-9_]+")
-
-
 def _get_result_from_line(line):
-    match = _get_result_from_line.pattern.match(line)
+    pattern = re.compile(r"^\s*TEST RESULT:\s*(?P<result>PASS|FAIL|SKIP)")
+    match = pattern.match(line)
     if not match:
         return None
     return match.group("result")
-
-
-_get_result_from_line.pattern = re.compile(
-    r"^\s*TEST RESULT:\s*(?P<result>PASS|FAIL|SKIP)"
-)
 
 
 def _check_expected_fails(current_id, result):
@@ -98,15 +92,14 @@ def _get_dut_addr():
     list_output = subprocess.check_output(
         ["mbl-cli", "list"], universal_newlines=True
     )
+
+    pattern = re.compile(r"\s*1:[^:]+:\s+(?P<address>\S+)")
     for line in list_output.splitlines():
         print(line)
-        match = _get_dut_addr.pattern.match(line)
+        match = pattern.match(line)
         if match:
             return match.group("address")
     return None
-
-
-_get_dut_addr.pattern = re.compile(r"\s*1:[^:]+:\s+(?P<address>\S+)")
 
 
 def _run_suite(suite, dut_addr):
