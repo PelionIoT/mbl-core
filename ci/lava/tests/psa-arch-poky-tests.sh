@@ -1,19 +1,28 @@
-#!/bin/sh
 
 # Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
 set +x
+
+# Run the tests and capture the output.
+
 psa-arch-crypto-tests > /tmp/results
+
+# Display the output.
+cat /tmp/results
+
+# Convert results into LAVA strings.
+
 state="LookingForTest"
-while read a
+
+while read -r line
 do
-    if [ $state == "LookingForTest" ];
+    if [ $state = "LookingForTest" ];
     then
-        if `echo $a | grep -q "DESCRIPTION:"`
+        if echo "$line" | grep -q "DESCRIPTION:"
         then
-            test=`echo $a  | cut -d":" -f2-`
+            test=$(echo "$line"  | cut -d":" -f2-)
             test=${test/ /}
             test=${test// /_}
             test=${test//_|_DESCRIPTION:/}
@@ -21,12 +30,12 @@ do
         fi
     elif [ $state = "LookingForResult" ];
     then
-        if `echo $a | grep -q "RESULT"`
+        if echo "$line" | grep -q "RESULT"
         then
             echo -n "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
-            echo -n $test
+            echo -n "$test"
             echo -n " RESULT="
-            if `echo $a | grep -q "PASS"`
+            if echo "$line" | grep -q "PASS"
             then
                 echo -n "pass"
             else
@@ -36,6 +45,6 @@ do
             state="LookingForTest"
        fi
    fi
-- done < /tmp/results
+done < /tmp/results
 
 
