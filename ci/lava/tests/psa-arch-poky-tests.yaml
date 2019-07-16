@@ -1,0 +1,19 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: PSA arch Poky tests
+    description: Run PSA arch Poky tests
+
+    parameters:
+        #
+        # virtual_env: specifies the Python virtual environment
+        #
+        virtual_env:
+
+run:
+    steps:
+        - ./ci/lava/tests/psa-arch-poky-tests.sh || lava-test-raise "psa-arch-poky-tests failed"
+
