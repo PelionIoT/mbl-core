@@ -241,5 +241,6 @@ def _calculate_crc(header_bytes):
     Args:
     * header_bytes(bytes/bytearray): bytes of the HEADER blob up to, but not
       including, the CRC field itself.
+
     """
     return zlib.crc32(header_bytes) & 0xFFFFFFFF
