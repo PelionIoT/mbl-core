@@ -29,6 +29,9 @@ while [ "$1" != "" ]; do
                         # $rootfs_image is the image name with the "wic.gz" replaced by "tar.xz"
                         rootfs_image=${1//wic.gz/tar.xz}
                         ;;
+        -r | --rootfs ) shift
+                        rootfs=$1
+                        ;;
         -u | --update ) shift
                         pelion_update=$1
                         ;;
@@ -43,7 +46,7 @@ done
 mbl-cli list > device_list
 cat device_list
 
-dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3-)
+dut_address=$(grep "$pattern" device_list | head -1 | cut -d":" -f3- | tr -d ' ')
 
 rm device_list
 
@@ -60,28 +63,16 @@ else
 
     printf "Active Partition: %s\n" "$active_partition"
 
+    # We check if the rootfs pass as argument is the same of the active rootfs
+    if [ "$active_partition" = "$rootfs" ]
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-%s-selected RESULT=pass>\n" "$pelion_update" "$rootfs"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-%s-selected RESULT=fail>\n" "$pelion_update" "$rootfs"
+    fi
 
     if [ "$test_stage" = "UPDATE" ]
     then
-        # At the start rootfs1 should be the active partition, since the board
-        # should be cleanly flashed.
-        if [ "$active_partition" = "rootfs1" ]
-        then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-rootfs1-selected RESULT=pass>\n" "$pelion_update"
-        else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-rootfs1-selected RESULT=fail>\n" "$pelion_update"
-        fi
-
-        # Update the hostname of the DUT to contain "lava-". This is so the
-        # test stage after the reboot will expect a different prompt.
-
-
-        # The single quotes upsets shellcheck, however we need to send the
-        # command as specified to the DUT. Otherwise the hostname is expanded
-        # on the host rather than on the DUT.
-        # shellcheck disable=SC2016
-        $mbl_command shell 'echo lava-"$(hostname)" > /config/user/hostname'
-
         # Install wget
         apt-get update
         apt-get install -q -q --yes wget
@@ -127,8 +118,6 @@ else
                 fi
 
             else
-
-
                 # Now copy the tar file to the DUT
                 $mbl_command put /tmp/payload.tar /scratch
 
@@ -136,19 +125,23 @@ else
                 $mbl_command shell 'su -l -c "mbl-firmware-update-manager /scratch/payload.tar -v --keep --assume-no"'
 
                 # Now reboot the board and get the result of the reboot command
-                $mbl_command shell 'su -l -c "reboot || echo $?"'
+                # $mbl_command shell 'su -l -c "reboot || echo $?"'
+                # mbl-cli doesn't close the connection properly when we run a reboot: IOTMBL-2389
+                # Until we fix it, we reboot the board sending the command over ssh with the appropriate
+                # options ServerAliveInterval=10 -o ServerAliveCountMax=3
+                ssh_options=("-o" "StrictHostKeyChecking=no" "-o" "ServerAliveInterval=5" "-o" "ServerAliveCountMax=1")
+                # Check if the address is IPv4. If not, assume it is IPv6.
+                # ssh command needs to be piped with true because when the connection hangs
+                # it returns an error code which we don't need to check.
+                printf "Rebooting device...\n"
+                if [[ $dut_address =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+                    ssh "${ssh_options[@]}" "$dut_address" 'su -l -c "reboot || echo $?"' | true
+                else
+                    ssh "${ssh_options[@]}" -6 "$dut_address" 'su -l -c "reboot || echo $?"' | true
+                fi
             fi
         else
             printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-rootfs-download RESULT=fail>\n" "$pelion_update"
-        fi
-
-    else # The POST_CHECK
-        # At the end rootfs2 should be the active partition.
-        if [ "$active_partition" = "rootfs2" ]
-        then
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-rootfs2-selected RESULT=pass>\n" "$pelion_update"
-        else
-            printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=%s-rootfs2-selected RESULT=fail>\n" "$pelion_update"
         fi
     fi
 fi
