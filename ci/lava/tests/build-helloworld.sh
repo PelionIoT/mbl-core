@@ -40,7 +40,7 @@ print_result
 
 teststep="select-device"
 case "$1" in
-    "bcm2837-rpi-3-b-32" | "bcm2837-rpi-3-b-plus-32" | "imx7s-warp-mbl" | "imx7d-pico-mbl")
+    "bcm2837-rpi-3-b-32" | "bcm2837-rpi-3-b-plus-32" | "imx7s-warp-mbl" | "imx7d-pico-mbl" | "imx6ul-pico-mbl")
         arm_arch="armv7"
         ;;
     "imx8mmevk-mbl")
