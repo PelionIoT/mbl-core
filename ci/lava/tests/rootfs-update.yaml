@@ -13,6 +13,11 @@ parameters:
     #
     test_stage:
 
+    # rootfs: specifies the active rootfs that needs to checked. It is the
+    #         label of the root file system (e.g.: rootfs1)
+    #
+    rootfs:
+
     # image_url: specifies the url of the test image in order to extract the
     #            root_fs image
     #
@@ -29,4 +34,4 @@ parameters:
 
 run:
     steps:
-        - ./ci/lava/tests/rootfs-update.sh --venv $virtual_env --stage $test_stage --image $image_url --update $pelion_update
+        - ./ci/lava/tests/rootfs-update.sh --venv $virtual_env --stage $test_stage --image $image_url --rootfs $rootfs --update $pelion_update
