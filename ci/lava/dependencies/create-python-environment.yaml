@@ -1,0 +1,31 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Create Python environment including pytest into the LXC container.
+    description: Python Environment Creation.
+
+parameters:
+    # virtual_env specifies the name of the virtual environment
+    #
+    virtual_env:
+
+run:
+    steps:
+        # Create and activate the python venv
+        - python3 -m venv $virtual_env
+        - . $virtual_env/bin/activate
+
+        # Upgrade version of pip3
+        - pip3 install --upgrade pip
+
+        # Download pytest. Do this in two stages to the files are available for installing on the DUT as well
+        #
+        - pip3 download -d /tmp/pytest pytest
+
+        # Install pytest
+        - pip3 install --no-index --find-links=/tmp/pytest/ pytest
+
+

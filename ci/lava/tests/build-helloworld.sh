@@ -82,4 +82,5 @@ tar -cvf user-sample-app-package_1.0_any.ipk.tar user-sample-app-package_1.0_any
 # subsequent test steps.
 
 cp user-sample-app-package_1.0_any.ipk.tar /tmp/user-sample-app-package_1.0_any.ipk.tar
+cp user-sample-app-package_1.0_any.ipk /tmp/user-sample-app-package_1.0_any.ipk
 

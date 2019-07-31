@@ -4,10 +4,13 @@
 
 metadata:
     format: Lava-Test Test Definition 1.0
-    name: Core components
-    description: Core component Tests
+    name: Build Test Images
+    description: Build Test Images
 
 parameters:
+    # device: specifies the device of the UUT (armv7 or arm64)
+    #
+    device:
 
     #
     # virtual_env: specifies the Python virtual environment
@@ -17,6 +20,7 @@ run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
+        - mkdir /home/root
 
-        - pytest --verbose -s ./ci/lava/tests/test-core-component.py
+        - pytest --verbose -s ./ci/lava/tests/test-build-test-images.py --device $device
 
