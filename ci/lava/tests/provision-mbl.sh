@@ -128,10 +128,15 @@ else
         cat /tmp/get-pelion-status
     fi
 
+    # Restart mbl-cloud-client and wait 30 seconds
+    if $mbl_command shell "systemctl restart mbl-cloud-client && sleep 30"
+    then
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=restart-mbl-cloud-client RESULT=pass>\n"
+    else
+        printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=restart-mbl-cloud-client RESULT=fail>\n"
+        overall_result="fail"
+    fi
 
     # Output overall result
     printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=provision-mbl RESULT=%s>\n" $overall_result
-
-
 fi
-
