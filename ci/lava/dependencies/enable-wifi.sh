@@ -49,7 +49,10 @@ mbl_command="mbl-cli -a $dut_address"
 
 # Enable WiFi if the device under test needs it.
 
-if [ "$device_type" =  "imx7s-warp-mbl" ] || [ "$device_type" =  "bcm2837-rpi-3-b-32" ] || [ "$device_type" =  "bcm2837-rpi-3-b-plus-32" ]
+if [ "$device_type" = "imx7s-warp-mbl" ] || \
+   [ "$device_type" = "bcm2837-rpi-3-b-32" ] || \
+   [ "$device_type" = "bcm2837-rpi-3-b-plus-32" ] || \
+   [ "$device_type" = "imx6ul-pico-mbl" ]
 then
 
 
@@ -69,7 +72,7 @@ then
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
     fi
-elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ] 
+elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ]
 then
 
 
