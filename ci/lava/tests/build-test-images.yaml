@@ -20,7 +20,10 @@ run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
-        - mkdir /home/root
 
-        - pytest --verbose -s ./ci/lava/tests/test-build-test-images.py --device $device
+        # The tutorial is cloned as root, but we build it as user "ubuntu".
+        # Give the directory write permisions so that the images can be written
+        - chmod -R a+w tutorials/helloworld
 
+        # Build the Hello World sample app.
+        - su ubuntu -c "$virtual_env/bin/pytest --verbose -s ./ci/lava/tests/test-build-test-images.py --device $device"

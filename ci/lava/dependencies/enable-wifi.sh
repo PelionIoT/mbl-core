@@ -51,8 +51,7 @@ mbl_command="mbl-cli -a $dut_address"
 
 if [ "$device_type" = "imx7s-warp-mbl" ] || \
    [ "$device_type" = "bcm2837-rpi-3-b-32" ] || \
-   [ "$device_type" = "bcm2837-rpi-3-b-plus-32" ] || \
-   [ "$device_type" = "imx6ul-pico-mbl" ]
+   [ "$device_type" = "bcm2837-rpi-3-b-plus-32" ]
 then
 
 
@@ -72,7 +71,7 @@ then
 
         printf "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID=enable-wifi RESULT=pass>\n"
     fi
-elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ]
+elif [ "$device_type" =  "imx7d-pico-mbl" ] || [ "$device_type" =  "imx8mmevk-mbl" ] || [ "$device_type" = "imx6ul-pico-mbl" ]
 then
 
 

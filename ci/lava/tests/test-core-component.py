@@ -4,8 +4,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Script to install and run core component tests o nthe DUT.
+Script to install and run core component tests on the DUT.
 
+This pytest script consists of a test_setup function that installs the
+necessary pre-built images and builds and installs images for firmware
+testing onto the DUT. It also copies the entire mbl-core clone onto the DUT.
+
+The test_component function runs pytest on the DUT via the mbl-cli on the
+mbl-core copy.
 
 """
 import pytest
@@ -14,9 +20,10 @@ import subprocess
 
 
 class Test_Core_Component_DUT:
-    def test_setup(self, dut_addr, execute_helper):
-        # Copy the test specific parts, generating items as required.
+    """Class to encapsulate the testing of core components on a DUT."""
 
+    def test_setup(self, dut_addr, execute_helper):
+        """Copy the test specific parts, generating items as required."""
         execute_helper._send_mbl_cli_command(
             [
                 "put",
@@ -57,7 +64,8 @@ class Test_Core_Component_DUT:
         execute_helper._execute_command(
             [
                 "python3",
-                "./firmware-management/mbl-app-manager/tests/native/test_case_generator_mbl-app-manager.py",
+                "./firmware-management/mbl-app-manager/tests/native/"
+                "test_case_generator_mbl-app-manager.py",
                 "-o",
                 "/tmp/app",
                 "-v",
@@ -82,12 +90,13 @@ class Test_Core_Component_DUT:
         assert True
 
     def test_component(self, dut_addr, execute_helper):
-
-        # Perform the test.
+        """Perform the test on the DUT via the mbl-cli."""
         execute_helper._send_mbl_cli_command(
             [
                 "shell",
-                "/tmp/venv/bin/pytest --verbose --ignore=/scratch/mbl-core/ci --color=no "
+                "/tmp/venv/bin/pytest "
+                "--verbose "
+                "--ignore=/scratch/mbl-core/ci --color=no "
                 "/scratch/mbl-core",
             ],
             dut_addr,

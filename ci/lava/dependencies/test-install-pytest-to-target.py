@@ -19,19 +19,19 @@ import re
 
 
 class Test_Create_Pytest_Environment_On_DUT:
-    """ Create python test environment on a device under test. """
+    """Create python test environment on a device under test."""
 
-    def test_copy_component_to_target(self, execute_helper, dut_addr):
-
+    def test_pytest_to_target(self, execute_helper, dut_addr):
+        """Copy pytest onto the DUT using the mbl-cli."""
         copy_success = False
 
-        returnCode, mbl_cli_put_output, error = execute_helper._send_mbl_cli_command(
+        returnCode, put_output, error = execute_helper._send_mbl_cli_command(
             ["put", "-r", "/tmp/pytest", "/tmp/pytest"], dut_addr
         )
 
         pattern = re.compile(r"Transfer completed")
 
-        for line in mbl_cli_put_output.splitlines():
+        for line in put_output.splitlines():
             match = pattern.match(line)
             if match:
                 copy_success = True
@@ -41,7 +41,7 @@ class Test_Create_Pytest_Environment_On_DUT:
     def test_create_python_virtual_environment_on_target(
         self, execute_helper, dut_addr
     ):
-
+        """Create the python virtual environment on the DUT using mbl-cli."""
         returnCode, output, error = execute_helper._send_mbl_cli_command(
             ["shell", "python3 -m venv /tmp/venv --system-site-packages"],
             dut_addr,
@@ -49,12 +49,15 @@ class Test_Create_Pytest_Environment_On_DUT:
 
         assert returnCode == 0
 
-    def test_install_component_on_target(self, execute_helper, dut_addr):
-
+    def test_install_pytest_on_target(self, execute_helper, dut_addr):
+        """Install pytest into the python virtual environment on the DUT."""
         returnCode, output, error = execute_helper._send_mbl_cli_command(
             [
                 "shell",
-                "/tmp/venv/bin/pip3 install --no-index --find-links=/tmp/pytest pytest",
+                "/tmp/venv/bin/pip3 "
+                "install "
+                "--no-index "
+                "--find-links=/tmp/pytest pytest",
             ],
             dut_addr,
         )

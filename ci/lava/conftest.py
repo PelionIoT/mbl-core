@@ -49,14 +49,19 @@ class Execute_Helper:
     """Class to provide a wrapper for executing commands as a subprocess."""
 
     @staticmethod
+    def _print(data):
+        # print(data)
+        pass
+
+    @staticmethod
     def _execute_command(command):
         """Execute the provided command list.
 
         Executes the command and returns the erro code, stdout and stderr.
         """
-        print("execute_command start:")
-        print("command:")
-        print(command)
+        Execute_Helper._print("execute_command start:")
+        Execute_Helper._print("command:")
+        Execute_Helper._print(command)
         p = subprocess.Popen(
             command,
             stdin=subprocess.PIPE,
@@ -66,24 +71,29 @@ class Execute_Helper:
             universal_newlines=True,
         )
         output, error = p.communicate()
-        print("output:")
-        print(output)
-        print("error:")
-        print(error)
-        print("returnCode:")
-        print(p.returncode)
-        print("execute_command done.")
+        Execute_Helper._print("output:")
+        Execute_Helper._print(output)
+        Execute_Helper._print("error:")
+        Execute_Helper._print(error)
+        Execute_Helper._print("returnCode:")
+        Execute_Helper._print(p.returncode)
+        Execute_Helper._print("execute_command done.")
 
         return p.returncode, output, error
 
     @staticmethod
     def _send_mbl_cli_command(command, addr):
 
-        cliCommand = ["mbl-cli", "--address", addr]
-        for item in command:
-            cliCommand.append(item)
+        err = 1
+        output = ""
+        error = ""
 
-        return Execute_Helper._execute_command(cliCommand)
+        if addr != "":
+            cliCommand = ["mbl-cli", "--address", addr]
+            for item in command:
+                cliCommand.append(item)
+            err, output, error = Execute_Helper._execute_command(cliCommand)
+        return err, output, error
 
 
 @pytest.fixture
