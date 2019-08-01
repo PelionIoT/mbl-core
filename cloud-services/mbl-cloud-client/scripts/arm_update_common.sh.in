@@ -19,10 +19,17 @@
 # Note - this library file uses return and exit codes 1-20 to indicate errors.
 #
 
-LOCAL_CONFIG_PATH=/opt/arm/arm_update_local_config.sh
-ROOTFS_TYPE="ext4"
-FLAGSFS_TYPE="ext4"
-SAVED_HEADER_PATH="/mnt/flags/header"
+FLAGS_DIR="@BOOTFLAGS_DIR@"
+TMP_DIR="@TMP_DIR@"
+UPDATE_PAYLOAD_DIR="@UPDATE_PAYLOAD_DIR@"
+LOG_DIR="@LOG_DIR@"
+ROOTFS1_LABEL="@ROOTFS1_LABEL@"
+ROOTFS2_LABEL="@ROOTFS2_LABEL@"
+ROOTFS_TYPE="@ROOTFS_TYPE@"
+
+ARM_UPDATE_ACTIVATE_LOG_PATH="${LOG_DIR}/arm_update_activate.log"
+ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH="${LOG_DIR}/arm_update_active_details.log"
+SAVED_HEADER_PATH="${FLAGS_DIR}/header"
 
 # Given an exit status, exits with that status if it is non-zero, otherwise
 # does nothing
@@ -130,6 +137,3 @@ emodFsType="$3"
 get_active_root_device() {
     lsblk -nrpo NAME,MOUNTPOINT | grep -e ".* /$" | cut -d ' ' -f1
 }
-
-
-[ -e "$LOCAL_CONFIG_PATH" ] && . "$LOCAL_CONFIG_PATH"
