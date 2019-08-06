@@ -49,12 +49,6 @@ HEADER_NAME="header"
 # location where the update client will find the header
 HEADER_PATH="${HEADER_DIR}/${HEADER_NAME}.bin"
 
-# Flag partition
-FLAGS=$(get_device_for_label bootflags)
-exit_on_error "$?"
-
-ensure_mounted_or_die "$FLAGS" /mnt/flags "$FLAGSFS_TYPE"
-
 # Boot Flags
 if [ -e "$SAVED_HEADER_PATH" ]; then
     if ! cp "$SAVED_HEADER_PATH" "$HEADER_PATH"; then
