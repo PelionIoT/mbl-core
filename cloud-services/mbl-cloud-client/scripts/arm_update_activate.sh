@@ -145,7 +145,7 @@ tar_filename="$1"
 # We only have to reboot during the update if there's an update for a component
 # that requires a reboot, so set the do_not_reboot flag here and let it be
 # deleted if a reboot is required..
-touch /tmp/do_not_reboot
+touch "${TMP_DIR}/do_not_reboot"
 
 # list files in udpate payload ($FIRMWARE) tar file
 FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
@@ -160,19 +160,19 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     # Install app updates from payload file
     # ------------------------------------------------------------------------------
 
-    printf "%s\n" "${FIRMWARE}" > /scratch/firmware_path
-    touch /scratch/do_app_update
+    printf "%s\n" "${FIRMWARE}" > "${UPDATE_PAYLOAD_DIR}/firmware_path"
+    touch "${UPDATE_PAYLOAD_DIR}/do_app_update"
     set +x
     echo "Waiting for app update to finish"
-    while ! [ -e /scratch/done_app_update ]; do
+    while ! [ -e "${UPDATE_PAYLOAD_DIR}/done_app_update" ]; do
         sleep 1
     done
     echo "App update finished"
     set -x
-    rm /scratch/done_app_update
+    rm "${UPDATE_PAYLOAD_DIR}/done_app_update"
 
-    app_update_rc=$(cat /scratch/app_update_rc)
-    rm /scratch/app_update_rc
+    app_update_rc=$(cat "${UPDATE_PAYLOAD_DIR}/app_update_rc")
+    rm "${UPDATE_PAYLOAD_DIR}/app_update_rc"
     if [ "$app_update_rc" -ne 0 ]; then
         exit 47
     fi
@@ -200,46 +200,41 @@ elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     # Install rootfs update from payload file
     # ------------------------------------------------------------------------------
     # Detect root partitions
-    root1=$(get_device_for_label rootfs1)
+    root1=$(get_device_for_label "$ROOTFS1_LABEL")
     exit_on_error "$?"
 
-    root2=$(get_device_for_label rootfs2)
-    exit_on_error "$?"
-
-    FLAGS=$(get_device_for_label bootflags)
+    root2=$(get_device_for_label "$ROOTFS2_LABEL")
     exit_on_error "$?"
 
     # Find the partition that is currently mounted to /
     activePartition=$(get_active_root_device)
 
     if [ "$activePartition" = "$root1" ]; then
-        activePartitionLabel=rootfs1
+        activePartitionLabel="$ROOTFS1_LABEL"
         nextPartition="$root2"
-        nextPartitionLabel=rootfs2
+        nextPartitionLabel="$ROOTFS2_LABEL"
     elif [ "$activePartition" = "$root2" ]; then
-        activePartitionLabel=rootfs2
+        activePartitionLabel="$ROOTFS2_LABEL"
         nextPartition="$root1"
-        nextPartitionLabel="rootfs1"
+        nextPartitionLabel="$ROOTFS1_LABEL"
     else
-        echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
+        echo "Current root partition does not have a \"${ROOTFS1_LABEL}\" or \"${ROOTFS2_LABEL}\" label"
         exit 21
     fi
 
     create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
     ensure_not_mounted_or_die "$nextPartition"
 
-    ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
-
     save_header_or_die "$HEADER"
     sync
 
-    if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
-        if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
+    if [ -e "${FLAGS_DIR}/${activePartitionLabel}" ]; then
+        if ! mv "${FLAGS_DIR}/${activePartitionLabel}" "${FLAGS_DIR}/${nextPartitionLabel}"; then
             echo "Failed to rename boot flag file";
             exit 25
         fi
     else
-        if ! touch "/mnt/flags/${nextPartitionLabel}"; then
+        if ! touch "${FLAGS_DIR}/${nextPartitionLabel}"; then
             echo "Failed to create new boot flag file";
             exit 26
         fi
@@ -247,8 +242,8 @@ elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     sync
 
     # Remove do_not_reboot_flag - we need a reboot for rootfs updates
-    if ! rm -f /tmp/do_not_reboot; then
-        echo "Failed to remove /tmp/do_not_reboot flag file";
+    if ! rm -f "${TMP_DIR}/do_not_reboot"; then
+        echo "Failed to remove ${TMP_DIR}/do_not_reboot flag file";
         exit 27
     fi
 
