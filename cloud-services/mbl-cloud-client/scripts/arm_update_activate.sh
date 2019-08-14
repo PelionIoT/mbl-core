@@ -133,6 +133,39 @@ tar_filename="$1"
     done
 }
 
+# Given a payload tar and a component file name, extract the component,
+# decompress it and write it to disk.
+#
+# $1: Tar archive file name
+# $2: Component file name to extract and write to disk
+# $3: Offset in KiB
+extract_and_write_update_component() {
+local payload="$1"
+local component_filename="$2"
+local offset_bytes=$(expr "$3" \* 1024)
+
+# Find the disk name in the blockdev output
+local disk_name=$(blockdev --report | grep \/dev\/mmcblk[0-9]$ | awk '{print $7}')
+
+# Set the block size to the sector size of the disk
+local block_size=$(blockdev --getss "$disk_name")
+
+tar -xf "$payload" "$component_filename"
+gunzip -c "$component_filename" | dd of=/dev/mmcblk1 seek="$offset_bytes" bs="$block_size"
+}
+
+# Remove the "do not reboot" flag
+# Exits on errors.
+#
+# $1: The path to the reboot flag file
+remove_do_not_reboot_flag_or_die() {
+local dnr_flag_path="$1"
+
+if ! rm -f "$dnr_flag_path"; then
+    echo "Failed to remove ${dnr_flag_path} flag file";
+    exit 27
+fi
+}
 
 # ------------------------------------------------------------------------------
 # Main code starts here
@@ -149,6 +182,14 @@ touch "${TMP_DIR}/do_not_reboot"
 
 # list files in udpate payload ($FIRMWARE) tar file
 FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
+
+# directory containing files which contain information about the update payloads
+PART_INFO_FILES_DIR=/config/factory/part-info
+
+# expected bootloader component file names
+WKS_BL1_FILENAME=MBL_WKS_BOOTLOADER1
+WKS_BL2_FILENAME=MBL_WKS_BOOTLOADER2
+
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -193,6 +234,23 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     systemctl restart mbl-cloud-client
 
     exit "$?"
+
+elif BOOTLOADER2_FILE=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BL2_FILENAME}"); then
+
+    # ------------------------------------------------------------------------------
+    # Write a bootloader 2 component from an update payload file to disk
+    # ------------------------------------------------------------------------------
+    # Find the offset from the 'part-info' file
+    OFFSET=$(cat "${PART_INFO_FILES_DIR}"/MBL_WKS_BOOTLOADER2_OFFSET_BANK1_KiB)
+
+    extract_and_write_update_component "$FIRMWARE" "$BOOTLOADER2_FILE" "$OFFSET"
+    sync
+
+    # Remove the do not reboot flag, the user will likely want to reboot after applying
+    # the bootloader update.
+    remove_do_not_reboot_flag_or_die "${TMP_DIR}/do_not_reboot"
+
+    exit 0
 
 elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
 
@@ -242,11 +300,7 @@ elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     sync
 
     # Remove do_not_reboot_flag - we need a reboot for rootfs updates
-    if ! rm -f "${TMP_DIR}/do_not_reboot"; then
-        echo "Failed to remove ${TMP_DIR}/do_not_reboot flag file";
-        exit 27
-    fi
-
+    remove_do_not_reboot_flag_or_die "${TMP_DIR}/do_not_reboot"
     exit 0
 
 else
