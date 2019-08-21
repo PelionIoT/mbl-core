@@ -147,11 +147,12 @@ local offset_bytes=$(expr "$3" \* 1024)
 # Find the disk name in the blockdev output
 local disk_name=$(blockdev --report | grep \/dev\/mmcblk[0-9]$ | awk '{print $7}')
 
-# Set the block size to the sector size of the disk
-local block_size=$(blockdev --getss "$disk_name")
-
 tar -xf "$payload" "$component_filename"
-gunzip -c "$component_filename" | dd of=/dev/mmcblk1 seek="$offset_bytes" bs="$block_size"
+# Linux always considers the sector size to be 512 bytes, no matter what
+# the devices actual block size is. We just let dd use its default block size and
+# ensure the seek is always a byte count.
+# See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
+gunzip -c "$component_filename" | dd of="$disk_name" oflag=seek_bytes conv=fsync seek="$offset_bytes"
 }
 
 # Remove the "do not reboot" flag
