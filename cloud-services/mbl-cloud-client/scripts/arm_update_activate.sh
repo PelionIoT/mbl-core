@@ -157,7 +157,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     fi
 
     if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
-        printf "Failed to strip the partition number from the disk name: %s" "$ewuc_disk_name"
+        printf "Failed to strip the partition number from the root partition's device file name: %s" "$ewuc_disk_name\n"
         exit 55
     fi
 
