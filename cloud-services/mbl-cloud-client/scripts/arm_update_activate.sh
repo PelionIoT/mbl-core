@@ -173,17 +173,17 @@ ewuc_component_filename="$2"
         exit 56
     fi
 
-    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$TMP_DIR"; then
+    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$UPDATE_PAYLOAD_DIR"; then
         printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
         exit 57
     fi
 
-    if ! gunzip "$TMP_DIR/$ewuc_component_filename".gz; then
+    if ! gunzip "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename".gz; then
         printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
         exit 58
     fi
 
-    if ! ewuc_actual_img_size=$(wc -c < "$TMP_DIR/$ewuc_component_filename"); then
+    if ! ewuc_actual_img_size=$(wc -c < "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"); then
         printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
         exit 59
     fi
@@ -199,13 +199,13 @@ ewuc_component_filename="$2"
     # the device's actual block size is. We just let dd use its default block size and
     # ensure the seek is always a byte count.
     # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-    if ! dd if="$TMP_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+    if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
         printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
         exit 61
     fi
 
     # Clean up.
-    if ! rm "$TMP_DIR/$ewuc_component_filename"; then
+    if ! rm "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
         printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
