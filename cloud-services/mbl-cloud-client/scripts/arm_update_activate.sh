@@ -301,7 +301,7 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
         # below will pass as should_skip will be empty.
         should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
         if [ "$should_skip" = "1" ]; then
-            printf "Partition is marked as skipped. Exiting."
+            printf "Partition is marked as skipped. Exiting.\n"
             exit 32
         fi
 
