@@ -283,7 +283,7 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
 
     # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
     for bl_file in $BOOTLOADER_FILES; do
-        bl_filename_no_suffix=$(echo "${bl_file}" | sed 's/.gz//')
+        bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
 
         offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
         if [ -z "$offset" ]; then
