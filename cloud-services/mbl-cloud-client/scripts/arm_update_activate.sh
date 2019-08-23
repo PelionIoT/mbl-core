@@ -179,7 +179,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     fi
 
     if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
-        printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s" "$ewuc_actual_img_size" "$ewuc_max_img_size"
+        printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
         exit 59
     fi
 
