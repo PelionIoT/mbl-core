@@ -133,6 +133,17 @@ tar_filename="$1"
     done
 }
 
+# Validate an integer is positive
+# Exits on errors
+#
+# $1: Integer to validate
+validate_positive_integer_or_die() {
+    if ! printf '%s\n' "$1"  | grep '^[0-9]\+$'; then
+        printf "%s is not a positive integer!\n" "$1"
+        exit 64
+    fi
+}
+
 # Given a payload tar and a component file name, extract the component,
 # decompress it and write it to disk.
 #
@@ -143,57 +154,58 @@ tar_filename="$1"
 extract_and_write_update_component_or_die() {
 ewuc_payload="$1"
 ewuc_component_filename="$2"
-# shellcheck disable=SC2003
-ewuc_offset_bytes=$(expr "$3" \* 1024)
-# shellcheck disable=SC2003
-ewuc_max_img_size=$(expr "$4" \* 1024)
-# Find the disk name in the blkid output
-    rootfs_part=$(blkid -L "$ROOTFS1_LABEL")
-    ewuc_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]+$//')
-
-    if [ -z "$ewuc_disk_name" ]; then
-        printf "Failed to find the root partition name.\n"
-        exit 54
+    # shellcheck disable=SC2003
+    ewuc_offset_bytes=$(expr "$3" \* 1024)
+    # shellcheck disable=SC2003
+    ewuc_max_img_size=$(expr "$4" \* 1024)
+    # Find the disk name in the blkid output
+    if ! rootfs_part=$(blkid -L "$ROOTFS1_LABEL"); then
+        printf "Could not find the rootfs1 label in the blkid output."
+    fi
+ 
+    if ! ewuc_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]\+$//'); then
+        printf "Failed to strip the partition number from the root partition's device file name."
+        exit 55
     fi
 
     if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
         printf "Failed to strip the partition number from the root partition's device file name: %s" "$ewuc_disk_name\n"
-        exit 55
-    fi
-
-    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz; then
-        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
         exit 56
     fi
 
-    if ! gunzip "$ewuc_component_filename".gz; then
-        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
+    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$TMP_DIR"; then
+        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
         exit 57
     fi
 
-    ewuc_actual_img_size=$(wc -c < "$ewuc_component_filename")
-
-    if [ -z "$ewuc_actual_img_size" ]; then
-        printf "Failed to get the image size of %s\n" "$ewuc_component_filename"
+    if ! gunzip "$TMP_DIR/$ewuc_component_filename".gz; then
+        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
         exit 58
     fi
 
+    if ! ewuc_actual_img_size=$(wc -c < "$TMP_DIR/$ewuc_component_filename"); then
+        printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
+        exit 59
+    fi
+
+    validate_positive_integer_or_die "$ewuc_actual_img_size"
+
     if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
         printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
-        exit 59
+        exit 60
     fi
 
     # Linux always considers the sector size to be 512 bytes, no matter what
     # the device's actual block size is. We just let dd use its default block size and
     # ensure the seek is always a byte count.
     # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-    if ! dd if="$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+    if ! dd if="$TMP_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
         printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
-        exit 60
+        exit 61
     fi
 
     # Clean up.
-    if ! rm "$ewuc_component_filename"; then
+    if ! rm "$TMP_DIR/$ewuc_component_filename"; then
         printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
@@ -286,17 +298,10 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
         bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
 
         offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
-        if [ -z "$offset" ]; then
-            printf "Failed to find the offset from the info file named: \"%s\"\n" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB"
-            exit 30
-        fi
+        validate_positive_integer_or_die "$offset"
 
         size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
-        if [ -z "$size" ]; then
-            printf "Couldn't find the image size in \"%s\".\n" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB"
-            exit 31
-        fi
-
+        validate_positive_integer_or_die "$size"
         # If this cat fails the 'SKIP' file does not exist, and the check
         # below will pass as should_skip will be empty.
         should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
