@@ -148,7 +148,7 @@ ewuc_offset_bytes=$(expr "$3" \* 1024)
 # shellcheck disable=SC2003
 ewuc_max_img_size=$(expr "$4" \* 1024)
 # Find the disk name in the blkid output
-rootfs_part=$(blkid -L "$ROOTFS1_LABEL")
+    rootfs_part=$(blkid -L "$ROOTFS1_LABEL")
 ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
 
     if [ -z "$ewuc_disk_name" ]; then
