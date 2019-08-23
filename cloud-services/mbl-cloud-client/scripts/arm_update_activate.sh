@@ -137,35 +137,76 @@ tar_filename="$1"
 # decompress it and write it to disk.
 #
 # $1: Tar archive file name
-# $2: Component file name to extract and write to disk
+# $2: Component file name
 # $3: Offset in KiB
-extract_and_write_update_component() {
-local payload="$1"
-local component_filename="$2"
-local offset_bytes=$(expr "$3" \* 1024)
+# $4: Expected size in KiB
+extract_and_write_update_component_or_die() {
+ewuc_payload="$1"
+ewuc_component_filename="$2"
+# shellcheck disable=SC2003
+ewuc_offset_bytes=$(expr "$3" \* 1024)
+# shellcheck disable=SC2003
+ewuc_max_img_size=$(expr "$4" \* 1024)
+# Find the disk name in the blkid output
+rootfs_part=$(blkid -L "$ROOTFS1_LABEL")
+ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
 
-# Find the disk name in the blockdev output
-local disk_name=$(blockdev --report | grep \/dev\/mmcblk[0-9]$ | awk '{print $7}')
+    if [ -z "$ewuc_disk_name" ]; then
+        printf "Failed to find the root partition name."
+        exit 54
+    fi
 
-tar -xf "$payload" "$component_filename"
-# Linux always considers the sector size to be 512 bytes, no matter what
-# the devices actual block size is. We just let dd use its default block size and
-# ensure the seek is always a byte count.
-# See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-gunzip -c "$component_filename" | dd of="$disk_name" oflag=seek_bytes conv=fsync seek="$offset_bytes"
+    if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
+        printf "Failed to strip the partition number from the disk name: %s" "$ewuc_disk_name"
+        exit 55
+    fi
+
+    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz; then
+        printf "Failed to unpack %s %s" "$ewuc_payload" "$ewuc_component_filename.gz"
+        exit 56
+    fi
+
+    if ! gunzip "$ewuc_component_filename".gz; then
+        printf "Failed to decompress %s" "$ewuc_component_filename.gz"
+        exit 57
+    fi
+
+    ewuc_actual_img_size=$(wc -c < "$ewuc_component_filename")
+
+    if [ -z "$ewuc_actual_img_size" ]; then
+        printf "Failed to get the image size of %s" "$ewuc_component_filename"
+        exit 58
+    fi
+
+    if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
+        printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s" "$ewuc_actual_img_size" "$ewuc_max_img_size"
+        exit 59
+    fi
+
+    # Linux always considers the sector size to be 512 bytes, no matter what
+    # the devices actual block size is. We just let dd use its default block size and
+    # ensure the seek is always a byte count.
+    # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
+    if ! dd if="$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+        printf "Writing %s to disk failed." "$ewuc_component_filename"
+        exit 60
+    fi
+
+    # Clean up.
+    if ! rm "$ewuc_component_filename"; then
+        printf "Failed to remove the decompressed file \"%s\" after update" "$ewuc_component_filename"
+    fi
 }
 
 # Remove the "do not reboot" flag
 # Exits on errors.
-#
-# $1: The path to the reboot flag file
 remove_do_not_reboot_flag_or_die() {
-local dnr_flag_path="$1"
+dnr_flag_path="${TMP_DIR}/do_not_reboot"
 
-if ! rm -f "$dnr_flag_path"; then
-    echo "Failed to remove ${dnr_flag_path} flag file";
-    exit 27
-fi
+    if ! rm -f "$dnr_flag_path"; then
+        echo Failed to remove "$dnr_flag_path" flag file;
+        exit 27
+    fi
 }
 
 # ------------------------------------------------------------------------------
@@ -185,12 +226,10 @@ touch "${TMP_DIR}/do_not_reboot"
 FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 
 # directory containing files which contain information about the update payloads
-PART_INFO_FILES_DIR=/config/factory/part-info
+PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
 # expected bootloader component file names
-WKS_BL1_FILENAME=MBL_WKS_BOOTLOADER1
-WKS_BL2_FILENAME=MBL_WKS_BOOTLOADER2
-
+WKS_BOOTLOADER_FILENAME_RE="^MBL_WKS_BOOTLOADER[0-9].gz$"
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -236,21 +275,43 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     exit "$?"
 
-elif BOOTLOADER2_FILE=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BL2_FILENAME}"); then
+elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}"); then
 
     # ------------------------------------------------------------------------------
-    # Write a bootloader 2 component from an update payload file to disk
+    # Write one or more bootloader components from an update payload file to disk
     # ------------------------------------------------------------------------------
-    # Find the offset from the 'part-info' file
-    OFFSET=$(cat "${PART_INFO_FILES_DIR}"/MBL_WKS_BOOTLOADER2_OFFSET_BANK1_KiB)
 
-    extract_and_write_update_component "$FIRMWARE" "$BOOTLOADER2_FILE" "$OFFSET"
-    sync
+    # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
+    for bl_file in $BOOTLOADER_FILES; do
+        bl_filename_no_suffix=$(echo "${bl_file}" | sed 's/.gz//')
+
+        offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
+        if [ -z "$offset" ]; then
+            printf "Failed to find the offset from the info file named: %s" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB"
+            exit 30
+        fi
+
+        size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
+        if [ -z "$size" ]; then
+            printf "Couldn't find the image size in %s." "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB"
+            exit 31
+        fi
+
+        # If this cat fails the 'SKIP' file does not exist, and the check
+        # below will pass as should_skip will be empty.
+        should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
+        if [ "$should_skip" = "1" ]; then
+            printf "Partition is marked as skipped. Exiting."
+            exit 32
+        fi
+
+        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size"
+        sync
+    done
 
     # Remove the do not reboot flag, the user will likely want to reboot after applying
     # the bootloader update.
-    remove_do_not_reboot_flag_or_die "${TMP_DIR}/do_not_reboot"
-
+    remove_do_not_reboot_flag_or_die
     exit 0
 
 elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
@@ -301,7 +362,7 @@ elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     sync
 
     # Remove do_not_reboot_flag - we need a reboot for rootfs updates
-    remove_do_not_reboot_flag_or_die "${TMP_DIR}/do_not_reboot"
+    remove_do_not_reboot_flag_or_die
     exit 0
 
 else

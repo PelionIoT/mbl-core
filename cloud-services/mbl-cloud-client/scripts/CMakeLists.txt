@@ -20,6 +20,7 @@ set(LOG_DIR "/var/log" CACHE FILEPATH "Path to directory in which to write log f
 set(ROOTFS1_LABEL "rootfs1" CACHE STRING "Label used for the first root file system bank")
 set(ROOTFS2_LABEL "rootfs2" CACHE STRING "Label used for the second root file system bank")
 set(ROOTFS_TYPE "ext4" CACHE STRING "Type of file system used for root file systems")
+set(FACTORY_CONFIG_PARTITION "/config/factory" CACHE STRING "Factory config partition mount point.")
 
 # Replace config value placeholders with values from CMake variables.
 configure_file("arm_update_common.sh.in" "arm_update_common.sh" @ONLY)
