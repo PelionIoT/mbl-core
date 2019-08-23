@@ -167,7 +167,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     fi
 
     if ! gunzip "$ewuc_component_filename".gz; then
-        printf "Failed to decompress %s" "$ewuc_component_filename.gz"
+        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
         exit 57
     fi
 
