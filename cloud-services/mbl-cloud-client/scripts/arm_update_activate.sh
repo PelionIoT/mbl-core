@@ -287,7 +287,7 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
 
         offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
         if [ -z "$offset" ]; then
-            printf "Failed to find the offset from the info file named: %s" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB"
+            printf "Failed to find the offset from the info file named: \"%s\"\n" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB"
             exit 30
         fi
 
