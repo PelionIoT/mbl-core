@@ -188,7 +188,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     # ensure the seek is always a byte count.
     # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
     if ! dd if="$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
-        printf "Writing %s to disk failed." "$ewuc_component_filename"
+        printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
         exit 60
     fi
 
