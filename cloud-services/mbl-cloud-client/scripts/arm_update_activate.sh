@@ -194,7 +194,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
 
     # Clean up.
     if ! rm "$ewuc_component_filename"; then
-        printf "Failed to remove the decompressed file \"%s\" after update" "$ewuc_component_filename"
+        printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
 
