@@ -152,7 +152,7 @@ ewuc_max_img_size=$(expr "$4" \* 1024)
 ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
 
     if [ -z "$ewuc_disk_name" ]; then
-        printf "Failed to find the root partition name."
+        printf "Failed to find the root partition name.\n"
         exit 54
     fi
 
