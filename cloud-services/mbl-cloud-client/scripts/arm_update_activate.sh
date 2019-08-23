@@ -174,7 +174,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     ewuc_actual_img_size=$(wc -c < "$ewuc_component_filename")
 
     if [ -z "$ewuc_actual_img_size" ]; then
-        printf "Failed to get the image size of %s" "$ewuc_component_filename"
+        printf "Failed to get the image size of %s\n" "$ewuc_component_filename"
         exit 58
     fi
 
