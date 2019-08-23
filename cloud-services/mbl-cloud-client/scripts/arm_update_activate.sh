@@ -184,7 +184,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     fi
 
     # Linux always considers the sector size to be 512 bytes, no matter what
-    # the devices actual block size is. We just let dd use its default block size and
+    # the device's actual block size is. We just let dd use its default block size and
     # ensure the seek is always a byte count.
     # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
     if ! dd if="$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
