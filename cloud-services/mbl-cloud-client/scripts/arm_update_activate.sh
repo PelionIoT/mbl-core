@@ -162,7 +162,7 @@ ewuc_disk_name=$(echo "$rootfs_part" | sed 's/p[0-9]//')
     fi
 
     if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz; then
-        printf "Failed to unpack %s %s" "$ewuc_payload" "$ewuc_component_filename.gz"
+        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
         exit 56
     fi
 
