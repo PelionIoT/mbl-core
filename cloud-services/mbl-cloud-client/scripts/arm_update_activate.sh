@@ -293,7 +293,7 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
 
         size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
         if [ -z "$size" ]; then
-            printf "Couldn't find the image size in %s." "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB"
+            printf "Couldn't find the image size in \"%s\".\n" "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB"
             exit 31
         fi
 
