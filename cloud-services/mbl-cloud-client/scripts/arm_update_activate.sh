@@ -204,7 +204,7 @@ remove_do_not_reboot_flag_or_die() {
 dnr_flag_path="${TMP_DIR}/do_not_reboot"
 
     if ! rm -f "$dnr_flag_path"; then
-        echo Failed to remove "$dnr_flag_path" flag file;
+        printf "Failed to remove the \"%s\" flag file\n" "$dnr_flag_path"
         exit 27
     fi
 }
