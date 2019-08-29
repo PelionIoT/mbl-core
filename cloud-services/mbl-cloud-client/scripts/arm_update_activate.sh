@@ -151,13 +151,20 @@ validate_positive_integer_or_die() {
 # $2: Component file name
 # $3: Offset in KiB
 # $4: Expected size in KiB
+# $5: Boot mount point (empty string if not writing to a boot partition)
+# $6: BLFS mount point (empty string if not writing to the blfs partition)
 extract_and_write_update_component_or_die() {
 ewuc_payload="$1"
 ewuc_component_filename="$2"
+ewuc_boot_part_mnt_point="$5"
+ewuc_fs_part_mnt_point="$6"
     # shellcheck disable=SC2003
     ewuc_offset_bytes=$(expr "$3" \* 1024)
     # shellcheck disable=SC2003
     ewuc_max_img_size=$(expr "$4" \* 1024)
+    # If this file is to be copied, strip off the actual filename from 
+    # ewuc_component_filename so the old files are overwritten
+    ewuc_dst_filename=$(printf "%s\n" "$ewuc_component_filename" | awk '{split($0, arr, ";"); print arr[2]}')
     # Find the disk name in the blkid output
     if ! rootfs_part=$(blkid -L "$ROOTFS1_LABEL"); then
         printf "Could not find the rootfs1 label in the blkid output."
@@ -195,13 +202,34 @@ ewuc_component_filename="$2"
         exit 60
     fi
 
-    # Linux always considers the sector size to be 512 bytes, no matter what
-    # the device's actual block size is. We just let dd use its default block size and
-    # ensure the seek is always a byte count.
-    # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-    if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
-        printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
-        exit 61
+    if [ ! -z "$ewuc_boot_part_mnt_point"  ]; then
+        if [ ! -z "$ewuc_fs_part_mnt_point" ]; then
+            remount_partition_or_die "$ewuc_fs_part_mnt_point" rw
+            # If we have an fs mount point, so try and copy the file to it.
+            if ! cp "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point/$ewuc_dst_filename"; then
+                printf "Copying %s to %s failed.\n" "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point/$ewuc_dst_filename"
+                exit 61
+            fi
+            remount_partition_or_die "$ewuc_fs_part_mnt_point" ro
+        fi
+
+        remount_partition_or_die "$ewuc_boot_part_mnt_point" rw
+        if ! cp "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point/$ewuc_dst_filename"; then
+            printf "Copying %s to %s failed.\n" "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point/$ewuc_dst_filename"
+            exit 62
+        fi
+        remount_partition_or_die "$ewuc_boot_part_mnt_point" ro
+    else
+        # Write the file to raw flash.
+        #
+        # Linux always considers the sector size to be 512 bytes, no matter what
+        # the device's actual block size is. We just let dd use its default block size and
+        # ensure the seek is always a byte count.
+        # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
+        if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+            printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
+            exit 63
+        fi
     fi
 
     # Clean up.
@@ -240,8 +268,9 @@ FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 # directory containing files which contain information about the update payloads
 PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
-# expected bootloader component file names
-WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9]\.gz$'
+# patterns to match bootloader component file names
+WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9].*\.gz$'
+WKS_IMAGE_BOOT_FILES_RE='^MBL_BOOT.*\.gz$'
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -287,30 +316,43 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     exit "$?"
 
-elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}"); then
+elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}\|${WKS_IMAGE_BOOT_FILES_RE}"); then
 
     # ------------------------------------------------------------------------------
     # Write one or more bootloader components from an update payload file to disk
     # ------------------------------------------------------------------------------
-
     # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
     for bl_file in $BOOTLOADER_FILES; do
         bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
+        bl_var_name=$(printf "%s\n" "$bl_filename_no_suffix" | awk '{split($0, arr, ";"); print arr[1]}')
+        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/${bl_var_name}"
+        size=$(cat "${bl_part_info_file_path_prefix}_SIZE_KiB")
 
-        offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
-        validate_positive_integer_or_die "$offset"
+        if printf "%s\n" "$bl_file" | grep "${WKS_IMAGE_BOOT_FILES_RE}"; then
+            if ! boot_mount_point=$(cat "${PART_INFO_FILES_DIR}/MBL_BOOT_MOUNT_POINT"); then
+                printf "Failed to find the boot partition mount point from partition info file: %s.\n" "${bl_part_info_file_path_prefix}_MOUNT_POINT"
+                exit 31
+            fi
 
-        size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
-        validate_positive_integer_or_die "$size"
-        # If this cat fails the 'SKIP' file does not exist, and the check
-        # below will pass as should_skip will be empty.
+            if [ "$(cat "${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_SKIP")" = "0" ]; then
+                fs_mount_point="${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_MOUNT_POINT"
+            fi
+        else
+            validate_positive_integer_or_die "$size"
+
+           # We're writing to a raw partition so we need the offset
+            offset=$(cat "${bl_part_info_file_path_prefix}_OFFSET_BANK1_KiB")
+            validate_positive_integer_or_die "$offset"
+        fi
+        # If this cat fails the 'SKIP' file does not exist and the check
+        # below will evaluate to false as should_skip will be empty.
         should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
         if [ "$should_skip" = "1" ]; then
             printf "Partition is marked as skipped. Exiting.\n"
             exit 32
         fi
 
-        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size"
+        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size" "$boot_mount_point" "$fs_mount_point"
         sync
     done
 
