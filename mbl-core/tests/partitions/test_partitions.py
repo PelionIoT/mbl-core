@@ -5,23 +5,18 @@
 
 """
 Pytest for checking partition offsets and sizes.
-
-The main idea is to create two lists of (offset, size) pairs:
-* one based on partition data left in the factory config partition;
-* one based on the output of "sfdisk -J".
-
-We then check that the two lists are equal.
 """
 
+import json
 import pathlib
+import pytest
 import re
 import subprocess
-import json
 
 PART_INFO_DIR = pathlib.Path("/config/factory/part-info")
 
 
-def get_var_for_part(var_name, part_name, default=None):
+def get_int_var_for_part(var_name, part_name, default=None):
     """
     Get the value of a partition config variable for a partition.
 
@@ -38,25 +33,31 @@ def get_var_for_part(var_name, part_name, default=None):
     path = PART_INFO_DIR / filename
     if default is not None and not path.is_file():
         return default
-    return path.read_text()
+    return int(path.read_text())
 
 
-def get_fs_part_names():
-    """
-    Get the names of all file system partitions.
-    """
-    part_names = []
+def get_part_names():
+    """Get the names of all partitions, including non-file system partitions."""
     filename_re = re.compile(r"^MBL_([A-Z0-9_]+)_SIZE_KiB$")
+    part_names = []
     for f in PART_INFO_DIR.iterdir():
         filename_match = filename_re.match(f.name)
         if filename_match:
             part_name = filename_match.group(1)
-            if int(get_var_for_part("SKIP", part_name, "0")):
-                continue
-            if int(get_var_for_part("NO_FS", part_name, "0")):
+            if get_int_var_for_part("SKIP", part_name, 0):
                 continue
             part_names.append(part_name)
     return part_names
+
+
+def is_fs_partition(part_name):
+    """Return true if the named partition has a file system."""
+    return not get_int_var_for_part("NO_FS", part_name, 0)
+
+
+def get_fs_part_names():
+    """Get the names of all file system partitions"""
+    return filter(is_fs_partition, get_part_names())
 
 
 def get_expected_part_table():
@@ -70,11 +71,11 @@ def get_expected_part_table():
     """
     part_table = []
     for part_name in get_fs_part_names():
-        size_KiB = int(get_var_for_part("SIZE_KiB", part_name))
-        offset1_KiB = int(get_var_for_part("OFFSET_BANK1_KiB", part_name))
+        size_KiB = get_int_var_for_part("SIZE_KiB", part_name)
+        offset1_KiB = get_int_var_for_part("OFFSET_BANK1_KiB", part_name)
         part_table.append((offset1_KiB, size_KiB))
-        if int(get_var_for_part("IS_BANKED", part_name, "0")):
-            offset2_KiB = int(get_var_for_part("OFFSET_BANK2_KiB", part_name))
+        if get_int_var_for_part("IS_BANKED", part_name, 0):
+            offset2_KiB = get_int_var_for_part("OFFSET_BANK2_KiB", part_name)
             part_table.append((offset2_KiB, size_KiB))
 
     return sorted(part_table)
@@ -126,5 +127,84 @@ def get_actual_part_table():
     return part_table
 
 
+def is_part_var_name(var_name):
+    """
+    Return true if the named variable is one of the MBL partition variables
+    we're interested in.
+    """
+    return var_name.startswith("MBL_") and any(
+        name in var_name for name in get_part_names()
+    )
+
+
 def test_part_table():
+    """
+    Test that the partition table on the system matches the expected partition table.
+
+    The idea is to create two lists of (offset, size) pairs:
+    * one based on partition data left in the factory config partition;
+    * one based on the output of "sfdisk -J".
+
+    We then check that the two lists are equal.
+    """
     assert get_actual_part_table() == get_expected_part_table()
+
+
+@pytest.mark.parametrize("part_name", get_fs_part_names())
+def test_size_KiB_consistent_with_size_MiB(part_name):
+    """
+    Test that the size in KiB recorded for a partition is always 1024 times the
+    size in MiB recorded for that partition
+    """
+    size_KiB = get_int_var_for_part("SIZE_KiB", part_name)
+    size_MiB = get_int_var_for_part("SIZE_MiB", part_name)
+    assert size_KiB == 1024 * size_MiB
+
+
+@pytest.mark.parametrize("part_name", get_part_names())
+def test_part_offset_is_aligned(part_name):
+    """
+    Test that the offset of the named partition is actually aligned according
+    to the alignment value we recorded for the partition.
+    """
+    align_KiB = get_int_var_for_part("ALIGN_KiB", part_name)
+    offset1_KiB = get_int_var_for_part("OFFSET_BANK1_KiB", part_name)
+    assert offset1_KiB % align_KiB == 0
+    if get_int_var_for_part("IS_BANKED", part_name, 0):
+        offset2_KiB = get_int_var_for_part("OFFSET_BANK2_KiB", part_name)
+        assert offset2_KiB % align_KiB == 0
+
+
+def test_local_conf_part_setting_has_taken_effect(local_conf_assignment):
+    """
+    If a partition property was set in local.conf, check that the property
+    matches what was set in the partition info files.
+    """
+    var_name, var_value = local_conf_assignment
+    if is_part_var_name(var_name):
+        var_path = PART_INFO_DIR / var_name
+        assert var_path.is_file()
+        assert var_path.read_text() == var_value
+
+
+@pytest.mark.parametrize("part_name", get_fs_part_names())
+def test_local_conf_flash_erase_block_size_setting_has_taken_effect(
+    local_conf_assignments_dict, part_name
+):
+    """
+    If the flash erase block size was set in local.conf, make sure all file
+    system partition alignments match that block size... Unless the partition's
+    alignment itself was overriden in local.conf.
+    """
+    flash_erase_block_size_KiB = int(
+        local_conf_assignments_dict.get("MBL_FLASH_ERASE_BLOCK_SIZE_KiB", 0)
+    )
+    if (
+        flash_erase_block_size_KiB
+        and "MBL_{}_ALIGN_KiB".format(part_name)
+        not in local_conf_assignments_dict
+    ):
+        assert (
+            get_int_var_for_part("ALIGN_KiB", part_name)
+            == flash_erase_block_size_KiB
+        )
