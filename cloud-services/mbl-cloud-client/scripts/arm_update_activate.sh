@@ -133,6 +133,93 @@ tar_filename="$1"
     done
 }
 
+# Validate an integer is positive
+# Exits on errors
+#
+# $1: Integer to validate
+validate_positive_integer_or_die() {
+    if ! printf '%s\n' "$1"  | grep '^[0-9]\+$'; then
+        printf "%s is not a positive integer!\n" "$1"
+        exit 64
+    fi
+}
+
+# Given a payload tar and a component file name, extract the component,
+# decompress it and write it to disk.
+#
+# $1: Tar archive file name
+# $2: Component file name
+# $3: Offset in KiB
+# $4: Expected size in KiB
+extract_and_write_update_component_or_die() {
+ewuc_payload="$1"
+ewuc_component_filename="$2"
+    # shellcheck disable=SC2003
+    ewuc_offset_bytes=$(expr "$3" \* 1024)
+    # shellcheck disable=SC2003
+    ewuc_max_img_size=$(expr "$4" \* 1024)
+    # Find the disk name in the blkid output
+    if ! rootfs_part=$(blkid -L "$ROOTFS1_LABEL"); then
+        printf "Could not find the rootfs1 label in the blkid output."
+    fi
+ 
+    if ! ewuc_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]\+$//'); then
+        printf "Failed to strip the partition number from the root partition's device file name."
+        exit 55
+    fi
+
+    if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
+        printf "Failed to strip the partition number from the root partition's device file name: %s" "$ewuc_disk_name\n"
+        exit 56
+    fi
+
+    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$UPDATE_PAYLOAD_DIR"; then
+        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
+        exit 57
+    fi
+
+    if ! gunzip "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename".gz; then
+        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
+        exit 58
+    fi
+
+    if ! ewuc_actual_img_size=$(wc -c < "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"); then
+        printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
+        exit 59
+    fi
+
+    validate_positive_integer_or_die "$ewuc_actual_img_size"
+
+    if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
+        printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
+        exit 60
+    fi
+
+    # Linux always considers the sector size to be 512 bytes, no matter what
+    # the device's actual block size is. We just let dd use its default block size and
+    # ensure the seek is always a byte count.
+    # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
+    if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+        printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
+        exit 61
+    fi
+
+    # Clean up.
+    if ! rm "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
+        printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
+    fi
+}
+
+# Remove the "do not reboot" flag
+# Exits on errors.
+remove_do_not_reboot_flag_or_die() {
+dnr_flag_path="${TMP_DIR}/do_not_reboot"
+
+    if ! rm -f "$dnr_flag_path"; then
+        printf "Failed to remove the \"%s\" flag file\n" "$dnr_flag_path"
+        exit 27
+    fi
+}
 
 # ------------------------------------------------------------------------------
 # Main code starts here
@@ -145,10 +232,16 @@ tar_filename="$1"
 # We only have to reboot during the update if there's an update for a component
 # that requires a reboot, so set the do_not_reboot flag here and let it be
 # deleted if a reboot is required..
-touch /tmp/do_not_reboot
+touch "${TMP_DIR}/do_not_reboot"
 
 # list files in udpate payload ($FIRMWARE) tar file
 FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
+
+# directory containing files which contain information about the update payloads
+PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
+
+# expected bootloader component file names
+WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9]\.gz$'
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -160,19 +253,19 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
     # Install app updates from payload file
     # ------------------------------------------------------------------------------
 
-    printf "%s\n" "${FIRMWARE}" > /scratch/firmware_path
-    touch /scratch/do_app_update
+    printf "%s\n" "${FIRMWARE}" > "${UPDATE_PAYLOAD_DIR}/firmware_path"
+    touch "${UPDATE_PAYLOAD_DIR}/do_app_update"
     set +x
     echo "Waiting for app update to finish"
-    while ! [ -e /scratch/done_app_update ]; do
+    while ! [ -e "${UPDATE_PAYLOAD_DIR}/done_app_update" ]; do
         sleep 1
     done
     echo "App update finished"
     set -x
-    rm /scratch/done_app_update
+    rm "${UPDATE_PAYLOAD_DIR}/done_app_update"
 
-    app_update_rc=$(cat /scratch/app_update_rc)
-    rm /scratch/app_update_rc
+    app_update_rc=$(cat "${UPDATE_PAYLOAD_DIR}/app_update_rc")
+    rm "${UPDATE_PAYLOAD_DIR}/app_update_rc"
     if [ "$app_update_rc" -ne 0 ]; then
         exit 47
     fi
@@ -194,52 +287,79 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     exit "$?"
 
+elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}"); then
+
+    # ------------------------------------------------------------------------------
+    # Write one or more bootloader components from an update payload file to disk
+    # ------------------------------------------------------------------------------
+
+    # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
+    for bl_file in $BOOTLOADER_FILES; do
+        bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
+
+        offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
+        validate_positive_integer_or_die "$offset"
+
+        size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
+        validate_positive_integer_or_die "$size"
+        # If this cat fails the 'SKIP' file does not exist, and the check
+        # below will pass as should_skip will be empty.
+        should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
+        if [ "$should_skip" = "1" ]; then
+            printf "Partition is marked as skipped. Exiting.\n"
+            exit 32
+        fi
+
+        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size"
+        sync
+    done
+
+    # Remove the do not reboot flag, the user will likely want to reboot after applying
+    # the bootloader update.
+    remove_do_not_reboot_flag_or_die
+    exit 0
+
 elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
 
     # ------------------------------------------------------------------------------
     # Install rootfs update from payload file
     # ------------------------------------------------------------------------------
     # Detect root partitions
-    root1=$(get_device_for_label rootfs1)
+    root1=$(get_device_for_label "$ROOTFS1_LABEL")
     exit_on_error "$?"
 
-    root2=$(get_device_for_label rootfs2)
-    exit_on_error "$?"
-
-    FLAGS=$(get_device_for_label bootflags)
+    root2=$(get_device_for_label "$ROOTFS2_LABEL")
     exit_on_error "$?"
 
     # Find the partition that is currently mounted to /
     activePartition=$(get_active_root_device)
 
     if [ "$activePartition" = "$root1" ]; then
-        activePartitionLabel=rootfs1
+        activePartitionLabel="$ROOTFS1_LABEL"
         nextPartition="$root2"
-        nextPartitionLabel=rootfs2
+        nextPartitionLabel="$ROOTFS2_LABEL"
     elif [ "$activePartition" = "$root2" ]; then
-        activePartitionLabel=rootfs2
+        activePartitionLabel="$ROOTFS2_LABEL"
         nextPartition="$root1"
-        nextPartitionLabel="rootfs1"
+        nextPartitionLabel="$ROOTFS1_LABEL"
     else
-        echo "Current root partition does not have a \"rootfs1\" or \"rootfs2\" label"
+        echo "Current root partition does not have a \"${ROOTFS1_LABEL}\" or \"${ROOTFS2_LABEL}\" label"
         exit 21
     fi
 
     create_root_partition_or_die "$nextPartition" "$nextPartitionLabel" "$FIRMWARE" "$ROOTFS_FILE"
     ensure_not_mounted_or_die "$nextPartition"
 
-    ensure_mounted_or_die "${FLAGS}" /mnt/flags "$FLAGSFS_TYPE"
-
     save_header_or_die "$HEADER"
     sync
 
-    if [ -e "/mnt/flags/${activePartitionLabel}" ]; then
-        if ! mv "/mnt/flags/${activePartitionLabel}" "/mnt/flags/${nextPartitionLabel}"; then
+    if [ -e "${FLAGS_DIR}/${activePartitionLabel}" ]; then
+        if ! mv "${FLAGS_DIR}/${activePartitionLabel}" "${FLAGS_DIR}/${nextPartitionLabel}"; then
             echo "Failed to rename boot flag file";
             exit 25
         fi
     else
-        if ! touch "/mnt/flags/${nextPartitionLabel}"; then
+        if ! touch "${FLAGS_DIR}/${nextPartitionLabel}"; then
             echo "Failed to create new boot flag file";
             exit 26
         fi
@@ -247,11 +367,7 @@ elif ROOTFS_FILE=$(echo "${FIRMWARE_FILES}" | grep '^rootfs\.tar\.xz$'); then
     sync
 
     # Remove do_not_reboot_flag - we need a reboot for rootfs updates
-    if ! rm -f /tmp/do_not_reboot; then
-        echo "Failed to remove /tmp/do_not_reboot flag file";
-        exit 27
-    fi
-
+    remove_do_not_reboot_flag_or_die
     exit 0
 
 else
