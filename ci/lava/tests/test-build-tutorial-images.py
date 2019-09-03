@@ -23,9 +23,16 @@ import subprocess
 BAD_ARCHITECTURE_IMAGE = "sample-app-3-bad-architecture"
 BAD_RUNTIME_IMAGE = "sample-app-4-bad-oci-runtime"
 
+USER_SAMPLE_TAR = "user-sample-app-package_1.0_any.ipk.tar"
+MULTI_APP_ALL_GOOD_TAR = "mbl-multi-apps-update-package-all-good.tar"
+MULTI_APP_ONE_FAIL_RUN_TAR = "mbl-multi-apps-update-package-one-fail-run.tar"
+MULTI_APP_ONE_FAIL_INSTALL_TAR = (
+    "mbl-multi-apps-update-package-one-fail-install.tar"
+)
+
 
 class Test_Build_Test_Images:
-    """Class to encalpulate building images for testing."""
+    """Class to encapsulate building images for testing."""
 
     def _print_result(self, teststep, err):
         """Private function to provide LAVA formatted sub-results."""
@@ -69,7 +76,7 @@ class Test_Build_Test_Images:
         with open(filename, "w") as fout:
             fout.writelines(data[1:])
 
-    def test_build(self, device, execute_helper):
+    def test_build(self, device, execute_helper, host_tutorials_dir):
         """
         Build all of the images and tarballs.
 
@@ -103,7 +110,7 @@ class Test_Build_Test_Images:
         os.chdir("tutorials/helloworld/")
 
         # Build dockcross
-        err, output, error = execute_helper._execute_command(
+        err, output, error = execute_helper.execute_command(
             [
                 "docker",
                 "build",
@@ -118,7 +125,7 @@ class Test_Build_Test_Images:
             assert False
             return
 
-        err, output, error = execute_helper._execute_command(
+        err, output, error = execute_helper.execute_command(
             ["docker", "run", "--rm", "linux-" + arm_arch]
         )
         overall_err += self._print_result("run-dockcross", err)
@@ -135,7 +142,7 @@ class Test_Build_Test_Images:
             print("Created build file")
 
             print("Create User Sample App")
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 ["./build-{}".format(arm_arch), "make", "release"]
             )
             overall_err += self._print_result("build-application", err)
@@ -148,7 +155,7 @@ class Test_Build_Test_Images:
                     "sample-app-{}-good".format(image),
                 )
 
-                err, output, error = execute_helper._execute_command(
+                err, output, error = execute_helper.execute_command(
                     ["./build-{}".format(arm_arch), "make", "release"]
                 )
                 overall_err += self._print_result(
@@ -168,7 +175,7 @@ class Test_Build_Test_Images:
                 "invalid-architecture",
             )
 
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 ["./build-{}".format(arm_arch), "make", "release"]
             )
             overall_err += self._print_result(
@@ -184,7 +191,7 @@ class Test_Build_Test_Images:
             )
             self._remove_first_line_from_file("src_bundle/config.json")
 
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 ["./build-{}".format(arm_arch), "make", "release"]
             )
             overall_err += self._print_result(
@@ -195,36 +202,41 @@ class Test_Build_Test_Images:
             os.chdir("release/ipk/")
 
             # Create tar bundles
+            if not os.path.exists(host_tutorials_dir):
+                os.makedirs(host_tutorials_dir)
+
             # User Sample App is needed in both ipk and tar format
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 [
                     "cp",
                     "user-sample-app-package_1.0_any.ipk",
-                    "/tmp/user-sample-app-package_1.0_any.ipk",
+                    "{}/user-sample-app-package_1.0_any.ipk".format(
+                        host_tutorials_dir
+                    ),
                 ]
             )
             overall_err += self._print_result(
                 "copy-user-sample-app-package_1.0_any.ipk", err
             )
 
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 [
                     "tar",
                     "-cvf",
-                    "/tmp/user-sample-app-package_1.0_any.ipk.tar",
+                    "{}/{}".format(host_tutorials_dir, USER_SAMPLE_TAR),
                     "user-sample-app-package_1.0_any.ipk",
                 ]
             )
             overall_err += self._print_result(
-                "tar-user-sample-app-package_1.0_any.ipk.tar", err
+                "tar-{}".format(USER_SAMPLE_TAR), err
             )
 
             # Create tar bundle with 5 good apps.
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 [
                     "tar",
                     "-cf",
-                    "/tmp/mbl-multi-apps-update-package-all-good.tar",
+                    "{}/{}".format(host_tutorials_dir, MULTI_APP_ALL_GOOD_TAR),
                     "sample-app-1-good_1.0_any.ipk",
                     "sample-app-2-good_1.0_any.ipk",
                     "sample-app-3-good_1.0_any.ipk",
@@ -233,15 +245,17 @@ class Test_Build_Test_Images:
                 ]
             )
             overall_err += self._print_result(
-                "tar-mbl-multi-apps-update-package-all-good.tar", err
+                "tar-{}".format(MULTI_APP_ALL_GOOD_TAR), err
             )
 
             # Create tar bundle with 4 good apps and one that cannot run.
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 [
                     "tar",
                     "-cf",
-                    "/tmp/mbl-multi-apps-update-package-one-fail-run.tar",
+                    "{}/{}".format(
+                        host_tutorials_dir, MULTI_APP_ONE_FAIL_RUN_TAR
+                    ),
                     "sample-app-1-good_1.0_any.ipk",
                     "sample-app-2-good_1.0_any.ipk",
                     "sample-app-3-good_1.0_any.ipk",
@@ -250,15 +264,17 @@ class Test_Build_Test_Images:
                 ]
             )
             overall_err += self._print_result(
-                "tar-mbl-multi-apps-update-package-one-fail-run.tar", err
+                "tar-{}".format(MULTI_APP_ONE_FAIL_RUN_TAR), err
             )
 
             # Create tar bundle with 4 good apps and one that cannot install.
-            err, output, error = execute_helper._execute_command(
+            err, output, error = execute_helper.execute_command(
                 [
                     "tar",
                     "-cf",
-                    "/tmp/mbl-multi-apps-update-package-one-fail-install.tar",
+                    "{}/{}".format(
+                        host_tutorials_dir, MULTI_APP_ONE_FAIL_INSTALL_TAR
+                    ),
                     "sample-app-1-good_1.0_any.ipk",
                     "sample-app-2-good_1.0_any.ipk",
                     "{}_1.1_invalid-architecture.ipk".format(
@@ -269,7 +285,7 @@ class Test_Build_Test_Images:
                 ]
             )
             overall_err += self._print_result(
-                "tar-mbl-multi-apps-update-package-one-fail-install.tar", err
+                "tar-{}".format(MULTI_APP_ONE_FAIL_INSTALL_TAR), err
             )
 
             if overall_err != 0:

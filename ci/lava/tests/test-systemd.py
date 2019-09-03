@@ -24,12 +24,12 @@ class Test_Systemd:
     def test_systemd_running(self, execute_helper):
         """Perform the test on the DUT via the mbl-cli."""
         # Check status
-        err, stdout, stderr = execute_helper._send_mbl_cli_command(
+        err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "systemctl --no-pager is-system-running"],
             Test_Systemd.dut_address,
         )
         if err != 0:
-            suberr, stdout, stderr = execute_helper._send_mbl_cli_command(
+            suberr, stdout, stderr = execute_helper.send_mbl_cli_command(
                 ["shell", "systemctl --no-pager --failed"],
                 Test_Systemd.dut_address,
             )
@@ -61,7 +61,7 @@ class Test_Systemd:
     def test_systemd_service(self, execute_helper, test_action):
         """Perform the test on the DUT via the mbl-cli."""
         # Check status
-        err, stdout, stderr = execute_helper._send_mbl_cli_command(
+        err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "systemctl --no-pager status {}".format(test_action)],
             Test_Systemd.dut_address,
         )

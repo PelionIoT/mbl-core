@@ -12,6 +12,10 @@ parameters:
     #
     virtual_env:
 
+    # pytest_download specifies the location to download the pytest files
+    #
+    host_download_dir:
+
 run:
     steps:
         # Create and activate the python venv
@@ -21,9 +25,10 @@ run:
         # Upgrade version of pip3
         - pip3 install --upgrade pip
 
-        # Download pytest. Do this in two stages to the files are available for installing on the DUT as well
+        # Download pytest.
+        # Do this in two stages so the files are available for installing on the DUT as well
         #
-        - pip3 download -d /tmp/pytest pytest
+        - pip3 download -d $host_download_dir pytest
 
         # Install pytest
-        - pip3 install --no-index --find-links=/tmp/pytest/ pytest
+        - pip3 install --no-index --find-links=$host_download_dir pytest

@@ -9,14 +9,22 @@ metadata:
 
 parameters:
 
+    # dut_tutorials_dir: specifies the location of the test artifacts on the device under test
     #
+    dut_tutorials_dir:
+
+    # host_tutorials_dir: specifies the location of the test artifacts on the host
+    #
+    host_tutorials_dir:
+
     # virtual_env: specifies the Python virtual environment
     #
     virtual_env:
+
 run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
 
-        - pytest --verbose -s ./ci/lava/tests/test-core-component.py
+        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host_tutorials_dir $host_tutorials_dir --dut_tutorials_dir $dut_tutorials_dir
 

@@ -66,7 +66,7 @@ else
 
         cd /tmp/update-resources || exit
         cp /root/.mbed_cloud_config.json /tmp/update-resources
-        manifest-tool update device --device-id "$device_id" --payload /tmp/user-sample-app-package_1.0_any.ipk.tar
+        manifest-tool update device --device-id "$device_id" --payload /tmp/tutorials/user-sample-app-package_1.0_any.ipk.tar
 
         # Check it is executing as expected
         $mbl_command shell "python3 /tmp/check_container.py user-sample-app-package"

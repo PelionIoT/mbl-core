@@ -55,7 +55,7 @@ else
     $mbl_command shell "rm /var/log/app/user-sample-app-package.log"
 
     # Now copy the package and python checker script to the DUT
-    $mbl_command put /tmp/user-sample-app-package_1.0_any.ipk.tar /tmp
+    $mbl_command put /tmp/tutorials/user-sample-app-package_1.0_any.ipk.tar /tmp
     $mbl_command put ./ci/lava/dependencies/check_container.py /tmp
 
     # Now install the package - this should cause it to run
