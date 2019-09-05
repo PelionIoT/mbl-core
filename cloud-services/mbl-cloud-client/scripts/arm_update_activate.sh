@@ -144,6 +144,56 @@ validate_positive_integer_or_die() {
     fi
 }
 
+# Copy all files in a directory from src to dst, remounting the file system as rw before copying.
+# Exits on errors.
+#
+# $1: Source path
+# $2: Destination path
+copy_dir_or_die() {
+cfod_source_path="$1"
+cfod_dst_filename="$2"
+cfod_mnt_point="$3"
+
+    remount_partition_or_die "$cfod_mnt_point" rw
+
+    if ! rm -f "$cfod_mnt_point"/*; then
+        printf "Failed to remove files on partition %s" "$cfod_mnt_point"
+        exit 60
+    fi
+
+    if ! cp -f "$cfod_source_path"/* "$cfod_mnt_point/$cfod_dst_filename"; then
+        printf "Copying %s to %s failed.\n" "$cfod_source_path" "$cfod_mnt_point/$cfod_dst_filename"
+        exit 61
+    fi
+
+    remount_partition_or_die "$cfod_mnt_point" ro
+}
+
+# Get the disk name from the device label.
+# Exits on errors.
+#
+# $1: Device label
+get_disk_name_from_label_or_die() {
+gdnflod_label="$1"
+
+    if ! rootfs_part=$(blkid -L "$gdnflod_label"); then
+        printf "Could not find the %s label in the blkid output.\n" "$gdnflod_label"
+        exit 54
+    fi
+
+    if ! gdnflod_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]\+$//'); then
+        printf "Failed to strip the partition number from the root partition's device file name.\n"
+        exit 55
+    fi
+
+    if [ "$gdnflod_disk_name" = "$rootfs_part" ]; then
+        printf "Failed to strip the partition number from the root partition's device file name: %s\n" "$gdnflod_disk_name"
+        exit 56
+    fi
+
+    printf "%s\n" "$gdnflod_disk_name"
+}
+
 # Given a payload tar and a component file name, extract the component,
 # decompress it and write it to disk.
 #
@@ -162,35 +212,24 @@ ewuc_fs_part_mnt_point="$6"
     ewuc_offset_bytes=$(expr "$3" \* 1024)
     # shellcheck disable=SC2003
     ewuc_max_img_size=$(expr "$4" \* 1024)
-    # If this file is to be copied, strip off the actual filename from 
-    # ewuc_component_filename so the old files are overwritten
-    ewuc_dst_filename=$(printf "%s\n" "$ewuc_component_filename" | awk '{split($0, arr, ";"); print arr[2]}')
-    # Find the disk name in the blkid output
-    if ! rootfs_part=$(blkid -L "$ROOTFS1_LABEL"); then
-        printf "Could not find the rootfs1 label in the blkid output."
-    fi
- 
-    if ! ewuc_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]\+$//'); then
-        printf "Failed to strip the partition number from the root partition's device file name."
-        exit 55
+
+    ewuc_disk_name=$(get_disk_name_from_label_or_die "$ROOTFS1_LABEL")
+
+    if ! mkdir -p "$UPDATE_PAYLOAD_DIR/tmp"; then
+        printf "Failed to create temporary directory at %s\n" "$UPDATE_PAYLOAD_DIR/tmp"
     fi
 
-    if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
-        printf "Failed to strip the partition number from the root partition's device file name: %s" "$ewuc_disk_name\n"
-        exit 56
-    fi
-
-    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$UPDATE_PAYLOAD_DIR"; then
-        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
+    if ! tar -xvf "$ewuc_payload" "$ewuc_component_filename" -C "$UPDATE_PAYLOAD_DIR/tmp"; then
+        printf "Failed to extract %s from %s\n" "$ewuc_component_filename" "$ewuc_payload"
         exit 57
     fi
 
-    if ! gunzip "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename".gz; then
-        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
+    if ! tar -xvzf "$UPDATE_PAYLOAD_DIR/tmp/$ewuc_component_filename" -C "$UPDATE_PAYLOAD_DIR"; then
+        printf "Failed to extract and decompress %s\n" "$ewuc_component_filename"
         exit 58
     fi
 
-    if ! ewuc_actual_img_size=$(wc -c < "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"); then
+    if ! ewuc_actual_img_size=$(expr "$(du -k "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" | awk '{print $1}')" \* 1024); then
         printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
         exit 59
     fi
@@ -202,23 +241,13 @@ ewuc_fs_part_mnt_point="$6"
         exit 60
     fi
 
+    # Copy files to the boot partition, and the bootloader FS partition if it exists
     if [ ! -z "$ewuc_boot_part_mnt_point"  ]; then
         if [ ! -z "$ewuc_fs_part_mnt_point" ]; then
-            remount_partition_or_die "$ewuc_fs_part_mnt_point" rw
-            # If we have an fs mount point, so try and copy the file to it.
-            if ! cp "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point/$ewuc_dst_filename"; then
-                printf "Copying %s to %s failed.\n" "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point/$ewuc_dst_filename"
-                exit 61
-            fi
-            remount_partition_or_die "$ewuc_fs_part_mnt_point" ro
+            copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_dst_filename" "$ewuc_fs_part_mnt_point"
         fi
 
-        remount_partition_or_die "$ewuc_boot_part_mnt_point" rw
-        if ! cp "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point/$ewuc_dst_filename"; then
-            printf "Copying %s to %s failed.\n" "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point/$ewuc_dst_filename"
-            exit 62
-        fi
-        remount_partition_or_die "$ewuc_boot_part_mnt_point" ro
+        copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_dst_filename" "$ewuc_boot_part_mnt_point"
     else
         # Write the file to raw flash.
         #
@@ -227,14 +256,21 @@ ewuc_fs_part_mnt_point="$6"
         # ensure the seek is always a byte count.
         # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
         if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
-            printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
-            exit 63
+            # We might be on raspberry pi 3, which has some version of dd without conv and oflag options
+            if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" seek=$(expr "$ewuc_offset_bytes" \/ 512); then
+                printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
+                exit 63
+            fi
         fi
     fi
 
     # Clean up.
-    if ! rm "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
-        printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
+    if ! rm -rf "$UPDATE_PAYLOAD_DIR/tmp"; then
+        print "Failed to remove temporary directory after update %s\n" "$UPDATE_PAYLOAD_DIR/tmp"
+    fi
+
+    if ! rm -rf "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
+        printf "Failed to remove the decompressed files \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
 
@@ -269,8 +305,8 @@ FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
 # patterns to match bootloader component file names
-WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9].*\.gz$'
-WKS_IMAGE_BOOT_FILES_RE='^MBL_BOOT.*\.gz$'
+WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9].*\.tar\.gz$'
+WKS_IMAGE_BOOT_FILES_RE='^MBL_BOOT.*\.tar\.gz$'
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -323,9 +359,8 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
     # ------------------------------------------------------------------------------
     # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
     for bl_file in $BOOTLOADER_FILES; do
-        bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
-        bl_var_name=$(printf "%s\n" "$bl_filename_no_suffix" | awk '{split($0, arr, ";"); print arr[1]}')
-        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/${bl_var_name}"
+        bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.tar.gz$//')
+        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}"
         size=$(cat "${bl_part_info_file_path_prefix}_SIZE_KiB")
 
         if printf "%s\n" "$bl_file" | grep "${WKS_IMAGE_BOOT_FILES_RE}"; then
@@ -335,24 +370,24 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
             fi
 
             if [ "$(cat "${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_SKIP")" = "0" ]; then
-                fs_mount_point="${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_MOUNT_POINT"
+                fs_mount_point=$(cat "${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_MOUNT_POINT")
             fi
         else
             validate_positive_integer_or_die "$size"
 
-           # We're writing to a raw partition so we need the offset
+            # We're writing to a raw partition so we need the offset
             offset=$(cat "${bl_part_info_file_path_prefix}_OFFSET_BANK1_KiB")
             validate_positive_integer_or_die "$offset"
         fi
         # If this cat fails the 'SKIP' file does not exist and the check
         # below will evaluate to false as should_skip will be empty.
-        should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
+        should_skip=$(cat "${bl_part_info_file_path_prefix}_SKIP")
         if [ "$should_skip" = "1" ]; then
             printf "Partition is marked as skipped. Exiting.\n"
             exit 32
         fi
 
-        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size" "$boot_mount_point" "$fs_mount_point"
+        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_file" "$offset" "$size" "$boot_mount_point" "$fs_mount_point"
         sync
     done
 
