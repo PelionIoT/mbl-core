@@ -1,0 +1,38 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Create python environment including pytest on the DUT
+    description: Create python environment on DUT.
+
+parameters:
+
+    # dut_download_dir: The directory on the device to download pytest
+    #
+    dut_download_dir:
+
+    # host_download_dir: The directory on the host to download pytest
+    host_download_dir:
+
+    # virtual_env specifies the name of the virtual environment
+    #
+    virtual_env:
+
+run:
+    steps:
+        # Create and activate the python venv
+        - . $virtual_env/bin/activate
+
+        # A Test FAIL means that pytest returns an error code.
+        # This in turn causes the shell to immediatly exit.
+        # Prevent this with the "set +e" option
+        - set +e
+
+        # Run pytest to create an environment on the device under test
+        - pytest -s --verbose ./ci/lava/dependencies/test-install-pytest-to-target.py --venv $virtual_env --host_download_dir $host_download_dir --dut_download_dir $dut_download_dir
+
+        # Reenable the "-e" option
+        - set -e
+
