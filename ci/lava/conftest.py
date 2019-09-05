@@ -133,7 +133,11 @@ class ExecuteHelper:
 
     @staticmethod
     def send_mbl_cli_command(command, addr):
+        """Execute the provided mbl-cli command.
 
+        Executes the mbl-cli command and returns the error code, stdout and
+        stderr.
+        """
         err = 1
         output = ""
         error = ""

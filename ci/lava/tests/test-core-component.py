@@ -128,7 +128,8 @@ class Test_Core_Component_DUT:
             ],
             dut_addr,
         )
-        # print the output to get any LAVA format strings displayed and processed by LAVA.
+        # print the output to get any LAVA format strings displayed and
+        # processed by LAVA.
         print(output)
 
         assert True
