@@ -148,11 +148,10 @@ validate_positive_integer_or_die() {
 # Exits on errors.
 #
 # $1: Source path
-# $2: Destination path
+# $2: Destination mount point
 copy_dir_or_die() {
 cfod_source_path="$1"
-cfod_dst_filename="$2"
-cfod_mnt_point="$3"
+cfod_mnt_point="$2"
 
     remount_partition_or_die "$cfod_mnt_point" rw
 
@@ -161,8 +160,8 @@ cfod_mnt_point="$3"
         exit 60
     fi
 
-    if ! cp -f "$cfod_source_path"/* "$cfod_mnt_point/$cfod_dst_filename"; then
-        printf "Copying %s to %s failed.\n" "$cfod_source_path" "$cfod_mnt_point/$cfod_dst_filename"
+    if ! cp -f "$cfod_source_path"/* "$cfod_mnt_point"; then
+        printf "Copying %s to %s failed.\n" "$cfod_source_path" "$cfod_mnt_point"
         exit 61
     fi
 
@@ -228,7 +227,7 @@ ewuc_fs_part_mnt_point="$6"
         printf "Failed to extract and decompress %s\n" "$ewuc_component_filename"
         exit 58
     fi
-
+    # shellcheck disable=SC2003
     if ! ewuc_actual_img_size=$(expr "$(du -k "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" | awk '{print $1}')" \* 1024); then
         printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
         exit 59
@@ -244,10 +243,10 @@ ewuc_fs_part_mnt_point="$6"
     # Copy files to the boot partition, and the bootloader FS partition if it exists
     if [ ! -z "$ewuc_boot_part_mnt_point"  ]; then
         if [ ! -z "$ewuc_fs_part_mnt_point" ]; then
-            copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_dst_filename" "$ewuc_fs_part_mnt_point"
+            copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point"
         fi
 
-        copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_dst_filename" "$ewuc_boot_part_mnt_point"
+        copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point"
     else
         # Write the file to raw flash.
         #
@@ -257,7 +256,9 @@ ewuc_fs_part_mnt_point="$6"
         # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
         if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
             # We might be on raspberry pi 3, which has some version of dd without conv and oflag options
-            if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" seek=$(expr "$ewuc_offset_bytes" \/ 512); then
+            # shellcheck disable=SC2003
+            # shellcheck disable=SC1001
+            if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" seek="$(expr "$ewuc_offset_bytes" \/ 512)"; then
                 printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
                 exit 63
             fi
@@ -269,7 +270,7 @@ ewuc_fs_part_mnt_point="$6"
         print "Failed to remove temporary directory after update %s\n" "$UPDATE_PAYLOAD_DIR/tmp"
     fi
 
-    if ! rm -rf "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
+    if ! rm -rf "${UPDATE_PAYLOAD_DIR:?}/$ewuc_component_filename"; then
         printf "Failed to remove the decompressed files \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
