@@ -5,10 +5,13 @@
 
 """Pytest configuration file."""
 
+import os
 import pytest
 import re
 import subprocess
 import sys
+import tempfile
+import urllib.request
 
 
 def pytest_report_teststatus(report):
@@ -42,7 +45,47 @@ def pytest_addoption(parser):
     parser.addoption(
         "--host_tutorials_dir", action="store", default="/tmp/tutorials"
     )
+    parser.addoption("--local_conf_url", action="store", default="")
+    parser.addoption("--payload_version", action="store", default="1")
     parser.addoption("--venv", action="store", default="/tmp/venv")
+
+
+def _download_from_url(url):
+
+    filename = None
+
+    if url != "":
+
+        filename = os.path.join(tempfile.mkdtemp(), os.path.basename(url))
+
+        try:
+            urllib.request.urlretrieve(url, filename)
+        except Exception as inst:
+            print("\n\nError {}\n\n".format(type(inst)))
+            print(
+                "urlretrieve failed. Trying alternative method by adding "
+                "mapping between 192.168.130.43 and "
+                "artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
+            )
+
+            try:
+                f = open("/etc/hosts", "a")
+                f.write(
+                    "192.168.130.43  artifactory-proxy.mbed-linux.arm.com\n"
+                )
+            except Exception as inst:
+                print("\n\nError {}\n\n".format(type(inst)))
+                print("Could not update /etc/hosts. Perhaps run as root?")
+
+            # re-try the urlretrieve.
+            try:
+                urllib.request.urlretrieve(url, filename)
+            except Exception as inst:
+                print("\n\nError {}\n\n".format(type(inst)))
+                print("\n\nAlternative method also failed.\n\n")
+                filename = None
+
+    return filename
 
 
 @pytest.fixture
@@ -88,6 +131,18 @@ def host_tutorials_dir(request):
 
 
 @pytest.fixture
+def local_conf_url(request):
+    """Fixture for --local_conf_url."""
+    return _download_from_url(request.config.getoption("--local_conf_url"))
+
+
+@pytest.fixture
+def payload_version(request):
+    """Fixture for --payload_version."""
+    return request.config.getoption("--payload_version")
+
+
+@pytest.fixture
 def venv(request):
     """Fixture for --venv."""
     return request.config.getoption("--venv")
@@ -96,12 +151,18 @@ def venv(request):
 class ExecuteHelper:
     """Class to provide a wrapper for executing commands as a subprocess."""
 
+    debug = False
+
+    def __init__(self, request):
+        """Initialise the class."""
+        ExecuteHelper.debug = request.config.getoption("--debug_output")
+
     @staticmethod
     def _print(data):
         # method provided for debug support. Ordinarily this does nothing.
         # Uncomment the following line to get debug output.
-        # print(data)
-        pass
+        if ExecuteHelper.debug:
+            print(data)
 
     @staticmethod
     def execute_command(command):
@@ -151,9 +212,9 @@ class ExecuteHelper:
 
 
 @pytest.fixture
-def execute_helper():
+def execute_helper(request):
     """Fixture to return the helper class."""
-    return ExecuteHelper
+    return ExecuteHelper(request)
 
 
 @pytest.fixture

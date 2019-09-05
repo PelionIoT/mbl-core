@@ -14,6 +14,7 @@ The test_component function runs pytest on the DUT via the mbl-cli on the
 mbl-core copy.
 
 """
+import os
 import pytest
 import re
 import subprocess
@@ -23,12 +24,27 @@ import subprocess
 dut_app_home = "/home"
 
 
-class Test_Core_Component_DUT:
+class TestCoreComponentDUT:
     """Class to encapsulate the testing of core components on a DUT."""
 
     def test_setup(
-        self, dut_addr, execute_helper, host_tutorials_dir, dut_tutorials_dir
+        self,
+        dut_addr,
+        execute_helper,
+        host_tutorials_dir,
+        dut_tutorials_dir,
+        local_conf_url,
     ):
+        """Copy the test specific parts, generating items as required."""
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                local_conf_url,
+                os.path.join("/tmp", os.path.basename(local_conf_url)),
+            ],
+            dut_addr,
+        )
+
         """Copy the test specific parts, generating items as required."""
         execute_helper.send_mbl_cli_command(
             [

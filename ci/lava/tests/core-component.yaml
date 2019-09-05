@@ -21,10 +21,14 @@ parameters:
     #
     virtual_env:
 
+    # local_conf_url: specifies the url of the local.conf file
+    #
+    local_conf_url:
+
 run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
 
-        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host_tutorials_dir $host_tutorials_dir --dut_tutorials_dir $dut_tutorials_dir
+        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host_tutorials_dir $host_tutorials_dir --dut_tutorials_dir $dut_tutorials_dir --local_conf_url $local_conf_url
 
