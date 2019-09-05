@@ -8,46 +8,23 @@ metadata:
     description: Core component Tests
 
 parameters:
-    # COMPONENT specifies the folder that pytest runs in. If this is not
-    #           provided by the test submission pytest will run over the
-    #           entire repository.
+
+    # dut_tutorials_dir: specifies the location of the test artifacts on the device under test
     #
-    COMPONENT:
+    dut_tutorials_dir:
 
-    # SETUP     performs whatever steps are necessary to set conditions prior
-    #           to the test. If this isn't provided by the test submission no
-    #           setup actions are performed.
-    SETUP:
+    # host_tutorials_dir: specifies the location of the test artifacts on the host
+    #
+    host_tutorials_dir:
 
-    # TEARDOWN  performs whatever steps are necessary to clean up after the
-    #           test has executed. If this isn't provided by the test
-    #           submission no teardown actions are performed.
-    TEARDOWN:
+    # virtual_env: specifies the Python virtual environment
+    #
+    virtual_env:
 
 run:
     steps:
         # Activate virtual environment
-        - source /tmp/test_venv/bin/activate
+        - . $virtual_env/bin/activate
 
-        # Perform optional SETUP actions
-        - $SETUP
+        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host_tutorials_dir $host_tutorials_dir --dut_tutorials_dir $dut_tutorials_dir
 
-        # A Test FAIL means that pytest returns an error code.
-        # This in turn causes the shell to immediatly exit.
-        # Prevent this with the "set +e" option
-        - set +e
-
-        # Run pytest
-        - pytest --verbose --color=no --junitxml=./$COMPONENT.xml ./$COMPONENT
-
-        # Turn the pytest results into a format the LAVA requires
-        - python3 ./ci/lava/dependencies/send_junit_results_to_lava.py ./$COMPONENT.xml
-
-        # Reenable the "-e" option
-        - set -e
-
-        # Perform optional TEARDOWN actions
-        - $TEARDOWN
-
-        # Cleanup
-        - /bin/rm ./$COMPONENT.xml
