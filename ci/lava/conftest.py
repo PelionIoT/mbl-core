@@ -100,7 +100,7 @@ class ExecuteHelper:
     def _print(data):
         # method provided for debug support. Ordinarily this does nothing.
         # Uncomment the following line to get debug output.
-        #print(data)
+        # print(data)
         pass
 
     @staticmethod
