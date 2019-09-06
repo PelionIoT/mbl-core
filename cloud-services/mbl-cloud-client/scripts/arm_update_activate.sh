@@ -156,7 +156,7 @@ cfod_mnt_point="$2"
     remount_partition_or_die "$cfod_mnt_point" rw
 
     if ! rm -f "$cfod_mnt_point"/*; then
-        printf "Failed to remove files on partition %s" "$cfod_mnt_point"
+        printf "Failed to remove files on partition %s\n" "$cfod_mnt_point"
         exit 60
     fi
 
