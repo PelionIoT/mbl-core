@@ -213,6 +213,13 @@ ewuc_fs_part_mnt_point="$6"
     ewuc_max_img_size=$(expr "$4" \* 1024)
 
     ewuc_disk_name=$(get_disk_name_from_label_or_die "$ROOTFS1_LABEL")
+    # get_disk_name_from_label_or_die runs in a subshell here so if it exits it
+    # will only exit from the subshell, not stop this function executing. Check
+    # the subshell's exit code so that we can propagate the "exit" if required.
+    ewuc_err=$?
+    if [ "$ewuc_err" -ne "0" ]; then
+        exit "$ewuc_err"
+    fi
 
     if ! mkdir -p "$UPDATE_PAYLOAD_DIR/tmp"; then
         printf "Failed to create temporary directory at %s\n" "$UPDATE_PAYLOAD_DIR/tmp"
