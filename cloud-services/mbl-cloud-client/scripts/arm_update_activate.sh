@@ -293,9 +293,30 @@ dnr_flag_path="${TMP_DIR}/do_not_reboot"
     fi
 }
 
+# Given a payload tar, ensure that its format version is supported
+#
+# $1: path to payload tar file.
+ensure_payload_format_support_or_die() {
+gpfvod_payload="$1"
+
+    if ! gpfvod_format_version=$(tar -xf "$gpfvod_payload" payload_format_version -O); then
+        printf "Failed to extract payload format version from payload file \"%s\"\n" "$gpfvod_payload"
+        exit 29
+    fi
+
+    printf "Payload format version is \"%s\"\n" "$gpfvod_format_version"
+
+    if [ "$gpfvod_format_version" != "1" ]; then
+        printf "Payload format version \"%s\" is not supported" "$gpfvod_format_version"
+        exit 30
+    fi
+}
+
 # ------------------------------------------------------------------------------
 # Main code starts here
 # ------------------------------------------------------------------------------
+
+ensure_payload_format_support_or_die "$FIRMWARE"
 
 # The udpate payload ($FIRMWARE) is a tar file containing files for updates for
 # different components of the system. Updates for different components are
