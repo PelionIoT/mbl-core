@@ -176,7 +176,7 @@ get_disk_name_from_label_or_die() {
 gdnflod_label="$1"
 
     if ! rootfs_part=$(blkid -L "$gdnflod_label"); then
-        printf "Could not find the %s label in the blkid output.\n" "$gdnflod_label"
+        printf "blkid failed to determine the device file for the partition with label %s.\n" "$gdnflod_label"
         exit 54
     fi
 
