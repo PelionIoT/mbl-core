@@ -253,6 +253,13 @@ ewuc_fs_part_mnt_point="$6"
             copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_fs_part_mnt_point"
         fi
 
+        # On raspberrypi3 we have a bootloaderfs partition and a boot
+        # partition. The bootloaderfs partition should hold the VC4 firmware
+        # and TF-A BL2, and the boot partition should hold the kernel FIT
+        # image.
+        #
+        # We have not yet split the contents of these two partitions apart
+        # though, so currently we keep all files on both partitions.
         copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" "$ewuc_boot_part_mnt_point"
     else
         # Write the file to raw flash.
