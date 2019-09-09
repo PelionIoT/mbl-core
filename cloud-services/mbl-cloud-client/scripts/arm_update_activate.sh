@@ -389,7 +389,7 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
     # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
     for bl_file in $BOOTLOADER_FILES; do
         bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.tar.gz$//')
-        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}"
+        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/MBL_${bl_filename_no_suffix}"
         size=$(cat "${bl_part_info_file_path_prefix}_SIZE_KiB")
 
         if printf "%s\n" "$bl_file" | grep "${WKS_IMAGE_BOOT_FILES_RE}"; then
