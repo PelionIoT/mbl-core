@@ -334,8 +334,8 @@ FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
 # patterns to match bootloader component file names
-WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9].*\.tar\.gz$'
-WKS_IMAGE_BOOT_FILES_RE='^MBL_BOOT.*\.tar\.gz$'
+WKS_BOOTLOADER_FILENAME_RE='^WKS_BOOTLOADER[0-9].*\.tar\.gz$'
+WKS_IMAGE_BOOT_FILES_RE='^BOOT.*\.tar\.gz$'
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
