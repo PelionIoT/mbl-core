@@ -15,4 +15,6 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/systemd.sh --venv $virtual_env
+        - . $virtual_env/bin/activate
+
+        - pytest --verbose -s ./ci/lava/tests/test-systemd.py
