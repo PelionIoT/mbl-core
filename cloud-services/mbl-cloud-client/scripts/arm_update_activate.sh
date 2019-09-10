@@ -106,8 +106,8 @@ ipk_filename="$1"
     # Check IPK extension
     file_extension="${ipk_filename##*.}"
     if [ "$file_extension" != "ipk" ]; then
-        printf "Check IPK tar filename validity failed: there is a non IPK file %s in udpate payload!\n" "${ipk_filename}"
-        exit 50
+        # Ignore non-ipk files
+        return 0
     fi
     ipk_directory_name=$(dirname "${ipk_filename}")
     if ! real_ipk_directory_name=$(realpath "${ipk_directory_name}" 2>/dev/null); then
