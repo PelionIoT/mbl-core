@@ -427,8 +427,11 @@ elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENA
         sync
     done
 
-    # Remove the do not reboot flag, the user will likely want to reboot after applying
-    # the bootloader update.
+    save_header_or_die "$HEADER"
+    sync
+
+    # Remove the do not reboot flag, the user will need to reboot after
+    # applying the bootloader update.
     remove_do_not_reboot_flag_or_die
     exit 0
 
