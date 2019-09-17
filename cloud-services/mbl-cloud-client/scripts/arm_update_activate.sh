@@ -269,9 +269,6 @@ ewuc_fs_part_mnt_point="$6"
         # ensure the seek is always a byte count.
         # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
         if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
-            # We might be on raspberry pi 3, which has some version of dd without conv and oflag options
-            # shellcheck disable=SC2003
-            # shellcheck disable=SC1001
             printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
             exit 63
         fi
