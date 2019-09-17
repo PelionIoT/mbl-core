@@ -272,10 +272,8 @@ ewuc_fs_part_mnt_point="$6"
             # We might be on raspberry pi 3, which has some version of dd without conv and oflag options
             # shellcheck disable=SC2003
             # shellcheck disable=SC1001
-            if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" seek="$(expr "$ewuc_offset_bytes" \/ 512)"; then
-                printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
-                exit 63
-            fi
+            printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
+            exit 63
         fi
     fi
 
