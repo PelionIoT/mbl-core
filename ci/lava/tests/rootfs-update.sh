@@ -35,6 +35,9 @@ while [ "$1" != "" ]; do
         -u | --update ) shift
                         pelion_update=$1
                         ;;
+        --payload_version )     shift
+                        payload_version=$1
+                        ;;
         * )             echo "Invalid Parameter"
                         exit 1
     esac
@@ -99,6 +102,8 @@ else
             # specified in rootfs_image and remove everything upto and
             # including the final "/"
             tar -cf /tmp/payload.tar "${rootfs_image##*/}" '--transform=s/.*/rootfs.tar.xz/'
+            echo "$payload_version" > payload_format_version
+            tar -rf /tmp/payload.tar payload_format_version
 
             if [ "$pelion_update" = "PELION" ]; then
 
