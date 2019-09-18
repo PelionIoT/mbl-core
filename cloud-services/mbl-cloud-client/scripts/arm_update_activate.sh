@@ -106,8 +106,8 @@ ipk_filename="$1"
     # Check IPK extension
     file_extension="${ipk_filename##*.}"
     if [ "$file_extension" != "ipk" ]; then
-        printf "Check IPK tar filename validity failed: there is a non IPK file %s in udpate payload!\n" "${ipk_filename}"
-        exit 50
+        # Ignore non-ipk files
+        return 0
     fi
     ipk_directory_name=$(dirname "${ipk_filename}")
     if ! real_ipk_directory_name=$(realpath "${ipk_directory_name}" 2>/dev/null); then
@@ -144,6 +144,55 @@ validate_positive_integer_or_die() {
     fi
 }
 
+# Copy all files in a directory from src to dst, remounting the file system as rw before copying.
+# Exits on errors.
+#
+# $1: Source path
+# $2: Destination mount point
+copy_dir_or_die() {
+cfod_source_path="$1"
+cfod_mnt_point="$2"
+
+    remount_partition_or_die "$cfod_mnt_point" rw
+
+    if ! rm -f "$cfod_mnt_point"/*; then
+        printf "Failed to remove files on partition %s\n" "$cfod_mnt_point"
+        exit 60
+    fi
+
+    if ! cp -f "$cfod_source_path"/* "$cfod_mnt_point"; then
+        printf "Copying %s to %s failed.\n" "$cfod_source_path" "$cfod_mnt_point"
+        exit 61
+    fi
+
+    remount_partition_or_die "$cfod_mnt_point" ro
+}
+
+# Get the disk name from the device label.
+# Exits on errors.
+#
+# $1: Device label
+get_disk_name_from_label_or_die() {
+gdnflod_label="$1"
+
+    if ! gdnflod_part_for_label=$(blkid -L "$gdnflod_label"); then
+        printf "blkid failed to determine the device file for the partition with label %s.\n" "$gdnflod_label"
+        exit 54
+    fi
+
+    if ! gdnflod_disk_name=$(printf '%s\n' "$gdnflod_part_for_label" | sed 's/p[0-9]\+$//'); then
+        printf "Failed to strip the partition number from the root partition's device file name.\n"
+        exit 55
+    fi
+
+    if [ "$gdnflod_disk_name" = "$gdnflod_part_for_label" ]; then
+        printf "Failed to strip the partition number from the root partition's device file name: %s\n" "$gdnflod_disk_name"
+        exit 56
+    fi
+
+    printf "%s\n" "$gdnflod_disk_name"
+}
+
 # Given a payload tar and a component file name, extract the component,
 # decompress it and write it to disk.
 #
@@ -151,62 +200,95 @@ validate_positive_integer_or_die() {
 # $2: Component file name
 # $3: Offset in KiB
 # $4: Expected size in KiB
+# $5: Boot mount point (empty string if not writing to a boot partition)
+# $6: BLFS mount point (empty string if not writing to the blfs partition)
 extract_and_write_update_component_or_die() {
 ewuc_payload="$1"
 ewuc_component_filename="$2"
+ewuc_boot_part_mnt_point="$5"
+ewuc_blfs_part_mnt_point="$6"
     # shellcheck disable=SC2003
     ewuc_offset_bytes=$(expr "$3" \* 1024)
     # shellcheck disable=SC2003
     ewuc_max_img_size=$(expr "$4" \* 1024)
-    # Find the disk name in the blkid output
-    if ! rootfs_part=$(blkid -L "$ROOTFS1_LABEL"); then
-        printf "Could not find the rootfs1 label in the blkid output."
-    fi
- 
-    if ! ewuc_disk_name=$(printf '%s\n' "$rootfs_part" | sed 's/p[0-9]\+$//'); then
-        printf "Failed to strip the partition number from the root partition's device file name."
-        exit 55
-    fi
-
-    if [ "$ewuc_disk_name" = "$rootfs_part" ]; then
-        printf "Failed to strip the partition number from the root partition's device file name: %s" "$ewuc_disk_name\n"
-        exit 56
+    ewuc_disk_name=$(get_disk_name_from_label_or_die "$ROOTFS1_LABEL")
+    # get_disk_name_from_label_or_die runs in a subshell here so if it exits it
+    # will only exit from the subshell, not stop this function executing. Check
+    # the subshell's exit code so that we can propagate the "exit" if required.
+    ewuc_err=$?
+    if [ "$ewuc_err" -ne "0" ]; then
+        exit "$ewuc_err"
     fi
 
-    if ! tar -xf "$ewuc_payload" "$ewuc_component_filename".gz -C "$UPDATE_PAYLOAD_DIR"; then
-        printf "Failed to extract %s from %s\n" "$ewuc_component_filename.gz" "$ewuc_payload"
+    # The outer tar file is uncompressed and contains a xz compressed tar file, which contains the payload.
+    #
+    # Extract a compressed tar file from the uncompressed outer tar file.
+    if ! tar -xvf "$ewuc_payload" "$ewuc_component_filename" -C "$UPDATE_PAYLOAD_DIR"; then
+        printf "Failed to extract tar file named %s from payload tar archive named %s\n" "$ewuc_component_filename" "$ewuc_payload"
         exit 57
     fi
 
-    if ! gunzip "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename".gz; then
-        printf "Failed to decompress %s\n" "$ewuc_component_filename.gz"
+    # Extract the actual payload file/directory from the compressed inner tar file.
+    if ! tar -xvf "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" -C "$UPDATE_PAYLOAD_DIR"; then
+        printf "Failed to extract files to update from inner tar file named %s\n" "$ewuc_component_filename"
         exit 58
     fi
 
-    if ! ewuc_actual_img_size=$(wc -c < "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"); then
-        printf "Failed to get the size of \"%s\"\n" "$ewuc_component_filename"
-        exit 59
+    ewuc_component_file_stem=${ewuc_component_filename%.tar.xz}
+    # Copy files to the boot partition, and the bootloader FS partition if it exists
+    if [ ! -z "$ewuc_boot_part_mnt_point"  ]; then
+        # shellcheck disable=SC2003
+        if ! ewuc_actual_img_size=$(expr "$(du -k "$UPDATE_PAYLOAD_DIR/${ewuc_component_file_stem}" | awk '{print $1}')" \* 1024); then
+            printf "Failed to get the size of \"%s\"\n" "$ewuc_component_file_stem"
+            exit 59
+        fi
+
+        validate_positive_integer_or_die "$ewuc_actual_img_size"
+
+        if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
+            printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
+            exit 60
+        fi
+
+        if [ ! -z "$ewuc_blfs_part_mnt_point" ]; then
+            copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_file_stem" "$ewuc_blfs_part_mnt_point"
+        fi
+
+        # On raspberrypi3 we have a bootloaderfs partition and a boot
+        # partition. The bootloaderfs partition should hold the VC4 firmware
+        # and TF-A BL2, and the boot partition should hold the kernel FIT
+        # image.
+        #
+        # We have not yet split the contents of these two partitions apart
+        # though, so currently we keep all files on both partitions.
+        copy_dir_or_die "$UPDATE_PAYLOAD_DIR/$ewuc_component_file_stem" "$ewuc_boot_part_mnt_point"
+    else
+        if ! ewuc_actual_img_size=$(wc -c < "$UPDATE_PAYLOAD_DIR/$ewuc_component_file_stem"); then
+            printf "Failed to get the size of \"%s\"\n" "$ewuc_component_file_stem"
+            exit 59
+        fi
+
+        validate_positive_integer_or_die "$ewuc_actual_img_size"
+
+        if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
+            printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
+            exit 60
+        fi
+
+        # Write the file to raw flash.
+        #
+        # Linux always considers the sector size to be 512 bytes, no matter what
+        # the device's actual block size is. We just let dd use its default block size and
+        # ensure the seek is always a byte count.
+        # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
+        if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_file_stem" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
+            printf "Writing %s to disk failed.\n" "$ewuc_component_file_stem"
+            exit 63
+        fi
     fi
 
-    validate_positive_integer_or_die "$ewuc_actual_img_size"
-
-    if [ "$ewuc_actual_img_size" -gt "$ewuc_max_img_size" ]; then
-        printf "Image size is greater than the maximum allocated size: Actual size %s. Expected size: %s\n" "$ewuc_actual_img_size" "$ewuc_max_img_size"
-        exit 60
-    fi
-
-    # Linux always considers the sector size to be 512 bytes, no matter what
-    # the device's actual block size is. We just let dd use its default block size and
-    # ensure the seek is always a byte count.
-    # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-    if ! dd if="$UPDATE_PAYLOAD_DIR/$ewuc_component_filename" of="$ewuc_disk_name" oflag=seek_bytes conv=fsync seek="$ewuc_offset_bytes"; then
-        printf "Writing %s to disk failed.\n" "$ewuc_component_filename"
-        exit 61
-    fi
-
-    # Clean up.
-    if ! rm "$UPDATE_PAYLOAD_DIR/$ewuc_component_filename"; then
-        printf "Failed to remove the decompressed file \"%s\" after update\n" "$ewuc_component_filename"
+    if ! rm -rf "${UPDATE_PAYLOAD_DIR:?}/$ewuc_component_filename"; then
+        printf "Failed to remove the decompressed files \"%s\" after update\n" "$ewuc_component_filename"
     fi
 }
 
@@ -221,9 +303,30 @@ dnr_flag_path="${TMP_DIR}/do_not_reboot"
     fi
 }
 
+# Given a payload tar, ensure that its format version is supported
+#
+# $1: path to payload tar file.
+ensure_payload_format_support_or_die() {
+gpfvod_payload="$1"
+
+    if ! gpfvod_format_version=$(tar -xf "$gpfvod_payload" payload_format_version -O); then
+        printf "Failed to extract payload format version from payload file \"%s\"\n" "$gpfvod_payload"
+        exit 29
+    fi
+
+    printf "Payload format version is \"%s\"\n" "$gpfvod_format_version"
+
+    if [ "$gpfvod_format_version" != "1" ]; then
+        printf "Payload format version \"%s\" is not supported" "$gpfvod_format_version"
+        exit 30
+    fi
+}
+
 # ------------------------------------------------------------------------------
 # Main code starts here
 # ------------------------------------------------------------------------------
+
+ensure_payload_format_support_or_die "$FIRMWARE"
 
 # The udpate payload ($FIRMWARE) is a tar file containing files for updates for
 # different components of the system. Updates for different components are
@@ -240,8 +343,9 @@ FIRMWARE_FILES=$(${tar_list_content_cmd} "${FIRMWARE}")
 # directory containing files which contain information about the update payloads
 PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
-# expected bootloader component file names
-WKS_BOOTLOADER_FILENAME_RE='^MBL_WKS_BOOTLOADER[0-9]\.gz$'
+# patterns to match bootloader component file names
+WKS_BOOTLOADER_FILENAME_RE='^WKS_BOOTLOADER[0-9].*\.tar\.xz$'
+WKS_IMAGE_BOOT_FILES_RE='^BOOT.*\.tar\.xz$'
 
 # Check if we need to do firmware update or application update
 if echo "${FIRMWARE_FILES}" | grep .ipk$; then
@@ -287,35 +391,53 @@ if echo "${FIRMWARE_FILES}" | grep .ipk$; then
 
     exit "$?"
 
-elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}"); then
+elif BOOTLOADER_FILES=$(echo "${FIRMWARE_FILES}" | grep "${WKS_BOOTLOADER_FILENAME_RE}\|${WKS_IMAGE_BOOT_FILES_RE}"); then
 
     # ------------------------------------------------------------------------------
     # Write one or more bootloader components from an update payload file to disk
     # ------------------------------------------------------------------------------
-
     # variable is unquoted to remove carriage returns, tabs, multiple spaces etc
     for bl_file in $BOOTLOADER_FILES; do
-        bl_filename_no_suffix=$(printf "%s\n" "$bl_file" | sed 's/\.gz$//')
+        bl_basename=$(printf "%s\n" "$bl_file" | sed 's/\.tar.xz$//')
+        bl_part_info_file_path_prefix="${PART_INFO_FILES_DIR}/MBL_${bl_basename}"
+        size=$(cat "${bl_part_info_file_path_prefix}_SIZE_KiB")
 
-        offset=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_OFFSET_BANK1_KiB")
-        validate_positive_integer_or_die "$offset"
+        if printf "%s\n" "$bl_file" | grep "${WKS_IMAGE_BOOT_FILES_RE}"; then
+            if ! boot_mount_point=$(cat "${PART_INFO_FILES_DIR}/MBL_BOOT_MOUNT_POINT"); then
+                printf "Failed to find the boot partition mount point from partition info file: %s.\n" "${bl_part_info_file_path_prefix}_MOUNT_POINT"
+                exit 31
+            fi
 
-        size=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SIZE_KiB")
-        validate_positive_integer_or_die "$size"
-        # If this cat fails the 'SKIP' file does not exist, and the check
-        # below will pass as should_skip will be empty.
-        should_skip=$(cat "${PART_INFO_FILES_DIR}/${bl_filename_no_suffix}_SKIP")
+            if [ "$(cat "${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_SKIP")" = "0" ]; then
+                fs_mount_point=$(cat "${PART_INFO_FILES_DIR}/MBL_WKS_BOOTLOADER_FS_MOUNT_POINT")
+            fi
+        else
+            validate_positive_integer_or_die "$size"
+            # Set the mount points to empty strings as they aren't needed.
+            boot_mount_point=""
+            fs_mount_point=""
+            # We're writing to a raw partition so we need the offset
+            offset=$(cat "${bl_part_info_file_path_prefix}_OFFSET_BANK1_KiB")
+            validate_positive_integer_or_die "$offset"
+        fi
+
+        # If this cat fails the 'SKIP' file does not exist and the check
+        # below will evaluate to false as should_skip will be empty.
+        should_skip=$(cat "${bl_part_info_file_path_prefix}_SKIP")
         if [ "$should_skip" = "1" ]; then
             printf "Partition is marked as skipped. Exiting.\n"
             exit 32
         fi
 
-        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_filename_no_suffix" "$offset" "$size"
+        extract_and_write_update_component_or_die "$FIRMWARE" "$bl_file" "$offset" "$size" "$boot_mount_point" "$fs_mount_point"
         sync
     done
 
-    # Remove the do not reboot flag, the user will likely want to reboot after applying
-    # the bootloader update.
+    save_header_or_die "$HEADER"
+    sync
+
+    # Remove the do not reboot flag, the user will need to reboot after
+    # applying the bootloader update.
     remove_do_not_reboot_flag_or_die
     exit 0
 
