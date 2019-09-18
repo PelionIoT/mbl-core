@@ -42,6 +42,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--host_tutorials_dir", action="store", default="/tmp/tutorials"
     )
+    parser.addoption("--payload_version", action="store", default="1")
     parser.addoption("--venv", action="store", default="/tmp/venv")
 
 
@@ -85,6 +86,12 @@ def host_download_dir(request):
 def host_tutorials_dir(request):
     """Fixture for --host_tutorials_dir."""
     return request.config.getoption("--host_tutorials_dir")
+
+
+@pytest.fixture
+def payload_version(request):
+    """Fixture for --payload_version."""
+    return request.config.getoption("--payload_version")
 
 
 @pytest.fixture

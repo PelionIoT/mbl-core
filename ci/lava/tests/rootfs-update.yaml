@@ -32,6 +32,11 @@ parameters:
     #
     virtual_env:
 
+    #
+    # payload_version: specifies the payloaf version
+    #
+    payload_version:
+
 run:
     steps:
-        - ./ci/lava/tests/rootfs-update.sh --venv $virtual_env --stage $test_stage --image $image_url --rootfs $rootfs --update $pelion_update
+        - ./ci/lava/tests/rootfs-update.sh --venv $virtual_env --stage $test_stage --image $image_url --rootfs $rootfs --update $pelion_update --payload_version $payload_version

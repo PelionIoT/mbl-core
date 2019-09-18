@@ -8,17 +8,27 @@ metadata:
     description: Build Test Images
 
 parameters:
+
+    #
     # device: specifies the device of the UUT (armv7 or arm64)
     #
     device:
 
+    #
     # virtual_env: specifies the Python virtual environment
     #
     virtual_env:
 
+    #
     # host_tutorials_dir: specifies the output directory for the build artifacts
     #
     host_tutorials_dir:
+
+    #
+    # payload_version: specifies the payloaf version
+    #
+    payload_version:
+
 run:
     steps:
         # Activate virtual environment
@@ -29,4 +39,4 @@ run:
         - chmod -R a+w tutorials
 
         # Build the Hello World sample app.
-        - su ubuntu -c "$virtual_env/bin/pytest --verbose -s ./ci/lava/tests/test-build-tutorial-images.py --device $device --host_tutorials_dir $host_tutorials_dir"
+        - su ubuntu -c "$virtual_env/bin/pytest --verbose -s ./ci/lava/tests/test-build-tutorial-images.py --device $device --host_tutorials_dir $host_tutorials_dir --payload_version $payload_version"
