@@ -138,3 +138,18 @@ emodFsType="$3"
 get_active_root_device() {
     lsblk -nrpo NAME,MOUNTPOINT | grep -e ".* /$" | cut -d ' ' -f1
 }
+
+# Remount a partition.
+# Exits on errors.
+#
+# $1: Mount point of the target partition
+# $2: Mount options e.g rw or ro
+remount_partition_or_die() {
+rpod_mount_point="$1"
+rpod_mount_opts="$2"
+
+    if ! mount -o remount,"$rpod_mount_opts" "$rpod_mount_point"; then
+        printf "Failed to remount partition at mount point %s with mount options %s" "$rpod_mount_opts" "$rpod_mount_point"
+        exit 65
+    fi
+}
