@@ -76,7 +76,9 @@ class Test_Build_Test_Images:
         with open(filename, "w") as fout:
             fout.writelines(data[1:])
 
-    def test_build(self, device, execute_helper, host_tutorials_dir):
+    def test_build(
+        self, device, execute_helper, host_tutorials_dir, payload_version
+    ):
         """
         Build all of the images and tarballs.
 
@@ -205,6 +207,10 @@ class Test_Build_Test_Images:
             if not os.path.exists(host_tutorials_dir):
                 os.makedirs(host_tutorials_dir)
 
+            # Create payload_version file
+            with open("payload_format_version", "w") as file:
+                file.write(payload_version)
+
             # User Sample App is needed in both ipk and tar format
             err, output, error = execute_helper.execute_command(
                 [
@@ -225,6 +231,7 @@ class Test_Build_Test_Images:
                     "-cvf",
                     "{}/{}".format(host_tutorials_dir, USER_SAMPLE_TAR),
                     "user-sample-app-package_1.0_any.ipk",
+                    "payload_format_version",
                 ]
             )
             overall_err += self._print_result(
@@ -242,6 +249,7 @@ class Test_Build_Test_Images:
                     "sample-app-3-good_1.0_any.ipk",
                     "sample-app-4-good_1.0_any.ipk",
                     "sample-app-5-good_1.0_any.ipk",
+                    "payload_format_version",
                 ]
             )
             overall_err += self._print_result(
@@ -261,6 +269,7 @@ class Test_Build_Test_Images:
                     "sample-app-3-good_1.0_any.ipk",
                     "{}_1.1_any.ipk".format(BAD_RUNTIME_IMAGE),
                     "sample-app-5-good_1.0_any.ipk",
+                    "payload_format_version",
                 ]
             )
             overall_err += self._print_result(
@@ -282,6 +291,7 @@ class Test_Build_Test_Images:
                     ),
                     "sample-app-4-good_1.0_any.ipk",
                     "sample-app-5-good_1.0_any.ipk",
+                    "payload_format_version",
                 ]
             )
             overall_err += self._print_result(
