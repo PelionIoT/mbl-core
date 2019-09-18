@@ -135,13 +135,12 @@ class AppUpdateManager:
         log.debug("Check that '{}' is a valid ipk".format(tar_info.name))
 
         if not tar_info.name.lower().endswith(".ipk"):
-            msg = (
-                "IPK(s) expected to be found in package '{}'"
-                " however '{}' was found".format(
-                    self.update_pkg, tar_info.name
+            log.info(
+                "Skipping non-ipk file '{}' in payload '{}'".format(
+                    tar_info.name, self.update_pkg
                 )
             )
-            raise IllegalPackage(msg)
+            return False
         elif not tar_info.isfile():
             msg = "'{}' found in package '{}' isn't regular file".format(
                 tar_info.name, self.update_pkg
@@ -157,6 +156,7 @@ class AppUpdateManager:
             raise IllegalPackage(msg)
 
         log.info("'{}' is a valid ipk".format(tar_info.name))
+        return True
 
     def _get_ipks_from_pkg(self, tar_file):
         """Retrieve ipks contained in a package."""
@@ -166,9 +166,9 @@ class AppUpdateManager:
                     tar_info.name, self.update_pkg
                 )
             )
-            self._validate_archive_member(tar_info)
-            self._ipks.append(tar_info.name)
-            self._pkg_arch_members.append(tar_info)
+            if self._validate_archive_member(tar_info):
+                self._ipks.append(tar_info.name)
+                self._pkg_arch_members.append(tar_info)
 
     def _install_app(self, app_record):
         """Install an application from an ipk."""
