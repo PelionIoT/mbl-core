@@ -3,29 +3,21 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Script to run endge connected test on the DUT."""
+"""Script to run edge connected test on the DUT."""
 
 import pytest
 import re
 
 
 class Test_Edge_Connected:
-    """Class to encapsulate the testing of systemd on a DUT."""
+    """Class to encapsulate the testing of edge cloud connection on a DUT."""
 
-    dut_address = ""
-
-    def test_setup_dut_addr(self, dut_addr):
-        """Store the device address."""
-        Test_Edge_Connected.dut_address = dut_addr
-
-        assert dut_addr != ""
-
-    def test_edge_connected(self, execute_helper):
+    def test_edge_connected(self, execute_helper, dut_addr):
         """Perform the test on the DUT via the mbl-cli."""
-        # Check status
+        # Get log file
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["get", "/var/log/edge-core.log", "/tmp/edge-core.log"],
-            Test_Edge_Connected.dut_address,
+            dut_addr,
         )
 
         if err == 0:
