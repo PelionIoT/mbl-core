@@ -16,8 +16,7 @@ class Test_Edge_Connected:
         """Perform the test on the DUT via the mbl-cli."""
         # Get log file
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
-            ["get", "/var/log/edge-core.log", "/tmp/edge-core.log"],
-            dut_addr,
+            ["get", "/var/log/edge-core.log", "/tmp/edge-core.log"], dut_addr
         )
 
         if err == 0:
