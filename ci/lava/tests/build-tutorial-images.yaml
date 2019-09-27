@@ -39,4 +39,4 @@ run:
         - chmod -R a+w tutorials
 
         # Build the Hello World sample app.
-        - su ubuntu -c "$virtual_env/bin/pytest --verbose -s ./ci/lava/tests/test-build-tutorial-images.py --device $device --host_tutorials_dir $host_tutorials_dir --payload_version $payload_version"
+        - su ubuntu -c "$virtual_env/bin/pytest --verbose -s ./ci/lava/tests/test-build-tutorial-images.py --device $device --host-tutorials-dir $host_tutorials_dir --payload-version $payload_version"

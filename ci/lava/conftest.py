@@ -32,21 +32,21 @@ def pytest_report_teststatus(report):
 
 def pytest_addoption(parser):
     """Add option parsing to pytest."""
-    parser.addoption("--debug_output", action="store_true")
+    parser.addoption("--debug-output", action="store_true")
     parser.addoption("--device", action="store", default="none")
     parser.addoption("--dut", action="store", default="auto")
     parser.addoption(
-        "--dut_download_dir", action="store", default="/tmp/pytest"
+        "--dut-download-dir", action="store", default="/tmp/pytest"
     )
-    parser.addoption("--dut_tutorials_dir", action="store", default="/scratch")
+    parser.addoption("--dut-tutorials-dir", action="store", default="/scratch")
     parser.addoption(
-        "--host_download_dir", action="store", default="/tmp/pytest"
+        "--host-download-dir", action="store", default="/tmp/pytest"
     )
     parser.addoption(
-        "--host_tutorials_dir", action="store", default="/tmp/tutorials"
+        "--host-tutorials-dir", action="store", default="/tmp/tutorials"
     )
-    parser.addoption("--local_conf_url", action="store", default="")
-    parser.addoption("--payload_version", action="store", default="1")
+    parser.addoption("--local-conf-url", action="store", default="")
+    parser.addoption("--payload-version", action="store", default="1")
     parser.addoption("--venv", action="store", default="/tmp/venv")
 
 
@@ -90,8 +90,8 @@ def _download_from_url(url):
 
 @pytest.fixture
 def debug_output(request):
-    """Fixture for --debug_output."""
-    return request.config.getoption("--debug_output")
+    """Fixture for --debug-output."""
+    return request.config.getoption("--debug-output")
 
 
 @pytest.fixture
@@ -108,38 +108,43 @@ def dut(request):
 
 @pytest.fixture
 def dut_download_dir(request):
-    """Fixture for --dut_download_dir."""
-    return request.config.getoption("--dut_download_dir")
+    """Fixture for --dut-download-dir."""
+    return request.config.getoption("--dut-download-dir")
 
 
 @pytest.fixture
 def dut_tutorials_dir(request):
-    """Fixture for --dut_tutorials_dir."""
-    return request.config.getoption("--dut_tutorials_dir")
+    """Fixture for --dut-tutorials-dir."""
+    return request.config.getoption("--dut-tutorials-dir")
 
 
 @pytest.fixture
 def host_download_dir(request):
-    """Fixture for --host_download_dir."""
-    return request.config.getoption("--host_download_dir")
+    """Fixture for --host-download-dir."""
+    return request.config.getoption("--host-download-dir")
 
 
 @pytest.fixture
 def host_tutorials_dir(request):
-    """Fixture for --host_tutorials_dir."""
-    return request.config.getoption("--host_tutorials_dir")
+    """Fixture for --host-tutorials-dir."""
+    return request.config.getoption("--host-tutorials-dir")
 
 
 @pytest.fixture
-def local_conf_url(request):
-    """Fixture for --local_conf_url."""
-    return _download_from_url(request.config.getoption("--local_conf_url"))
+def local_conf_file(request):
+    """
+    Fixture for --local-conf-url.
+
+    Downloads the file from the url and returns the path, or None if the
+    download fails.
+    """
+    return _download_from_url(request.config.getoption("--local-conf-url"))
 
 
 @pytest.fixture
 def payload_version(request):
-    """Fixture for --payload_version."""
-    return request.config.getoption("--payload_version")
+    """Fixture for --payload-version."""
+    return request.config.getoption("--payload-version")
 
 
 @pytest.fixture
@@ -155,7 +160,7 @@ class ExecuteHelper:
 
     def __init__(self, request):
         """Initialise the class."""
-        ExecuteHelper.debug = request.config.getoption("--debug_output")
+        ExecuteHelper.debug = request.config.getoption("--debug-output")
 
     @staticmethod
     def _print(data):
