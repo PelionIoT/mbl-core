@@ -141,7 +141,9 @@ def local_conf_file(request):
     Else return None
     """
     if request.config.getoption("--local-conf-file").startswith("http"):
-        return _download_from_url(request.config.getoption("--local-conf-file"))
+        return _download_from_url(
+            request.config.getoption("--local-conf-file")
+        )
     elif os.path.exists(request.config.getoption("--local-conf-file")):
         return request.config.getoption("--local-conf-file")
     else:
