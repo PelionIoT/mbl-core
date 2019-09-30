@@ -30,5 +30,5 @@ run:
         # Activate virtual environment
         - . $virtual_env/bin/activate
 
-        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host-tutorials-dir $host_tutorials_dir --dut-tutorials-dir $dut_tutorials_dir --local-conf-url $local_conf_url
+        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host-tutorials-dir $host_tutorials_dir --dut-tutorials-dir $dut_tutorials_dir --local-conf-file $local_conf_url
 

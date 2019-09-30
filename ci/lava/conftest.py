@@ -45,7 +45,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--host-tutorials-dir", action="store", default="/tmp/tutorials"
     )
-    parser.addoption("--local-conf-url", action="store", default="")
+    parser.addoption("--local-conf-file", action="store", default="")
     parser.addoption("--payload-version", action="store", default="1")
     parser.addoption("--venv", action="store", default="/tmp/venv")
 
@@ -133,12 +133,19 @@ def host_tutorials_dir(request):
 @pytest.fixture
 def local_conf_file(request):
     """
-    Fixture for --local-conf-url.
+    Fixture for --local-conf-file.
 
-    Downloads the file from the url and returns the path, or None if the
-    download fails.
+    If the provided option starts with http, atttempt to download the file
+    from the url and return the path.
+    If the provided option is a file that exists then return that path.
+    Else return None
     """
-    return _download_from_url(request.config.getoption("--local-conf-url"))
+    if request.config.getoption("--local-conf-file").startswith("http"):
+        return _download_from_url(request.config.getoption("--local-conf-file"))
+    elif os.path.exists(request.config.getoption("--local-conf-file")):
+        return request.config.getoption("--local-conf-file")
+    else:
+        return None
 
 
 @pytest.fixture

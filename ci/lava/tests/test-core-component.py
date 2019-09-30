@@ -27,6 +27,8 @@ dut_app_home = "/home"
 class TestCoreComponentDUT:
     """Class to encapsulate the testing of core components on a DUT."""
 
+    local_conf_file = None
+
     def test_setup(
         self,
         dut_addr,
@@ -36,14 +38,15 @@ class TestCoreComponentDUT:
         local_conf_file,
     ):
         """Copy the test specific parts, generating items as required."""
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                local_conf_file,
-                os.path.join("/tmp", os.path.basename(local_conf_file)),
-            ],
+        # Copy the local.conf file, creating the directory first.
+        return_code, output, error = execute_helper.send_mbl_cli_command(
+            ["shell", "mkdir -p {}".format(os.path.dirname(local_conf_file))],
             dut_addr,
         )
+        execute_helper.send_mbl_cli_command(
+            ["put", local_conf_file, local_conf_file], dut_addr
+        )
+        TestCoreComponentDUT.local_conf_file = local_conf_file
 
         """Copy the test specific parts, generating items as required."""
         execute_helper.send_mbl_cli_command(
@@ -138,8 +141,12 @@ class TestCoreComponentDUT:
                 "{}/bin/pytest "
                 "--verbose "
                 "--ignore={}/mbl-core/ci --color=no "
-                "{}/mbl-core".format(
-                    venv, dut_tutorials_dir, dut_tutorials_dir
+                "{}/mbl-core "
+                "--local-conf-file {}".format(
+                    venv,
+                    dut_tutorials_dir,
+                    dut_tutorials_dir,
+                    TestCoreComponentDUT.local_conf_file,
                 ),
             ],
             dut_addr,
