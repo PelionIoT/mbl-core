@@ -52,7 +52,8 @@ class TestProvisionMbl:
 
     def test_reject_invalid_key(self, execute_helper):
         """Test invalid API key saving using mbl-cli."""
-        exit_code, stdout, stderr = execute_helper.execute_command(
+        exit_code, stdout, stderr = execute_helper.send_mbl_cli_command(
+            ["save-api-key", "invalid_key"], TestProvisionMbl.dut_addr
             ["mbl-cli", "save-api-key", "invalid_key"]
         )
         assert "API key not recognised by Pelion Device Management" in stderr
