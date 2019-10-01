@@ -10,14 +10,14 @@ import re
 import subprocess
 
 
-class Test_Systemd:
+class TestSystemd:
     """Class to encapsulate the testing of systemd on a DUT."""
 
     dut_address = ""
 
     def test_setup_dut_addr(self, dut_addr):
         """Store the device address."""
-        Test_Systemd.dut_address = dut_addr
+        TestSystemd.dut_address = dut_addr
 
         assert dut_addr != ""
 
@@ -26,12 +26,12 @@ class Test_Systemd:
         # Check status
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "systemctl --no-pager is-system-running"],
-            Test_Systemd.dut_address,
+            TestSystemd.dut_address,
         )
         if err != 0:
             suberr, stdout, stderr = execute_helper.send_mbl_cli_command(
                 ["shell", "systemctl --no-pager --failed"],
-                Test_Systemd.dut_address,
+                TestSystemd.dut_address,
             )
             print(stdout)
         assert err == 0
@@ -63,6 +63,6 @@ class Test_Systemd:
         # Check status
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "systemctl --no-pager status {}".format(test_action)],
-            Test_Systemd.dut_address,
+            TestSystemd.dut_address,
         )
         assert err == 0
