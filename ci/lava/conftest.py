@@ -54,7 +54,7 @@ def _download_from_url(url):
 
     filename = None
 
-    if url != "":
+    if url:
 
         filename = os.path.join(tempfile.mkdtemp(), os.path.basename(url))
 
