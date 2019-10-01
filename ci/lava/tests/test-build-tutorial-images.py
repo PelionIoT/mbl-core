@@ -31,24 +31,10 @@ MULTI_APP_ONE_FAIL_INSTALL_TAR = (
 )
 
 
-class Test_Build_Test_Images:
+class TestBuildTestImages:
     """Class to encapsulate building images for testing."""
 
-    def _print_result(self, teststep, err):
-        """Private function to provide LAVA formatted sub-results."""
-        if err == 0:
-            print(
-                "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID={}-{} RESULT=pass>".format(
-                    self.__class__.__name__, teststep
-                )
-            )
-        else:
-            print(
-                "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID={}-{} RESULT=fail>".format(
-                    self.__class__.__name__, teststep
-                )
-            )
-        return err
+    arm_arch = None
 
     def _replace_line_in_file(self, filename, search, replace):
         """
@@ -76,17 +62,9 @@ class Test_Build_Test_Images:
         with open(filename, "w") as fout:
             fout.writelines(data[1:])
 
-    def test_build(
-        self, device, execute_helper, host_tutorials_dir, payload_version
-    ):
-        """
-        Build all of the images and tarballs.
-
-        This function builds the the dockcross compiler and the test images
-        needed for mbl-core tests and the HelloWorld update tests.
-        """
+    def test_select_architecture(self, device):
+        """Select the architechture based upon the device under test."""
         err = 0
-        overall_err = 0
 
         if (
             device == "bcm2837-rpi-3-b-32"
@@ -95,20 +73,17 @@ class Test_Build_Test_Images:
             or device == "imx7d-pico-mbl"
             or device == "imx6ul-pico-mbl"
         ):
-            arm_arch = "armv7"
+            TestBuildTestImages.arm_arch = "armv7"
         elif device == "imx8mmevk-mbl":
-            arm_arch = "arm64"
+            TestBuildTestImages.arm_arch = "arm64"
         else:
             print("Unsupported device type {}".format(device))
             err = 1
 
-        overall_err += self._print_result("select-device", err)
+        assert err == 0
 
-        # If a valid device isn't specifed then exit with an error.
-        if err == 1:
-            assert False
-            return
-
+    def test_build_dockcross(self, execute_helper):
+        """Build the dockcross compiler."""
         os.chdir("tutorials/helloworld/")
 
         # Build dockcross
@@ -117,188 +92,218 @@ class Test_Build_Test_Images:
                 "docker",
                 "build",
                 "-t",
-                "linux-" + arm_arch + ":latest",
-                "./cc-env/" + arm_arch,
+                "linux-" + TestBuildTestImages.arm_arch + ":latest",
+                "./cc-env/" + TestBuildTestImages.arm_arch,
             ]
         )
 
-        overall_err += self._print_result("build-dockcross", err)
-        if err != 0:
-            assert False
-            return
+        assert err == 0
 
+    def test_run_dockcross(self, execute_helper):
+        """
+        Run the dockcross compiler.
+
+        This produces a script that is used to build the images.
+        """
         err, output, error = execute_helper.execute_command(
-            ["docker", "run", "--rm", "linux-" + arm_arch]
+            ["docker", "run", "--rm", "linux-" + TestBuildTestImages.arm_arch]
         )
-        overall_err += self._print_result("run-dockcross", err)
 
         if err != 0:
             assert False
             return
         else:
             print("Creating build file")
-            build = open("build-{}".format(arm_arch), "w")
+            build = open("build-{}".format(TestBuildTestImages.arm_arch), "w")
             build.write(output)
             build.close()
-            os.chmod("build-{}".format(arm_arch), 0o777)
+            os.chmod("build-{}".format(TestBuildTestImages.arm_arch), 0o777)
             print("Created build file")
 
-            print("Create User Sample App")
-            err, output, error = execute_helper.execute_command(
-                ["./build-{}".format(arm_arch), "make", "release"]
-            )
-            overall_err += self._print_result("build-application", err)
+        assert err == 0
 
-            print("Create Good Sample Apps")
-            for image in range(1, 6):
-                self._replace_line_in_file(
-                    "src_opkg/CONTROL/control",
-                    "Package:",
-                    "sample-app-{}-good".format(image),
-                )
+    def test_build_images(self, execute_helper):
+        """Build all of the test images."""
+        overall_result = 0
 
-                err, output, error = execute_helper.execute_command(
-                    ["./build-{}".format(arm_arch), "make", "release"]
-                )
-                overall_err += self._print_result(
-                    "build-sample-app-{}-good".format(image), err
-                )
+        print("\nCreate User Sample App")
+        err, output, error = execute_helper.execute_command(
+            [
+                "./build-{}".format(TestBuildTestImages.arm_arch),
+                "make",
+                "release",
+            ]
+        )
 
-            print("Create Bad Architecture App")
-            self._replace_line_in_file(
-                "src_opkg/CONTROL/control", "Package:", BAD_ARCHITECTURE_IMAGE
-            )
-            self._replace_line_in_file(
-                "src_opkg/CONTROL/control", "Version:", "1.1"
-            )
+        overall_result += err
+
+        print("Create Good Sample Apps")
+        for image in range(1, 6):
             self._replace_line_in_file(
                 "src_opkg/CONTROL/control",
-                "Architecture:",
-                "invalid-architecture",
+                "Package:",
+                "sample-app-{}-good".format(image),
             )
 
-            err, output, error = execute_helper.execute_command(
-                ["./build-{}".format(arm_arch), "make", "release"]
-            )
-            overall_err += self._print_result(
-                "build-{}".format(BAD_ARCHITECTURE_IMAGE), err
-            )
-
-            print("Create Bad OCI Runtime App")
-            self._replace_line_in_file(
-                "src_opkg/CONTROL/control", "Package:", BAD_RUNTIME_IMAGE
-            )
-            self._replace_line_in_file(
-                "src_opkg/CONTROL/control", "Architecture:", "any"
-            )
-            self._remove_first_line_from_file("src_bundle/config.json")
-
-            err, output, error = execute_helper.execute_command(
-                ["./build-{}".format(arm_arch), "make", "release"]
-            )
-            overall_err += self._print_result(
-                "build-{}".format(BAD_RUNTIME_IMAGE), err
-            )
-
-            # Navigate to the location of the IPK
-            os.chdir("release/ipk/")
-
-            # Create tar bundles
-            if not os.path.exists(host_tutorials_dir):
-                os.makedirs(host_tutorials_dir)
-
-            # Create payload_version file
-            with open("payload_format_version", "w") as file:
-                file.write(payload_version)
-
-            # User Sample App is needed in both ipk and tar format
-            err, output, error = execute_helper.execute_command(
-                [
-                    "cp",
-                    "user-sample-app-package_1.0_any.ipk",
-                    "{}/user-sample-app-package_1.0_any.ipk".format(
-                        host_tutorials_dir
-                    ),
-                ]
-            )
-            overall_err += self._print_result(
-                "copy-user-sample-app-package_1.0_any.ipk", err
-            )
+            print("\tBuilding sample-app-{}-good".format(image))
 
             err, output, error = execute_helper.execute_command(
                 [
-                    "tar",
-                    "-cvf",
-                    "{}/{}".format(host_tutorials_dir, USER_SAMPLE_TAR),
-                    "user-sample-app-package_1.0_any.ipk",
-                    "payload_format_version",
+                    "./build-{}".format(TestBuildTestImages.arm_arch),
+                    "make",
+                    "release",
                 ]
             )
-            overall_err += self._print_result(
-                "tar-{}".format(USER_SAMPLE_TAR), err
-            )
 
-            # Create tar bundle with 5 good apps.
-            err, output, error = execute_helper.execute_command(
-                [
-                    "tar",
-                    "-cf",
-                    "{}/{}".format(host_tutorials_dir, MULTI_APP_ALL_GOOD_TAR),
-                    "sample-app-1-good_1.0_any.ipk",
-                    "sample-app-2-good_1.0_any.ipk",
-                    "sample-app-3-good_1.0_any.ipk",
-                    "sample-app-4-good_1.0_any.ipk",
-                    "sample-app-5-good_1.0_any.ipk",
-                    "payload_format_version",
-                ]
-            )
-            overall_err += self._print_result(
-                "tar-{}".format(MULTI_APP_ALL_GOOD_TAR), err
-            )
+            overall_result += err
 
-            # Create tar bundle with 4 good apps and one that cannot run.
-            err, output, error = execute_helper.execute_command(
-                [
-                    "tar",
-                    "-cf",
-                    "{}/{}".format(
-                        host_tutorials_dir, MULTI_APP_ONE_FAIL_RUN_TAR
-                    ),
-                    "sample-app-1-good_1.0_any.ipk",
-                    "sample-app-2-good_1.0_any.ipk",
-                    "sample-app-3-good_1.0_any.ipk",
-                    "{}_1.1_any.ipk".format(BAD_RUNTIME_IMAGE),
-                    "sample-app-5-good_1.0_any.ipk",
-                    "payload_format_version",
-                ]
-            )
-            overall_err += self._print_result(
-                "tar-{}".format(MULTI_APP_ONE_FAIL_RUN_TAR), err
-            )
+        print("Create Bad Architecture App")
+        self._replace_line_in_file(
+            "src_opkg/CONTROL/control", "Package:", BAD_ARCHITECTURE_IMAGE
+        )
+        self._replace_line_in_file(
+            "src_opkg/CONTROL/control", "Version:", "1.1"
+        )
+        self._replace_line_in_file(
+            "src_opkg/CONTROL/control", "Architecture:", "invalid-architecture"
+        )
 
-            # Create tar bundle with 4 good apps and one that cannot install.
-            err, output, error = execute_helper.execute_command(
-                [
-                    "tar",
-                    "-cf",
-                    "{}/{}".format(
-                        host_tutorials_dir, MULTI_APP_ONE_FAIL_INSTALL_TAR
-                    ),
-                    "sample-app-1-good_1.0_any.ipk",
-                    "sample-app-2-good_1.0_any.ipk",
-                    "{}_1.1_invalid-architecture.ipk".format(
-                        BAD_ARCHITECTURE_IMAGE
-                    ),
-                    "sample-app-4-good_1.0_any.ipk",
-                    "sample-app-5-good_1.0_any.ipk",
-                    "payload_format_version",
-                ]
-            )
-            overall_err += self._print_result(
-                "tar-{}".format(MULTI_APP_ONE_FAIL_INSTALL_TAR), err
-            )
+        err, output, error = execute_helper.execute_command(
+            [
+                "./build-{}".format(TestBuildTestImages.arm_arch),
+                "make",
+                "release",
+            ]
+        )
+        overall_result += err
 
-            if overall_err != 0:
-                assert False
-            else:
-                assert True
+        print("Create Bad OCI Runtime App")
+        self._replace_line_in_file(
+            "src_opkg/CONTROL/control", "Package:", BAD_RUNTIME_IMAGE
+        )
+        self._replace_line_in_file(
+            "src_opkg/CONTROL/control", "Architecture:", "any"
+        )
+        self._remove_first_line_from_file("src_bundle/config.json")
+
+        err, output, error = execute_helper.execute_command(
+            [
+                "./build-{}".format(TestBuildTestImages.arm_arch),
+                "make",
+                "release",
+            ]
+        )
+        overall_result += err
+
+        assert overall_result == 0
+
+    def test_create_tarfiles(
+        self, execute_helper, host_tutorials_dir, payload_version
+    ):
+        """Create the output artifacts."""
+        overall_result = 0
+
+        # Navigate to the location of the IPK
+        os.chdir("release/ipk/")
+
+        # Create tar bundles
+        if not os.path.exists(host_tutorials_dir):
+            os.makedirs(host_tutorials_dir)
+
+        # Create payload_version file
+        with open("payload_format_version", "w") as file:
+            file.write(payload_version)
+
+        print("Copying user-sample-app-package_1.0_any.ipk")
+
+        # User Sample App is needed in both ipk and tar format
+        err, output, error = execute_helper.execute_command(
+            [
+                "cp",
+                "user-sample-app-package_1.0_any.ipk",
+                "{}/user-sample-app-package_1.0_any.ipk".format(
+                    host_tutorials_dir
+                ),
+            ]
+        )
+        overall_result += err
+
+        print("Creating {}/{}".format(host_tutorials_dir, USER_SAMPLE_TAR))
+        err, output, error = execute_helper.execute_command(
+            [
+                "tar",
+                "-cvf",
+                "{}/{}".format(host_tutorials_dir, USER_SAMPLE_TAR),
+                "user-sample-app-package_1.0_any.ipk",
+                "payload_format_version",
+            ]
+        )
+        overall_result += err
+
+        # Create tar bundle with 5 good apps.
+        print(
+            "Creating {}/{}".format(host_tutorials_dir, MULTI_APP_ALL_GOOD_TAR)
+        )
+        err, output, error = execute_helper.execute_command(
+            [
+                "tar",
+                "-cf",
+                "{}/{}".format(host_tutorials_dir, MULTI_APP_ALL_GOOD_TAR),
+                "sample-app-1-good_1.0_any.ipk",
+                "sample-app-2-good_1.0_any.ipk",
+                "sample-app-3-good_1.0_any.ipk",
+                "sample-app-4-good_1.0_any.ipk",
+                "sample-app-5-good_1.0_any.ipk",
+                "payload_format_version",
+            ]
+        )
+        overall_result += err
+
+        # Create tar bundle with 4 good apps and one that cannot run.
+        print(
+            "Creating {}/{}".format(
+                host_tutorials_dir, MULTI_APP_ONE_FAIL_RUN_TAR
+            )
+        )
+
+        err, output, error = execute_helper.execute_command(
+            [
+                "tar",
+                "-cf",
+                "{}/{}".format(host_tutorials_dir, MULTI_APP_ONE_FAIL_RUN_TAR),
+                "sample-app-1-good_1.0_any.ipk",
+                "sample-app-2-good_1.0_any.ipk",
+                "sample-app-3-good_1.0_any.ipk",
+                "{}_1.1_any.ipk".format(BAD_RUNTIME_IMAGE),
+                "sample-app-5-good_1.0_any.ipk",
+                "payload_format_version",
+            ]
+        )
+        overall_result += err
+
+        # Create tar bundle with 4 good apps and one that cannot install.
+        print(
+            "Creating {}/{}".format(
+                host_tutorials_dir, MULTI_APP_ONE_FAIL_INSTALL_TAR
+            )
+        )
+        err, output, error = execute_helper.execute_command(
+            [
+                "tar",
+                "-cf",
+                "{}/{}".format(
+                    host_tutorials_dir, MULTI_APP_ONE_FAIL_INSTALL_TAR
+                ),
+                "sample-app-1-good_1.0_any.ipk",
+                "sample-app-2-good_1.0_any.ipk",
+                "{}_1.1_invalid-architecture.ipk".format(
+                    BAD_ARCHITECTURE_IMAGE
+                ),
+                "sample-app-4-good_1.0_any.ipk",
+                "sample-app-5-good_1.0_any.ipk",
+                "payload_format_version",
+            ]
+        )
+        overall_result += err
+
+        assert overall_result == 0
