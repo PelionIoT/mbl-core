@@ -17,7 +17,6 @@ mbl-core copy.
 import os
 import pytest
 import re
-import subprocess
 
 # The test expects applications to be copied into the "/home/app" directory on
 # the device
