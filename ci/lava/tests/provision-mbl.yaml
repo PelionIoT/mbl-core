@@ -15,4 +15,6 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/provision-mbl.sh --venv $virtual_env
+        # Activate virtual environment
+        - . $virtual_env/bin/activate
+        - pytest --verbose -s ./ci/lava/tests/test-provision-mbl.py
