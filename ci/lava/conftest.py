@@ -5,10 +5,13 @@
 
 """Pytest configuration file."""
 
+import os
 import pytest
 import re
 import subprocess
 import sys
+import tempfile
+import urllib.request
 
 
 def pytest_report_teststatus(report):
@@ -29,27 +32,66 @@ def pytest_report_teststatus(report):
 
 def pytest_addoption(parser):
     """Add option parsing to pytest."""
-    parser.addoption("--debug_output", action="store_true")
+    parser.addoption("--debug-output", action="store_true")
     parser.addoption("--device", action="store", default="none")
     parser.addoption("--dut", action="store", default="auto")
     parser.addoption(
-        "--dut_download_dir", action="store", default="/tmp/pytest"
+        "--dut-download-dir", action="store", default="/tmp/pytest"
     )
-    parser.addoption("--dut_tutorials_dir", action="store", default="/scratch")
+    parser.addoption("--dut-tutorials-dir", action="store", default="/scratch")
     parser.addoption(
-        "--host_download_dir", action="store", default="/tmp/pytest"
+        "--host-download-dir", action="store", default="/tmp/pytest"
     )
     parser.addoption(
-        "--host_tutorials_dir", action="store", default="/tmp/tutorials"
+        "--host-tutorials-dir", action="store", default="/tmp/tutorials"
     )
-    parser.addoption("--payload_version", action="store", default="1")
+    parser.addoption("--local-conf-file", action="store", default="")
+    parser.addoption("--payload-version", action="store", default="1")
     parser.addoption("--venv", action="store", default="/tmp/venv")
+
+
+def _download_from_url(url):
+
+    filename = None
+
+    if url:
+
+        filename = os.path.join(tempfile.mkdtemp(), os.path.basename(url))
+
+        try:
+            urllib.request.urlretrieve(url, filename)
+        except Exception as inst:
+            print("\n\nError {}\n\n".format(type(inst)))
+            print(
+                "urlretrieve failed. Trying alternative method by adding "
+                "mapping between 192.168.130.43 and "
+                "artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
+            )
+
+            try:
+                f = open("/etc/hosts", "a")
+                f.write(
+                    "192.168.130.43  artifactory-proxy.mbed-linux.arm.com\n"
+                )
+            except Exception as inst:
+                print("\n\nError {}\n\n".format(type(inst)))
+                print("Could not update /etc/hosts. Perhaps run as root?")
+
+            # re-try the urlretrieve.
+            try:
+                urllib.request.urlretrieve(url, filename)
+            except Exception as inst:
+                print("\n\nError {}\n\n".format(type(inst)))
+                print("\n\nAlternative method also failed.\n\n")
+                filename = None
+
+    return filename
 
 
 @pytest.fixture
 def debug_output(request):
-    """Fixture for --debug_output."""
-    return request.config.getoption("--debug_output")
+    """Fixture for --debug-output."""
+    return request.config.getoption("--debug-output")
 
 
 @pytest.fixture
@@ -66,32 +108,52 @@ def dut(request):
 
 @pytest.fixture
 def dut_download_dir(request):
-    """Fixture for --dut_download_dir."""
-    return request.config.getoption("--dut_download_dir")
+    """Fixture for --dut-download-dir."""
+    return request.config.getoption("--dut-download-dir")
 
 
 @pytest.fixture
 def dut_tutorials_dir(request):
-    """Fixture for --dut_tutorials_dir."""
-    return request.config.getoption("--dut_tutorials_dir")
+    """Fixture for --dut-tutorials-dir."""
+    return request.config.getoption("--dut-tutorials-dir")
 
 
 @pytest.fixture
 def host_download_dir(request):
-    """Fixture for --host_download_dir."""
-    return request.config.getoption("--host_download_dir")
+    """Fixture for --host-download-dir."""
+    return request.config.getoption("--host-download-dir")
 
 
 @pytest.fixture
 def host_tutorials_dir(request):
-    """Fixture for --host_tutorials_dir."""
-    return request.config.getoption("--host_tutorials_dir")
+    """Fixture for --host-tutorials-dir."""
+    return request.config.getoption("--host-tutorials-dir")
+
+
+@pytest.fixture
+def local_conf_file(request):
+    """
+    Fixture for --local-conf-file.
+
+    If the provided option starts with http, atttempt to download the file
+    from the url and return the path.
+    If the provided option is a file that exists then return that path.
+    Else return None
+    """
+    if request.config.getoption("--local-conf-file").startswith("http"):
+        return _download_from_url(
+            request.config.getoption("--local-conf-file")
+        )
+    elif os.path.exists(request.config.getoption("--local-conf-file")):
+        return request.config.getoption("--local-conf-file")
+    else:
+        return None
 
 
 @pytest.fixture
 def payload_version(request):
-    """Fixture for --payload_version."""
-    return request.config.getoption("--payload_version")
+    """Fixture for --payload-version."""
+    return request.config.getoption("--payload-version")
 
 
 @pytest.fixture
@@ -103,12 +165,18 @@ def venv(request):
 class ExecuteHelper:
     """Class to provide a wrapper for executing commands as a subprocess."""
 
+    debug = False
+
+    def __init__(self, request):
+        """Initialise the class."""
+        ExecuteHelper.debug = request.config.getoption("--debug-output")
+
     @staticmethod
     def _print(data):
         # method provided for debug support. Ordinarily this does nothing.
         # Uncomment the following line to get debug output.
-        # print(data)
-        pass
+        if ExecuteHelper.debug:
+            print(data)
 
     @staticmethod
     def execute_command(command):
@@ -158,9 +226,9 @@ class ExecuteHelper:
 
 
 @pytest.fixture
-def execute_helper():
+def execute_helper(request):
     """Fixture to return the helper class."""
-    return ExecuteHelper
+    return ExecuteHelper(request)
 
 
 @pytest.fixture
