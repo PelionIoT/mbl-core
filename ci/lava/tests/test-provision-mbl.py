@@ -32,7 +32,7 @@ class TestProvisionMbl:
             os.mkdir(directory)
         os.chdir(directory)
 
-    def test_manifest_ini(self, execute_helper):
+    def test_manifest_init(self, execute_helper):
         """Test manifest-tool init command."""
         exit_code, stdout, stderr = execute_helper.execute_command(
             [
