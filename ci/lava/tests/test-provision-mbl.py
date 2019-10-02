@@ -63,9 +63,8 @@ class TestProvisionMbl:
             ["get-pelion-status"], TestProvisionMbl.dut_addr
         )
         assert (
-            "Your device is not correctly configured for Pelion Device \
-                Management."
-            in stderr
+            "Your device is not correctly configured for Pelion Device "
+            "Management." in stderr
         )
 
     def test_pelion_provisioned(self, execute_helper):
