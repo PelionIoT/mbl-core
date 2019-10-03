@@ -32,3 +32,6 @@ run:
 
         # Install pytest
         - pip3 install --no-index --find-links=$host_download_dir pytest
+
+        # Install manifest-tool
+        - pip3 install manifest-tool
