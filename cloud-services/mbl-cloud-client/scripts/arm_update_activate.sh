@@ -274,7 +274,7 @@ ubpd_skip_ok="$4"
 
     if is_part_skipped "$ubpd_part_name"; then
         if [ "$ubpd_skip_ok" != "yes" ]; then
-            printf "Partition \"%s\" does not exist\n" "%ubpd_part_name"
+            printf "Partition \"%s\" does not exist\n" "$ubpd_part_name"
             exit 65
         fi
         return 0
