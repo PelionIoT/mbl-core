@@ -17,7 +17,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-# Note - exit codes 1-20 come from arm_udpate_common.sh.
+# Note - exit codes 1-20 come from arm_update_common.sh.
 
 set -x
 
