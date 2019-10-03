@@ -545,7 +545,7 @@ ensure_payload_format_support_or_die "${PAYLOAD_TMP_DIR}/payload_format_version"
 # deleted if a reboot is required..
 touch "${TMP_DIR}/do_not_reboot"
 
-# list files from udpate payload
+# list files from update payload
 if ! FIRMWARE_FILES=$(find "${PAYLOAD_TMP_DIR}" -type f); then
     printf "Failed to list files from payload in \"%s\"\n" "$PAYLOAD_TMP_DIR"
     exit 67
