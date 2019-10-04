@@ -119,10 +119,11 @@ class Test_Core_Component_DUT:
         return_code, output, error = execute_helper.send_mbl_cli_command(
             [
                 "shell",
+                'sh -l -c "'
                 "{}/bin/pytest "
                 "--verbose "
                 "--ignore={}/mbl-core/ci --color=no "
-                "{}/mbl-core".format(
+                '{}/mbl-core"'.format(
                     venv, dut_tutorials_dir, dut_tutorials_dir
                 ),
             ],
