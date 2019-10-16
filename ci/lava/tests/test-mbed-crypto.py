@@ -110,7 +110,10 @@ class TestSystemd:
         """Perform the test on the DUT via the mbl-cli."""
         # Check status
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
-            ["shell", "cd /usr/lib/mbed-crypto/test && ./{}".format(test_action)],
+            [
+                "shell",
+                "cd /usr/lib/mbed-crypto/test && ./{}".format(test_action),
+            ],
             TestSystemd.dut_address,
         )
         assert err == 0
