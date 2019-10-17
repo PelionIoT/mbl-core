@@ -16,4 +16,3 @@ metadata:
 run:
     steps:
         - ./ci/lava/tests/mbed-crypto-poky.sh || lava-test-raise "mbed-crypto-poky failed"
-
