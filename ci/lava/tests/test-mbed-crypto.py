@@ -3,20 +3,19 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Script to run systemd tests on the DUT."""
+"""Script to run tests on the DUT."""
 
 import pytest
 import re
 
-
-class TestSystemd:
-    """Class to encapsulate the testing of systemd on a DUT."""
+class TestRunner:
+    """Class to encapsulate the testing on a DUT."""
 
     dut_address = ""
 
     def test_setup_dut_addr(self, dut_addr):
         """Store the device address."""
-        TestSystemd.dut_address = dut_addr
+        TestRunner.dut_address = dut_addr
 
         assert dut_addr != ""
 
@@ -105,7 +104,7 @@ class TestSystemd:
             "test_suite_xtea",
         ],
     )
-    def test_systemd_service(self, execute_helper, test_action):
+    def test_runner(self, execute_helper, test_action):
         """Perform the test on the DUT via the mbl-cli."""
         # Check status
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
@@ -113,6 +112,6 @@ class TestSystemd:
                 "shell",
                 "cd /usr/lib/mbed-crypto/test && ./{}".format(test_action),
             ],
-            TestSystemd.dut_address,
+            TestRunner.dut_address,
         )
         assert err == 0
