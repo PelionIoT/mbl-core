@@ -7,7 +7,6 @@
 
 import pytest
 import re
-import subprocess
 
 
 class TestSystemd:
