@@ -137,11 +137,12 @@ class TestCoreComponentDUT:
         return_code, output, error = execute_helper.send_mbl_cli_command(
             [
                 "shell",
+                'sh -l -c "'
                 "{}/bin/pytest "
                 "--verbose "
                 "--ignore={}/mbl-core/ci --color=no "
                 "{}/mbl-core "
-                "--local-conf-file {}".format(
+                '--local-conf-file {}"'.format(
                     venv,
                     dut_tutorials_dir,
                     dut_tutorials_dir,
