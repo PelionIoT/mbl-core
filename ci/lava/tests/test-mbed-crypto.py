@@ -8,6 +8,7 @@
 import pytest
 import re
 
+
 class TestRunner:
     """Class to encapsulate the testing on a DUT."""
 
