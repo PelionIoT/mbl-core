@@ -1,0 +1,17 @@
+# Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+
+[Unit]
+Description=Test service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+ExecStart=/opt/arm/wdog-test.sh
+WatchdogSec=5
+TimeoutSec=15
+
+[Install]
+WantedBy=multi-user.target
