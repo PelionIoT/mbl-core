@@ -100,7 +100,11 @@ class TestSystemd:
         )
         assert s_err == 0
 
-        # Sleep until the watchdog timeout is exceeded.
+        # Sleep until the service's watchdog interval is exceeded.
+        # The WatchdogSec property in the systemd service file is
+        # set to 5 seconds, which is the watchdog interval for the test
+        # service. If the service doesn't emit a watchdog keep-alive
+        # message in that interval the service will be terminated.
         time.sleep(7)
 
         t_err, t_stdout, t_stderr = execute_helper.send_mbl_cli_command(
