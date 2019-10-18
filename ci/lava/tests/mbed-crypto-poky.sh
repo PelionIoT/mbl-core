@@ -1,0 +1,106 @@
+
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+TESTS="test_suite_aes.cbc"
+TESTS="$TESTS test_suite_aes.cfb"
+TESTS="$TESTS test_suite_aes.ecb"
+TESTS="$TESTS test_suite_aes.ofb"
+TESTS="$TESTS test_suite_aes.rest"
+TESTS="$TESTS test_suite_aes.xts"
+TESTS="$TESTS test_suite_arc4"
+TESTS="$TESTS test_suite_aria"
+TESTS="$TESTS test_suite_asn1write"
+TESTS="$TESTS test_suite_base64"
+TESTS="$TESTS test_suite_blowfish"
+TESTS="$TESTS test_suite_camellia"
+TESTS="$TESTS test_suite_ccm"
+TESTS="$TESTS test_suite_chacha20"
+TESTS="$TESTS test_suite_chachapoly"
+TESTS="$TESTS test_suite_cipher.aes"
+TESTS="$TESTS test_suite_cipher.arc4"
+TESTS="$TESTS test_suite_cipher.blowfish"
+TESTS="$TESTS test_suite_cipher.camellia"
+TESTS="$TESTS test_suite_cipher.ccm"
+TESTS="$TESTS test_suite_cipher.chacha20"
+TESTS="$TESTS test_suite_cipher.chachapoly"
+TESTS="$TESTS test_suite_cipher.des"
+TESTS="$TESTS test_suite_cipher.gcm"
+TESTS="$TESTS test_suite_cipher.misc"
+TESTS="$TESTS test_suite_cipher.nist_kw"
+TESTS="$TESTS test_suite_cipher.null"
+TESTS="$TESTS test_suite_cipher.padding"
+TESTS="$TESTS test_suite_cmac"
+TESTS="$TESTS test_suite_ctr_drbg"
+TESTS="$TESTS test_suite_des"
+TESTS="$TESTS test_suite_dhm"
+TESTS="$TESTS test_suite_ecdh"
+TESTS="$TESTS test_suite_ecdsa"
+TESTS="$TESTS test_suite_ecjpake"
+TESTS="$TESTS test_suite_ecp"
+TESTS="$TESTS test_suite_entropy"
+TESTS="$TESTS test_suite_error"
+TESTS="$TESTS test_suite_gcm.aes128_de"
+TESTS="$TESTS test_suite_gcm.aes128_en"
+TESTS="$TESTS test_suite_gcm.aes192_de"
+TESTS="$TESTS test_suite_gcm.aes192_en"
+TESTS="$TESTS test_suite_gcm.aes256_de"
+TESTS="$TESTS test_suite_gcm.aes256_en"
+TESTS="$TESTS test_suite_gcm.camellia"
+TESTS="$TESTS test_suite_gcm.misc"
+TESTS="$TESTS test_suite_hkdf"
+TESTS="$TESTS test_suite_hmac_drbg.misc"
+TESTS="$TESTS test_suite_hmac_drbg.no_reseed"
+TESTS="$TESTS test_suite_hmac_drbg.nopr"
+TESTS="$TESTS test_suite_hmac_drbg.pr"
+TESTS="$TESTS test_suite_md"
+TESTS="$TESTS test_suite_mdx"
+TESTS="$TESTS test_suite_memory_buffer_alloc"
+TESTS="$TESTS test_suite_mpi"
+TESTS="$TESTS test_suite_nist_kw"
+TESTS="$TESTS test_suite_oid"
+TESTS="$TESTS test_suite_pem"
+TESTS="$TESTS test_suite_pk"
+TESTS="$TESTS test_suite_pkcs1_v15"
+TESTS="$TESTS test_suite_pkcs1_v21"
+TESTS="$TESTS test_suite_pkcs5"
+TESTS="$TESTS test_suite_pkparse"
+TESTS="$TESTS test_suite_pkwrite"
+TESTS="$TESTS test_suite_poly1305"
+TESTS="$TESTS test_suite_psa_crypto"
+TESTS="$TESTS test_suite_psa_crypto_entropy"
+TESTS="$TESTS test_suite_psa_crypto_hash"
+TESTS="$TESTS test_suite_psa_crypto_init"
+TESTS="$TESTS test_suite_psa_crypto_metadata"
+TESTS="$TESTS test_suite_psa_crypto_persistent_key"
+TESTS="$TESTS test_suite_psa_crypto_se_driver_hal"
+TESTS="$TESTS test_suite_psa_crypto_se_driver_hal_mocks"
+TESTS="$TESTS test_suite_psa_crypto_slot_management"
+TESTS="$TESTS test_suite_psa_its"
+TESTS="$TESTS test_suite_rsa"
+TESTS="$TESTS test_suite_shax"
+TESTS="$TESTS test_suite_timing"
+TESTS="$TESTS test_suite_version"
+TESTS="$TESTS test_suite_xtea"
+
+set +x
+
+# Run the tests
+cd /usr/lib/mbed-crypto/test
+for test in $TESTS; do
+    # Run the test and capture the result
+    ./$test
+    res=$?
+
+    # Print out the result
+    echo -n "<LAVA_SIGNAL_TESTCASE TEST_CASE_ID="
+    echo -n "$test"
+    echo -n " RESULT="
+    if [ $res -eq 0 ]; then
+        echo -n "pass"
+    else
+        echo -n "fail"
+    fi
+    echo ">"
+done
