@@ -90,7 +90,7 @@ set +x
 cd /usr/lib/mbed-crypto/test
 for test in $TESTS; do
     # Run the test and capture the result
-    $test
+    ./$test
     res=$?
 
     # Print out the result
