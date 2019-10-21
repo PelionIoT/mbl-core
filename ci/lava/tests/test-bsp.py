@@ -26,14 +26,16 @@ class TestBsp:
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             [
                 "shell",
-                'sh -l -c "badblocks -v $(mount | grep \"on \/ type\" | cut -d\' \' -f 1)"',
+                'sh -l -c "badblocks -v '
+                "$(mount | grep \"on \/ type\" | cut -d' ' -f 1)"
+                '"',
             ],
             TestBsp.dut_address,
         )
         print(stdout)
         assert err == 0 and "Pass" in stdout
 
-    def test_memtester(self, execute_helper):
+    def _test_memtester(self, execute_helper):
         """Perform the test on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             [
@@ -45,13 +47,10 @@ class TestBsp:
         print(stdout)
         assert err == 0
 
-    def test_optee(self, execute_helper):
+    def _test_optee(self, execute_helper):
         """Perform the test on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
-            [
-                "shell",
-                'sh -l -c "' "xtest l 0 -t regression" '"',
-            ],
+            ["shell", 'sh -l -c "' "xtest l 0 -t regression" '"'],
             TestBsp.dut_address,
         )
         print(stdout)
