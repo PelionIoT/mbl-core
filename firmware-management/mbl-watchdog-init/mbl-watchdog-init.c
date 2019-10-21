@@ -75,10 +75,25 @@ int print_last_boot_reason(const int boot_status)
     switch (boot_status)
     {
         case WDIOF_OVERHEAT:
-            log_info("The last reboot was caused by the CPU overheating.\n");
+            log_info("The last reboot was caused by the CPU overheating.");
             return 0;
         case WDIOF_CARDRESET:
-            log_info("The last reboot was caused by a watchdog reset.\n");
+            log_info("The last reboot was caused by a watchdog reset.");
+            return 0;
+        case WDIOF_FANFAULT:
+            log_info("The last reboot was because a system fan monitored by the watchdog card failed.");
+            return 0;
+        case WDIOF_EXTERN1:
+            log_info("The last reboot was because external monitoring relay/source 1 was triggered.");
+            return 0;
+        case WDIOF_EXTERN2:
+            log_info("The last reboot was because external monitoring relay/source 2 was triggered.");
+            return 0;
+        case WDIOF_POWERUNDER:
+            log_info("The last reboot was due to the machine showing an undervoltage status.");
+            return 0;
+        case WDIOF_POWEROVER:
+            log_info("The last reboot was due to the machine showing an overvoltage status.");
             return 0;
     }
     return -1;
