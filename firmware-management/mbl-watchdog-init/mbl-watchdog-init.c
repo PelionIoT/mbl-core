@@ -102,7 +102,7 @@ int get_last_boot_status(const int watchdog_fd)
     const int gs_ret = ioctl(watchdog_fd, WDIOC_GETBOOTSTATUS, &flags);
     if (is_err(gs_ret))
     {
-        return -1;
+        return gs_ret;
     }
 
     const int lb_ret = print_last_boot_reason(flags);
