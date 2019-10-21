@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     int optindex;
     struct option longopts[] = {
         {"timeout", required_argument, NULL, 't'},
-        {"wdog-fname", required_argument, NULL, 'w'},
+        {"device", required_argument, NULL, 'w'},
     };
 
     while ((current_opt = getopt_long(argc, argv, "tw:", longopts, &optindex)) != -1)
