@@ -64,12 +64,6 @@ int set_watchdog_timeout(const int watchdog_fd, int *timeout)
 }
 
 
-int get_last_boot_status(const int watchdog_fd, int *flags)
-{
-    return ioctl(watchdog_fd, WDIOC_GETBOOTSTATUS, flags);
-}
-
-
 int print_last_boot_reason(const int boot_status)
 {
     switch (boot_status)
@@ -96,7 +90,28 @@ int print_last_boot_reason(const int boot_status)
             log_info("The last reboot was due to the machine showing an overvoltage status.");
             return 0;
     }
+
     return -1;
+}
+
+
+int get_last_boot_status(const int watchdog_fd)
+{
+    int flags;
+
+    const int gs_ret = ioctl(watchdog_fd, WDIOC_GETBOOTSTATUS, &flags);
+    if (is_err(gs_ret))
+    {
+        return -1;
+    }
+
+    const int lb_ret = print_last_boot_reason(flags);
+    if (is_err(lb_ret))
+    {
+        log_info("Last boot wasn't caused by the watchdog card");
+    }
+
+    return 0;
 }
 
 //============================================================================
@@ -136,19 +151,10 @@ int main(int argc, char **argv)
         return log_error("Failed to open watchdog device file");
     }
 
-    int flags;
-    const int gs_ret = get_last_boot_status(wdog_fd, &flags);
+    const int gs_ret = get_last_boot_status(wdog_fd);
     if (is_err(gs_ret))
     {
         return log_error("Failed to get the last boot status");
-    }
-    else
-    {
-        const int lb_ret = print_last_boot_reason(flags);
-        if (is_err(lb_ret))
-        {
-            log_warning("Failed to determine last boot reason.");
-        }
     }
 
     const int to_ret = set_watchdog_timeout(wdog_fd, &timeout);
