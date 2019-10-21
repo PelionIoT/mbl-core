@@ -223,7 +223,7 @@ ewuc_blfs_part_mnt_point="$6"
     # The outer tar file is uncompressed and contains a xz compressed tar file, which contains the payload.
     #
     # Extract a compressed tar file from the uncompressed outer tar file.
-    if ! tar -xvf "$ewuc_payload" "$ewuc_component_filename" -C "$UPDATE_PAYLOAD_DIR"; then
+    if ! tar -xvf "$ewuc_payload" -C "$UPDATE_PAYLOAD_DIR" "$ewuc_component_filename"; then
         printf "Failed to extract tar file named %s from payload tar archive named %s\n" "$ewuc_component_filename" "$ewuc_payload"
         exit 57
     fi
@@ -288,7 +288,11 @@ ewuc_blfs_part_mnt_point="$6"
     fi
 
     if ! rm -rf "${UPDATE_PAYLOAD_DIR:?}/$ewuc_component_filename"; then
-        printf "Failed to remove the decompressed files \"%s\" after update\n" "$ewuc_component_filename"
+        printf "Failed to remove the tar file \"%s\" after update\n" "$ewuc_component_filename"
+    fi
+
+    if ! rm -rf "${UPDATE_PAYLOAD_DIR:?}/$ewuc_component_file_stem"; then
+        printf "Failed to remove the decompressed files \"%s\" after update\n" "$ewuc_component_file_stem"
     fi
 }
 
