@@ -100,10 +100,11 @@ def download_from_url(url):
                 "artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
             )
             try:
-                f = open("/etc/hosts", "a")
-                f.write(
-                    "192.168.130.43  artifactory-proxy.mbed-linux.arm.com\n"
-                )
+                with open("/etc/hosts", "a") as f:
+                    f.write(
+                        "192.168.130.43  "
+                        "artifactory-proxy.mbed-linux.arm.com\n"
+                    )
             except PermissionError as inst:
                 print("\n\nError {}\n\n".format(type(inst)))
                 print("Could not update /etc/hosts. Perhaps run as root?")
