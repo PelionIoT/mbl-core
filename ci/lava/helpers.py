@@ -21,7 +21,7 @@ def compare_files(dut_addr, execute_helper, file1, file2):
     """Run cmp command on files passed as argument using mbl-cli."""
     cmp_command = "cmp -s {} {}".format(file1, file2)
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "{}"'.format(cmp_command)], dut_addr
+        ["shell", 'sh -l -c "{}"'.format(cmp_command)], dut_addr
     )
     return exit_code
 
@@ -161,7 +161,7 @@ def get_dut_address(dut, execute_helper):
 def get_kernel_version(dut_addr, execute_helper):
     """Get the kernel version running on the DUT using mbl-cli."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "uname -a"'], dut_addr
+        ["shell", 'sh -l -c "uname -a"'], dut_addr
     )
     return exit_code, output
 
@@ -170,7 +170,7 @@ def strings_grep(dut_addr, execute_helper, file_path, pattern):
     """Run strings command on a file and grep for a pattern using mbl-cli."""
     command = "strings {} | grep {}".format(file_path, pattern)
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "{}"'.format(command)], dut_addr
+        ["shell", 'sh -l -c "{}"'.format(command)], dut_addr
     )
     return exit_code, output, error
 

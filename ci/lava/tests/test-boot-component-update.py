@@ -90,7 +90,7 @@ class TestBootComponentUpdate:
             payload_name
         )
         exit_code, output, error = execute_helper.send_mbl_cli_command(
-            ["shell", 'su -l -c "{}"'.format(cmd)], dut_addr
+            ["shell", 'sh -l -c "{}"'.format(cmd)], dut_addr
         )
         assert "Content of update package installed" in output
 
