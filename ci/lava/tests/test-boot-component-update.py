@@ -6,7 +6,13 @@
 """
 Pytest for testing boot component update.
 
-lorem ipsum
+This module is testing the update of boot loader components. Those are
+wks_bootloader1, wks_bootloaer2 and kernel.
+They can be updated via bothe mbl-cli and pelion.
+The marker "@pytest.mark.pelion" means that the test will be executed only when
+the pelion method is specified
+Analogous behaviour with "@pytest.mark.mbl_cli".
+If a test case doesn't have any marker, it will be always executed.
 """
 import os
 import time
@@ -98,15 +104,16 @@ class TestBootComponentUpdate:
     def test_dut_online_after_reboot(
         self, dut, execute_helper, update_component_name
     ):
-        """Wait the DUT to be back online after the reboot."""
+        """Wait for the DUT to be back online after the reboot."""
         # Wait some time before discovering again the DUT
         time.sleep(10)
-        while True:
+        dut_address = ""
+        while not dut_address:
             dut_address = get_dut_address(dut, execute_helper)
             if dut_address:
                 print("DUT {} is online again".format(dut_address))
-                break
-            print("DUT is still offline. Trying again...")
+            else:
+                print("DUT is still offline. Trying again...")
         assert dut_address
 
     def test_check_post_update(

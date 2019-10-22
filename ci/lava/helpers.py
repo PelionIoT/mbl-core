@@ -6,7 +6,8 @@
 """
 Helpers module.
 
-This module contains methods that are used across pytest classes.
+This module contains helper functions and classes that are used across pytest
+modules.
 """
 
 import os
@@ -14,6 +15,7 @@ import re
 import subprocess
 import tempfile
 import urllib.request
+from urllib.error import HTTPError
 from pathlib import Path
 
 
@@ -90,7 +92,7 @@ def download_from_url(url):
         filename = os.path.join(tempfile.mkdtemp(), os.path.basename(url))
         try:
             urllib.request.urlretrieve(url, filename)
-        except Exception as inst:
+        except HTTPError as inst:
             print("\n\nError {}\n\n".format(type(inst)))
             print(
                 "urlretrieve failed. Trying alternative method by adding "
@@ -102,14 +104,14 @@ def download_from_url(url):
                 f.write(
                     "192.168.130.43  artifactory-proxy.mbed-linux.arm.com\n"
                 )
-            except Exception as inst:
+            except PermissionError as inst:
                 print("\n\nError {}\n\n".format(type(inst)))
                 print("Could not update /etc/hosts. Perhaps run as root?")
 
             # re-try the urlretrieve.
             try:
                 urllib.request.urlretrieve(url, filename)
-            except Exception as inst:
+            except HTTPError as inst:
                 print("\n\nError {}\n\n".format(type(inst)))
                 print("\n\nAlternative method also failed.\n\n")
                 filename = None
@@ -186,8 +188,6 @@ class ExecuteHelper:
 
     @staticmethod
     def _print(data):
-        # method provided for debug support. Ordinarily this does nothing.
-        # Uncomment the following line to get debug output.
         if ExecuteHelper.debug:
             print(data)
 
@@ -230,7 +230,7 @@ class ExecuteHelper:
         output = ""
         error = ""
 
-        if addr != "":
+        if addr:
             cli_command = ["mbl-cli", "--address", addr]
             for item in command:
                 cli_command.append(item)

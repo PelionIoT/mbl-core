@@ -69,13 +69,11 @@ def pytest_collection_modifyitems(config, items):
         reason="update-method {} selected".format(update_method)
     )
     for item in items:
-        markers = set([m.name for m in item.iter_markers()])
+        markers = set((m.name for m in item.iter_markers()))
         # We skip tests which don't match the update_method
         # mbl-cli is replaced with mbl_cli
-        if (
-            update_method.replace("-", "_") not in markers
-            and not len(markers) == 0
-        ):
+        if update_method.replace("-", "_") not in markers and markers:
+            print(item)
             item.add_marker(skip)
 
 
