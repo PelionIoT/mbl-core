@@ -66,7 +66,7 @@ def dd_bootloader_component(
         size_magnitude = ""
     dd_command = (
         "set -x; "
-        "BD=$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]\+$//'); "
+        r"BD=$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]\+$//'); "
         "OF={}; "
         "SKIP=$(cat {})K; "
         "COUNT=$({}); "
