@@ -51,8 +51,13 @@ def pytest_addoption(parser):
 
 
 def pytest_configure(config):
-    """Pytest configure hook."""
-    config.addinivalue_line("markers", "pelion or mblcli")
+    """Registering custom markers"""
+    config.addinivalue_line("markers", "pelion: mark a test to be run when "
+        "the update method is pelion"
+    )
+    config.addinivalue_line("markers", "mbl_cli: mark a test to be run when "
+        "the update method is mbl-cli"
+    )
 
 
 def pytest_collection_modifyitems(config, items):

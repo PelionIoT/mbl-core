@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Helpers modeule.
+Helpers module.
 
 This module contains methods that are used across pytest classes.
 """
