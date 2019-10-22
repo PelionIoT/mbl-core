@@ -32,4 +32,4 @@ run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
-        - pytest --verbose --debug-output -s ./ci/lava/tests/test-boot-component-update.py --update-component-name $component_name --payload-url $payload_url --update-method $update_method
+        - pytest --verbose --debug-output -s ./ci/lava/tests/test-boot-component-update.py --update-component-name $component_name --update-payload-url $payload_url --update-method $update_method
