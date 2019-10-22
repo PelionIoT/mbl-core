@@ -104,7 +104,7 @@ int get_last_boot_status(const int watchdog_fd)
 
 //============================================================================
 // Convert a string containing only digits to an integer. Exits on errors.
-int numeric_string_to_int(const char* const str)
+int numeric_string_to_positive_int(const char* const str)
 {
     errno = 0;
     char *endptr;
@@ -117,15 +117,15 @@ int numeric_string_to_int(const char* const str)
         exit(EXIT_FAILURE);
     }
 
-    if (res < 0 || res > INT_MAX)
+    if (res <= 0 || res > INT_MAX)
     {
-        log_error("Integer not in valid range. Expecting a positive integer with maximum size MAX_INT");
+        log_error("Integer not in valid range. Expecting a positive integer with maximum size INT_MAX");
         exit(EXIT_FAILURE);
     }
 
     if (endptr == str)
     {
-        log_error("No digits found");
+        log_error("String must contain digits only.");
         exit(EXIT_FAILURE);
     }
 
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
         switch (current_opt)
         {
             case 't':
-                timeout = numeric_string_to_int(optarg);
+                timeout = numeric_string_to_positive_int(optarg);
                 break;
             case 'w':
                 wdog_filename = optarg;
@@ -171,17 +171,16 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    // Set return value to EXIT_SUCCESS, will be set to EXIT_FAILURE if any of
-    // the following calls fail.
-    int ret = EXIT_SUCCESS;
-
     const int wdog_fd = open(wdog_filename, O_WRONLY);
     if (is_err(wdog_fd))
     {
         log_error("Failed to open watchdog device file");
-        ret = EXIT_FAILURE;
-        goto close;
+        return EXIT_FAILURE;
     }
+
+    // Set return value to EXIT_SUCCESS, will be set to EXIT_FAILURE if any of
+    // the following calls fail.
+    int ret = EXIT_SUCCESS;
 
     const int gs_ret = get_last_boot_status(wdog_fd);
     if (is_err(gs_ret))
