@@ -102,7 +102,7 @@ class TestBootComponentUpdate:
 
         # Reboot the device
         exit_code, output, error = execute_helper.send_mbl_cli_command(
-            ["shell", 'sh -l -c "shutdown -r now"'.format(cmd)], dut_addr
+            ["shell", 'sh -l -c "shutdown -r +1"'.format(cmd)], dut_addr
         )
         assert exit_code == 0
 
