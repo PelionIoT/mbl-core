@@ -92,13 +92,19 @@ class TestBootComponentUpdate:
 
         # Run the update
         payload_name = os.path.basename(TestBootComponentUpdate.update_payload)
-        cmd = "mbl-firmware-update-manager --assume-yes /scratch/{}".format(
+        cmd = "mbl-firmware-update-manager --assume-no /scratch/{}".format(
             payload_name
         )
         exit_code, output, error = execute_helper.send_mbl_cli_command(
             ["shell", 'sh -l -c "{}"'.format(cmd)], dut_addr
         )
         assert "Content of update package installed" in output
+
+        # Reboot the device
+        exit_code, output, error = execute_helper.send_mbl_cli_command(
+            ["shell", 'sh -l -c "shutdown -r now"'.format(cmd)], dut_addr
+        )
+        assert exit_code == 0
 
     @pytest.mark.mbl_cli
     def test_dut_online_after_reboot(
