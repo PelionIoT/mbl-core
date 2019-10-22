@@ -120,6 +120,12 @@ int numeric_string_to_positive_int(const char* const str)
     char *endptr;
     const long int res = strtol(str, &endptr, 0);
 
+    if (*endptr != '\0' || endptr == str)
+    {
+        log_error("String must contain digits only.");
+        exit(EXIT_FAILURE);
+    }
+
     if ((errno == ERANGE && (res == LONG_MAX || res == LONG_MIN))
            || (errno != 0 && res == 0))
     {
@@ -130,12 +136,6 @@ int numeric_string_to_positive_int(const char* const str)
     if (res <= 0 || res > INT_MAX)
     {
         log_error("Integer not in valid range. Expecting a positive integer with maximum size INT_MAX");
-        exit(EXIT_FAILURE);
-    }
-
-    if (endptr == str)
-    {
-        log_error("String must contain digits only.");
         exit(EXIT_FAILURE);
     }
 
