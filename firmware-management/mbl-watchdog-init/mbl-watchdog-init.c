@@ -103,6 +103,7 @@ int get_last_boot_status(const int watchdog_fd)
 
 
 //============================================================================
+// Convert a string containing only digits to an integer. Exits on errors.
 int numeric_string_to_int(const char* const str)
 {
     errno = 0;
@@ -122,6 +123,12 @@ int numeric_string_to_int(const char* const str)
         exit(EXIT_FAILURE);
     }
 
+    if (endptr == str)
+    {
+        log_error("No digits found");
+        exit(EXIT_FAILURE);
+    }
+
     const int num = res;
 
     return num;
@@ -131,12 +138,8 @@ int numeric_string_to_int(const char* const str)
 // Main entry point
 int main(int argc, char **argv)
 {
-    // Set the default timeout to 10 seconds.
-    // On some devices the maximum interval is 15 seconds,
-    // so we choose 10 to be on the safe side.
-    // The user should always be passing this on the command line anyway.
-    int timeout = 10;
-    char* wdog_filename = "/dev/watchdog";
+    int timeout = 0;
+    const char* wdog_filename = "/dev/watchdog";
 
     // Parse command line arguments
     int current_opt;
@@ -162,33 +165,46 @@ int main(int argc, char **argv)
         }
     }
 
+    if (timeout <= 0)
+    {
+        log_error("--timeout must be passed and it must be a positive integer");
+        return EXIT_FAILURE;
+    }
+
+    // Set return value to EXIT_SUCCESS, will be set to EXIT_FAILURE if any of
+    // the following calls fail.
+    int ret = EXIT_SUCCESS;
+
     const int wdog_fd = open(wdog_filename, O_WRONLY);
     if (is_err(wdog_fd))
     {
         log_error("Failed to open watchdog device file");
-        return 1;
+        ret = EXIT_FAILURE;
+        goto close;
     }
 
     const int gs_ret = get_last_boot_status(wdog_fd);
     if (is_err(gs_ret))
     {
         log_error("Failed to get the last boot status");
-        return 1;
+        ret = EXIT_FAILURE;
+        goto close;
     }
 
     const int to_ret = set_watchdog_timeout(wdog_fd, &timeout);
     if (is_err(to_ret))
     {
         log_error("Failed to set the watchdog timeout");
-        return 1;
+        ret = EXIT_FAILURE;
+        goto close;
     }
 
-    const int cl_ret = close(wdog_fd);
-    if (is_err(cl_ret))
+close:
+    if (is_err(close(wdog_fd)))
     {
         log_error("Failed to close the watchdog device file");
-        return 1;
+        ret = EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    return ret;
 }
