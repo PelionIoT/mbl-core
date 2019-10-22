@@ -53,7 +53,7 @@ void log_warning(const char * const message)
 void log_info(const char * const message)
 {
     static const char * const prefix = "WATCHDOG-INFO:";
-    fprintf(stderr, "%s %s\n", prefix, message);
+    fprintf(stdout, "%s %s\n", prefix, message);
 }
 
 //============================================================================
@@ -66,22 +66,32 @@ int set_watchdog_timeout(const int watchdog_fd, int * const timeout)
 
 void print_last_boot_reason(const int boot_status)
 {
-    switch (boot_status)
+    if (boot_status == 0)
     {
-        case WDIOF_OVERHEAT:
-            log_info("The last reboot was caused by the CPU overheating.");
-        case WDIOF_CARDRESET:
-            log_info("The last reboot was caused by a watchdog reset.");
-        case WDIOF_FANFAULT:
-            log_info("The last reboot was because a system fan monitored by the watchdog card failed.");
-        case WDIOF_EXTERN1:
-            log_info("The last reboot was because external monitoring relay/source 1 was triggered.");
-        case WDIOF_EXTERN2:
-            log_info("The last reboot was because external monitoring relay/source 2 was triggered.");
-        case WDIOF_POWERUNDER:
-            log_info("The last reboot was due to the machine showing an undervoltage status.");
-        case WDIOF_POWEROVER:
-            log_info("The last reboot was due to the machine showing an overvoltage status.");
+        log_info("Normal boot.");
+    }
+    else
+    {
+        if (boot_status & WDIOF_OVERHEAT)
+            log_warning("The last reboot was caused by the CPU overheating.");
+
+        if (boot_status & WDIOF_CARDRESET)
+            log_warning("The last reboot was caused by a watchdog reset.");
+
+        if (boot_status & WDIOF_FANFAULT)
+            log_warning("The last reboot was because a system fan monitored by the watchdog card failed.");
+
+        if (boot_status & WDIOF_EXTERN1)
+            log_warning("The last reboot was because external monitoring relay/source 1 was triggered.");
+
+        if (boot_status & WDIOF_EXTERN2)
+            log_warning("The last reboot was because external monitoring relay/source 2 was triggered.");
+
+        if (boot_status & WDIOF_POWERUNDER)
+            log_warning("The last reboot was due to the machine showing an undervoltage status.");
+
+        if (boot_status & WDIOF_POWEROVER)
+            log_warning("The last reboot was due to the machine showing an overvoltage status.");
     }
 }
 
