@@ -16,5 +16,4 @@ metadata:
 run:
     steps:
         - . $virtual_env/bin/activate
-
         - pytest --verbose -s ./ci/lava/tests/test-bsp.py
