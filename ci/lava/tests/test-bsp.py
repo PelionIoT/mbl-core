@@ -19,7 +19,7 @@ class TestBSP:
         """Store the device address."""
         TestBsp.dut_address = dut_addr
 
-        assert dut_addr != ""
+        assert dut_addr
 
     def test_badblocks(self, execute_helper):
         """Perform the test on the DUT via the mbl-cli."""
