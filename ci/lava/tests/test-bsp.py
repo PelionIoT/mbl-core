@@ -10,7 +10,7 @@ import re
 import subprocess
 
 
-class TestBsp:
+class TestBSP:
     """Class to encapsulate the testing of systemd on a DUT."""
 
     dut_address = ""
