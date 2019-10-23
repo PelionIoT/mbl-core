@@ -120,16 +120,16 @@ int numeric_string_to_positive_int(const char* const str)
     char *endptr;
     const long int res = strtol(str, &endptr, 0);
 
-    if (*endptr != '\0' || endptr == str)
-    {
-        log_error("String must contain digits only.");
-        exit(EXIT_FAILURE);
-    }
-
     if ((errno == ERANGE && (res == LONG_MAX || res == LONG_MIN))
            || (errno != 0 && res == 0))
     {
         log_error("strtol failed");
+        exit(EXIT_FAILURE);
+    }
+
+    if (*endptr != '\0' || endptr == str)
+    {
+        log_error("String must contain digits only.");
         exit(EXIT_FAILURE);
     }
 
