@@ -19,11 +19,15 @@
 #include <fstream>
 #include <iostream>
 
+#if !defined(MBL_PROVISIONING_CERT_DIR)
+#define MBL_PROVISIONING_CERT_DIR   "/scratch/provisioning-certs"
+#endif
+
 
 namespace mbl {
     namespace provisioning{
         // Path to the provisioning certificate directory
-        static const std::string provisioning_cert_path{"/scratch/provisioning-certs/"};
+        static const std::string provisioning_cert_path{MBL_PROVISIONING_CERT_DIR};
 
         void print_fcc_error_status(std::ostream &out_stream,
                                     const std::string &error_msg,
@@ -48,8 +52,15 @@ namespace mbl {
         // Load a binary file to a vector of bytes
         std::pair<std::vector<uint8_t>, ProvisionedStatusCode> binary_file_to_bytes(const std::string &file_name)
         {
-            const auto path = provisioning_cert_path + file_name;
-            
+            auto path = provisioning_cert_path;
+
+            if (!path.empty() && path.back() != '/')
+            {
+                path += '/';
+            }
+
+            path = path + file_name;
+
             if (std::ifstream is{path, std::ios::binary | std::ios::ate}) 
             {
                 auto pos = is.tellg();
