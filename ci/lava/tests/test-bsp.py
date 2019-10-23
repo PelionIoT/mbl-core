@@ -17,7 +17,7 @@ class TestBSP:
 
     def test_setup_dut_addr(self, dut_addr):
         """Store the device address."""
-        TestBsp.dut_address = dut_addr
+        TestBSP.dut_address = dut_addr
 
         assert dut_addr
 
@@ -27,10 +27,10 @@ class TestBSP:
             [
                 "shell",
                 'sh -l -c "badblocks -v '
-                "$(mount | grep \"on \/ type\" | cut -d' ' -f 1)"
+                "$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]+$//')"
                 '"',
             ],
-            TestBsp.dut_address,
+            TestBSP.dut_address,
         )
         print(stdout)
         assert err == 0 and "Pass" in stdout
@@ -42,7 +42,7 @@ class TestBSP:
                 "shell",
                 'sh -l -c "' "memtester  1M 1 | sed 's/:.*ok/: ok/g'" '"',
             ],
-            TestBsp.dut_address,
+            TestBSP.dut_address,
         )
         print(stdout)
         assert err == 0
@@ -51,7 +51,7 @@ class TestBSP:
         """Perform the test on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", 'sh -l -c "' "xtest l 0 -t regression" '"'],
-            TestBsp.dut_address,
+            TestBSP.dut_address,
         )
         print(stdout)
         assert err == 0
