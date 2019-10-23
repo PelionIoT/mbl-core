@@ -7,7 +7,8 @@
 
 import pytest
 import re
-import subprocess
+import time
+import pathlib
 
 
 class TestSystemd:
@@ -66,3 +67,84 @@ class TestSystemd:
             TestSystemd.dut_address,
         )
         assert err == 0
+
+    def test_systemd_watchdog_setup(self, execute_helper):
+        """Test the watchdog is enabled and the kernel config is set."""
+        # kill systemd.init so the expected messages appear in the dmesg log
+        assert (
+            execute_helper.send_mbl_cli_command(
+                ["shell", "kill 1"], TestSystemd.dut_address
+            )[0]
+            == 0
+        )
+
+        err, stdout, stderr = execute_helper.send_mbl_cli_command(
+            ["shell", "dmesg | grep watchdog"], TestSystemd.dut_address
+        )
+        wdog_timeout_set_re = re.compile(
+            r"Set hardware watchdog to (\d*s\.|\dmin\s\ds.)"
+        )
+        wdog_nowayout_str = "nowayout prevents watchdog being stopped!"
+
+        assert err == 0
+        assert not stderr
+        assert wdog_nowayout_str in stdout
+        assert re.search(wdog_timeout_set_re, stdout).group(0)
+
+    def test_systemd_watchdog_causes_service_sigabrt(self, execute_helper):
+        """Test service is terminated when the watchdog timeout is reached."""
+        self._setup_wdog_service(execute_helper)
+
+        s_err, s_stdout, s_stderr = execute_helper.send_mbl_cli_command(
+            ["shell", "systemctl start wdog-test"], TestSystemd.dut_address
+        )
+        assert s_err == 0
+
+        # Sleep until the service's watchdog interval is exceeded.
+        # The WatchdogSec property in the systemd service file is
+        # set to 5 seconds, which is the watchdog interval for the test
+        # service. If the service doesn't emit a watchdog keep-alive
+        # message in that interval the service will be terminated.
+        time.sleep(7)
+
+        t_err, t_stdout, t_stderr = execute_helper.send_mbl_cli_command(
+            ["shell", "systemctl status wdog-test --no-pager"],
+            TestSystemd.dut_address,
+        )
+        expected_output = (
+            "ExecStart=/opt/arm/wdog-test.sh (code=killed, signal=ABRT)"
+        )
+
+        assert expected_output in t_stdout
+
+    def _setup_wdog_service(self, execute_helper):
+        sp_err, sp_stdout, sp_stderr = execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "ci/lava/dependencies/wdog-test.service",
+                "/etc/systemd/system/wdog-test.service",
+            ],
+            TestSystemd.dut_address,
+        )
+        assert sp_err == 0
+
+        tp_err, tp_stdout, tp_stderr = execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "ci/lava/dependencies/wdog-test.sh",
+                "/opt/arm/wdog-test.sh",
+            ],
+            TestSystemd.dut_address,
+        )
+        assert tp_err == 0
+
+        cm_err, cm_stdout, cm_stderr = execute_helper.send_mbl_cli_command(
+            ["shell", "chmod 755 /opt/arm/wdog-test.sh"],
+            TestSystemd.dut_address,
+        )
+        assert cm_err == 0
+
+        dr_err, dr_stdout, dr_stderr = execute_helper.send_mbl_cli_command(
+            ["shell", "systemctl daemon-reload"], TestSystemd.dut_address
+        )
+        assert dr_err == 0
