@@ -102,11 +102,9 @@ class TestBootComponentUpdate:
 
         # Reboot the device
         exit_code, output, error = execute_helper.send_mbl_cli_command(
-            ["shell", 'sh -l -c "shutdown -r +1"'.format(cmd)], dut_addr
+            ["shell", 'sh -l -c "reboot | true"'.format(cmd)], dut_addr
         )
         assert exit_code == 0
-        # We delayed the shutdown by 1 minute hence waiting.
-        time.sleep(60)
 
     @pytest.mark.mbl_cli
     def test_dut_online_after_reboot(
