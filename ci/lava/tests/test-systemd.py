@@ -138,12 +138,6 @@ class TestSystemd:
         )
         assert tp_err == 0
 
-        cm_err, cm_stdout, cm_stderr = execute_helper.send_mbl_cli_command(
-            ["shell", "chmod 755 /opt/arm/wdog-test.sh"],
-            TestSystemd.dut_address,
-        )
-        assert cm_err == 0
-
         dr_err, dr_stdout, dr_stderr = execute_helper.send_mbl_cli_command(
             ["shell", "systemctl daemon-reload"], TestSystemd.dut_address
         )
