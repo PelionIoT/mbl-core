@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------------
-# Copyright (c) 2017 Arm Limited and Contributors. All rights reserved.
+# Copyright (c) 2017-2019 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -31,6 +31,9 @@ FACTORY_CONFIG_PARTITION="@FACTORY_CONFIG_PARTITION@"
 ARM_UPDATE_ACTIVATE_LOG_PATH="${LOG_DIR}/arm_update_activate.log"
 ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH="${LOG_DIR}/arm_update_active_details.log"
 SAVED_HEADER_PATH="${FLAGS_DIR}/header"
+
+PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
+PAYLOAD_TMP_DIR="${UPDATE_PAYLOAD_DIR}/arm_update_activate"
 
 # Given an exit status, exits with that status if it is non-zero, otherwise
 # does nothing
@@ -150,6 +153,143 @@ rpod_mount_opts="$2"
 
     if ! mount -o remount,"$rpod_mount_opts" "$rpod_mount_point"; then
         printf "Failed to remount partition at mount point %s with mount options %s" "$rpod_mount_opts" "$rpod_mount_point"
-        exit 65
+        exit 10
     fi
+}
+
+# Validate an integer is positive
+# Exits on errors
+#
+# $1: Integer to validate
+validate_positive_integer_or_die() {
+    if ! printf '%s\n' "$1"  | grep -q '^[0-9]\+$'; then
+        printf "%s is not a positive integer!\n" "$1"
+        exit 11
+    fi
+}
+
+# Copy all files in a directory from src to dst, remounting the file system as rw before copying.
+# Exits on errors.
+#
+# $1: Source path
+# $2: Destination mount point
+copy_dir_or_die() {
+cfod_source_path="$1"
+cfod_mnt_point="$2"
+
+    remount_partition_or_die "$cfod_mnt_point" rw
+
+    if ! rm -f "$cfod_mnt_point"/*; then
+        printf "Failed to remove files on partition %s\n" "$cfod_mnt_point"
+        exit 12
+    fi
+
+    if ! cp -f "$cfod_source_path"/* "$cfod_mnt_point"; then
+        printf "Copying %s to %s failed.\n" "$cfod_source_path" "$cfod_mnt_point"
+        exit 13
+    fi
+
+    remount_partition_or_die "$cfod_mnt_point" ro
+}
+
+# Get the disk name from the device label.
+# Exits on errors.
+#
+# $1: Device label
+get_disk_name_from_label_or_die() {
+gdnflod_label="$1"
+
+    if ! gdnflod_part_for_label=$(blkid -L "$gdnflod_label"); then
+        printf "blkid failed to determine the device file for the partition with label %s.\n" "$gdnflod_label"
+        exit 14
+    fi
+
+    if ! gdnflod_disk_name=$(printf '%s\n' "$gdnflod_part_for_label" | sed 's/p[0-9]\+$//'); then
+        printf "Failed to strip the partition number from the root partition's device file name.\n"
+        exit 15
+    fi
+
+    if [ "$gdnflod_disk_name" = "$gdnflod_part_for_label" ]; then
+        printf "Failed to strip the partition number from the root partition's device file name: %s\n" "$gdnflod_disk_name"
+        exit 16
+    fi
+
+    printf "%s\n" "$gdnflod_disk_name"
+}
+
+# Decompress a .xz file.
+# Exits on errors.
+#
+# $1: Path to compressed file.
+# $2: Path to write decompressed file to.
+decompress_or_die() {
+dod_compressed_path="$1"
+dod_decompressed_path="$2"
+    if ! xzcat "$dod_compressed_path" > "$dod_decompressed_path"; then
+        printf "Failed to decompress \"%s\" to \"%s\"\n" "$dod_compressed_path" "$dod_decompressed_path"
+        exit 17
+    fi
+}
+
+# Remove the "do not reboot" flag
+# Exits on errors.
+remove_do_not_reboot_flag_or_die() {
+    dnr_flag_path="${TMP_DIR}/do_not_reboot"
+
+    if ! rm -f "$dnr_flag_path"; then
+        printf "Failed to remove the \"%s\" flag file\n" "$dnr_flag_path"
+        exit 18
+    fi
+}
+
+# Check if a partition exists on this device.
+# Returns zero if partition is skipped; non-zero otherwise
+#
+# $1: Name of partition (e.g. WKS_BOOTLOADER_FS)
+is_part_skipped() {
+ips_part_name="${1%v?}"
+    [ "$(cat "${PART_INFO_FILES_DIR}/MBL_${ips_part_name}_SKIP")" = "1" ]
+}
+
+# Get a size variable (either SIZE or OFFSET) for a partition in bytes.
+# Exits on failures (but you're going to run this function in a subshell so you
+# still have to check the error code).
+#
+# $1: Name of partition (e.g. WKS_BOOTLOADER_FS)
+# $2: Name of variable (SIZE or OFFSET1)
+get_part_size_var_B() {
+gpsv_part_name="${1%v?}"
+gpsv_var_name="$2"
+
+    gpsv_size_KiB=$(cat "${PART_INFO_FILES_DIR}/MBL_${gpsv_part_name}_${gpsv_var_name}_KiB")
+    validate_positive_integer_or_die "$gpsv_size_KiB"
+
+    # shellcheck disable=SC2003
+    gpsv_size_B=$(expr "$gpsv_size_KiB" \* 1024)
+    validate_positive_integer_or_die "$gpsv_size_B"
+
+    printf "%s\n" "$gpsv_size_B"
+    return 0
+}
+
+# Get the size of a partition in bytes.
+# Exits on failures (but you're going to run this function in a subshell so you
+# still have to check the error code).
+#
+# $1: Name of partition (e.g. WKS_BOOTLOADER_FS)
+get_part_size_B() {
+gps_part_name="$1"
+    get_part_size_var_B "$gps_part_name" SIZE
+}
+
+# Get the offset of a partition in bytes.
+# Exits on failures (but you're going to run this function in a subshell so you
+# still have to check the error code).
+#
+# $1: Name of partition (e.g. WKS_BOOTLOADER_FS)
+# $2: Bank number (default: 1)
+get_part_offset_B() {
+gpo_part_name="$1"
+gpo_bank="${2:-1}"
+    get_part_size_var_B "$gpo_part_name" "OFFSET_BANK${gpo_bank}"
 }
