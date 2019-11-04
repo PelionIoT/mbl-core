@@ -179,7 +179,7 @@ class ExecuteHelper:
             print(data)
 
     @staticmethod
-    def execute_command(command):
+    def execute_command(command, timeout=None):
         """Execute the provided command list.
 
         Executes the command and returns the error code, stdout and stderr.
@@ -195,7 +195,13 @@ class ExecuteHelper:
             bufsize=-1,
             universal_newlines=True,
         )
-        output, error = p.communicate()
+        try:
+            output, error = p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            ExecuteHelper._print("Timeout after {}".format(timeout))
+            p.kill()
+            output, error = p.communicate()
+
         ExecuteHelper._print("output:")
         ExecuteHelper._print(output)
         ExecuteHelper._print("error:")
