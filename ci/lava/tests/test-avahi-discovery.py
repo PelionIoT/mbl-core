@@ -35,7 +35,7 @@ class TestRunner:
         device is found or 5 minutes have elapsed.
         """
         returnValue = False
-        starttime = datetime.now()
+        start_time = datetime.now()
 
         while (
             not returnValue and (datetime.now() - start_time).seconds < 5 * 60
