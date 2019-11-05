@@ -38,7 +38,7 @@ class TestRunner:
         starttime = datetime.now()
 
         while (
-            not returnValue and (datetime.now() - starttime).seconds < 5 * 60
+            not returnValue and (datetime.now() - start_time).seconds < 5 * 60
         ):
             returnValue = TestRunner._test_avahi_browse(self, execute_helper)
             time.sleep(1)
