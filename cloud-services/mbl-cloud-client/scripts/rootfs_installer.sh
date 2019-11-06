@@ -18,6 +18,7 @@
 # ----------------------------------------------------------------------------
 
 
+# shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
 # Format and mount a root partition

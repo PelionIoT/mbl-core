@@ -18,6 +18,8 @@
 # ----------------------------------------------------------------------------
 
 
+
+# shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
 # Update a "boot partition" with the contents of a directory.

@@ -17,7 +17,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------
 
-
+# shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
 # Update the apps component.

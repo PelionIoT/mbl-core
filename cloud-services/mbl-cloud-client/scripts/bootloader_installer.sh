@@ -18,6 +18,7 @@
 # ----------------------------------------------------------------------------
 
 
+# shellcheck disable=SC1091
 . /opt/arm/arm_update_common.sh
 
 # Write a file to raw storage on the same device as the rootfs.
