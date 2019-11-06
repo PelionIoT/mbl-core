@@ -16,8 +16,13 @@
 -- limitations under the License.
 -- ----------------------------------------------------------------------------
 
-
 require("swupdate")
+
+-- Path to the payload temporary dir, set at build time.
+-- This directory is created and cleaned up by arm_update_activate.sh.
+-- Therefore arm_update_activate.sh must be used as the entry point for updates
+-- that use the swupdate handlers defined in this file.
+PAYLOAD_TMP_DIR = "@PAYLOAD_TMP_DIR@"
 
 -- Utility functions
 ------------------------------------------------------------------------------
@@ -26,7 +31,7 @@ require("swupdate")
 -- streams, they can only handle files at the moment.
 -- Returns the image path (or nil on failure) and an exit code.
 function copy_image_to_file(image)
-    local img_path = string.format("/scratch/%s", tostring(image.filename))
+    local img_path = string.format("%s/%s", PAYLOAD_TMP_DIR, tostring(image.filename))
     local err, msg = image:copy2file(img_path)
     if err ~= 0 then
         swupdate.error(
@@ -42,19 +47,6 @@ function copy_image_to_file(image)
     return img_path, 0
 end
 
--- Remove a file with `rm -rf`
-function rm_file(path)
-    local cmd = string.format("rm -rf %s", path)
-    swupdate.trace("Running command: rm -rf "..path)
-    local success, reason, err_code = os.execute(cmd)
-    if err_code ~= 0 then
-        swupdate.error("Failed to clean up "..path)
-        return 1
-    end
-
-    return 0
-end
-
 -- Run a shell script installer.
 -- Runs the given installer with the given image path as its only argument.
 -- Logs errors.
@@ -67,7 +59,6 @@ function run_installer(installer_path, image_path)
             "The command '%s' did not terminate successfully. "..
             "The %s code was '%s'",
             cmd,
-            status,
             reason,
             err
         )
@@ -89,147 +80,81 @@ function run_installer(installer_path, image_path)
     return 0
 end
 
-
 ------------------------------------------------------------------------------
 -- swupdate handlers
 ------------------------------------------------------------------------------
 wks_bootloader1 = function(image)
-    local if_err = 0
-    local ri_err = 0
-    local rm_err = 0
-    local exit_code = 0
-
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ri_err = run_installer("/opt/arm/bootloader_installer.sh", img_path)
+    local ri_err = run_installer("/opt/arm/bootloader_installer.sh", img_path)
     if ri_err ~= 0 then
-        exit_code =  1
-        goto cleanup
+        return 1
     end
 
-    ::cleanup::
-    rm_err = rm_file(img_path)
-    if rm_err ~= 0 then
-        exit_code = 1
-    end
-
-    return exit_code
+    return 0
 end
 
 
 wks_bootloader2 = function(image)
-    local if_err = 0
-    local ri_err = 0
-    local rm_err = 0
-    local exit_code = 0
-
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ri_err = run_installer("/opt/arm/bootloader_installer.sh", img_path)
+    local ri_err = run_installer("/opt/arm/bootloader_installer.sh", img_path)
     if ri_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ::cleanup::
-    rm_err = rm_file(img_path)
-    if rm_err ~= 0 then
-        exit_code = 1
-    end
-
-    return exit_code
+    return 0
 end
 
 
 boot = function(image)
-    local if_err = 0
-    local ri_err = 0
-    local rm_err = 0
-    local exit_code = 0
-
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ri_err = run_installer("/opt/arm/boot_partition_installer.sh", img_path)
+    local ri_err = run_installer("/opt/arm/boot_partition_installer.sh", img_path)
     if ri_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ::cleanup::
-    rm_err = rm_file(img_path)
-    if rm_err ~= 0 then
-        exit_code = 1
-    end
-
-    return exit_code
+    return 0
 end
 
 
 rootfs = function(image)
-    local if_err = 0
-    local ri_err = 0
-    local rm_err = 0
-    local exit_code = 0
-
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ri_err = run_installer("/opt/arm/rootfs_installer.sh", img_path)
+    local ri_err = run_installer("/opt/arm/rootfs_installer.sh", img_path)
     if ri_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ::cleanup::
-    rm_err = rm_file(img_path)
-    if rm_err ~= 0 then
-        exit_code = 1
-    end
-
-    return exit_code
+    return 0
 end
 
 
 apps = function(image)
-    local if_err = 0
-    local ri_err = 0
-    local rm_err = 0
-    local exit_code = 0
-
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ri_err = run_installer("/opt/arm/apps_installer.sh", img_path)
+    local ri_err = run_installer("/opt/arm/apps_installer.sh", img_path)
     if ri_err ~= 0 then
-        exit_code = 1
-        goto cleanup
+        return 1
     end
 
-    ::cleanup::
-    rm_err = rm_file(img_path)
-    if rm_err ~= 0 then
-        exit_code = 1
-    end
-
-    return exit_code
+    return 0
 end
 
 

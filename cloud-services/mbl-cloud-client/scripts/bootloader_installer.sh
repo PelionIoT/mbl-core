@@ -82,8 +82,8 @@ ublod_path="$1"
     decompress_or_die "$ublod_path" "$ublod_decompressed_path"
     write_to_flash_or_die "$ublod_decompressed_path" "$ublod_offset_B" "$ublod_max_size_B"
 
-    # Remove the do not reboot flag, the user will need to reboot after
-    # applying the bootloader update.
+    # Remove the do not reboot flag, which was created by arm_update_activate.sh, the user
+    # will need to reboot after applying the bootloader update.
     remove_do_not_reboot_flag_or_die
 }
 

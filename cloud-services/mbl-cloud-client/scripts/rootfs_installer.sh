@@ -109,6 +109,7 @@ urod_rootfs_file="$1"
     fi
     sync
 
+    # Remove the do not reboot flag, which was created by arm_update_activate.sh
     remove_do_not_reboot_flag_or_die
 }
 

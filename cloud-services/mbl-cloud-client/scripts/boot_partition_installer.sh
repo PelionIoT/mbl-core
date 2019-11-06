@@ -99,6 +99,7 @@ ubod_path="$1"
     # though, so currently we keep all files on both partitions.
     update_boot_part_from_dir_or_die WKS_BOOTLOADER_FS "$ubod_tmp_dir" "$ubod_size_estimate_B" yes
 
+    # Remove the "do not reboot" flag which was created by arm_update_activate.sh
     remove_do_not_reboot_flag_or_die
 }
 

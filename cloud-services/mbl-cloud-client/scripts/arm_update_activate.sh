@@ -82,12 +82,16 @@ if ! FIRMWARE_PATH=$(realpath "$FIRMWARE"); then
     exit 24
 fi
 
+# Set up the temporary directory used by the installer scripts (which are called by
+# swupdate). The installers depend on this directory being present. We also clean
+# up the directory when the script exits.
 set_up_payload_tmp_dir_or_die
 trap clean_up EXIT
 
 # We only have to reboot during the update if there's an update for a component
 # that requires a reboot, so set the do_not_reboot flag here and let it be
-# deleted if a reboot is required..
+# deleted if a reboot is required. It is the responsibilty of the installer scripts
+# to delete this file if a reboot is required.
 touch "${TMP_DIR}/do_not_reboot"
 
 # Call swupdate and pass it the payload cpio archive. swupdate will then delegate

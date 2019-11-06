@@ -27,13 +27,13 @@ ROOTFS1_LABEL="@ROOTFS1_LABEL@"
 ROOTFS2_LABEL="@ROOTFS2_LABEL@"
 ROOTFS_TYPE="@ROOTFS_TYPE@"
 FACTORY_CONFIG_PARTITION="@FACTORY_CONFIG_PARTITION@"
+PAYLOAD_TMP_DIR="@PAYLOAD_TMP_DIR@"
 
 ARM_UPDATE_ACTIVATE_LOG_PATH="${LOG_DIR}/arm_update_activate.log"
 ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH="${LOG_DIR}/arm_update_active_details.log"
 SAVED_HEADER_PATH="${FLAGS_DIR}/header"
 
 PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
-PAYLOAD_TMP_DIR="${UPDATE_PAYLOAD_DIR}/arm_update_activate"
 
 # Given an exit status, exits with that status if it is non-zero, otherwise
 # does nothing
