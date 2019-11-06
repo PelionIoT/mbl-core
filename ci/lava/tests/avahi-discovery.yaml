@@ -6,7 +6,13 @@ metadata:
     format: Lava-Test Test Definition 1.0
     name: Avahi discovery
     description: Run a test to discover connected devices using avahi-browse.
+    parameters:
+        #
+        # virtual_env: specifies the Python virtual environment
+        #
+        virtual_env:
 
 run:
     steps:
-        - ./ci/lava/tests/avahi-discovery.sh || lava-test-raise "avahi discovery failed"
+        - . $virtual_env/bin/activate
+        - pytest --verbose -s ./ci/lava/tests/test-avahi-discovery.py || lava-test-raise "avahi discovery failed"
