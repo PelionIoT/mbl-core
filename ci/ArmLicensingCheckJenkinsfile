@@ -4,7 +4,7 @@
  *  SPDX-License-Identifier: BSD-3-Clause
  */
 
-@Library('mbl-jenkins-library@master') _
+@Library('mbl-jenkins-library@warrior-dev') _
 
 licensingCheckPipeline {
     /* github personal access token to checkout mbl-tools repo */
