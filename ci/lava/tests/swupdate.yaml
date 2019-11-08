@@ -4,8 +4,8 @@
 
 metadata:
     format: Lava-Test Test Definition 1.0
-    name: Mbed-Crypto-Test
-    description: Mbed Crypto tests
+    name: swupdate
+    description: swupdate sanity tests
 
     parameters:
         #
@@ -16,4 +16,5 @@ metadata:
 run:
     steps:
         - . $virtual_env/bin/activate
-        - pytest --verbose -s ./ci/lava/tests/test-mbed-crypto.py
+
+        - pytest --verbose -s ./ci/lava/tests/test-swupdate.py
