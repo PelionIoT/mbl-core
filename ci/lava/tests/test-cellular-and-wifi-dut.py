@@ -1,4 +1,4 @@
-#!/usr/bin/env pythonTestRunner
+#!/usr/bin/env python3
 # Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: BSD-3-Clause
@@ -20,31 +20,31 @@ class TestCellularAndWifiDut:
 
     def test_cellular_setup(self, execute_helper):
         """Test the cellular and wifi bevaviour."""
-        TestRunner.overall_result = "pass"
+        TestCellularAndWifiDut.overall_result = "pass"
 
-        TestRunner._debug(self, execute_helper)
+        TestCellularAndWifiDut._debug(self, execute_helper)
 
     def test_cellular_initialise_cellular_module(self, execute_helper):
         """Enable the cellular interface."""
-        assert TestRunner._control_cellular(self, enable=True)
+        assert TestCellularAndWifiDut._control_cellular(self, enable=True)
 
     def test_cellular_disable_wired_ethernet(self, execute_helper):
         """Bring down the wired interface."""
-        assert TestRunner._disable_interface(self, "eth0", execute_helper)
+        assert TestCellularAndWifiDut._disable_interface(self, "eth0", execute_helper)
 
     def test_cellular_ping_test_wired_expect_fail(self, execute_helper):
         """Check we cannot ping using the wired interface."""
-        assert TestRunner._run_ping_tests(self, "eth0", "fail", execute_helper)
+        assert TestCellularAndWifiDut._run_ping_tests(self, "eth0", "fail", execute_helper)
 
     def test_cellular_ping_test_cellular_expect_pass_test_1(
         self, execute_helper
     ):
         """Check we can ping using the cellular interface."""
-        assert TestRunner._run_ping_tests(self, "usb0", "pass", execute_helper)
+        assert TestCellularAndWifiDut._run_ping_tests(self, "usb0", "pass", execute_helper)
 
     def test_cellular_disable_cellular(self, execute_helper):
         """Bring down the wired interface."""
-        assert TestRunner._disable_interface(self, "usb0", execute_helper)
+        assert TestCellularAndWifiDut._disable_interface(self, "usb0", execute_helper)
 
     def test_cellular_wait_for_wlan(self, execute_helper):
         """Wait for 60 seconds to give the wlan time to come up."""
@@ -56,21 +56,21 @@ class TestCellularAndWifiDut:
 
     def test_cellular_ping_test_wifi_expect_pass(self, execute_helper):
         """Check we can ping using the wifi interface."""
-        assert TestRunner._run_ping_tests(
+        assert TestCellularAndWifiDut._run_ping_tests(
             self, "wlan0", "pass", execute_helper
         )
 
     def test_cellular_ping_test_cellular_expect_fail(self, execute_helper):
         """Check we cannot ping using the cellular interface."""
-        assert TestRunner._run_ping_tests(self, "usb0", "fail", execute_helper)
+        assert TestCellularAndWifiDut._run_ping_tests(self, "usb0", "fail", execute_helper)
 
     def test_cellular_reenable_cellular_module(self, execute_helper):
         """Re-enable the cellular interface."""
-        assert TestRunner._enable_interface(self, "usb0", execute_helper)
+        assert TestCellularAndWifiDut._enable_interface(self, "usb0", execute_helper)
 
     def test_cellular_ping_test_wifi_expect_pass(self, execute_helper):
         """Check we cannot ping using the wifi interface."""
-        assert TestRunner._run_ping_tests(
+        assert TestCellularAndWifiDut._run_ping_tests(
             self, "wlan0", "fail", execute_helper
         )
 
@@ -78,30 +78,30 @@ class TestCellularAndWifiDut:
         self, execute_helper
     ):
         """Check we can ping using the cellular interface."""
-        assert TestRunner._run_ping_tests(self, "usb0", "pass", execute_helper)
+        assert TestCellularAndWifiDut._run_ping_tests(self, "usb0", "pass", execute_helper)
 
     def test_cellular_cleanup(self, execute_helper):
         """Disable the cellular interface."""
         # Bring down the cellular interface, to be clean.
-        TestRunner._control_cellular(self, enable=False)
+        TestCellularAndWifiDut._control_cellular(self, enable=False)
 
         # Bring up the wired interface.
-        TestRunner._enable_interface(self, "eth0", execute_helper)
+        TestCellularAndWifiDut._enable_interface(self, "eth0", execute_helper)
 
         assert True
 
     def test_cellular_overall_result(self, execute_helper):
         """Get overall result."""
-        assert TestRunner.overall_result
+        assert TestCellularAndWifiDut.overall_result
 
     def _run_ping_tests(self, interface, expected, execute_helper):
 
-        TestRunner._debug(self, execute_helper)
-        ipAddressPingStatus = TestRunner._run_ping_test(
+        TestCellularAndWifiDut._debug(self, execute_helper)
+        ipAddressPingStatus = TestCellularAndWifiDut._run_ping_test(
             self, interface, "8.8.8.8", expected, execute_helper
         )
 
-        urlPingStatus = TestRunner._run_ping_test(
+        urlPingStatus = TestCellularAndWifiDut._run_ping_test(
             self, interface, "www.google.com", expected, execute_helper
         )
         return ipAddressPingStatus and urlPingStatus
@@ -120,12 +120,12 @@ class TestCellularAndWifiDut:
                 returnValue = True
             else:
                 returnValue = False
-                TestRunner.overall_result = "fail"
+                TestCellularAndWifiDut.overall_result = "fail"
         else:
             result = "fail"
             if expected == "pass":
                 returnValue = False
-                TestRunner.overall_result = "fail"
+                TestCellularAndWifiDut.overall_result = "fail"
             else:
                 returnValue = True
         print(
