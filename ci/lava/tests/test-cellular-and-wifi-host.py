@@ -18,7 +18,7 @@ import pytest
 import re
 
 
-class TestRunner:
+class TestCellularAndWifiHost:
     """Class to encapsulate the testing of cellular connctivity on a DUT."""
 
     def test_setup(self, dut_addr, execute_helper, dut_tutorials_dir):
