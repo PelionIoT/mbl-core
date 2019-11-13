@@ -18,7 +18,7 @@ import pytest
 import re
 
 
-class Test_Create_Pytest_Environment_On_DUT:
+class TestCreatePythonEnvironmentOnDUT:
     """Create python test environment on a device under test."""
 
     def test_download_pyserial_to_host(
