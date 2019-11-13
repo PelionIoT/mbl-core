@@ -1,0 +1,29 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Cellular and WiFi Tests
+    description: Cellular and WiFi Tests
+
+parameters:
+    # device_type: specifies the device the test is running on
+    #
+    device_type:
+
+    # dut_tutorials_dir: specifies the location of the test artifacts on the device under test
+    #
+    dut_tutorials_dir:
+
+    # virtual_env: specifies the Python virtual environment
+    #
+    virtual_env:
+
+run:
+    steps:
+        # Activate virtual environment
+        - . $virtual_env/bin/activate
+
+        - pytest --verbose -s ./ci/lava/tests/test-cellular-and-wifi-host.py --venv $virtual_env --device $device_type --dut-tutorials-dir $dut_tutorials_dir
+
