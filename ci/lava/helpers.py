@@ -194,7 +194,7 @@ def get_pelion_device_id(dut_addr, execute_helper):
 def get_kernel_version(dut_addr, execute_helper):
     """Get the kernel version running on the DUT using mbl-cli."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "uname -a"'], dut_addr
+        ["shell", 'sh -l -c "uname -a"'], dut_addr
     )
     return exit_code, output
 
