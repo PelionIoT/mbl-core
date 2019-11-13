@@ -92,6 +92,7 @@ def pytest_report_teststatus(report):
         )
         return report.outcome, "*", lava
 
+
 def pytest_generate_tests(metafunc):
     """Select tests that have the update_component_name specified as marker."""
     # This is called for every test. Only get/set command line arguments

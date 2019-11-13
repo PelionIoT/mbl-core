@@ -51,9 +51,7 @@ def read_partition_to_file(
     :param component_size int: (optional) number of bytes to read from disk.
     """
     part_info = Path("/config/factory/part-info")
-    output_file_path = Path("/scratch") / "{}_{}".format(
-        partition_name, stage
-    )
+    output_file_path = Path("/scratch") / "{}_{}".format(partition_name, stage)
     align_file_path = part_info / "MBL_{}_OFFSET_BANK1_KiB".format(
         partition_name.upper()
     )
@@ -93,11 +91,11 @@ def read_partition_to_file(
             ofile=output_file_path,
             align=align_file_path,
             count=count,
-            magnitude=size_magnitude
+            magnitude=size_magnitude,
         )
     )
     execute_helper.send_mbl_cli_command(
-        ["shell", dd_command], dut_addr, raise_on_error=True,
+        ["shell", dd_command], dut_addr, raise_on_error=True
     )
     return output_file_path
 
@@ -124,8 +122,7 @@ def download_from_url(url):
         try:
             with open("/etc/hosts", "a") as f:
                 f.write(
-                    "192.168.130.43  "
-                    "artifactory-proxy.mbed-linux.arm.com\n"
+                    "192.168.130.43  " "artifactory-proxy.mbed-linux.arm.com\n"
                 )
         except PermissionError as inst:
             print("\n\nError {}\n\n".format(type(inst)))
@@ -184,6 +181,7 @@ def get_dut_address(dut, execute_helper):
 
 
 def get_pelion_device_id(dut_addr, execute_helper):
+    """Get the DUT device id by reading the mbl-cloud-client log."""
     _, output, _ = execute_helper.send_mbl_cli_command(
         ["shell", 'grep -i "device id" /var/log/mbl-cloud-client.log'],
         dut_addr,
@@ -202,6 +200,7 @@ def get_kernel_version(dut_addr, execute_helper):
 
 
 def get_file_contents_md5(path, dut_addr, execute_helper):
+    """Run md5sum on a file on the DUT."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
         ["shell", 'su -l -c "md5sum {}"'.format(path)],
         dut_addr,
@@ -211,6 +210,7 @@ def get_file_contents_md5(path, dut_addr, execute_helper):
 
 
 def get_file_sha256sum(path, dut_addr, execute_helper):
+    """Run sha256sum on a file on the DUT."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
         ["shell", 'su -l -c "sha256sum {}"'.format(path)],
         dut_addr,
@@ -220,13 +220,11 @@ def get_file_sha256sum(path, dut_addr, execute_helper):
 
 
 def get_mounted_bank_label(mount_point, dut_addr, execute_helper):
+    """Get the mounted partition label at a particular mount."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        [
-            "shell",
-            '/usr/bin/lsblk --noheadings --output "MOUNTPOINT,LABEL"'
-        ],
+        ["shell", '/usr/bin/lsblk --noheadings --output "MOUNTPOINT,LABEL"'],
         dut_addr,
-        raise_on_error=True
+        raise_on_error=True,
     )
     for line in output.split("\n"):
         match = re.search(r"^{} .*".format(mount_point), line)
@@ -239,13 +237,9 @@ def get_mounted_bank_label(mount_point, dut_addr, execute_helper):
 
 
 def get_file_mtime(path, dut_addr, execute_helper):
+    """Get the last modified time of a file on the DUT."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        [
-            "shell",
-            "stat {}".format(path)
-        ],
-        dut_addr,
-        raise_on_error=True,
+        ["shell", "stat {}".format(path)], dut_addr, raise_on_error=True
     )
     for line in output.split("\n"):
         if "Modify:" in line:
@@ -330,10 +324,8 @@ class ExecuteHelper:
                 "Invalid DUT address. Given address is an empty string."
             )
 
-        cli_command = ["mbl-cli", "--address", addr]+[x for x in command]
-        exit_code, output, error = ExecuteHelper.execute_command(
-            cli_command
-        )
+        cli_command = ["mbl-cli", "--address", addr] + [x for x in command]
+        exit_code, output, error = ExecuteHelper.execute_command(cli_command)
         if raise_on_error and exit_code != 0:
             msg = (
                 "mbl-cli command '{cmd}' returned an error code of {code}."
@@ -341,10 +333,7 @@ class ExecuteHelper:
             )
             raise AssertionError(
                 msg.format(
-                    cmd=cli_command,
-                    code=exit_code,
-                    out=output,
-                    err=error
+                    cmd=cli_command, code=exit_code, out=output, err=error
                 )
             )
 
