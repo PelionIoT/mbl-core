@@ -15,8 +15,5 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/psa/tests-poky-trusted-storage-linux.sh || lava-test-raise "poky-psa-trusted-storage-linux failed"
-        - ./ci/lava/tests/poky-mbed-crypto.sh || lava-test-raise "poky-mbed-crypto failed"
-        # Disabled until PSA Arch Tests version works with latest PSA API version	
-        #- ./ci/lava/tests/poky-psa-arch-tests.sh || lava-test-raise "poky-psa-arch-tests failed"
+        - ./ci/lava/tests/poky-tests.sh || lava-test-raise "poky tests failed"
 
