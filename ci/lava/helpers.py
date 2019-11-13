@@ -202,7 +202,7 @@ def get_kernel_version(dut_addr, execute_helper):
 def get_file_contents_md5(path, dut_addr, execute_helper):
     """Run md5sum on a file on the DUT."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "md5sum {}"'.format(path)],
+        ["shell", 'sh -l -c "md5sum {}"'.format(path)],
         dut_addr,
         raise_on_error=True,
     )
