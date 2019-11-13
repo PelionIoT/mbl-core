@@ -1,0 +1,40 @@
+# Copyright (c) 2019, Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+metadata:
+    format: Lava-Test Test Definition 1.0
+    name: Boot component update
+    description: Boot component update
+
+parameters:
+    #
+    # virtual_env: specifies the Python virtual environment
+    #
+    virtual_env:
+
+    #
+    # component_name: specifies the bootloader component to update
+    #
+    component_name:
+
+    #
+    # payload_url: specifies the full url of the boot component payload to update
+    #
+    payload_url:
+
+    #
+    # payload_testinfo_url: specifies the full url of the boot component testinfo file
+    #
+    payload_testinfo_url:
+
+    #
+    # update_method: specifies the method used to do the update (mbl-cli or pelion)
+    #
+    update_method:
+
+run:
+    steps:
+        # Activate virtual environment
+        - . $virtual_env/bin/activate
+        - pytest --verbose --debug-output -x -s ./ci/lava/tests/test-component-update.py --update-component-name $component_name --update-payload-url $payload_url --update-payload-testinfo-url $payload_testinfo_url --update-method $update_method
