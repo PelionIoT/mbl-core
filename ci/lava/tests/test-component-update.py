@@ -207,7 +207,7 @@ class TestComponentUpdate:
 
         # Reboot the device
         execute_helper.send_mbl_cli_command(
-            ["shell", 'su -l -c "reboot || true"'],
+            ["shell", 'sh -l -c "reboot || true"'],
             TestComponentUpdate.dut_address,
         )
 
