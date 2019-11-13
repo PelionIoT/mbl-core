@@ -191,7 +191,7 @@ class TestComponentUpdate:
         )
         try:
             _, output, err = execute_helper.send_mbl_cli_command(
-                ["shell", 'su -l -c "{}"'.format(cmd)],
+                ["shell", 'sh -l -c "{}"'.format(cmd)],
                 TestComponentUpdate.dut_address,
                 raise_on_error=True,
             )
