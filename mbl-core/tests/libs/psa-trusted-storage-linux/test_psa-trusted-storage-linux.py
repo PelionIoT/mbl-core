@@ -15,7 +15,8 @@ import pytest
 import subprocess
 
 
-TESTS = "/usr/bin/psa-storage-example-app"
+TESTS_PATH = "/usr/bin/"
+TESTS = ["psa-storage-example-app"]
 
 
 def test_psa_trusted_storage_linux_tests_exist():
@@ -27,11 +28,7 @@ def test_psa_trusted_storage_linux_tests_exist():
 def test_psa_trusted_storage_linux(test):
     """Run a test binary on the target"""
     result = subprocess.run(
-        [TESTS_PATH / test],
-        check=False,
-        cwd=TESTS_PATH,
-        capture_output=True,
-        text=True,
+        [test], check=False, cwd=TESTS_PATH, capture_output=True, text=True
     )
     if result.returncode != 0:
         logging.getLogger().error(result.stdout)

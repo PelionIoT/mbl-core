@@ -18,10 +18,26 @@ import pytest
 import re
 
 
-class Test_Create_Pytest_Environment_On_DUT:
+class TestCreatePythonEnvironmentOnDUT:
     """Create python test environment on a device under test."""
 
-    def test_pytest_to_target(
+    def test_download_pyserial_to_host(
+        self, execute_helper, host_download_dir
+    ):
+        """Download pytest into the host."""
+        returnCode, put_output, error = execute_helper.execute_command(
+            [
+                "/tmp/venv/bin/pip3",
+                "download",
+                "-d",
+                host_download_dir,
+                "pyserial",
+            ]
+        )
+
+        assert returnCode == 0
+
+    def test_copy_pytest_to_target(
         self, execute_helper, dut_addr, host_download_dir, dut_download_dir
     ):
         """Copy pytest onto the DUT."""
@@ -47,7 +63,8 @@ class Test_Create_Pytest_Environment_On_DUT:
         returnCode, output, error = execute_helper.send_mbl_cli_command(
             [
                 "shell",
-                "python3 -m venv {} --system-site-packages".format(venv),
+                "python3 -m venv {} --without-pip "
+                "--system-site-packages".format(venv),
             ],
             dut_addr,
         )
@@ -61,11 +78,33 @@ class Test_Create_Pytest_Environment_On_DUT:
         returnCode, output, error = execute_helper.send_mbl_cli_command(
             [
                 "shell",
-                "{}/bin/pip3 "
+                "source "
+                "{}/bin/activate;"
+                "pip3 "
                 "install "
                 "--no-index "
                 "--find-links="
                 "{} pytest".format(venv, dut_download_dir),
+            ],
+            dut_addr,
+        )
+
+        assert returnCode == 0
+
+    def test_install_pyserial_on_target(
+        self, execute_helper, dut_addr, dut_download_dir, venv
+    ):
+        """Install pytest into the python virtual environment on the DUT."""
+        returnCode, output, error = execute_helper.send_mbl_cli_command(
+            [
+                "shell",
+                "source "
+                "{}/bin/activate;"
+                "pip3 "
+                "install "
+                "--no-index "
+                "--find-links="
+                "{} pyserial".format(venv, dut_download_dir),
             ],
             dut_addr,
         )

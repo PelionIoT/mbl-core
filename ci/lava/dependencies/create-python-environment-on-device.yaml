@@ -31,7 +31,7 @@ run:
         - set +e
 
         # Run pytest to create an environment on the device under test
-        - pytest -s --verbose ./ci/lava/dependencies/test-install-pytest-to-target.py --venv $virtual_env --host-download-dir $host_download_dir --dut-download-dir $dut_download_dir
+        - pytest -s --verbose ./ci/lava/dependencies/test-create-python_environment-on-device.py --venv $virtual_env --host-download-dir $host_download_dir --dut-download-dir $dut_download_dir
 
         # Reenable the "-e" option
         - set -e
