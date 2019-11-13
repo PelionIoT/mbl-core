@@ -24,7 +24,7 @@ QCADriverUrl = (
 )
 
 
-class Test_Enable_Wifi:
+class TestEnableWiFi:
     """Create python test environment on a device under test."""
 
     def test_enable_wifi(
