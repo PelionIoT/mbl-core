@@ -8,14 +8,24 @@ metadata:
     description: Enable WiFi
 
 parameters:
+
     # device_type: specifies the device the test is running on
     #
     device_type:
 
-    # virtual_env: specifies the Python virtual environment to be used
+    # virtual_env specifies the name of the virtual environment
     #
     virtual_env:
 
 run:
     steps:
-        - ./ci/lava/dependencies/enable-wifi.sh --dev $device_type --venv $virtual_env
+        # Create and activate the python venv
+        - . $virtual_env/bin/activate
+
+        # A Test FAIL means that pytest returns an error code.
+        # This in turn causes the shell to immediatly exit.
+        # Prevent this with the "set +e" option
+        - set +e
+
+        # Run pytest to create an environment on the device under test
+        - pytest -s --verbose ./ci/lava/dependencies/test-enable-wifi.py --venv $virtual_env --device $device_type
