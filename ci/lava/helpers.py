@@ -212,7 +212,7 @@ def get_file_contents_md5(path, dut_addr, execute_helper):
 def get_file_sha256sum(path, dut_addr, execute_helper):
     """Run sha256sum on a file on the DUT."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'su -l -c "sha256sum {}"'.format(path)],
+        ["shell", 'sh -l -c "sha256sum {}"'.format(path)],
         dut_addr,
         raise_on_error=True,
     )
