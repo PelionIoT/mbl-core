@@ -13,6 +13,7 @@ modules.
 import os
 import re
 import subprocess
+import sys
 import tempfile
 import urllib.request
 from urllib.error import HTTPError
@@ -75,7 +76,7 @@ def read_partition_to_file(
         size_magnitude = ""
     else:
         raise AssertionError(
-            "Invalid component size, must be <= than the partition size\n"
+            "Invalid component size, must be <= the partition size\n"
             "component_size_KiB={}\npartition_size_KiB={}".format(
                 component_size / 1024, partition_size
             )
@@ -113,11 +114,12 @@ def download_from_url(url):
     try:
         urllib.request.urlretrieve(url, filename)
     except HTTPError as inst:
-        print("\n\nError {}\n\n".format(type(inst)))
+        print("\n\nError {}\n\n".format(type(inst)), file=sys.stderr)
         print(
             "urlretrieve failed. Trying alternative method by adding "
             "mapping between 192.168.130.43 and "
-            "artifactory-proxy.mbed-linux.arm.com into /etc/hosts."
+            "artifactory-proxy.mbed-linux.arm.com into /etc/hosts.",
+            file=sys.stderr,
         )
         try:
             with open("/etc/hosts", "a") as f:
@@ -125,21 +127,24 @@ def download_from_url(url):
                     "192.168.130.43  " "artifactory-proxy.mbed-linux.arm.com\n"
                 )
         except PermissionError as inst:
-            print("\n\nError {}\n\n".format(type(inst)))
-            print("Could not update /etc/hosts. Perhaps run as root?")
+            print("\n\nError {}\n\n".format(type(inst)), file=sys.stderr)
+            print(
+                "Could not update /etc/hosts. Perhaps run as root?",
+                file=sys.stderr,
+            )
 
         # re-try the urlretrieve.
         try:
             urllib.request.urlretrieve(url, filename)
         except HTTPError as inst:
-            print("\n\nError {}\n\n".format(type(inst)))
-            print("\n\nAlternative method also failed.\n\n")
+            print("\n\nError {}\n\n".format(type(inst)), file=sys.stderr)
+            print("\n\nAlternative method also failed.\n\n", file=sys.stderr)
             raise
     return filename
 
 
 def get_dut_address(dut, execute_helper):
-    """Calculate the DUT IP address using mbl-cli."""
+    """Discover the IP address of the DUT using mbl-cli."""
     dut_addr = ""
 
     exit_code, output, error = execute_helper.execute_command(
@@ -206,7 +211,7 @@ def get_file_contents_md5(path, dut_addr, execute_helper):
         dut_addr,
         raise_on_error=True,
     )
-    return output.split("\n")[1].split()[0]
+    return output.splitlines()[1].split()[0]
 
 
 def get_file_sha256sum(path, dut_addr, execute_helper):
@@ -216,7 +221,7 @@ def get_file_sha256sum(path, dut_addr, execute_helper):
         dut_addr,
         raise_on_error=True,
     )
-    return output.split("\n")[1].split()[0]
+    return output.splitlines()[1].split()[0]
 
 
 def get_mounted_bank_label(mount_point, dut_addr, execute_helper):
@@ -226,7 +231,7 @@ def get_mounted_bank_label(mount_point, dut_addr, execute_helper):
         dut_addr,
         raise_on_error=True,
     )
-    for line in output.split("\n"):
+    for line in output.splitlines():
         match = re.search(r"^{} .*".format(mount_point), line)
         if match:
             return match.group(0).split()[1]
@@ -241,7 +246,7 @@ def get_file_mtime(path, dut_addr, execute_helper):
     exit_code, output, error = execute_helper.send_mbl_cli_command(
         ["shell", "stat {}".format(path)], dut_addr, raise_on_error=True
     )
-    for line in output.split("\n"):
+    for line in output.splitlines():
         if "Modify:" in line:
             mtime = line
             break
@@ -261,7 +266,7 @@ def strings_grep(dut_addr, execute_helper, file_path, pattern):
         dut_addr,
         raise_on_error=True,
     )
-    return output.split("\n")[1]
+    return output.splitlines()[1]
 
 
 class ExecuteHelper:
@@ -279,7 +284,7 @@ class ExecuteHelper:
             print(data)
 
     @staticmethod
-    def execute_command(command):
+    def execute_command(command, timeout=None):
         """Execute the provided command list.
 
         Executes the command and returns the error code, stdout and stderr.
@@ -295,7 +300,13 @@ class ExecuteHelper:
             bufsize=-1,
             universal_newlines=True,
         )
-        output, error = p.communicate()
+        try:
+            output, error = p.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            ExecuteHelper._print("Timed out after {}s".format(timeout))
+            p.kill()
+            output, error = p.communicate()
+
         ExecuteHelper._print("output:")
         ExecuteHelper._print(output)
         ExecuteHelper._print("error:")
@@ -329,7 +340,7 @@ class ExecuteHelper:
         if raise_on_error and exit_code != 0:
             msg = (
                 "mbl-cli command '{cmd}' returned an error code of {code}."
-                "\nCommand stdout: {out}\nCommand stderr:{err}\n"
+                "\nCommand stdout: {out}\nCommand stderr: {err}\n"
             )
             raise AssertionError(
                 msg.format(
