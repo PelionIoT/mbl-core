@@ -4,8 +4,8 @@
 
 metadata:
     format: Lava-Test Test Definition 1.0
-    name: Mbed Crypto Poky tests
-    description: Run Mbed Crypto Poky tests
+    name: Poky tests
+    description: Run Poky tests
 
     parameters:
         #
@@ -15,4 +15,5 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/mbed-crypto-poky.sh || lava-test-raise "mbed-crypto-poky failed"
+        - ./ci/lava/tests/poky-tests.sh || lava-test-raise "poky tests failed"
+
