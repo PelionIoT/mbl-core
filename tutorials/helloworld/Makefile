@@ -5,11 +5,11 @@
 CC ?= gcc
 RM := rm -rf
 CP := cp
-OPKG_BUILD := opkg-build -Z "xz" -g root -o root 
+OPKG_BUILD := opkg-build -Z "xz" -g root -o root
 
 SRC := src/hello_world.c
 
-LIBS := 
+LIBS :=
 COMMON_CFLAGS := -static -Wall -Werror -Wformat=2 -Wunused-parameter -Wwrite-strings -Wconversion
 RELEASE_CFLAGS := -O3
 DEBUG_CFLAGS := -Og -ftrapv
@@ -19,7 +19,7 @@ MACHINE := armv7vet2hf-neon
 PACKAGE_VER := 1.0
 IPK_PACKAGE := user-sample-app-package_$(PACKAGE_VER)_$(MACHINE).ipk
 
-.phony: all debug release clean
+.phony: all debug release test clean
 
 all: debug release
 debug: debug/ipk/$(IPK_PACKAGE)
@@ -58,8 +58,8 @@ debug/bundle/rootfs/$(FILE_EXECUTABLE): src_bundle/config.json debug/$(FILE_EXEC
 	$(CP) debug/$(FILE_EXECUTABLE) $(@D)/$(FILE_EXECUTABLE)
 	@rm debug/$(FILE_EXECUTABLE)
 	@echo ' '
-	
-	
+
+
 # Create IPK
 release/ipk/$(IPK_PACKAGE): src_opkg/CONTROL/control release/bundle/rootfs/$(FILE_EXECUTABLE)
 	@mkdir -p $(@D)/in/CONTROL
@@ -74,6 +74,27 @@ debug/ipk/$(IPK_PACKAGE): src_opkg/CONTROL/control debug/bundle/rootfs/$(FILE_EX
 	$(CP) -r src_opkg/CONTROL $(@D)/in
 	$(OPKG_BUILD) $(abspath $(@D)/in) $(abspath $(@D))
 	@echo ' '
+
+# Create apps for testing
+test:
+	@echo 'Create good sample apps'
+	for number in 1 2 3 4 5 6; do \
+		sed -i "s/Version.*/Version: 1.0/" src_opkg/CONTROL/control; \
+		sed -i "s/Package.*/Package: sample-app-$$number-good/" src_opkg/CONTROL/control; \
+		$(MAKE) release; \
+	done
+
+	@echo 'Create bad architecture app'
+	sed -i "s/Package.*/Package: sample-app-3-bad-architecture/" src_opkg/CONTROL/control
+	sed -i "s/Version.*/Version: 1.1/" src_opkg/CONTROL/control
+	sed -i "s/Architecture.*/Architecture: invalid-architecture/" src_opkg/CONTROL/control
+	$(MAKE) release
+
+	@echo 'Create bad OCI runtime app'
+	sed -i "s/Package.*/Package: sample-app-4-bad-oci-runtime/" src_opkg/CONTROL/control
+	sed -i "s/Architecture.*/Architecture: any/" src_opkg/CONTROL/control
+	sed -i "1d" src_bundle/config.json
+	$(MAKE) release
 
 clean:
 	-$(RM) release/*
