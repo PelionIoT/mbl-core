@@ -40,14 +40,14 @@ Features not checked for as no obvious extra packages installed
 """
 
 
-class TestRunner:
+class TestMinimalProductionImage:
     """Class to encapsulate the testing on a DUT."""
 
     dut_address = ""
 
     def test_setup_dut_addr(self, dut_addr):
         """Store the device address."""
-        TestRunner.dut_address = dut_addr
+        TestMinimalProductionImage.dut_address = dut_addr
 
         assert dut_addr != ""
 
@@ -56,7 +56,7 @@ class TestRunner:
         """Check for systemd service on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "sh -c -l 'systemctl status {}'".format(service)],
-            TestRunner.dut_address,
+            TestMinimalProductionImage.dut_address,
         )
         if err != 4:
             print(
@@ -141,8 +141,8 @@ class TestRunner:
         """Try to find the program on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", "sh -c -l 'which {}'".format(program)],
-            TestRunner.dut_address,
+            TestMinimalProductionImage.dut_address,
         )
         if err == 0:
-            print("Not expecting to find: {}".format(stdout.split("\n")[1]))
+            print("Not expecting program: {}".format(stdout.split("\n")[1]))
         assert err != 0
