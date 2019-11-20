@@ -33,6 +33,7 @@ from helpers import (
     get_dut_address,
     get_file_contents_md5,
     get_file_sha256sum,
+    get_app_info,
     get_mounted_bank_label,
     get_file_mtime,
     strings_grep,
@@ -53,6 +54,7 @@ mounted_bank_test_info = []
 file_timestamp_test_info = []
 part_sha_256_test_info = []
 file_sha256_test_info = []
+app_bank_test_info = []
 
 
 class TestComponentUpdate:
@@ -133,6 +135,10 @@ class TestComponentUpdate:
                     file_sha256_test_info.append(
                         (image_data["image_name"], item["args"])
                     )
+                elif item["test_type"] == "app_bank_compare":
+                    app_bank_test_info.append(
+                        (image_data["image_name"], item["args"])
+                    )
         assert not all(
             not x
             for x in [
@@ -141,6 +147,7 @@ class TestComponentUpdate:
                 part_sha_256_test_info,
                 file_timestamp_test_info,
                 mounted_bank_test_info,
+                app_bank_test_info,
             ]
         )
 
@@ -205,11 +212,12 @@ class TestComponentUpdate:
             raise
         assert "Content of update package installed" in output
 
-        # Reboot the device
-        execute_helper.send_mbl_cli_command(
-            ["shell", 'sh -l -c "reboot || true"'],
-            TestComponentUpdate.dut_address,
-        )
+        # Don't reboot the device in case of app updates
+        if update_component_name not in ["app", "multi-app"]:
+            execute_helper.send_mbl_cli_command(
+                ["shell", 'sh -l -c "reboot || true"'],
+                TestComponentUpdate.dut_address,
+            )
 
     @pytest.mark.mbl_cli
     def test_dut_online_after_reboot(
@@ -217,17 +225,20 @@ class TestComponentUpdate:
     ):
         """Wait for the DUT to be back online after the reboot."""
         # Wait some time before attempting to discover the DUT
-        time.sleep(30)
-        dut_address = ""
-        num_retries = 0
-        while not dut_address and num_retries < 30:
-            dut_address = get_dut_address(dut, execute_helper)
-            if dut_address:
-                print("DUT {} is online again".format(dut_address))
-            else:
-                print("DUT is still offline. Trying again...")
-            num_retries += 1
-        assert dut_address
+        if update_component_name not in ["app", "multi-app"]:
+            time.sleep(30)
+            dut_address = ""
+            num_retries = 0
+            while not dut_address and num_retries < 30:
+                dut_address = get_dut_address(dut, execute_helper)
+                if dut_address:
+                    print("DUT {} is online again".format(dut_address))
+                else:
+                    print("DUT is still offline. Trying again...")
+                num_retries += 1
+            assert dut_address
+        else:
+            pytest.skip("Don't reboot for app updates")
 
     def test_image_post_update_checks(
         self, execute_helper, update_component_name
@@ -247,6 +258,9 @@ class TestComponentUpdate:
 
         if mounted_bank_test_info:
             self._compare_mounted_bank(execute_helper)
+
+        if app_bank_test_info:
+            self._compare_app_info(execute_helper)
 
     def _compare_partition_sha256(self, execute_helper):
         for item in part_sha_256_test_info:
@@ -307,3 +321,37 @@ class TestComponentUpdate:
             assert before_result != get_file_mtime(
                 data["path"], TestComponentUpdate.dut_address, execute_helper
             )
+
+    def _compare_app_info(self, execute_helper):
+        for item in app_bank_test_info:
+            img_name, data = item
+            app_name = data["app_name"]
+            app_info = get_app_info(
+                app_name,
+                TestComponentUpdate.dut_address,
+                execute_helper,
+                app_output=False,
+            )
+            print(
+                "Checking the app {} is running and installed".format(app_name)
+            )
+            assert '"status": "running"' in app_info
+            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
+        # Wait 30 seconds for the app to stop.
+        time.sleep(30)
+        for item in app_bank_test_info:
+            img_name, data = item
+            app_name = data["app_name"]
+            app_info = get_app_info(
+                app_name,
+                TestComponentUpdate.dut_address,
+                execute_helper,
+                app_output=True,
+            )
+            print(
+                "Checking the app {} is stopped and its output".format(
+                    app_name
+                )
+            )
+            assert '"status": "stopped"' in app_info
+            assert app_info.count("Hello, world") == 10
