@@ -39,7 +39,13 @@ def pytest_addoption(parser):
     parser.addoption(
         "--update-component-name",
         action="store",
-        choices=["bootloader1", "bootloader2", "kernel", "rootfs"],
+        choices=[
+            "bootloader1",
+            "bootloader2",
+            "kernel",
+            "rootfs",
+            "multi_component",
+        ],
     )
     parser.addoption("--update-payload-url", action="store")
     parser.addoption("--update-payload-testinfo-url", action="store")
