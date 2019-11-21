@@ -52,7 +52,7 @@ def pytest_addoption(parser):
     parser.addoption(
         "--update-method",
         action="store",
-        default="mbl-cli",
+        default="",
         choices=["pelion", "mbl-cli"],
     )
 
@@ -72,6 +72,8 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     """Select tests depending the update-method passed as argument."""
     update_method = config.getoption("--update-method")
+    if not update_method:
+        return
     skip = pytest.mark.skip(
         reason="update-method {} selected".format(update_method)
     )

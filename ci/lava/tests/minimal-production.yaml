@@ -4,8 +4,8 @@
 
 metadata:
     format: Lava-Test Test Definition 1.0
-    name: PSA arch Poky tests
-    description: Run PSA arch Poky tests
+    name: Minimal-production
+    description: Check the minimal production rootfs
 
     parameters:
         #
@@ -15,5 +15,5 @@ metadata:
 
 run:
     steps:
-        - ./ci/lava/tests/psa-arch-poky-tests.sh || lava-test-raise "psa-arch-poky-tests failed"
-
+        - . $virtual_env/bin/activate
+        - pytest --verbose -s ./ci/lava/tests/test-minimal-production.py
