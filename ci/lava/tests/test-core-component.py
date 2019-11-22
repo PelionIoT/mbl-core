@@ -47,6 +47,71 @@ class TestCoreComponentDUT:
         )
         TestCoreComponentDUT.local_conf_file = local_conf_file
 
+        """Copy the test specific parts, generating items as required."""
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "{}/user-sample-app-package_1.0_any.ipk".format(
+                    host_tutorials_dir
+                ),
+                "{}/app-lifecycle-manager-test-package_1.0_any.ipk".format(
+                    dut_tutorials_dir
+                ),
+            ],
+            dut_addr,
+        )
+
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "{}/mbl-multi-apps-update-package-all-good.tar".format(
+                    host_tutorials_dir
+                ),
+                dut_tutorials_dir,
+            ],
+            dut_addr,
+        )
+
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "{}/mbl-multi-apps-update-package-one-fail-run.tar".format(
+                    host_tutorials_dir
+                ),
+                dut_tutorials_dir,
+            ],
+            dut_addr,
+        )
+
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "{}/mbl-multi-apps-update-package-one-fail-install.tar".format(
+                    host_tutorials_dir
+                ),
+                dut_tutorials_dir,
+            ],
+            dut_addr,
+        )
+
+        # Build the test images
+        execute_helper.execute_command(
+            [
+                "python3",
+                "./firmware-management/mbl-app-manager/tests/native/"
+                "test_case_generator_mbl-app-manager.py",
+                "-o",
+                "{}/app".format(host_tutorials_dir),
+                "-v",
+            ]
+        )
+
+        # Copy the test images to the DUT
+        execute_helper.send_mbl_cli_command(
+            ["put", "-r", "{}/app".format(host_tutorials_dir), dut_app_home],
+            dut_addr,
+        )
+
         # Copy the common parts to the DUT
         execute_helper.send_mbl_cli_command(
             ["put", "-r", "./", "{}/mbl-core".format(dut_tutorials_dir)],
@@ -58,15 +123,6 @@ class TestCoreComponentDUT:
             [
                 "put",
                 "./ci/lava/conftest.py",
-                "{}/mbl-core".format(dut_tutorials_dir),
-            ],
-            dut_addr,
-        )
-
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                "./ci/lava/helpers.py",
                 "{}/mbl-core".format(dut_tutorials_dir),
             ],
             dut_addr,
@@ -85,7 +141,7 @@ class TestCoreComponentDUT:
                 "{}/bin/pytest "
                 "--verbose "
                 "--ignore={}/mbl-core/ci --color=no "
-                "{}/mbl-core/mbl-core/tests/partitions "
+                "{}/mbl-core "
                 '--local-conf-file {}"'.format(
                     venv,
                     dut_tutorials_dir,
