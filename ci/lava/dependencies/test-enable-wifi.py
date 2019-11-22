@@ -139,8 +139,7 @@ class TestEnableWiFi:
                     # Wait for the module to be loaded.
                     time.sleep(60)
 
-                    # Enable WiFi
-                    ret, output, error = execute_helper.send_mbl_cli_command(
-                        ["shell", 'sh -l -c "connmanctl enable wifi"'],
-                        dut_addr,
-                    )
+            # Enable WiFi
+            ret, output, error = execute_helper.send_mbl_cli_command(
+                ["shell", 'sh -l -c "connmanctl enable wifi"'], dut_addr
+            )
