@@ -68,7 +68,9 @@ class TestConfigAcrossReboot:
         err, TestConfigAcrossReboot.wlan_ip_address = self._get_wlan_ip(
             execute_helper
         )
+        # Display the ifconfig of the DUT for debug of test failures.
         self._ifconfig(execute_helper)
+
         assert err == 0
         assert TestConfigAcrossReboot.wlan_ip_address is not None
 
@@ -115,7 +117,9 @@ class TestConfigAcrossReboot:
 
     def test_get_wlan_ip_after_reboot(self, execute_helper):
         """Check the WLAN IP still exists after reboot."""
+        # Display the ifconfig of the DUT for debug of test failures.
         self._ifconfig(execute_helper)
+
         err, wlan_ip_address = self._get_wlan_ip(execute_helper)
         assert err == 0
         assert wlan_ip_address is not None
@@ -168,7 +172,9 @@ class TestConfigAcrossReboot:
         return err, wlan_ip_address
 
     def _disable_technology(self, technology, execute_helper):
+        # Display the ifconfig of the DUT for debug of test failures.
         self._ifconfig(execute_helper)
+
         test_command = 'sh -l -c "connmanctl disable {}"'.format(technology)
 
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
@@ -178,10 +184,17 @@ class TestConfigAcrossReboot:
         # Wait for the interface to be removed and the routing tables
         # etc to be updated
         time.sleep(30)
+
+        # Display the ifconfig of the DUT for debug of test failures.
         self._ifconfig(execute_helper)
         return err
 
     def _ifconfig(self, execute_helper):
+        """Debug code for displaying the ifconfig of the DUT.
+
+        Perform the ifconfig commmand on the DUT. This will show the IP address
+        of the interfaces and might aid debugging test failures.
+        """
         debug_command = 'sh -l -c "ifconfig"'
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             ["shell", debug_command], TestConfigAcrossReboot.dut_address
