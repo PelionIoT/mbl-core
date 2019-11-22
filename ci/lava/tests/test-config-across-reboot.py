@@ -61,7 +61,7 @@ class TestConfigAcrossReboot:
         assert err == 0
 
     def test_get_wlan_ip(self, execute_helper):
-        """Disable the ethernet and get the WLAN IP address"""
+        """Disable the ethernet and get the WLAN IP address."""
         err = self._disable_technology("ethernet", execute_helper)
         assert err == 0
 
