@@ -11,7 +11,7 @@ import time
 
 
 class TestCommsProductionImage:
-    """Class to encapsulate the avahi discover of a DUT."""
+    """Class to test the mDNS and SSH connections in production."""
 
     # Address set via test_mDNS_responder()
     dut_address = ""
