@@ -144,6 +144,5 @@ def get_var_for_actual_part(var_name, part_name, default=None):
     return path.read_text()
 
 
-
 def test_part_table():
     assert get_actual_part_table() == get_expected_part_table()
