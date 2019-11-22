@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Script to run systemd tests on the DUT."""
+"""Script to run config across reboot tests on the DUT."""
 
 import pytest
 import re
