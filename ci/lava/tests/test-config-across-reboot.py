@@ -114,7 +114,7 @@ class TestConfigAcrossReboot:
         assert hostname == TestConfigAcrossReboot.newHostname
 
     def test_get_wlan_ip_after_reboot(self, execute_helper):
-        """Perform the test on the DUT via the mbl-cli."""
+        """Check the WLAN IP still exists after reboot."""
         self._ifconfig(execute_helper)
         err, wlan_ip_address = self._get_wlan_ip(execute_helper)
         assert err == 0
