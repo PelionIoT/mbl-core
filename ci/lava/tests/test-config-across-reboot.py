@@ -156,7 +156,7 @@ class TestConfigAcrossReboot:
         return err, hostname
 
     def _get_wlan_ip(self, execute_helper):
-        """Perform the test on the DUT via the mbl-cli."""
+        """Retrieve WLAN IP address from the DUT via the mbl-cli."""
         wlan_ip_address = None
 
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
