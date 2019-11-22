@@ -88,7 +88,7 @@ class TestConfigAcrossReboot:
     def test_dut_online_after_reboot(self, dut, execute_helper):
         """Wait for the DUT to come back online.
 
-        The previous test cause the DUT to reboot.
+        The previous test causes the DUT to reboot.
         """
         dut_address = ""
 
