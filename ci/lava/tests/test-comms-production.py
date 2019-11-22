@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""Script to run avahi discovery test."""
+"""Script to validate mDNS and SSH connection in production images."""
 
 from datetime import datetime
 import re

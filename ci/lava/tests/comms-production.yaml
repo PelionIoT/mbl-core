@@ -5,7 +5,7 @@
 metadata:
     format: Lava-Test Test Definition 1.0
     name: Comms-production
-    description: Check the comms on a production distro
+    description: Check the network comms on a production distro
 
     parameters:
         #
