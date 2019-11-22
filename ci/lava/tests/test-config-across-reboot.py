@@ -48,7 +48,7 @@ class TestConfigAcrossReboot:
         )
         print(TestConfigAcrossReboot.newHostname)
 
-        """Perform the test on the DUT via the mbl-cli."""
+        """Set new hostname on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
             [
                 "shell",
