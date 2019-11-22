@@ -128,7 +128,7 @@ class TestConfigAcrossReboot:
         )
 
     def _get_hostname(self, dut, dut_addr, execute_helper):
-        """Perform the test on the DUT via the mbl-cli."""
+        """Get hostname on the DUT via the mbl-cli."""
         hostname = None
 
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
