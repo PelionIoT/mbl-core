@@ -17,7 +17,7 @@ DEBUG_CFLAGS := -Og -ftrapv
 FILE_EXECUTABLE := hello_world
 MACHINE := armv7vet2hf-neon
 PACKAGE_VER := 1.0
-IPK_PACKAGE := user-sample-app-package_$(PACKAGE_VER)_$(MACHINE).ipk
+IPK_PACKAGE := sample-app_$(PACKAGE_VER)_$(MACHINE).ipk
 
 .phony: all debug release test clean
 

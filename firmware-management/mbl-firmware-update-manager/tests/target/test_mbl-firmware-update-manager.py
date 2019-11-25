@@ -15,7 +15,7 @@ import mbl.firmware_update_manager.cli as fum_cli
 
 UPDATE_PACKAGE_LOCATION = os.path.join(os.sep, "scratch")
 MBL_APPS_DIR = os.path.join(os.sep, "home", "app")
-USER_APPS_UPDATE_PACKAGE = "mbl-multi-apps-update-package-all-good.tar"
+USER_APPS_UPDATE_PACKAGE = "multi-app-all-good.swu"
 ROOTFS_UPDATE_PACKAGE = "rootfs-update-package.tar"
 USER_APPLICATIONS = [
     "sample-app-1-good",
