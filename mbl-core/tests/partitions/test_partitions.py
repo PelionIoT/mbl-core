@@ -12,7 +12,8 @@ The main idea is to create two lists of (offset, size) pairs:
 
 We then check that the two lists are equal.
 """
-
+import glob
+import os
 import pathlib
 import re
 import subprocess
@@ -80,18 +81,19 @@ def get_expected_part_table():
     return sorted(part_table)
 
 
-def get_device_file_for_parts():
+def get_block_device_for_parts():
     """
-    Get the path to the device file that contains the file system partitions.
+    Get the name of the block device that contains the file system partitions.
+
+    The 'blkid' call will return something like "/dev/mmcblk1p3" and the bit
+    we are interested in is "mmcblk1".
 
     This function assumes that all of the partitions are on the same device.
     """
-    return str(
-        subprocess.check_output(["blkid", "-L", "rootfs1"])
-        .rsplit(b"p", 1)[0]
-        .split(b"/")[2],
-        "utf-8",
-    )
+
+    return os.path.basename(
+        subprocess.check_output(["blkid", "-L", "rootfs1"], text=True)
+    ).rsplit("p", 1)[0]
 
 
 def get_actual_part_table():
@@ -99,24 +101,21 @@ def get_actual_part_table():
     Get the actual partition table.
 
     Returns a list of (offset, size) pairs for file system partitions, based on
-    the content of /sys/block.
+    the content of /sys/block/{block_device}/{partition}
 
 
     The list is sorted and the offsets and sizes are in KiB units.
     """
-    device_file = get_device_file_for_parts()
-    device_dir = pathlib.Path.joinpath(ACTUAL_PART_INFO_DIR, device_file)
+    block_device = get_block_device_for_parts()
+    device_dir = ACTUAL_PART_INFO_DIR / block_device
 
     part_table = []
 
-    filename_re = re.compile(r"^.*{}p([0-9]+)$".format(device_file))
-
-    for f in device_dir.iterdir():
-        filename_match = filename_re.match(f.name)
-        if filename_match:
-            size_KiB = int(get_var_for_actual_part("size", f))
-            offset1_KiB = int(get_var_for_actual_part("start", f))
-            part_table.append((offset1_KiB // 2, size_KiB // 2))
+    for f in device_dir.glob("{}p[0-9]*".format(glob.escape(block_device))):
+        size_in_sectors = int(get_var_for_actual_part(f / "size"))
+        start_in_sectors = int(get_var_for_actual_part(f / "start"))
+        # Divide the numbers by 2 to convert 512B sectors into KiB
+        part_table.append((start_in_sectors // 2, size_in_sectors // 2))
 
     part_table = sorted(part_table)
 
@@ -127,21 +126,21 @@ def get_actual_part_table():
     return part_table
 
 
-def get_var_for_actual_part(var_name, part_name, default=None):
+def get_var_for_actual_part(sys_part_info_file):
     """
-    Get the value of a partition config variable for a partition.
+    Get the value of partition information.
 
     Args:
-    * var_name (str): name of partition property to get.
-    * part_name (str): name of partition.
+    * sys_part_info_file (str): name of file containing the partition
+    information.
 
     Returns (str): the contents of the config file for the given variable name
-    and partition, or empty string if the config file doesn't exist.
+    and partition, or a string containing "0" if the config file doesn't exist.
     """
-    path = part_name / var_name
-    if not path.is_file():
-        return ""
-    return path.read_text()
+    try:
+        return sys_part_info_file.read_text()
+    except FileNotFoundError:
+        return "0"
 
 
 def test_part_table():
