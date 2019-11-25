@@ -112,7 +112,7 @@ def get_actual_part_table():
     part_table = []
 
     for f in device_dir.glob("{}p[0-9]*".format(glob.escape(block_device))):
-        size_in_sectors = int((f / "siz").read_text())
+        size_in_sectors = int((f / "size").read_text())
         start_in_sectors = int((f / "start").read_text())
         # Divide the numbers by 2 to convert 512B sectors into KiB
         part_table.append((start_in_sectors // 2, size_in_sectors // 2))
