@@ -8,15 +8,6 @@ metadata:
     description: Core component Tests
 
 parameters:
-
-    # dut_tutorials_dir: specifies the location of the test artifacts on the device under test
-    #
-    dut_tutorials_dir:
-
-    # host_tutorials_dir: specifies the location of the test artifacts on the host
-    #
-    host_tutorials_dir:
-
     # virtual_env: specifies the Python virtual environment
     #
     virtual_env:
@@ -25,10 +16,22 @@ parameters:
     #
     local_conf_url:
 
+    # payloads_url: specifies the url where to download payloads
+    #
+    payloads_url:
+
+    # dut_artifacts_dir: specifies the location of the test artifacts on the device under test
+    #
+    dut_artifacts_dir:
+
+    # host_artifacts_dir: specifies the location of the test artifacts on the host
+    #
+    host_artifacts_dir:
+
+
 run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
-
-        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host-tutorials-dir $host_tutorials_dir --dut-tutorials-dir $dut_tutorials_dir --local-conf-file $local_conf_url
+        - pytest --verbose -s ./ci/lava/tests/test-core-component.py --venv $virtual_env --host-artifacts-dir $host_artifacts_dir --dut-artifacts-dir $dut_artifacts_dir --local-conf-file $local_conf_url --payloads-url $payloads_url
 

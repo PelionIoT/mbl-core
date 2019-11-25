@@ -18,6 +18,9 @@ import os
 import pytest
 import re
 
+from helpers import download_from_url
+
+
 # The test expects applications to be copied into the "/home/app" directory on
 # the device
 dut_app_home = "/home"
@@ -32,12 +35,18 @@ class TestCoreComponentDUT:
         self,
         dut_addr,
         execute_helper,
-        host_tutorials_dir,
-        dut_tutorials_dir,
+        host_artifacts_dir,
+        dut_artifacts_dir,
         local_conf_file,
+        payloads_url,
     ):
         """Copy the test specific parts, generating items as required."""
-        # Copy the local.conf file, creating the directory first.
+        print("Download and copy app payloads to the DUT")
+        self._download_and_copy_app_payloads(
+            payloads_url, execute_helper, dut_artifacts_dir, dut_addr
+        )
+
+        print("Copy the local.conf file, creating the directory first.")
         return_code, output, error = execute_helper.send_mbl_cli_command(
             ["shell", "mkdir -p {}".format(os.path.dirname(local_conf_file))],
             dut_addr,
@@ -47,91 +56,53 @@ class TestCoreComponentDUT:
         )
         TestCoreComponentDUT.local_conf_file = local_conf_file
 
-        """Copy the test specific parts, generating items as required."""
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                "{}/user-sample-app-package_1.0_any.ipk".format(
-                    host_tutorials_dir
-                ),
-                "{}/app-lifecycle-manager-test-package_1.0_any.ipk".format(
-                    dut_tutorials_dir
-                ),
-            ],
-            dut_addr,
-        )
-
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                "{}/mbl-multi-apps-update-package-all-good.tar".format(
-                    host_tutorials_dir
-                ),
-                dut_tutorials_dir,
-            ],
-            dut_addr,
-        )
-
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                "{}/mbl-multi-apps-update-package-one-fail-run.tar".format(
-                    host_tutorials_dir
-                ),
-                dut_tutorials_dir,
-            ],
-            dut_addr,
-        )
-
-        execute_helper.send_mbl_cli_command(
-            [
-                "put",
-                "{}/mbl-multi-apps-update-package-one-fail-install.tar".format(
-                    host_tutorials_dir
-                ),
-                dut_tutorials_dir,
-            ],
-            dut_addr,
-        )
-
-        # Build the test images
+        print("Build the test images")
         execute_helper.execute_command(
             [
                 "python3",
                 "./firmware-management/mbl-app-manager/tests/native/"
                 "test_case_generator_mbl-app-manager.py",
                 "-o",
-                "{}/app".format(host_tutorials_dir),
+                "{}/app".format(host_artifacts_dir),
                 "-v",
             ]
         )
 
-        # Copy the test images to the DUT
+        print("Copy the test images to the DUT")
         execute_helper.send_mbl_cli_command(
-            ["put", "-r", "{}/app".format(host_tutorials_dir), dut_app_home],
+            ["put", "-r", "{}/app".format(host_artifacts_dir), dut_app_home],
             dut_addr,
         )
 
-        # Copy the common parts to the DUT
+        print("Copy the common parts to the DUT")
         execute_helper.send_mbl_cli_command(
-            ["put", "-r", "./", "{}/mbl-core".format(dut_tutorials_dir)],
+            ["put", "-r", "./", "{}/mbl-core".format(dut_artifacts_dir)],
             dut_addr,
         )
 
-        # Copy the conftest to the DUT
+        print("Copy the conftest to the DUT")
         execute_helper.send_mbl_cli_command(
             [
                 "put",
                 "./ci/lava/conftest.py",
-                "{}/mbl-core".format(dut_tutorials_dir),
+                "{}/mbl-core".format(dut_artifacts_dir),
             ],
             dut_addr,
         )
 
+        print("Copy the helpers.py to the DUT")
+        execute_helper.send_mbl_cli_command(
+            [
+                "put",
+                "./ci/lava/helpers.py",
+                "{}/mbl-core".format(dut_artifacts_dir),
+            ],
+            dut_addr,
+        )
         assert True
 
     def test_component(
-        self, dut_addr, execute_helper, venv, dut_tutorials_dir
+        self, dut_addr, execute_helper, venv, dut_artifacts_dir
     ):
         """Perform the test on the DUT via the mbl-cli."""
         return_code, output, error = execute_helper.send_mbl_cli_command(
@@ -144,8 +115,8 @@ class TestCoreComponentDUT:
                 "{}/mbl-core "
                 '--local-conf-file {}"'.format(
                     venv,
-                    dut_tutorials_dir,
-                    dut_tutorials_dir,
+                    dut_artifacts_dir,
+                    dut_artifacts_dir,
                     TestCoreComponentDUT.local_conf_file,
                 ),
             ],
@@ -156,3 +127,27 @@ class TestCoreComponentDUT:
         print(output)
 
         assert True
+
+    def _download_and_copy_app_payloads(
+        self, payloads_url, execute_helper, dut_artifacts_dir, dut_addr
+    ):
+        payloads = [
+            "sample-app",
+            "multi-app-all-good",
+            "multi-app-one-fail-install",
+            "multi-app-one-fail-run",
+        ]
+        for payload in payloads:
+            local_file = download_from_url(
+                "{0}/{1}.swu/{1}.swu".format(payloads_url, payload)
+            )
+            execute_helper.send_mbl_cli_command(
+                [
+                    "put",
+                    local_file,
+                    "{}/{}".format(
+                        dut_artifacts_dir, os.path.basename(local_file)
+                    ),
+                ],
+                dut_addr,
+            )

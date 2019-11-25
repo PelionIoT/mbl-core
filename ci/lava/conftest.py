@@ -26,25 +26,28 @@ def pytest_addoption(parser):
     )
 
     # Tutorial tests parameters
-    parser.addoption("--dut-tutorials-dir", action="store", default="/scratch")
+    parser.addoption("--dut-artifacts-dir", action="store", default="/scratch")
     parser.addoption(
-        "--host-tutorials-dir", action="store", default="/tmp/tutorials"
+        "--host-artifacts-dir", action="store", default="/tmp/tutorials"
     )
     parser.addoption("--payload-version", action="store", default="1")
 
     # local.conf tests parameters
     parser.addoption("--local-conf-file", action="store", default="")
 
-    # Boot component update test parameters
+    # Component update test parameters
+    parser.addoption("--payloads-url", action="store")
     parser.addoption(
         "--update-component-name",
         action="store",
         choices=[
+            "sample-app",
             "bootloader1",
             "bootloader2",
             "kernel",
+            "multi-app-all-good",
+            "multi-component",
             "rootfs",
-            "multi_component",
         ],
     )
     parser.addoption("--update-payload-url", action="store")
@@ -152,15 +155,15 @@ def host_download_dir(request):
 
 # Tutorials fixtures
 @pytest.fixture
-def dut_tutorials_dir(request):
-    """Fixture for --dut-tutorials-dir."""
-    return request.config.getoption("--dut-tutorials-dir")
+def dut_artifacts_dir(request):
+    """Fixture for --dut-artifacts-dir."""
+    return request.config.getoption("--dut-artifacts-dir")
 
 
 @pytest.fixture
-def host_tutorials_dir(request):
-    """Fixture for --host-tutorials-dir."""
-    return request.config.getoption("--host-tutorials-dir")
+def host_artifacts_dir(request):
+    """Fixture for --host-artifacts-dir."""
+    return request.config.getoption("--host-artifacts-dir")
 
 
 @pytest.fixture
@@ -199,6 +202,12 @@ def update_component_name(request):
 def update_payload(request):
     """Fixture for --update-payload-url."""
     return download_from_url(request.config.getoption("--update-payload-url"))
+
+
+@pytest.fixture
+def payloads_url(request):
+    """Fixture for --payloads-url."""
+    return request.config.getoption("--payloads-url")
 
 
 @pytest.fixture
