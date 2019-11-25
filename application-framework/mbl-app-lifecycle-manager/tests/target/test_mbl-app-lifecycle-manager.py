@@ -190,13 +190,14 @@ def unpack_payload(payload):
     """Extract the ipk from the swu payload"""
     cpio_cmd = ["cpio", "-i", "-F", payload]
     subprocess.run(cpio_cmd, check=False)
+    # The content will be extracted in /hom/root
     assert os.path.isfile(
-        "/scratch/mbl-core/APPSv3.tar.xz"
+        "/home/root/APPSv3.tar.xz"
     ), "Missing APPSv3.tar.xz test file."
     tar_cmd = [
         "tar",
         "xvf",
-        "/scratch/mbl-core/APPSv3.tar.xz",
+        "/home/root/APPSv3.tar.xz",
         "-C",
         "/scratch",
     ]
