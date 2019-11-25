@@ -12,9 +12,9 @@ parameters:
     #
     device_type:
 
-    # dut_tutorials_dir: specifies the location of the test artifacts on the device under test
+    # dut_artifacts_dir: specifies the location of the test artifacts on the device under test
     #
-    dut_tutorials_dir:
+    dut_artifacts_dir:
 
     # virtual_env: specifies the Python virtual environment
     #
@@ -25,5 +25,5 @@ run:
         # Activate virtual environment
         - . $virtual_env/bin/activate
 
-        - pytest --verbose -s ./ci/lava/tests/test-cellular-and-wifi-host.py --venv $virtual_env --device $device_type --dut-tutorials-dir $dut_tutorials_dir
+        - pytest --verbose -s ./ci/lava/tests/test-cellular-and-wifi-host.py --venv $virtual_env --device $device_type --dut-artifacts-dir $dut_artifacts_dir
 
