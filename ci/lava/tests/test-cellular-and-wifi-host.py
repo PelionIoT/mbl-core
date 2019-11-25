@@ -21,15 +21,15 @@ import re
 class TestCellularAndWifiHost:
     """Class to encapsulate the testing of cellular connctivity on a DUT."""
 
-    def test_setup(self, dut_addr, execute_helper, dut_tutorials_dir):
+    def test_setup(self, dut_addr, execute_helper, dut_artifacts_dir):
         """Copy the necessary files to DUT."""
         execute_helper.send_mbl_cli_command(
-            ["put", "-r", "./", "{}/mbl-core".format(dut_tutorials_dir)],
+            ["put", "-r", "./", "{}/mbl-core".format(dut_artifacts_dir)],
             dut_addr,
         )
 
     def test_cellular(
-        self, dut_addr, execute_helper, venv, dut_tutorials_dir, device
+        self, dut_addr, execute_helper, venv, dut_artifacts_dir, device
     ):
         """Perform the test on the DUT via the mbl-cli."""
         if (
@@ -48,7 +48,7 @@ class TestCellularAndWifiHost:
                     "-s "
                     "--color=no "
                     "{}/mbl-core/ci/lava/tests/test-cellular-and-wifi-dut.py"
-                    '"'.format(venv, dut_tutorials_dir),
+                    '"'.format(venv, dut_artifacts_dir),
                 ],
                 dut_addr,
             )

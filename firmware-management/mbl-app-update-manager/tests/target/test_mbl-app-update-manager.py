@@ -23,13 +23,9 @@ USER_APPLICATIONS_ALL_GOOD = [
     "sample-app-4-good",
     "sample-app-5-good",
 ]
-UPDATE_PACKAGE_ALL_APPS_GOOD = "mbl-multi-apps-update-package-all-good.tar"
-UPDATE_PACKAGE_ONE_APP_FAILS_INSTALL = (
-    "mbl-multi-apps-update-package-one-fail-install.tar"
-)
-UPDATE_PACKAGE_ONE_APP_FAILS_RUN = (
-    "mbl-multi-apps-update-package-one-fail-run.tar"
-)
+UPDATE_PACKAGE_ALL_APPS_GOOD = "multi-app-all-good.swu"
+UPDATE_PACKAGE_ONE_APP_FAILS_INSTALL = "multi-app-one-fail-install.swu"
+UPDATE_PACKAGE_ONE_APP_FAILS_RUN = "multi-app-one-fail-run.swu"
 
 
 class TestMblAppUpdateManager:
@@ -172,7 +168,7 @@ def install_apps_from_package(update_pkg):
     """Install user applications."""
     # usage: mbl-app-update-manager [-h] [-v] <update-package>
     print("Update application contained in `{}`".format(update_pkg))
-    cmd = ["mbl-app-update-manager", "-v", update_pkg]
+    cmd = ["mbl-firmware-update-manager", "-v", "--keep", update_pkg]
     print("Executing command: {}".format(cmd))
     return subprocess.run(cmd, check=False).returncode
 
