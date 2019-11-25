@@ -213,7 +213,7 @@ class TestComponentUpdate:
         assert "Content of update package installed" in output
 
         # Don't reboot the device in case of app updates
-        if update_component_name not in ["app", "multi-app"]:
+        if update_component_name not in ["sample-app", "multi-app-all-good"]:
             execute_helper.send_mbl_cli_command(
                 ["shell", 'sh -l -c "reboot || true"'],
                 TestComponentUpdate.dut_address,
@@ -225,7 +225,7 @@ class TestComponentUpdate:
     ):
         """Wait for the DUT to be back online after the reboot."""
         # Wait some time before attempting to discover the DUT
-        if update_component_name not in ["app", "multi-app"]:
+        if update_component_name not in ["sample-app", "multi-app-all-good"]:
             time.sleep(30)
             dut_address = ""
             num_retries = 0
