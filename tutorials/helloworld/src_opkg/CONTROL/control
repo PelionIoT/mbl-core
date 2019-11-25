@@ -1,4 +1,4 @@
-Package: user-sample-app-package
+Package: sample-app
 Version: 1.0
 Architecture: any
 Maintainer: Mbed Linux OS team <mbed-linux-team@arm.com>

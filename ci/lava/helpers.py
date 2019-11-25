@@ -258,6 +258,23 @@ def get_file_mtime(path, dut_addr, execute_helper):
     return mtime
 
 
+def get_app_info(app_name, dut_addr, execute_helper, app_output):
+    """Get app info using runc and reading its log file."""
+    exit_code, output, error = execute_helper.send_mbl_cli_command(
+        ["shell", "runc state {}".format(app_name)],
+        dut_addr,
+        raise_on_error=True,
+    )
+    if app_output:
+        exit_code, output_cat, error = execute_helper.send_mbl_cli_command(
+            ["shell", "cat /var/log/app/{}.log".format(app_name)],
+            dut_addr,
+            raise_on_error=True,
+        )
+        output = "{}{}".format(output, output_cat)
+    return output
+
+
 def strings_grep(dut_addr, execute_helper, file_path, pattern):
     """Run strings command on a file and grep for a pattern using mbl-cli."""
     command = "strings {} | grep {}".format(file_path, pattern)

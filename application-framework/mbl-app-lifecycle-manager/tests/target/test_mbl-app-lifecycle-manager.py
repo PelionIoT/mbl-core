@@ -18,9 +18,8 @@ import mbl.app_manager.manager as am_m
 MBL_APPS_DIR = os.path.join(os.sep, "home", "app")
 MBL_APP_MANAGER = "mbl-app-manager"
 MBL_APP_LIFECYCLE_MANAGER = "mbl-app-lifecycle-manager"
-APP_PKG = os.path.join(
-    os.sep, "scratch", "app-lifecycle-manager-test-package_1.0_any.ipk"
-)
+APP_SWU = os.path.join(os.sep, "scratch", "sample-app.swu")
+APP_PKG = os.path.join(os.sep, "scratch", "sample-app_1.0_any.ipk")
 
 
 class TestAppLifecycleManager:
@@ -33,6 +32,7 @@ class TestAppLifecycleManager:
         cls.app_mgr = am_m.AppManager()
         # Install app_lifecycle_mng_test_container
         # All container operation will be done using it
+        unpack_payload(APP_SWU)
         assert os.path.isfile(APP_PKG), "Missing IPK test file."
         # In case container run before the tests - stop it
         cls.app_name = cls.app_mgr.get_app_name(APP_PKG)
@@ -184,3 +184,21 @@ def remove_app(app_name, app_path):
     command = [MBL_APP_MANAGER, "-v", "remove", app_name, app_path]
     print("Executing command: {}".format(command))
     return subprocess.run(command, check=False).returncode
+
+
+def unpack_payload(payload):
+    """Extract the ipk from the swu payload"""
+    cpio_cmd = ["cpio", "-i", "-F", payload]
+    subprocess.run(cpio_cmd, check=False)
+    # The content will be extracted in /hom/root
+    assert os.path.isfile(
+        "/home/root/APPSv3.tar.xz"
+    ), "Missing APPSv3.tar.xz test file."
+    tar_cmd = [
+        "tar",
+        "xvf",
+        "/home/root/APPSv3.tar.xz",
+        "-C",
+        "/scratch",
+    ]
+    subprocess.run(tar_cmd, check=False)
