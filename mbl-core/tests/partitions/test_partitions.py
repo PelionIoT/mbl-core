@@ -112,8 +112,8 @@ def get_actual_part_table():
     part_table = []
 
     for f in device_dir.glob("{}p[0-9]*".format(glob.escape(block_device))):
-        size_in_sectors = int(get_var_for_actual_part(f / "size"))
-        start_in_sectors = int(get_var_for_actual_part(f / "start"))
+        size_in_sectors = int((f / "siz").read_text())
+        start_in_sectors = int((f / "start").read_text())
         # Divide the numbers by 2 to convert 512B sectors into KiB
         part_table.append((start_in_sectors // 2, size_in_sectors // 2))
 
@@ -124,21 +124,6 @@ def get_actual_part_table():
     del part_table[3]
 
     return part_table
-
-
-def get_var_for_actual_part(sys_part_info_file):
-    """
-    Get the value of partition information.
-
-    Args:
-    * sys_part_info_file (str): name of file containing the partition
-    information.
-
-    Returns (str): the contents of the config file for the given variable name
-    and partition, or an exception if the config file doesn't exist.
-    """
-    return sys_part_info_file.read_text()
-
 
 
 def test_part_table():
