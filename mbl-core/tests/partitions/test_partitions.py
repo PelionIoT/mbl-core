@@ -135,12 +135,10 @@ def get_var_for_actual_part(sys_part_info_file):
     information.
 
     Returns (str): the contents of the config file for the given variable name
-    and partition, or a string containing "0" if the config file doesn't exist.
+    and partition, or an exception if the config file doesn't exist.
     """
-    try:
-        return sys_part_info_file.read_text()
-    except FileNotFoundError:
-        return "0"
+    return sys_part_info_file.read_text()
+
 
 
 def test_part_table():
