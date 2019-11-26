@@ -323,22 +323,8 @@ class TestComponentUpdate:
             )
 
     def _compare_app_info(self, execute_helper):
-        for item in app_bank_test_info:
-            img_name, data = item
-            app_name = data["app_name"]
-            app_info = get_app_info(
-                app_name,
-                TestComponentUpdate.dut_address,
-                execute_helper,
-                app_output=False,
-            )
-            print(
-                "Checking the app {} is running and installed".format(app_name)
-            )
-            assert '"status": "running"' in app_info
-            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
-        # Wait 30 seconds for the app to stop.
-        time.sleep(30)
+        # Wait few seconds for the app to start running
+        time.sleep(5)
         for item in app_bank_test_info:
             img_name, data = item
             app_name = data["app_name"]
@@ -349,9 +335,11 @@ class TestComponentUpdate:
                 app_output=True,
             )
             print(
-                "Checking the app {} is stopped and its output".format(
+                "Checking the app {} is installed and its output".format(
                     app_name
                 )
             )
-            assert '"status": "stopped"' in app_info
-            assert app_info.count("Hello, world") == 10
+            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
+            # The app might still be running running, so just checking there is
+            # some output in the log.
+            assert app_info.count("Hello, world") > 0
