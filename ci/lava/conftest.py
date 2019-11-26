@@ -7,6 +7,7 @@
 
 import os
 import pytest
+import re
 
 from helpers import download_from_url, get_dut_address, ExecuteHelper
 
@@ -114,6 +115,53 @@ def pytest_generate_tests(metafunc):
         and option_value is not None
     ):
         metafunc.parametrize("update_component_name", [option_value])
+
+
+def get_local_conf_assignments_dict(local_conf_file):
+    """
+    Get a list of the variable (name, value) pairs for each simple assignment
+    in the given local.conf.
+
+    Note that this function only deals with values that are double quoted and
+    doesn't deal with override syntax, variable appends, variable prepends or
+    "weak" assignments.
+
+    I.e. the variable values returned by this function are NOT guaranteed to be
+    final values used by BitBake.
+
+    Returns a dict mapping variable names to the values assigned to them.
+    """
+    assignment_re = re.compile(
+        r"""^\s*
+            (?P<var_name> [A-Za-z0-9_]+ )
+            \s* = \s*
+            "(?P<var_value> [^"]* )"
+            \s*
+        $""",
+        re.X,
+    )
+    assignments = {}
+    with open(local_conf_file, "r") as config:
+        for line in config:
+            m = assignment_re.match(line)
+            if m:
+                # Don't check if the var name is already in our dict - just let
+                # later assignments take precedence.
+                assignments[m.group('var_name')] = m.group('var_value')
+    return assignments
+
+
+@pytest.fixture
+def local_conf_assignments_dict(local_conf_file):
+    """
+    Fixture for the dictionary mapping variable names to their values for
+    assignments in local.conf.
+    The caveats in the docstring for get_local_conf_assignments_dict apply here
+    too.
+    """
+    if local_conf_file is None:
+        return {}
+    return get_local_conf_assignments_dict(local_conf_file)
 
 
 # common fixtures
