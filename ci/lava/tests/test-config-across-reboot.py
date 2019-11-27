@@ -117,9 +117,10 @@ class TestConfigAcrossReboot:
 
     def test_get_wlan_ip_after_reboot(self, execute_helper):
         """Check the WLAN IP still exists after reboot."""
-        # Display the ifconfig of the DUT for debug of test failures.
-        self._ifconfig(execute_helper)
+        # Wait for the wlan to become available.
         time.sleep(60)
+
+        # Display the ifconfig of the DUT for debug of test failures.
         self._ifconfig(execute_helper)
 
         err, wlan_ip_address = self._get_wlan_ip(execute_helper)
