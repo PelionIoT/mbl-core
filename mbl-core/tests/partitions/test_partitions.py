@@ -4,13 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Pytest for checking partition offsets and sizes.
-
-The main idea is to create two lists of (offset, size) pairs:
-* one based on partition data left in the factory config partition;
-* one based on the content of /sys/block.
-
-We then check that the two lists are equal.
+Pytest for checking the partitions are as we expect them (offsets, sizes,
+devices, etc.)
 """
 import glob
 import os
@@ -172,6 +167,10 @@ def get_actual_part_table():
 
 
 def test_part_table():
+    # Create two lists of (offset, size) pairs:
+    # * one based on partition data left in the factory config partition,
+    # * one based on the content of /sys/block,
+    # then check that the two lists are equal.
     assert get_actual_part_table() == get_expected_part_table()
 
 
