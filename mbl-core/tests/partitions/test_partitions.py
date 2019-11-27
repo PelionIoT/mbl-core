@@ -4,13 +4,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-Pytest for checking partition offsets and sizes.
-
-The main idea is to create two lists of (offset, size) pairs:
-* one based on partition data left in the factory config partition;
-* one based on the content of /sys/block.
-
-We then check that the two lists are equal.
+Pytest for checking the partitions are as we expect them (offsets, sizes,
+devices, etc.)
 """
 import glob
 import os
@@ -35,16 +30,47 @@ def get_var_for_part(var_name, part_name, default=None):
     Returns (str): the contents of the config file for the given variable name
     and partition.
     """
-    filename = "MBL_{}_{}".format(re.escape(part_name), re.escape(var_name))
+    filename = "MBL_{}_{}".format(part_name, var_name)
     path = EXPECTED_PART_INFO_DIR / filename
     if default is not None and not path.is_file():
         return default
     return path.read_text()
 
 
-def get_fs_part_names():
+def get_bool_var_for_part(var_name, part_name):
     """
-    Get the names of all file system partitions.
+    Get the value of a boolean partition config variable for a partition.
+
+    Args:
+    * var_name (str): name of partition property to get.
+    * part_name (str): name of partition.
+
+    Returns (bool): the contents of the config file for the given variable name
+    and partition converted to a boolean, or False if the file doesn't exist.
+    """
+    # Convert to int so that e.g. " " doesn't count as true.
+    # Convert to bool to get the return type right.
+    return bool(int(get_var_for_part(var_name, part_name, "0")))
+
+
+def is_part_skipped(part_name):
+    """Return True if the given partition is skipped on the device."""
+    return get_bool_var_for_part("SKIP", part_name)
+
+
+def is_part_banked(part_name):
+    """Return True if the given partition is banked."""
+    return get_bool_var_for_part("IS_BANKED", part_name)
+
+
+def is_fs_part(part_name):
+    """Return True if the given partition is a file system partition."""
+    return not get_bool_var_for_part("NO_FS", part_name)
+
+
+def get_all_part_names():
+    """
+    Get the names of all partitions (including "raw" partitions).
     """
     part_names = []
     filename_re = re.compile(r"^MBL_([A-Z0-9_]+)_SIZE_KiB$")
@@ -52,12 +78,26 @@ def get_fs_part_names():
         filename_match = filename_re.match(f.name)
         if filename_match:
             part_name = filename_match.group(1)
-            if int(get_var_for_part("SKIP", part_name, "0")):
-                continue
-            if int(get_var_for_part("NO_FS", part_name, "0")):
+            if is_part_skipped(part_name):
                 continue
             part_names.append(part_name)
     return part_names
+
+
+def get_fs_part_names():
+    """
+    Get the names of all file system partitions.
+    """
+    return filter(is_fs_part, get_all_part_names())
+
+
+def get_part_bank_numbers(part_name):
+    """Get a tuple of bank numbers for the given partition."""
+    if is_part_skipped(part_name):
+        return []
+    if is_part_banked(part_name):
+        return [1, 2]
+    return [1]
 
 
 def get_expected_part_table():
@@ -72,11 +112,11 @@ def get_expected_part_table():
     part_table = []
     for part_name in get_fs_part_names():
         size_KiB = int(get_var_for_part("SIZE_KiB", part_name))
-        offset1_KiB = int(get_var_for_part("OFFSET_BANK1_KiB", part_name))
-        part_table.append((offset1_KiB, size_KiB))
-        if int(get_var_for_part("IS_BANKED", part_name, "0")):
-            offset2_KiB = int(get_var_for_part("OFFSET_BANK2_KiB", part_name))
-            part_table.append((offset2_KiB, size_KiB))
+        for bank in get_part_bank_numbers(part_name):
+            offset_KiB = int(
+                get_var_for_part("OFFSET_BANK{}_KiB".format(bank), part_name)
+            )
+            part_table.append((offset_KiB, size_KiB))
 
     return sorted(part_table)
 
@@ -127,4 +167,18 @@ def get_actual_part_table():
 
 
 def test_part_table():
+    # Create two lists of (offset, size) pairs:
+    # * one based on partition data left in the factory config partition,
+    # * one based on the content of /sys/block,
+    # then check that the two lists are equal.
     assert get_actual_part_table() == get_expected_part_table()
+
+
+def test_part_device_name_files():
+    device_name = get_block_device_for_parts()
+    for part_name in get_all_part_names():
+        for bank in get_part_bank_numbers(part_name):
+            assert (
+                get_var_for_part("DEVICE_NAME_BANK{}".format(bank), part_name)
+                == device_name
+            )
