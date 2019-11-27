@@ -18,8 +18,6 @@ set(TMP_DIR "/tmp" CACHE PATH "Path to directory used to temporarily store small
 set(UPDATE_PAYLOAD_DIR "/tmp" CACHE PATH "Path to directory used to temporarily store update payload files")
 set(PAYLOAD_TMP_DIR "${UPDATE_PAYLOAD_DIR}/arm_update_activate" CACHE PATH "Path to directory used to temporarily store payload files")
 set(LOG_DIR "/var/log" CACHE FILEPATH "Path to directory in which to write log files")
-set(ROOTFS1_LABEL "rootfs1" CACHE STRING "Label used for the first root file system bank")
-set(ROOTFS2_LABEL "rootfs2" CACHE STRING "Label used for the second root file system bank")
 set(ROOTFS_TYPE "ext4" CACHE STRING "Type of file system used for root file systems")
 set(FACTORY_CONFIG_PARTITION "/config/factory" CACHE STRING "Factory config partition mount point.")
 

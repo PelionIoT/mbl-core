@@ -23,8 +23,6 @@ FLAGS_DIR="@BOOTFLAGS_DIR@"
 TMP_DIR="@TMP_DIR@"
 UPDATE_PAYLOAD_DIR="@UPDATE_PAYLOAD_DIR@"
 LOG_DIR="@LOG_DIR@"
-ROOTFS1_LABEL="@ROOTFS1_LABEL@"
-ROOTFS2_LABEL="@ROOTFS2_LABEL@"
 ROOTFS_TYPE="@ROOTFS_TYPE@"
 FACTORY_CONFIG_PARTITION="@FACTORY_CONFIG_PARTITION@"
 PAYLOAD_TMP_DIR="@PAYLOAD_TMP_DIR@"
@@ -46,22 +44,28 @@ eoeStatus="$1"
     fi
 }
 
-# Get the path to the device file for the partition with the given label.⏎
+# Get the path to the device file for the MBL partitions
 #
-# $1: the partition label
-get_device_for_label() {
-gdflLabel="$1"
-
-    gdflDev=$(readlink -f "/dev/disk/by-label/${gdflLabel}")
+get_device_for_mbl_partitions() {
+    gdmpLsblkOutput=$(lsblk -n -o MOUNTPOINT,PKNAME)
     if [ "$?" -ne 0 ]; then
-        echo "Failed to find device file for partition with label \"${gdflLabel}\""
-        return 1;
+        echo "Failed to determine device file for partitions: lsblk failed"
+        return 1
     fi
-    if [ ! -b "$gdflDev" ]; then
-        echo "Device with label \"${gdflLabel}\" is not a block device"
-        return 2;
+
+    gdmpDeviceName=$(printf "%s\n" "$gdmpLsblkOutput" | awk '/^\/ / {print $2}')
+    if [ "$?" -ne 0 ]; then
+        echo "Failed to determine device file for partitions: couldn't find root partition in lsblk output"
+        return 1
     fi
-    printf "%s" "$gdflDev"
+
+    gdmpDevicePath="/dev/${gdmpDeviceName}"
+    if ! [ -b "$gdmpDevicePath" ]; then
+        echo "Failed to determine device file for partitions: \"${gdmpDevicePath}\" is not a block device"
+        return 1
+    fi
+    printf "%s\n" "$gdmpDevicePath"
+    return 0
 }
 
 # Get the mountpoint for a device.
@@ -190,31 +194,6 @@ cfod_mnt_point="$2"
     fi
 
     remount_partition_or_die "$cfod_mnt_point" ro
-}
-
-# Get the disk name from the device label.
-# Exits on errors.
-#
-# $1: Device label
-get_disk_name_from_label_or_die() {
-gdnflod_label="$1"
-
-    if ! gdnflod_part_for_label=$(blkid -L "$gdnflod_label"); then
-        printf "blkid failed to determine the device file for the partition with label %s.\n" "$gdnflod_label"
-        exit 14
-    fi
-
-    if ! gdnflod_disk_name=$(printf '%s\n' "$gdnflod_part_for_label" | sed 's/p[0-9]\+$//'); then
-        printf "Failed to strip the partition number from the root partition's device file name.\n"
-        exit 15
-    fi
-
-    if [ "$gdnflod_disk_name" = "$gdnflod_part_for_label" ]; then
-        printf "Failed to strip the partition number from the root partition's device file name: %s\n" "$gdnflod_disk_name"
-        exit 16
-    fi
-
-    printf "%s\n" "$gdnflod_disk_name"
 }
 
 # Decompress a .xz file.
