@@ -122,7 +122,7 @@ class TestComponentUpdate:
                         item["args"]["size_B"],
                     )
                     part_sha_256_test_info.append(
-                        (image_data["image_name"], item["args"], pre_timestamp)
+                        (image_data["image_name"], item["args"])
                     )
                 elif item["test_type"] == "file_sha256":
                     file_sha256_test_info.append(
@@ -257,7 +257,7 @@ class TestComponentUpdate:
 
     def _compare_partition_sha256(self, execute_helper):
         for item in part_sha_256_test_info:
-            img_name, data, before_result = item
+            img_name, data = item
             print("Testing partition sha256 for image {}".format(img_name))
             post_extracted_img = read_partition_to_file(
                 TestComponentUpdate.dut_address,
