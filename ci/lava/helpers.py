@@ -224,10 +224,10 @@ def get_file_sha256sum(path, dut_addr, execute_helper):
     return output.splitlines()[1].split()[0]
 
 
-def get_mounted_bank_label(mount_point, dut_addr, execute_helper):
-    """Get the mounted partition label at a particular mount."""
+def get_mounted_bank_device_name(mount_point, dut_addr, execute_helper):
+    """Get the name of the block device mounted at a particular mount."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", '/usr/bin/lsblk --noheadings --output "MOUNTPOINT,LABEL"'],
+        ["shell", '/usr/bin/lsblk --noheadings --output "MOUNTPOINT,KNAME"'],
         dut_addr,
         raise_on_error=True,
     )
