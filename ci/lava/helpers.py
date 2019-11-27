@@ -275,17 +275,6 @@ def get_app_info(app_name, dut_addr, execute_helper, app_output):
     return output
 
 
-def strings_grep(dut_addr, execute_helper, file_path, pattern):
-    """Run strings command on a file and grep for a pattern using mbl-cli."""
-    command = "strings {} | grep {}".format(file_path, pattern)
-    exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'sh -l -c "{}"'.format(command)],
-        dut_addr,
-        raise_on_error=True,
-    )
-    return output.splitlines()[1]
-
-
 class ExecuteHelper:
     """Class to provide a wrapper for executing commands as a subprocess."""
 
