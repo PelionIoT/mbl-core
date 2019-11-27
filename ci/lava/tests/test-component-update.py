@@ -36,7 +36,6 @@ from helpers import (
     get_app_info,
     get_mounted_bank_device_name,
     get_file_mtime,
-    strings_grep,
     get_pelion_device_id,
 )
 
@@ -121,12 +120,6 @@ class TestComponentUpdate:
                         item["args"]["part_name"],
                         "pre",
                         item["args"]["size_B"],
-                    )
-                    pre_timestamp = strings_grep(
-                        TestComponentUpdate.dut_address,
-                        execute_helper,
-                        pre_update_img,
-                        "Built",
                     )
                     part_sha_256_test_info.append(
                         (image_data["image_name"], item["args"], pre_timestamp)
@@ -277,15 +270,6 @@ class TestComponentUpdate:
                 post_extracted_img,
                 TestComponentUpdate.dut_address,
                 execute_helper,
-            )
-            assert (
-                strings_grep(
-                    TestComponentUpdate.dut_address,
-                    execute_helper,
-                    post_extracted_img,
-                    "Built",
-                )
-                != before_result
             )
 
     def _compare_file_sha256(self, execute_helper):
