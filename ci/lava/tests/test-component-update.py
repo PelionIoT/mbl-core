@@ -34,7 +34,7 @@ from helpers import (
     get_file_contents_md5,
     get_file_sha256sum,
     get_app_info,
-    get_mounted_bank_label,
+    get_mounted_bank_device_name,
     get_file_mtime,
     strings_grep,
     get_pelion_device_id,
@@ -95,7 +95,7 @@ class TestComponentUpdate:
                         (
                             image_data["image_name"],
                             item["args"],
-                            get_mounted_bank_label(
+                            get_mounted_bank_device_name(
                                 **item["args"],
                                 dut_addr=TestComponentUpdate.dut_address,
                                 execute_helper=execute_helper
@@ -308,7 +308,7 @@ class TestComponentUpdate:
         for item in mounted_bank_test_info:
             img_name, data, before_result = item
             print("Testing mounted bank for image {}".format(img_name))
-            assert before_result != get_mounted_bank_label(
+            assert before_result != get_mounted_bank_device_name(
                 data["mount_point"],
                 TestComponentUpdate.dut_address,
                 execute_helper,

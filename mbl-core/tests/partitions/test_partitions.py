@@ -125,15 +125,20 @@ def get_block_device_for_parts():
     """
     Get the name of the block device that contains the file system partitions.
 
-    The 'blkid' call will return something like "/dev/mmcblk1p3" and the bit
-    we are interested in is "mmcblk1".
+    The returned name does not include any partition numbers, just the name of
+    the parent device. E.g. "mmcblk1".
 
     This function assumes that all of the partitions are on the same device.
     """
 
-    return os.path.basename(
-        subprocess.check_output(["blkid", "-L", "rootfs1"], text=True)
-    ).rsplit("p", 1)[0]
+    lsblk_output = subprocess.check_output(
+        ["lsblk", "-n", "-o", "MOUNTPOINT,PKNAME"], text=True
+    )
+    for line in lsblk_output.splitlines():
+        fields = line.split()
+        if len(fields) == 2 and fields[0] == "/":
+            return fields[1]
+    raise AssertionError("Failed to find rootfs entry in lsblk output")
 
 
 def get_actual_part_table():
