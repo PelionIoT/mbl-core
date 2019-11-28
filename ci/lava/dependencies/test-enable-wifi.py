@@ -19,6 +19,8 @@ import pytest
 import re
 import time
 
+from helpers import download_from_url
+
 QCADriverUrl = (
     "https://www.nxp.com/lgfiles/NMG/MAD/YOCTO/firmware-qca-2.0.3.bin"
 )
@@ -27,9 +29,7 @@ QCADriverUrl = (
 class TestEnableWiFi:
     """Create python test environment on a device under test."""
 
-    def test_enable_wifi(
-        self, execute_helper, dut_addr, device, local_conf_file
-    ):
+    def test_enable_wifi(self, execute_helper, dut_addr, device):
         """Enable the Wifi on the device."""
         if (
             device == "imx7s-warp-mbl"
@@ -102,18 +102,19 @@ class TestEnableWiFi:
             if "qca9377" not in output:
                 # Not loaded so fetch the firmware and install it.
 
-                if os.path.exists(local_conf_file):
-                    os.chmod(local_conf_file, 0o777)
+                driver_file = download_from_url(QCADriverUrl)
+                if os.path.exists(driver_file):
+                    os.chmod(driver_file, 0o777)
 
                     ret, output, error = execute_helper.send_mbl_cli_command(
-                        ["put", local_conf_file, "/tmp"], dut_addr
+                        ["put", driver_file, "/tmp"], dut_addr
                     )
 
                     ret, output, error = execute_helper.send_mbl_cli_command(
                         [
                             "shell",
                             "/tmp/{} --auto-accept".format(
-                                os.path.basename(local_conf_file)
+                                os.path.basename(driver_file)
                             ),
                         ],
                         dut_addr,
