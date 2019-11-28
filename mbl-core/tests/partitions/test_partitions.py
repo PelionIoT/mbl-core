@@ -131,7 +131,9 @@ def get_block_device_for_parts():
     This function assumes that all of the partitions are on the same device.
     """
 
-    lsblk_output = subprocess.check_output(["lsblk", "-n", "-o", "MOUNTPOINT,PKNAME"], text=True)
+    lsblk_output = subprocess.check_output(
+        ["lsblk", "-n", "-o", "MOUNTPOINT,PKNAME"], text=True
+    )
     for line in lsblk_output.splitlines():
         fields = line.split()
         if len(fields) == 2 and fields[0] == "/":
