@@ -44,10 +44,12 @@ char *str_copy_to_new(const char *const src)
 
 int str_endswith(const char *const substr, const char *const fullstr)
 {
-    const size_t endlen = strlen(fullstr) - strlen(substr);
+    const size_t substr_len = strlen(substr);
+    const size_t fullstr_len = strlen(fullstr);
+    const int endlen = fullstr_len - substr_len;
     if (endlen <= 0)
         return 1;
-    return strncmp(&fullstr[endlen], substr, strlen(substr));
+    return strncmp(&fullstr[endlen], substr, substr_len);
 }
 
 char *read_file_to_new_str(const char *const filepath)
