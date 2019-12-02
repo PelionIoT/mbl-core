@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
