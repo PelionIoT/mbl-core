@@ -28,7 +28,6 @@ configure_file("swupdate_handlers.lua" "swupdate_handlers.lua" @ONLY)
 # but for consistency, copy them to the build directory.
 configure_file("arm_update_activate.sh" "arm_update_activate.sh" COPYONLY)
 configure_file("arm_update_active_details.sh" "arm_update_active_details.sh" COPYONLY)
-configure_file("rootfs_installer.sh" "rootfs_installer.sh" COPYONLY)
 configure_file("bootloader_installer.sh" "bootloader_installer.sh" COPYONLY)
 configure_file("boot_partition_installer.sh" "boot_partition_installer.sh" COPYONLY)
 configure_file("apps_installer.sh" "apps_installer.sh" COPYONLY)
