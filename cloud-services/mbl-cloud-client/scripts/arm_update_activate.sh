@@ -102,4 +102,22 @@ if ! swupdate -i "$FIRMWARE_PATH"; then
 fi
 
 save_header_or_die "$HEADER"
+
+if [ -e "${TMP_DIR}/do_not_reboot" ]; then
+    # None of the component installers want a full reboot, but:
+    # mbed-cloud-client does not currently support component update; it
+    # therefore expects the system receiving the update to be rebooted as
+    # a whole image is expected to have been updated.
+    # The registration process that kicks in at boot up notifies Pelion Device
+    # Management that the update was successfully applied.
+    #
+    # Until component updates is implemented, it is required to restart the
+    # instance of the client running as service in order to simulate the
+    # expected system reboot.
+    #
+    # It was deemed safe to reboot at this stage as no other step is expected
+    # at this point other than rebooting.
+    systemctl restart mbl-cloud-client
+    exit_on_error "$?"
+fi
 exit 0
