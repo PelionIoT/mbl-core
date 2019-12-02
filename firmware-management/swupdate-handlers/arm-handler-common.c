@@ -47,7 +47,7 @@ int str_endswith(const char *const substr, const char *const fullstr)
     const size_t substr_len = strlen(substr);
     const size_t fullstr_len = strlen(fullstr);
     const int endlen = fullstr_len - substr_len;
-    if (endlen <= 0)
+    if (endlen < 0)
         return 1;
     return strncmp(&fullstr[endlen], substr, substr_len);
 }
@@ -62,7 +62,7 @@ char *read_file_to_new_str(const char *const filepath)
         return NULL;
     }
 
-    char *dst = str_new(stat_buf.st_size + 1);
+    char *dst = malloc_or_abort(stat_buf.st_size + 1);
     if (!dst)
     {
         ERROR("%s", "Failed to allocate string buffer");
@@ -137,7 +137,7 @@ int find_target_bank(char *dst
 {
     int return_value = 1;
 
-    char *mnt_device_cpy = str_copy(mounted_device);
+    char *mnt_device_cpy = str_copy_to_new(mounted_device);
     if (!mnt_device_cpy)
     {
         return 1;
