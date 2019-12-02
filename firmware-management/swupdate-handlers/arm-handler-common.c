@@ -13,13 +13,13 @@
 #include "util.h"
 #include <arm-handler-common.h>
 
-char *str_new(const size_t size)
+char *malloc_or_abort(const size_t size)
 {
-    char *dst;
-    if (!(dst = malloc(sizeof dst * size)))
+    char *dst = malloc(sizeof dst * size);
+    if (!dst)
     {
         ERROR("%s", "Failed to allocate string");
-        return NULL;
+        abort();
     }
     return dst;
 }
