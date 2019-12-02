@@ -33,8 +33,7 @@ char *str_copy_to_new(const char *const src)
 {
     const size_t dst_size = strlen(src) + 1;
     char *dst = malloc_or_abort(dst_size);
-
-    strncpy(dst, src, dst_size)
+    strncpy(dst, src, dst_size);
 
     if (dst[strlen(src)] != '\0')
         dst[strlen(src)] = '\0';
@@ -63,11 +62,6 @@ char *read_file_to_new_str(const char *const filepath)
     }
 
     char *dst = malloc_or_abort(stat_buf.st_size + 1);
-    if (!dst)
-    {
-        ERROR("%s", "Failed to allocate string buffer");
-        return NULL;
-    }
 
     FILE *fp = fopen(filepath, "r");
     if (fp == NULL)
@@ -102,7 +96,7 @@ clean:
     return return_val;
 }
 
-int get_mounted_device_path(char *dst, const char *const mount_point)
+int get_mounted_device(char *dst, const char *const mount_point)
 {
     int return_val = 1;
 
@@ -113,13 +107,16 @@ int get_mounted_device_path(char *dst, const char *const mount_point)
     {
         if (strcmp(mount_point, mntent_desc->mnt_dir) == 0)
         {
-            if (!strncpy(dst, mntent_desc->mnt_fsname, strlen(mntent_desc->mnt_fsname)))
+            const size_t mnt_fsname_strlen = strlen(mntent_desc->mnt_fsname);
+            if (!strncpy(dst, mntent_desc->mnt_fsname, mnt_fsname_strlen + 1))
             {
                 return_val = 1;
                 goto end;
             }
 
-            dst[strlen(mntent_desc->mnt_fsname)] = '\0';
+            if (dst[mnt_fsname_strlen] != '\0')
+                dst[mnt_fsname_strlen] = '\0';
+
             return_val = 0;
             goto end;
         }
@@ -130,18 +127,14 @@ end:
     return return_val;
 }
 
-int find_target_bank(char *dst
-                     , const char *const mounted_device
-                     , const char *const bank1_part_num
-                     , const char *const bank2_part_num)
+int find_target_partition(char *dst
+                          , const char *const mounted_partition
+                          , const char *const bank1_part_num
+                          , const char *const bank2_part_num)
 {
     int return_value = 1;
 
-    char *mnt_device_cpy = str_copy_to_new(mounted_device);
-    if (!mnt_device_cpy)
-    {
-        return 1;
-    }
+    char *mnt_device_cpy = str_copy_to_new(mounted_partition);
 
     static const char *const delim = "p";
     char *token = strtok(mnt_device_cpy, delim);
@@ -152,19 +145,19 @@ int find_target_bank(char *dst
         goto free;
     }
 
-    if (str_endswith(bank1_part_num, mounted_device) == 0)
+    if (str_endswith(bank1_part_num, mounted_partition) == 0)
     {
         snprintf(dst, strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1, "%s%s%s", token, delim, bank2_part_num);
         return_value = 0;
     }
-    else if (str_endswith(bank2_part_num, mounted_device) == 0)
+    else if (str_endswith(bank2_part_num, mounted_partition) == 0)
     {
         snprintf(dst, strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1, "%s%s%s", token, delim, bank1_part_num);
         return_value = 0;
     }
     else
     {
-        ERROR("%s %s %s %s %s %s", "Failed to find partition number", bank1_part_num, "or", bank2_part_num, "in device file", mounted_device);
+        ERROR("%s %s %s %s %s %s", "Failed to find partition number", bank1_part_num, "or", bank2_part_num, "in device file", mounted_partition);
     }
 
 free:
