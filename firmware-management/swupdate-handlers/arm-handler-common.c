@@ -18,7 +18,7 @@ char *malloc_or_abort(const size_t size)
     char *dst = malloc(sizeof dst * size);
     if (!dst)
     {
-        ERROR("%s", "Failed to allocate string");
+        ERROR("%s", "Failed to allocate memory");
         abort();
     }
     return dst;
@@ -29,23 +29,12 @@ void str_delete(char *str)
     free(str);
 }
 
-char *str_copy(const char *src)
+char *str_copy_to_new(const char *const src)
 {
-    if (!src)
-        return NULL;
+    const size_t dst_size = strlen(src) + 1;
+    char *dst = malloc_or_abort(dst_size);
 
-    char *dst = str_new(strlen(src) + 1);
-    if (!dst)
-    {
-        return NULL;
-    }
-
-    if (!strncpy(dst, src, strlen(src)))
-    {
-        ERROR("%s", "Failed to copy str");
-        str_delete(dst);
-        return NULL;
-    }
+    strncpy(dst, src, dst_size)
 
     if (dst[strlen(src)] != '\0')
         dst[strlen(src)] = '\0';
