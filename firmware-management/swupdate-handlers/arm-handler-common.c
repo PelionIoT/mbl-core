@@ -39,7 +39,7 @@ int str_endswith(const char *const substr, const char *const fullstr)
     const size_t fullstr_len = strlen(fullstr);
     if (substr_len > fullstr_len) return 1;
     const size_t endlen = fullstr_len - substr_len;
-    return strncmp(&fullstr[endlen], substr, substr_len);
+    return strcmp(&fullstr[endlen], substr);
 }
 
 char *read_file_to_new_str(const char *const filepath)
@@ -58,7 +58,7 @@ char *read_file_to_new_str(const char *const filepath)
     FILE *const fp = fopen(filepath, "r");
     if (fp == NULL)
     {
-        ERROR("%s: %s", "Failed to open file", strerror(errno));
+        ERROR("%s %s: %s", "Failed to open file", filepath, strerror(errno));
         return_val = NULL;
         goto clean;
     }
@@ -66,7 +66,7 @@ char *read_file_to_new_str(const char *const filepath)
     fread(dst, 1, (size_t)stat_buf.st_size, fp);
     if (feof(fp) != 0 || ferror(fp) != 0)
     {
-        ERROR("%s", "Reading from file stream failed");
+        ERROR("%s %s", "Failed to read from file", filepath);
         return_val = NULL;
         goto clean;
     }
@@ -79,7 +79,7 @@ clean:
     {
         if (fclose(fp) == -1)
         {
-            ERROR("%s", "Failed to close file descriptor");
+            ERROR("%s %s", "Failed to close file descriptor for file", filepath);
             return_val = NULL;
         }
     }
@@ -92,13 +92,13 @@ clean:
 
 int get_mounted_device(char *const dst, const char *const mount_point, const size_t dst_size)
 {
-    int return_val = 1;
+    int return_val = -1;
 
     FILE *mtab = setmntent("/etc/mtab", "r");
     if (!mtab)
     {
         ERROR("%s", "Failed to open mtab");
-        return 1;
+        return -1;
     }
 
     struct mntent *mntent_desc;
@@ -113,7 +113,7 @@ int get_mounted_device(char *const dst, const char *const mount_point, const siz
             if (dst[mnt_fsname_strlen] != '\0')
             {
                 ERROR("%s %s", mntent_desc->mnt_fsname, "could not fit into destination buffer and was truncated");
-                return_val = 1;
+                return_val = -1;
                 goto end;
             }
 
@@ -133,7 +133,7 @@ int find_target_partition(char *const dst
         , const char *const bank2_part_num
         , const size_t dst_size)
 {
-    int return_value = 1;
+    int return_value = -1;
 
     char *mnt_device_cpy = str_copy_to_new(mounted_partition);
 
@@ -151,7 +151,7 @@ int find_target_partition(char *const dst
         const size_t len = strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1;
         if (len > dst_size)
         {
-            return_value = 1;
+            return_value = -1;
             goto free;
         }
         snprintf(dst, len, "%s%s%s", token, delim, bank2_part_num);
@@ -162,7 +162,7 @@ int find_target_partition(char *const dst
         const size_t len = strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1;
         if (len > dst_size)
         {
-            return_value = 1;
+            return_value = -1;
             goto free;
         }
         snprintf(dst, len, "%s%s%s", token, delim, bank1_part_num);
