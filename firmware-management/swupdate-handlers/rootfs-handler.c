@@ -74,8 +74,6 @@ close:
 
 int write_bootflags_file()
 {
-    int return_value = 0;
-
     if (mkdir(BOOTFLAGS_DIR, 0755) == -1)
     {
         if (errno != EEXIST)
@@ -90,8 +88,8 @@ int write_bootflags_file()
     const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
     snprintf(bootflags_file_path, len, "%s%s", BOOTFLAGS_DIR, fname);
 
-    FILE* file;
-    if (!(file = fopen(bootflags_file_path, "w")))
+    FILE* file = fopen(bootflags_file_path, "w");
+    if (!file)
     {
         return -1;
     }
