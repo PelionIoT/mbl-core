@@ -13,7 +13,8 @@
 #include "util.h"
 #include <arm-handler-common.h>
 
-char *malloc_or_abort(const size_t size)
+
+void *malloc_or_abort(const size_t size)
 {
     char *dst = malloc(sizeof dst * size);
     if (!dst)
@@ -24,36 +25,24 @@ char *malloc_or_abort(const size_t size)
     return dst;
 }
 
-void str_delete(char *str)
-{
-    free(str);
-}
-
 char *str_copy_to_new(const char *const src)
 {
     const size_t dst_size = strlen(src) + 1;
     char *dst = malloc_or_abort(dst_size);
-    strncpy(dst, src, dst_size);
-
-    if (dst[strlen(src)] != '\0')
-        dst[strlen(src)] = '\0';
-
-    return dst;
+    return strcpy(dst, src);
 }
 
 int str_endswith(const char *const substr, const char *const fullstr)
 {
     const size_t substr_len = strlen(substr);
     const size_t fullstr_len = strlen(fullstr);
-    const int endlen = fullstr_len - substr_len;
-    if (endlen < 0)
-        return 1;
+    if (substr_len > fullstr_len) return 1;
+    const size_t endlen = fullstr_len - substr_len;
     return strncmp(&fullstr[endlen], substr, substr_len);
 }
 
 char *read_file_to_new_str(const char *const filepath)
 {
-    char *return_val;
     struct stat stat_buf;
     if (stat(filepath, &stat_buf) == -1)
     {
@@ -61,8 +50,11 @@ char *read_file_to_new_str(const char *const filepath)
         return NULL;
     }
 
-    char *dst = malloc_or_abort(stat_buf.st_size + 1);
+    if (stat_buf.st_size < 0)
+        return NULL;
 
+    char *dst = malloc_or_abort((size_t)stat_buf.st_size + 1);
+    char *return_val;
     FILE *fp = fopen(filepath, "r");
     if (fp == NULL)
     {
@@ -71,7 +63,7 @@ char *read_file_to_new_str(const char *const filepath)
         goto clean;
     }
 
-    fread(dst, 1, stat_buf.st_size, fp);
+    fread(dst, 1, (size_t)stat_buf.st_size, fp);
     if (feof(fp) != 0 || ferror(fp) != 0)
     {
         ERROR("%s", "Reading from file stream failed");
@@ -91,16 +83,22 @@ clean:
     }
 
     if (return_val == NULL)
-        str_delete(dst);
+        free(dst);
 
     return return_val;
 }
 
-int get_mounted_device(char *dst, const char *const mount_point)
+int get_mounted_device(char *const dst, const char *const mount_point, const size_t dst_size)
 {
     int return_val = 1;
 
     FILE *mtab = setmntent("/etc/mtab", "r");
+    if (!mtab)
+    {
+        ERROR("%s", "Failed to open mtab");
+        return -1;
+    }
+
     struct mntent *mntent_desc;
 
     while ((mntent_desc = getmntent(mtab)))
@@ -108,14 +106,14 @@ int get_mounted_device(char *dst, const char *const mount_point)
         if (strcmp(mount_point, mntent_desc->mnt_dir) == 0)
         {
             const size_t mnt_fsname_strlen = strlen(mntent_desc->mnt_fsname);
-            if (!strncpy(dst, mntent_desc->mnt_fsname, mnt_fsname_strlen + 1))
+            strncpy(dst, mntent_desc->mnt_fsname, dst_size);
+
+            if (dst[mnt_fsname_strlen] != '\0')
             {
+                ERROR("%s %s", mntent_desc->mnt_fsname, "could not fit into destination buffer and was truncated");
                 return_val = 1;
                 goto end;
             }
-
-            if (dst[mnt_fsname_strlen] != '\0')
-                dst[mnt_fsname_strlen] = '\0';
 
             return_val = 0;
             goto end;
@@ -127,10 +125,11 @@ end:
     return return_val;
 }
 
-int find_target_partition(char *dst
+int find_target_partition(char *const dst
                           , const char *const mounted_partition
                           , const char *const bank1_part_num
-                          , const char *const bank2_part_num)
+                          , const char *const bank2_part_num
+                          , const size_t dst_size)
 {
     int return_value = 1;
 
@@ -140,28 +139,40 @@ int find_target_partition(char *dst
     char *token = strtok(mnt_device_cpy, delim);
     if (token == NULL)
     {
-        ERROR("%s %s %s %s", "Failed to find", delim, "in string", mnt_device_cpy);
+        ERROR("%s %s %s", "Failed to find", delim, "in string");
         return_value = 1;
         goto free;
     }
 
     if (str_endswith(bank1_part_num, mounted_partition) == 0)
     {
-        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1, "%s%s%s", token, delim, bank2_part_num);
+        const size_t len = strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1;
+        if (len > dst_size)
+        {
+            return_value = 1;
+            goto free;
+        }
+        snprintf(dst, len, "%s%s%s", token, delim, bank2_part_num);
         return_value = 0;
     }
     else if (str_endswith(bank2_part_num, mounted_partition) == 0)
     {
-        snprintf(dst, strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1, "%s%s%s", token, delim, bank1_part_num);
+        const size_t len = strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1;
+        if (len > dst_size)
+        {
+            return_value = 1;
+            goto free;
+        }
+        snprintf(dst, len, "%s%s%s", token, delim, bank1_part_num);
         return_value = 0;
     }
     else
     {
-        ERROR("%s %s %s %s %s %s", "Failed to find partition number", bank1_part_num, "or", bank2_part_num, "in device file", mounted_partition);
+        ERROR("%s %s %s %s %s", "Failed to find partition number", bank1_part_num, "or", bank2_part_num, "in device file");
     }
 
 free:
-    str_delete(mnt_device_cpy);
+    free(mnt_device_cpy);
     return return_value;
 }
 

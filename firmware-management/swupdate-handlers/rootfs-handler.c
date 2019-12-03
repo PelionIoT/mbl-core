@@ -12,31 +12,35 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "arm-handler-common.h"
-#include "handler.h"
 #include "swupdate.h"
 #include "util.h"
+#include "handler.h"
 
-int get_part_info_filepath(char *dst, const char *const file_name)
+int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size)
 {
     static const char *const part_info_dir = "part-info";
-    return snprintf(
-            dst
-            , strlen(FACTORY_CONFIG_PARTITION) + strlen(file_name) + strlen(part_info_dir) + 3
-            ,  "%s/%s/%s"
-            , FACTORY_CONFIG_PARTITION
-            , part_info_dir
-            , file_name);
+    const int num_written = snprintf(
+        dst
+        , dst_size
+        , "%s/%s/%s"
+        , FACTORY_CONFIG_DIR
+        , part_info_dir
+        , file_name);
+
+    if (num_written < 0 || (size_t)num_written >= dst_size)
+    {
+        ERROR("%s", "Part info filepath is larger than the destination buffer size");
+        return -1;
+    }
+
+    return 0;
 }
 
 char *read_part_info_file(const char *const file_name)
 {
     char part_info_filepath[PATH_MAX];
-    if (get_part_info_filepath(part_info_filepath, file_name) < 0)
-    {
-        ERROR("Failed to create part-info file path for %s", file_name);
+    if (get_part_info_filepath(part_info_filepath, file_name, PATH_MAX) == -1)
         return NULL;
-    }
-
     return read_file_to_new_str(part_info_filepath);
 }
 
@@ -46,13 +50,13 @@ int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
     int fd = openfileoutput(device_filepath);
     if (fd < 0)
     {
-        ERROR("%s%s", "Failed to open output file ", device_filepath);
+        ERROR("%s", "Failed to open target device file");
         return -1;
     }
 
     if (copyimage(&fd, img, NULL) < 0)
     {
-        ERROR("%s%s", "Failed to copy image to target device");
+        ERROR("%s", "Failed to copy image to target device");
         goto close;
         ret_val = -1;
     }
@@ -65,17 +69,23 @@ int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
 close:
     if (close(fd) == -1)
     {
-        ERROR("Failed to close file descriptor");
+        ERROR("%s", "Failed to close target device file descriptor");
         ret_val = -1;
     }
 
     return ret_val;
 }
 
-int get_bootflag_file_path(char *bootflags_file_path)
+int get_bootflag_file_path(char *const bootflags_file_path, const size_t size)
 {
     static const char *const fname = "/rootfs2";
     const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
+    if (len > size)
+    {
+        ERROR("%s", "Bootflag file path will not fit in the destination buffer");
+        return -1;
+    }
+
     return snprintf(bootflags_file_path, len, "%s%s", BOOTFLAGS_DIR, fname);
 }
 
@@ -91,15 +101,17 @@ int write_bootflag_file()
     }
 
     char bootflags_file_path[PATH_MAX];
-    get_bootflag_file_path(bootflags_file_path);
+    if (get_bootflag_file_path(bootflags_file_path, PATH_MAX) < 1)
+        return -1;
 
     FILE* file = fopen(bootflags_file_path, "w");
     if (!file)
     {
+        ERROR("%s: %s", "Failed to open bootflags file", strerror(errno));
         return -1;
     }
 
-    fprintf(file, "");
+    fprintf(file, "%s", "");
     fclose(file);
 
     return 0;
@@ -108,13 +120,14 @@ int write_bootflag_file()
 int remove_bootflag_file()
 {
     char bootflags_file_path[PATH_MAX];
-    get_bootflag_file_path(bootflags_file_path);
+    if (get_bootflag_file_path(bootflags_file_path, PATH_MAX) < 0)
+        return -1;
 
     if (remove(bootflags_file_path) == -1)
     {
         if (errno != ENOENT)
         {
-            ERROR("Failed to remove %s: %s", bootflags_file_path, strerror(errno));
+            ERROR("%s: %s", "Failed to remove bootflags file", strerror(errno));
             return -1;
         }
     }
@@ -127,7 +140,7 @@ int rootfs_handler(struct img_type *img
 {
     static const char *const root_mnt_point = "/";
     char mounted_device_filepath[PATH_MAX];
-    if (get_mounted_device(mounted_device_filepath, root_mnt_point) != 0)
+    if (get_mounted_device(mounted_device_filepath, root_mnt_point, PATH_MAX) != 0)
     {
         ERROR("%s", "Failed to get mounted device file path.");
         return 1;
@@ -136,7 +149,7 @@ int rootfs_handler(struct img_type *img
     char *b1_pnum = read_part_info_file("MBL_ROOT_FS_PART_NUMBER_BANK1");
     if (!b1_pnum)
     {
-        ERROR("Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK1");
+        ERROR("%s", "Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK1");
         return 1;
     }
 
@@ -145,31 +158,31 @@ int rootfs_handler(struct img_type *img
     char *b2_pnum = read_part_info_file("MBL_ROOT_FS_PART_NUMBER_BANK2");
     if (!b2_pnum)
     {
-        ERROR("Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK2");
+        ERROR("%s", "Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK2");
         return_value = 1;
         goto free;
     }
 
     char target_device_filepath[PATH_MAX];
-    if (find_target_partition(target_device_filepath, mounted_device_filepath, b1_pnum, b2_pnum) != 0)
+    if (find_target_partition(target_device_filepath, mounted_device_filepath, b1_pnum, b2_pnum, PATH_MAX) != 0)
     {
-        ERROR("Failed to find target partition.");
+        ERROR("%s", "Failed to find target partition.");
         return_value = 1;
         goto free;
     }
 
     if (copy_image_and_sync(img, target_device_filepath) == -1)
     {
-        ERROR("%s %s %s %s", "Failed to copy image", img->fname, "to device", target_device_filepath);
+        ERROR("%s %s %s", "Failed to copy image", img->fname, "to target partition");
         return_value = 1;
         goto free;
     }
 
-    if (str_endswith(target_device_filepath, b2_pnum))
+    if (str_endswith(target_device_filepath, b2_pnum) == 0)
     {
         if (write_bootflag_file() == -1)
         {
-            ERROR("Failed to write boot flag file. Next boot will be from bank 1");
+            ERROR("%s", "Failed to write boot flag file. Next boot will be from bank 1");
             return_value = 1;
             goto free;
         }
@@ -178,13 +191,14 @@ int rootfs_handler(struct img_type *img
     {
         if (remove_bootflag_file() == -1)
         {
-            ERROR("Failed to remove bootflag file.");
+            ERROR("%s", "Failed to remove bootflag file.");
+            return_value = 1;
         }
     }
 
 free:
-    str_delete(b1_pnum);
-    str_delete(b2_pnum);
+    free(b1_pnum);
+    free(b2_pnum);
     return return_value;
 }
 

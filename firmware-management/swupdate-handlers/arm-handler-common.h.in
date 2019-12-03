@@ -8,21 +8,17 @@ static const char *const BOOTFLAGS_DIR = "@BOOTFLAGS_DIR@";
 static const char *const UPDATE_PAYLOAD_DIR = "@UPDATE_PAYLOAD_DIR@";
 static const char *const LOG_DIR = "@LOG_DIR@";
 static const char *const ROOTFS_TYPE = "@ROOTFS_TYPE@";
-static const char *const FACTORY_CONFIG_PARTITION = "@FACTORY_CONFIG_PARTITION@";
-
+static const char *const FACTORY_CONFIG_DIR= "@FACTORY_CONFIG_DIR@";
 
 /* Create a new string buffer.
    This function allocates memory for a new string buffer. It is the caller's
    responsibility to free the allocated memory. */
-char *malloc_or_abort(const size_t size);
+void *malloc_or_abort(const size_t size);
 
 /* Copy a string.
    This function allocates memory for the new string src is copied into.
    It is the caller's responsibility to free the allocated memory. */
 char *str_copy_to_new(const char *const src);
-
-/* Delete a string buffer and free the memory. */
-void str_delete(char *str);
 
 /* Return 0 if fullstr ends with substr, else return non-zero */
 int str_endswith(const char *const substr, const char *const fullstr);
@@ -36,11 +32,12 @@ char *read_file_to_new_str(const char *const filepath);
 
 /* Get the device file path for the device at the given mount point and store
    it in dst */
-int get_mounted_device(char *dst, const char *const mount_point);
+int get_mounted_device(char *const dst, const char *const mount_point, const size_t dst_size);
 
 /* Deduce the target bank by comparing the bank part numbers against the device file path
    store the target device file path in dst */
-int find_target_partition(char *dst
+int find_target_partition(char *const dst
         , const char *const mounted_partition
         , const char *const bank1_part_num
-        , const char *const bank2_part_num);
+        , const char *const bank2_part_num
+        , const size_t dst_size);
