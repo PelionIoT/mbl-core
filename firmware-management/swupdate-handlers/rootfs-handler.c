@@ -72,7 +72,14 @@ close:
     return ret_val;
 }
 
-int write_bootflags_file()
+int get_bootflag_file_path(char *bootflags_file_path)
+{
+    static const char *const fname = "/rootfs2";
+    const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
+    return snprintf(bootflags_file_path, len, "%s%s", BOOTFLAGS_DIR, fname);
+}
+
+int write_bootflag_file()
 {
     if (mkdir(BOOTFLAGS_DIR, 0755) == -1)
     {
@@ -84,9 +91,7 @@ int write_bootflags_file()
     }
 
     char bootflags_file_path[PATH_MAX];
-    static const char *const fname = "/rootfs2";
-    const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
-    snprintf(bootflags_file_path, len, "%s%s", BOOTFLAGS_DIR, fname);
+    get_bootflag_file_path(bootflags_file_path);
 
     FILE* file = fopen(bootflags_file_path, "w");
     if (!file)
@@ -96,6 +101,23 @@ int write_bootflags_file()
 
     fprintf(file, "");
     fclose(file);
+
+    return 0;
+}
+
+int remove_bootflag_file()
+{
+    char bootflags_file_path[PATH_MAX];
+    get_bootflag_file_path(bootflags_file_path);
+
+    if (remove(bootflags_file_path) == -1)
+    {
+        if (errno != ENOENT)
+        {
+            ERROR("Failed to remove %s: %s", bootflags_file_path, strerror(errno));
+            return -1;
+        }
+    }
 
     return 0;
 }
@@ -145,11 +167,18 @@ int rootfs_handler(struct img_type *img
 
     if (str_endswith(target_device_filepath, b2_pnum))
     {
-        if (write_bootflags_file() == -1)
+        if (write_bootflag_file() == -1)
         {
             ERROR("Failed to write boot flag file. Next boot will be from bank 1");
             return_value = 1;
             goto free;
+        }
+    }
+    else
+    {
+        if (remove_bootflag_file() == -1)
+        {
+            ERROR("Failed to remove bootflag file.");
         }
     }
 
