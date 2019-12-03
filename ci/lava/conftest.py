@@ -119,8 +119,7 @@ def pytest_generate_tests(metafunc):
 
 def get_local_conf_assignments_dict(local_conf_file):
     """
-    Get a list of the variable (name, value) pairs for each simple assignment
-    in the given local.conf.
+    Get a list of the variable (name, value) pairs.
 
     Note that this function only deals with values that are double quoted and
     doesn't deal with override syntax, variable appends, variable prepends or
@@ -147,15 +146,15 @@ def get_local_conf_assignments_dict(local_conf_file):
             if m:
                 # Don't check if the var name is already in our dict - just let
                 # later assignments take precedence.
-                assignments[m.group('var_name')] = m.group('var_value')
+                assignments[m.group("var_name")] = m.group("var_value")
     return assignments
 
 
 @pytest.fixture
 def local_conf_assignments_dict(local_conf_file):
     """
-    Fixture for the dictionary mapping variable names to their values for
-    assignments in local.conf.
+    Fixture for the dictionary mapping variable names to their values.
+
     The caveats in the docstring for get_local_conf_assignments_dict apply here
     too.
     """
