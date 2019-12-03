@@ -11,38 +11,10 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include "arm-handler-common.h"
 #include "swupdate.h"
 #include "util.h"
 #include "handler.h"
-
-int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size)
-{
-    static const char *const part_info_dir = "part-info";
-    const int num_written = snprintf(
-        dst
-        , dst_size
-        , "%s/%s/%s"
-        , FACTORY_CONFIG_DIR
-        , part_info_dir
-        , file_name);
-
-    if (num_written < 0 || (size_t)num_written >= dst_size)
-    {
-        ERROR("%s", "Part info filepath is larger than the destination buffer size");
-        return -1;
-    }
-
-    return 0;
-}
-
-char *read_part_info_file(const char *const file_name)
-{
-    char part_info_filepath[PATH_MAX];
-    if (get_part_info_filepath(part_info_filepath, file_name, PATH_MAX) == -1)
-        return NULL;
-    return read_file_to_new_str(part_info_filepath);
-}
+#include "arm-handler-common.h"
 
 int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
 {
@@ -95,7 +67,7 @@ int write_bootflag_file()
     {
         if (errno != EEXIST)
         {
-            ERROR("Failed to create %s: %s", BOOTFLAGS_DIR, strerror(errno));
+            ERROR("%s %s: %s", "Failed to create", BOOTFLAGS_DIR, strerror(errno));
             return -1;
         }
     }
@@ -104,7 +76,7 @@ int write_bootflag_file()
     if (get_bootflag_file_path(bootflags_file_path, PATH_MAX) < 1)
         return -1;
 
-    FILE* file = fopen(bootflags_file_path, "w");
+    FILE *const file = fopen(bootflags_file_path, "w");
     if (!file)
     {
         ERROR("%s: %s", "Failed to open bootflags file", strerror(errno));
@@ -146,7 +118,7 @@ int rootfs_handler(struct img_type *img
         return 1;
     }
 
-    char *b1_pnum = read_part_info_file("MBL_ROOT_FS_PART_NUMBER_BANK1");
+    char *b1_pnum = read_part_info_file_to_new_str("MBL_ROOT_FS_PART_NUMBER_BANK1");
     if (!b1_pnum)
     {
         ERROR("%s", "Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK1");
@@ -155,7 +127,7 @@ int rootfs_handler(struct img_type *img
 
     int return_value = 0;
 
-    char *b2_pnum = read_part_info_file("MBL_ROOT_FS_PART_NUMBER_BANK2");
+    char *b2_pnum = read_part_info_file_to_new_str("MBL_ROOT_FS_PART_NUMBER_BANK2");
     if (!b2_pnum)
     {
         ERROR("%s", "Failed to read file MBL_ROOT_FS_PART_NUMBER_BANK2");

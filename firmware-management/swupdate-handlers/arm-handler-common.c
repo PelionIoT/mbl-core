@@ -4,15 +4,15 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
+#include <errno.h>
+#include <limits.h>
 #include <mntent.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <errno.h>
+#include <string.h>
 #include <sys/stat.h>
 #include "util.h"
-#include <arm-handler-common.h>
-
+#include "arm-handler-common.h"
 
 void *malloc_or_abort(const size_t size)
 {
@@ -22,6 +22,7 @@ void *malloc_or_abort(const size_t size)
         ERROR("%s", "Failed to allocate memory");
         abort();
     }
+
     return dst;
 }
 
@@ -50,12 +51,11 @@ char *read_file_to_new_str(const char *const filepath)
         return NULL;
     }
 
-    if (stat_buf.st_size < 0)
-        return NULL;
-
+    /* st_size is type off_t which is defined as a signed integer type by the POSIX standard,
+       so its safe to cast to size_t here */
     char *dst = malloc_or_abort((size_t)stat_buf.st_size + 1);
     char *return_val;
-    FILE *fp = fopen(filepath, "r");
+    FILE *const fp = fopen(filepath, "r");
     if (fp == NULL)
     {
         ERROR("%s: %s", "Failed to open file", strerror(errno));
@@ -71,15 +71,17 @@ char *read_file_to_new_str(const char *const filepath)
         goto clean;
     }
 
-    if (dst[stat_buf.st_size] != '\0')
-        dst[stat_buf.st_size] = '\0';
+    dst[stat_buf.st_size] = '\0';
     return_val = dst;
 
 clean:
     if (fp != NULL)
     {
         if (fclose(fp) == -1)
+        {
+            ERROR("%s", "Failed to close file descriptor");
             return_val = NULL;
+        }
     }
 
     if (return_val == NULL)
@@ -96,7 +98,7 @@ int get_mounted_device(char *const dst, const char *const mount_point, const siz
     if (!mtab)
     {
         ERROR("%s", "Failed to open mtab");
-        return -1;
+        return 1;
     }
 
     struct mntent *mntent_desc;
@@ -126,10 +128,10 @@ end:
 }
 
 int find_target_partition(char *const dst
-                          , const char *const mounted_partition
-                          , const char *const bank1_part_num
-                          , const char *const bank2_part_num
-                          , const size_t dst_size)
+        , const char *const mounted_partition
+        , const char *const bank1_part_num
+        , const char *const bank2_part_num
+        , const size_t dst_size)
 {
     int return_value = 1;
 
@@ -176,3 +178,36 @@ free:
     return return_value;
 }
 
+int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size)
+{
+    static const char *const part_info_dir = "part-info";
+    const int num_written = snprintf(
+        dst
+        , dst_size
+        , "%s/%s/%s"
+        , FACTORY_CONFIG_DIR
+        , part_info_dir
+        , file_name);
+
+    if (num_written < 0)
+    {
+        ERROR("%s", "There was an output error when writing to the destination buffer");
+        return -1;
+    }
+
+    if ((size_t)num_written >= dst_size)
+    {
+        ERROR("%s", "Part info filepath is larger than the destination buffer size");
+        return -1;
+    }
+
+    return 0;
+}
+
+char *read_part_info_file_to_new_str(const char *const file_name)
+{
+    char part_info_filepath[PATH_MAX];
+    if (get_part_info_filepath(part_info_filepath, file_name, PATH_MAX) == -1)
+        return NULL;
+    return read_file_to_new_str(part_info_filepath);
+}

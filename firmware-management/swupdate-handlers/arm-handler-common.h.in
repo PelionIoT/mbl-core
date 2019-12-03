@@ -41,3 +41,11 @@ int find_target_partition(char *const dst
         , const char *const bank1_part_num
         , const char *const bank2_part_num
         , const size_t dst_size);
+
+/* Get the full path to a file from the part-info directory.
+   This function gives no guarantee the path actually exists */
+int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size);
+
+/* Read the contents of a file from the part info directory to a new string.
+   It is the callers responsibilty to free the memory allocated for the new string */
+char *read_part_info_file_to_new_str(const char *const file_name);
