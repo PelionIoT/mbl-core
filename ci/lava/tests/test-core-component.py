@@ -126,7 +126,7 @@ class TestCoreComponentDUT:
         # processed by LAVA.
         print(output)
 
-        assert True
+        assert return_code == 0
 
     def _download_and_copy_app_payloads(
         self, payloads_url, execute_helper, dut_artifacts_dir, dut_addr
