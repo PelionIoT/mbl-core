@@ -16,7 +16,7 @@
 #include "handler.h"
 #include "arm-handler-common.h"
 
-int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
+static int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
 {
     int ret_val = 0;
     int fd = openfileoutput(device_filepath);
@@ -182,4 +182,3 @@ void rootfs_handler_init(void)
                      , IMAGE_HANDLER
                      , NULL);
 }
-
