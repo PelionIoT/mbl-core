@@ -23,15 +23,13 @@ FLAGS_DIR="@BOOTFLAGS_DIR@"
 TMP_DIR="@TMP_DIR@"
 UPDATE_PAYLOAD_DIR="@UPDATE_PAYLOAD_DIR@"
 LOG_DIR="@LOG_DIR@"
-ROOTFS_TYPE="@ROOTFS_TYPE@"
-FACTORY_CONFIG_PARTITION="@FACTORY_CONFIG_PARTITION@"
 PAYLOAD_TMP_DIR="@PAYLOAD_TMP_DIR@"
+PART_INFO_DIR="@PART_INFO_DIR@"
 
 ARM_UPDATE_ACTIVATE_LOG_PATH="${LOG_DIR}/arm_update_activate.log"
 ARM_UPDATE_ACTIVE_DETAILS_LOG_PATH="${LOG_DIR}/arm_update_active_details.log"
 SAVED_HEADER_PATH="${FLAGS_DIR}/header"
 
-PART_INFO_FILES_DIR="${FACTORY_CONFIG_PARTITION}"/part-info
 
 # Given an exit status, exits with that status if it is non-zero, otherwise
 # does nothing
@@ -149,7 +147,7 @@ remove_do_not_reboot_flag_or_die() {
 # $1: Name of partition (e.g. WKS_BOOTLOADER_FS)
 is_part_skipped() {
 ips_part_name="${1%v?}"
-    [ "$(cat "${PART_INFO_FILES_DIR}/MBL_${ips_part_name}_SKIP")" = "1" ]
+    [ "$(cat "${PART_INFO_DIR}/MBL_${ips_part_name}_SKIP")" = "1" ]
 }
 
 # Get a size variable (either SIZE or OFFSET) for a partition in bytes.
@@ -162,7 +160,7 @@ get_part_size_var_B() {
 gpsv_part_name="${1%v?}"
 gpsv_var_name="$2"
 
-    gpsv_size_KiB=$(cat "${PART_INFO_FILES_DIR}/MBL_${gpsv_part_name}_${gpsv_var_name}_KiB")
+    gpsv_size_KiB=$(cat "${PART_INFO_DIR}/MBL_${gpsv_part_name}_${gpsv_var_name}_KiB")
     validate_positive_integer_or_die "$gpsv_size_KiB"
 
     # shellcheck disable=SC2003
