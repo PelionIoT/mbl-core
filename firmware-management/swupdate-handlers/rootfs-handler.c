@@ -111,10 +111,11 @@ int rootfs_handler(struct img_type *img
                    , void __attribute__ ((__unused__)) *data)
 {
     static const char *const root_mnt_point = "/";
-    char mounted_device_filepath[PATH_MAX];
-    if (get_mounted_device(mounted_device_filepath, root_mnt_point, PATH_MAX) != 0)
+    static const int MAX_DEVICE_FILE_PATH = 512;
+    char mounted_device_filepath[MAX_DEVICE_FILE_PATH];
+    if (get_mounted_device(mounted_device_filepath, root_mnt_point, MAX_DEVICE_FILE_PATH) != 0)
     {
-        ERROR("%s", "Failed to get mounted device file path.");
+        ERROR("%s %s", "Failed to get mounted device file path", mounted_device_filepath);
         return 1;
     }
 
@@ -135,10 +136,10 @@ int rootfs_handler(struct img_type *img
         goto free;
     }
 
-    char target_device_filepath[PATH_MAX];
-    if (find_target_partition(target_device_filepath, mounted_device_filepath, b1_pnum, b2_pnum, PATH_MAX) != 0)
+    char target_device_filepath[MAX_DEVICE_FILE_PATH];
+    if (find_target_partition(target_device_filepath, mounted_device_filepath, b1_pnum, b2_pnum, MAX_DEVICE_FILE_PATH) != 0)
     {
-        ERROR("%s", "Failed to find target partition.");
+        ERROR("%s %s", "Failed to find target partition", target_device_filepath);
         return_value = 1;
         goto free;
     }
