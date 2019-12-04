@@ -51,14 +51,20 @@ close:
 static int get_bootflag_file_path(char *const bootflags_file_path, const size_t size)
 {
     static const char *const fname = "/rootfs2";
-    const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
-    if (len > size)
+    int num_written = snprintf(bootflags_file_path, size, "%s%s", BOOTFLAGS_DIR, fname);
+    if (num_written < 0)
     {
-        ERROR("%s", "Bootflag file path will not fit in the destination buffer");
+        ERROR("%s", "There was an output error when writing to the destination buffer");
         return -1;
     }
 
-    return snprintf(bootflags_file_path, len, "%s%s", BOOTFLAGS_DIR, fname);
+    if ((size_t)num_written >= size)
+    {
+        ERROR("%s", "bootflags filepath is larger than the destination buffer size");
+        return -1;
+    }
+
+    return 0;
 }
 
 int write_bootflag_file()
@@ -86,6 +92,7 @@ int write_bootflag_file()
     fprintf(file, "%s", "");
     fclose(file);
 
+    sync();
     return 0;
 }
 
@@ -104,6 +111,7 @@ int remove_bootflag_file()
         }
     }
 
+    sync();
     return 0;
 }
 

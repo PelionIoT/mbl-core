@@ -51,8 +51,12 @@ char *read_file_to_new_str(const char *const filepath)
         return NULL;
     }
 
-    /* st_size is type off_t which is defined as a signed integer type by the POSIX standard,
-       so its safe to cast to size_t here */
+    if (stat_buf.st_size < 0)
+    {
+        ERROR("%s %s", filepath, "has a negative size");
+        return NULL;
+    }
+
     char *dst = malloc_or_abort((size_t)stat_buf.st_size + 1);
     char *return_val;
     FILE *const fp = fopen(filepath, "r");
@@ -141,30 +145,46 @@ int find_target_partition(char *const dst
     if (token == NULL)
     {
         ERROR("%s %s %s", "Failed to find", delim, "in string");
-        return_value = 1;
+        return_value = -1;
         goto free;
     }
 
     if (str_endswith(bank1_part_num, mounted_partition) == 0)
     {
-        const size_t len = strlen(token) + strlen(delim) + strlen(bank2_part_num) + 1;
-        if (len > dst_size)
+        const int num_written = snprintf(dst, dst_size, "%s%s%s", token, delim, bank2_part_num);
+        if (num_written < 0)
         {
+            ERROR("%s", "There was an output error when writing to the destination buffer");
             return_value = -1;
             goto free;
         }
-        snprintf(dst, len, "%s%s%s", token, delim, bank2_part_num);
+
+        if ((size_t)num_written >= dst_size)
+        {
+            ERROR("%s", "bootflags filepath is larger than the destination buffer size");
+            return_value = -1;
+            goto free;
+        }
+
         return_value = 0;
     }
     else if (str_endswith(bank2_part_num, mounted_partition) == 0)
     {
-        const size_t len = strlen(token) + strlen(delim) + strlen(bank1_part_num) + 1;
-        if (len > dst_size)
+        const int num_written = snprintf(dst, dst_size, "%s%s%s", token, delim, bank1_part_num);
+        if (num_written < 0)
         {
+            ERROR("%s", "There was an output error when writing to the destination buffer");
             return_value = -1;
             goto free;
         }
-        snprintf(dst, len, "%s%s%s", token, delim, bank1_part_num);
+
+        if ((size_t)num_written >= dst_size)
+        {
+            ERROR("%s", "Target partition filepath is larger than the destination buffer size");
+            return_value = -1;
+            goto free;
+        }
+
         return_value = 0;
     }
     else
