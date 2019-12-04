@@ -107,7 +107,6 @@ int get_mounted_device(char *const dst, const char *const mount_point, const siz
     {
         if (strcmp(mount_point, mntent_desc->mnt_dir) == 0)
         {
-            const size_t mnt_fsname_strlen = strlen(mntent_desc->mnt_fsname);
             strncpy(dst, mntent_desc->mnt_fsname, dst_size);
 
             if (dst[dst_size] != '\0')
