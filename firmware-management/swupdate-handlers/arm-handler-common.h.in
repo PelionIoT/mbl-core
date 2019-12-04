@@ -13,39 +13,39 @@ static const char *const FACTORY_CONFIG_DIR= "@FACTORY_CONFIG_DIR@";
 /* Create a new string buffer.
    This function allocates memory for a new string buffer. It is the caller's
    responsibility to free the allocated memory. */
-void *malloc_or_abort(const size_t size);
+void *malloc_or_abort(size_t size);
 
 /* Copy a string.
    This function allocates memory for the new string src is copied into.
    It is the caller's responsibility to free the allocated memory. */
-char *str_copy_to_new(const char *const src);
+char *str_copy_to_new(const char * src);
 
 /* Return 0 if fullstr ends with substr, else return non-zero */
-int str_endswith(const char *const substr, const char *const fullstr);
+int str_endswith(const char * substr, const char * fullstr);
 
 /* Read a file to a new string.
    Allocate memory for a new string buffer the size of the file.
    Returns a pointer to the newly allocated string buffer.
    This function should not be used to read large files.
    It is the callers responsibility to free the memory allocated. */
-char *read_file_to_new_str(const char *const filepath);
+char *read_file_to_new_str(const char * filepath);
 
 /* Get the device file path for the device at the given mount point and store
    it in dst */
-int get_mounted_device(char *const dst, const char *const mount_point, const size_t dst_size);
+int get_mounted_device(char * dst, const char * mount_point, size_t dst_size);
 
 /* Deduce the target bank by comparing the bank part numbers against the device file path
    store the target device file path in dst */
-int find_target_partition(char *const dst
-        , const char *const mounted_partition
-        , const char *const bank1_part_num
-        , const char *const bank2_part_num
-        , const size_t dst_size);
+int find_target_partition(char * dst
+        , const char * mounted_partition
+        , const char * bank1_part_num
+        , const char * bank2_part_num
+        , size_t dst_size);
 
 /* Get the full path to a file from the part-info directory.
    This function gives no guarantee the path actually exists */
-int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size);
+int get_part_info_filepath(char * dst, const char * file_name, size_t dst_size);
 
 /* Read the contents of a file from the part info directory to a new string.
    It is the callers responsibilty to free the memory allocated for the new string */
-char *read_part_info_file_to_new_str(const char *const file_name);
+char *read_part_info_file_to_new_str(const char * file_name);
