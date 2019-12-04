@@ -199,13 +199,11 @@ free:
 
 int get_part_info_filepath(char *const dst, const char *const file_name, const size_t dst_size)
 {
-    static const char *const part_info_dir = "part-info";
     const int num_written = snprintf(
         dst
         , dst_size
-        , "%s/%s/%s"
-        , FACTORY_CONFIG_DIR
-        , part_info_dir
+        , "%s/%s"
+        , PART_INFO_DIR
         , file_name);
 
     if (num_written < 0)

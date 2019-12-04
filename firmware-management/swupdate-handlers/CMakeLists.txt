@@ -27,6 +27,6 @@ set(UPDATE_PAYLOAD_DIR "/tmp" CACHE PATH "Path to directory used to temporarily 
 set(PAYLOAD_TMP_DIR "${UPDATE_PAYLOAD_DIR}/arm_update_activate" CACHE PATH "Path to directory used to temporarily store payload files")
 set(LOG_DIR "/var/log" CACHE FILEPATH "Path to directory in which to write log files")
 set(FACTORY_CONFIG_DIR "/config/factory" CACHE STRING "Factory config partition mount point.")
-
+set(PART_INFO_DIR "${FACTORY_CONFIG_DIR}/part-info" )
 # Replace placeholder variables with our cache variables defined above.
 configure_file("arm-handler-common.h.in" "arm-handler-common.h" @ONLY)

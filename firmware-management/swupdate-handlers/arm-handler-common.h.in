@@ -9,6 +9,7 @@ static const char *const UPDATE_PAYLOAD_DIR = "@UPDATE_PAYLOAD_DIR@";
 static const char *const LOG_DIR = "@LOG_DIR@";
 static const char *const ROOTFS_TYPE = "@ROOTFS_TYPE@";
 static const char *const FACTORY_CONFIG_DIR= "@FACTORY_CONFIG_DIR@";
+static const char *const PART_INFO_DIR = "@PART_INFO_DIR@";
 
 /* Create a new string buffer.
    This function allocates memory for a new string buffer. It is the caller's
