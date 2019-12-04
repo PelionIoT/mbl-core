@@ -48,7 +48,7 @@ close:
     return ret_val;
 }
 
-int get_bootflag_file_path(char *const bootflags_file_path, const size_t size)
+static int get_bootflag_file_path(char *const bootflags_file_path, const size_t size)
 {
     static const char *const fname = "/rootfs2";
     const size_t len = strlen(BOOTFLAGS_DIR) + strlen(fname) + 1;
