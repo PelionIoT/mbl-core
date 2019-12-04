@@ -110,7 +110,7 @@ int get_mounted_device(char *const dst, const char *const mount_point, const siz
             const size_t mnt_fsname_strlen = strlen(mntent_desc->mnt_fsname);
             strncpy(dst, mntent_desc->mnt_fsname, dst_size);
 
-            if (dst[mnt_fsname_strlen] != '\0')
+            if (dst[dst_size] != '\0')
             {
                 ERROR("%s %s", mntent_desc->mnt_fsname, "could not fit into destination buffer and was truncated");
                 return_val = -1;
