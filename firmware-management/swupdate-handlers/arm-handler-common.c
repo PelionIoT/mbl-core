@@ -11,8 +11,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include "util.h"
+#include <unistd.h>
 #include "arm-handler-common.h"
+#include "util.h"
 
 void *malloc_or_abort(const size_t size)
 {
@@ -227,4 +228,102 @@ char *read_part_info_file_to_new_str(const char *const file_name)
     if (get_part_info_filepath(part_info_filepath, file_name, PATH_MAX) == -1)
         return NULL;
     return read_file_to_new_str(part_info_filepath);
+}
+
+int get_bootflag_file_path(char *const bootflags_file_path, const char *const filename, const size_t size)
+{
+    int num_written = snprintf(bootflags_file_path, size, "%s%s", BOOTFLAGS_DIR, filename);
+    if (num_written < 0)
+    {
+        ERROR("%s", "There was an output error when writing to the destination buffer");
+        return -1;
+    }
+
+    if ((size_t)num_written >= size)
+    {
+        ERROR("%s", "bootflags filepath is larger than the destination buffer size");
+        return -1;
+    }
+
+    return 0;
+}
+
+int write_bootflag_file(const char *const filename)
+{
+    if (mkdir(BOOTFLAGS_DIR, 0755) == -1)
+    {
+        if (errno != EEXIST)
+        {
+            ERROR("%s %s: %s", "Failed to create", BOOTFLAGS_DIR, strerror(errno));
+            return -1;
+        }
+    }
+
+    char bootflags_file_path[PATH_MAX];
+    if (get_bootflag_file_path(bootflags_file_path, filename, PATH_MAX) < 1)
+        return -1;
+
+    FILE *const file = fopen(bootflags_file_path, "w");
+    if (!file)
+    {
+        ERROR("%s: %s", "Failed to open bootflags file", strerror(errno));
+        return -1;
+    }
+
+    fprintf(file, "%s", "");
+    fclose(file);
+    sync();
+
+    return 0;
+}
+
+int remove_bootflag_file(const char *const filename)
+{
+    char bootflags_file_path[PATH_MAX];
+    if (get_bootflag_file_path(bootflags_file_path, filename, PATH_MAX) < 0)
+        return -1;
+
+    if (remove(bootflags_file_path) == -1)
+    {
+        if (errno != ENOENT)
+        {
+            ERROR("%s: %s", "Failed to remove bootflags file", strerror(errno));
+            return -1;
+        }
+    }
+
+    sync();
+    return 0;
+}
+
+int copy_image_and_sync(struct img_type *img, const char *const device_filepath)
+{
+    int ret_val = 0;
+    int fd = openfileoutput(device_filepath);
+    if (fd < 0)
+    {
+        ERROR("%s %s", "Failed to open target device file", device_filepath);
+        return -1;
+    }
+
+    if (copyimage(&fd, img, NULL) < 0)
+    {
+        ERROR("%s %s %s %s", "Failed to copy", img->fname, "to target device", device_filepath);
+        goto close;
+        ret_val = -1;
+    }
+
+    if (fsync(fd) == -1)
+    {
+        WARN("%s: %s", "Failed to sync filesystem", strerror(errno));
+    }
+
+close:
+    if (close(fd) == -1)
+    {
+        ERROR("%s", "Failed to close target device file descriptor");
+        ret_val = -1;
+    }
+
+    return ret_val;
 }
