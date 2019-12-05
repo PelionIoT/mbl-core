@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "arm-handler-common.h"
-#include "util.h"
+#include "swupdate/util.h"
 
 void *malloc_or_abort(const size_t size)
 {

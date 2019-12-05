@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
-#include "swupdate.h"
+#include "swupdate/swupdate.h"
 
 static const char *const BOOTFLAGS_DIR = "@BOOTFLAGS_DIR@";
 static const char *const UPDATE_PAYLOAD_DIR = "@UPDATE_PAYLOAD_DIR@";

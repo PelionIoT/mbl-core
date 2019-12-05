@@ -4,7 +4,7 @@ project(swupdate-handlers)
 
 add_library(swupdate-handlers SHARED rootfs-handler.c arm-handler-common.c)
 
-target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/swupdate ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_options(swupdate-handlers
     PUBLIC
     -Wall

@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "arm-handler-common.h"
-#include "swupdate.h"
-#include "util.h"
-#include "handler.h"
+#include "rootfs-handler.h"
+#include "swupdate/swupdate.h"
+#include "swupdate/util.h"
+#include "swupdate/handler.h"
 
 
-int rootfs_handler(struct img_type *img
-                   , void __attribute__ ((__unused__)) *data)
+int rootfsv4_handler(struct img_type *img, void __attribute__ ((__unused__)) *data)
 {
     static const size_t MAX_DEVICE_FILE_PATH = 512;
     static const char *const root_mnt_point = "/";
@@ -81,13 +81,4 @@ clean:
     free(b1_pnum);
     free(b2_pnum);
     return return_value;
-}
-
-__attribute__((constructor))
-void rootfs_handler_init(void)
-{
-    register_handler("ROOTFSv4"
-                     , rootfs_handler
-                     , IMAGE_HANDLER
-                     , NULL);
 }
