@@ -11,11 +11,14 @@
  * When a request is received, UpdateD will hand off responsibility for applying
  * the update to swupdate. */
 
+#include <unistd.h>
+
 int main()
 {
     while(1)
     {
-        continue;
+        pause();
     }
+
     return 0;
 }
