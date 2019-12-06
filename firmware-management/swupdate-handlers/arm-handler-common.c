@@ -5,6 +5,7 @@
 */
 
 #include <errno.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <mntent.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "arm-handler-common.h"
+#include "swupdate/swupdate.h"
 #include "swupdate/util.h"
 
 void *malloc_or_abort(const size_t size)
@@ -40,6 +42,7 @@ int str_endswith(const char *const substr, const char *const fullstr)
     const size_t fullstr_len = strlen(fullstr);
     if (substr_len > fullstr_len) return 1;
     const size_t endlen = fullstr_len - substr_len;
+    TRACE("%s:%zu %s:%zu", "fullstr len", fullstr_len, "Substr len", substr_len);
     return strcmp(&fullstr[endlen], substr);
 }
 
@@ -260,18 +263,23 @@ int write_bootflag_file(const char *const filename)
     }
 
     char bootflags_file_path[PATH_MAX];
-    if (get_bootflag_file_path(bootflags_file_path, filename, PATH_MAX) < 1)
+    if (get_bootflag_file_path(bootflags_file_path, filename, PATH_MAX) == -1)
+    {
         return -1;
+    }
 
-    FILE *const file = fopen(bootflags_file_path, "w");
-    if (!file)
+    const int fd = open(bootflags_file_path, O_WRONLY);
+    if (fd == -1)
     {
         ERROR("%s: %s", "Failed to open bootflags file", strerror(errno));
         return -1;
     }
 
-    fprintf(file, "%s", "");
-    fclose(file);
+    if (close(fd) == -1)
+    {
+        WARN("%s %s: %s", "Error closing file descriptor for file", bootflags_file_path, strerror(errno));
+    }
+
     sync();
 
     return 0;

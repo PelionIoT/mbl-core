@@ -1,10 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(swupdate-handlers)
+project(swupdate-handlers VERSION 0.1.0)
 
-add_library(swupdate-handlers SHARED rootfs-handler.c arm-handler-common.c)
+add_library(swupdate-handlers STATIC rootfs-handler.c arm-handler-common.c)
+set_target_properties(swupdate-handlers PROPERTIES VERSION ${PROJECT_VERSION})
+#set_target_properties(swupdate-handlers PROPERTIES SOVERSION 1)
+set_target_properties(swupdate-handlers PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/rootfs-handler.h)
 
-target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR}/include/swupdate ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 target_compile_options(swupdate-handlers
     PUBLIC
     -Wall
@@ -31,4 +34,5 @@ set(PART_INFO_DIR "${FACTORY_CONFIG_DIR}/part-info" CACHE PATH "Path to the dire
 # Replace placeholder variables with our cache variables defined above.
 configure_file("arm-handler-common.h.in" "arm-handler-common.h" @ONLY)
 
-install(TARGETS swupdate-handlers DESTINATION lib)
+install(TARGETS swupdate-handlers LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

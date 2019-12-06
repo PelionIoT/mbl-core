@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: BSD-3-Clause
 */
 
+#ifndef swupdate_handlers_arm_handler_common_h_
+#define swupdate_handlers_arm_handler_common_h_
+
 #include "swupdate/swupdate.h"
+#include <stddef.h>
 
 static const char *const BOOTFLAGS_DIR = "@BOOTFLAGS_DIR@";
 static const char *const UPDATE_PAYLOAD_DIR = "@UPDATE_PAYLOAD_DIR@";
@@ -65,3 +69,5 @@ int remove_bootflag_file(const char *filename);
 
 /* Copy an image to a device using swupdate's copyimage function. */
 int copy_image_and_sync(struct img_type *img, const char *device_filepath);
+
+#endif // swupdate_handlers_arm_handler_common_h_
