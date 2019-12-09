@@ -47,7 +47,6 @@ def _get_testinfo_from_json(filename):
     with open(filename) as fobj:
         return json.loads(fobj.read())
 
-
 file_cmp_test_info = []
 mounted_bank_test_info = []
 file_timestamp_test_info = []
@@ -170,6 +169,7 @@ class TestComponentUpdate:
             ]
         )
 
+        self._cat_logfiles(execute_helper)
         assert exit_code == 0
 
     @pytest.mark.mbl_cli
@@ -195,14 +195,9 @@ class TestComponentUpdate:
                 TestComponentUpdate.dut_address,
                 raise_on_error=True,
             )
-        except AssertionError:
-            _, output, err = execute_helper.send_mbl_cli_command(
-                ["shell", "cat /var/log/arm_update_activate.log"],
-                TestComponentUpdate.dut_address,
-                raise_on_error=True,
-            )
-            print(output)
-            raise
+        finally:
+            self._cat_logfiles(execute_helper)
+
         assert "Content of update package installed" in output
 
         # Don't reboot the device in case of app updates
@@ -327,3 +322,18 @@ class TestComponentUpdate:
             # The app might still be running running, so just checking there is
             # some output in the log.
             assert app_info.count("Hello, world") > 0
+
+    def _cat_logfiles(self, execute_helper):
+        cmds = (
+            ["shell", "sh -l -c 'cat /var/log/arm_update_activate.log'"],
+            ["shell", "sh -l -c 'cat /var/log/messages'"],
+            ["shell", "sh -l -c 'cat /var/log/mbl_cloud_client.log'"],
+            ["shell", "sh -l -c 'journalctl --no-pager'"],
+        )
+        for cmd in cmds:
+            _, out, err = execute_helper.send_mbl_cli_command(
+                cmd, TestComponentUpdate.dut_address
+            )
+            print(out)
+            print(err)
+
