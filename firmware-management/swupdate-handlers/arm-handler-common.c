@@ -42,7 +42,6 @@ int str_endswith(const char *const substr, const char *const fullstr)
     const size_t fullstr_len = strlen(fullstr);
     if (substr_len > fullstr_len) return 1;
     const size_t endlen = fullstr_len - substr_len;
-    TRACE("%s:%zu %s:%zu", "fullstr len", fullstr_len, "Substr len", substr_len);
     return strcmp(&fullstr[endlen], substr);
 }
 
@@ -235,7 +234,7 @@ char *read_part_info_file_to_new_str(const char *const file_name)
 
 int get_bootflag_file_path(char *const bootflags_file_path, const char *const filename, const size_t size)
 {
-    int num_written = snprintf(bootflags_file_path, size, "%s%s", BOOTFLAGS_DIR, filename);
+    int num_written = snprintf(bootflags_file_path, size, "%s/%s", BOOTFLAGS_DIR, filename);
     if (num_written < 0)
     {
         ERROR("%s", "There was an output error when writing to the destination buffer");
@@ -268,10 +267,10 @@ int write_bootflag_file(const char *const filename)
         return -1;
     }
 
-    const int fd = open(bootflags_file_path, O_WRONLY);
+    const int fd = open(bootflags_file_path, O_WRONLY | O_CREAT, 0644);
     if (fd == -1)
     {
-        ERROR("%s: %s", "Failed to open bootflags file", strerror(errno));
+        ERROR("%s %s: %s", "Failed to open file", bootflags_file_path, strerror(errno));
         return -1;
     }
 

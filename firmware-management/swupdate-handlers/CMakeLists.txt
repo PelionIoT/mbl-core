@@ -4,7 +4,6 @@ project(swupdate-handlers VERSION 0.1.0)
 
 add_library(swupdate-handlers STATIC rootfs-handler.c arm-handler-common.c)
 set_target_properties(swupdate-handlers PROPERTIES VERSION ${PROJECT_VERSION})
-#set_target_properties(swupdate-handlers PROPERTIES SOVERSION 1)
 set_target_properties(swupdate-handlers PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/rootfs-handler.h)
 
 target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

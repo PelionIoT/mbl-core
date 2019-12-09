@@ -59,7 +59,6 @@ int rootfsv4_handler(struct img_type *img, void __attribute__ ((__unused__)) *da
     }
 
     static const char *const rootfs_filename = "rootfs2";
-    TRACE("%s %s", "Target device filepath is", target_device_filepath);
     if (str_endswith(b2_pnum, target_device_filepath) == 0)
     {
         if (write_bootflag_file(rootfs_filename) == -1)
