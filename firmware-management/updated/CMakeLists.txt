@@ -21,4 +21,4 @@ target_compile_options(updated
     -Wlogical-op)
 
 
-install(TARGETS updated DESTINATION bin)
+install(TARGETS updated DESTINATION ${CMAKE_INSTALL_BINDIR})
