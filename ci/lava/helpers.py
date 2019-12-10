@@ -275,15 +275,37 @@ def get_app_info(app_name, dut_addr, execute_helper, app_output):
     return output
 
 
-def strings_grep(dut_addr, execute_helper, file_path, pattern):
-    """Run strings command on a file and grep for a pattern using mbl-cli."""
-    command = "strings {} | grep {}".format(file_path, pattern)
-    exit_code, output, error = execute_helper.send_mbl_cli_command(
-        ["shell", 'sh -l -c "{}"'.format(command)],
-        dut_addr,
-        raise_on_error=True,
+def get_local_conf_assignments_dict(local_conf_file):
+    """
+    Get a list of the variable (name, value) pairs.
+
+    Note that this function only deals with values that are double quoted and
+    doesn't deal with override syntax, variable appends, variable prepends or
+    "weak" assignments.
+
+    I.e. the variable values returned by this function are NOT guaranteed to be
+    final values used by BitBake.
+
+    Returns a dict mapping variable names to the values assigned to them.
+    """
+    assignment_re = re.compile(
+        r"""^\s*
+            (?P<var_name> [A-Za-z0-9_]+ )
+            \s* = \s*
+            "(?P<var_value> [^"]* )"
+            \s*
+        $""",
+        re.X,
     )
-    return output.splitlines()[1]
+    assignments = {}
+    with open(local_conf_file, "r") as config:
+        for line in config:
+            m = assignment_re.match(line)
+            if m:
+                # Don't check if the var name is already in our dict - just let
+                # later assignments take precedence.
+                assignments[m.group("var_name")] = m.group("var_value")
+    return assignments
 
 
 class ExecuteHelper:
