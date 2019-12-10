@@ -7,8 +7,14 @@
 
 import os
 import pytest
+import re
 
-from helpers import download_from_url, get_dut_address, ExecuteHelper
+from helpers import (
+    download_from_url,
+    get_dut_address,
+    ExecuteHelper,
+    get_local_conf_assignments_dict,
+)
 
 
 def pytest_addoption(parser):
@@ -114,6 +120,19 @@ def pytest_generate_tests(metafunc):
         and option_value is not None
     ):
         metafunc.parametrize("update_component_name", [option_value])
+
+
+@pytest.fixture
+def local_conf_assignments_dict(local_conf_file):
+    """
+    Fixture for the dictionary mapping variable names to their values.
+
+    The caveats in the docstring for get_local_conf_assignments_dict apply here
+    too.
+    """
+    if local_conf_file is None:
+        return {}
+    return get_local_conf_assignments_dict(local_conf_file)
 
 
 # common fixtures

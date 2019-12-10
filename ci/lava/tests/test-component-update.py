@@ -36,7 +36,6 @@ from helpers import (
     get_app_info,
     get_mounted_bank_device_name,
     get_file_mtime,
-    strings_grep,
     get_pelion_device_id,
 )
 
@@ -122,14 +121,8 @@ class TestComponentUpdate:
                         "pre",
                         item["args"]["size_B"],
                     )
-                    pre_timestamp = strings_grep(
-                        TestComponentUpdate.dut_address,
-                        execute_helper,
-                        pre_update_img,
-                        "Built",
-                    )
                     part_sha_256_test_info.append(
-                        (image_data["image_name"], item["args"], pre_timestamp)
+                        (image_data["image_name"], item["args"])
                     )
                 elif item["test_type"] == "file_sha256":
                     file_sha256_test_info.append(
@@ -264,7 +257,7 @@ class TestComponentUpdate:
 
     def _compare_partition_sha256(self, execute_helper):
         for item in part_sha_256_test_info:
-            img_name, data, before_result = item
+            img_name, data = item
             print("Testing partition sha256 for image {}".format(img_name))
             post_extracted_img = read_partition_to_file(
                 TestComponentUpdate.dut_address,
@@ -277,15 +270,6 @@ class TestComponentUpdate:
                 post_extracted_img,
                 TestComponentUpdate.dut_address,
                 execute_helper,
-            )
-            assert (
-                strings_grep(
-                    TestComponentUpdate.dut_address,
-                    execute_helper,
-                    post_extracted_img,
-                    "Built",
-                )
-                != before_result
             )
 
     def _compare_file_sha256(self, execute_helper):
@@ -323,22 +307,8 @@ class TestComponentUpdate:
             )
 
     def _compare_app_info(self, execute_helper):
-        for item in app_bank_test_info:
-            img_name, data = item
-            app_name = data["app_name"]
-            app_info = get_app_info(
-                app_name,
-                TestComponentUpdate.dut_address,
-                execute_helper,
-                app_output=False,
-            )
-            print(
-                "Checking the app {} is running and installed".format(app_name)
-            )
-            assert '"status": "running"' in app_info
-            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
-        # Wait 30 seconds for the app to stop.
-        time.sleep(30)
+        # Wait few seconds for the app to start running
+        time.sleep(5)
         for item in app_bank_test_info:
             img_name, data = item
             app_name = data["app_name"]
@@ -349,9 +319,11 @@ class TestComponentUpdate:
                 app_output=True,
             )
             print(
-                "Checking the app {} is stopped and its output".format(
+                "Checking the app {} is installed and its output".format(
                     app_name
                 )
             )
-            assert '"status": "stopped"' in app_info
-            assert app_info.count("Hello, world") == 10
+            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
+            # The app might still be running running, so just checking there is
+            # some output in the log.
+            assert app_info.count("Hello, world") > 0

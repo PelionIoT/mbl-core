@@ -56,7 +56,7 @@ class TestCellularAndWifiHost:
             # processed by LAVA.
             print(output)
 
-            assert True
+            assert return_code == 0
         else:
             print(
                 "Device {} does not support cellular modules.".format(device)
