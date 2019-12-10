@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.5)
 
 project(swupdate-handlers VERSION 0.1.0)
 
+# WARNING: if you add new handlers you need to register them in the swupdate
+# patch in swupdate_%.bb in the meta-mbl repo.
 add_library(swupdate-handlers STATIC rootfs-handler.c arm-handler-common.c)
 set_target_properties(swupdate-handlers PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(swupdate-handlers PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/rootfs-handler.h)
