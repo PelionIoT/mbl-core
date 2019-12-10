@@ -47,6 +47,7 @@ def _get_testinfo_from_json(filename):
     with open(filename) as fobj:
         return json.loads(fobj.read())
 
+
 file_cmp_test_info = []
 mounted_bank_test_info = []
 file_timestamp_test_info = []
@@ -336,4 +337,3 @@ class TestComponentUpdate:
             )
             print(out)
             print(err)
-
