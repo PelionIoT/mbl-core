@@ -14,8 +14,8 @@
 #include "swupdate/util.h"
 #include "swupdate/handler.h"
 
-// WARNING: if you add new handlers you need to register them in the swupdate
-// patch in swupdate_%.bb in the meta-mbl repo.
+// WARNING: if you add new handlers you need to register them in arm-handlers.c
+// added to the swupdate build by swupdate_%.bb in the meta-mbl repo.
 
 int rootfsv4_handler(struct img_type *img, void __attribute__ ((__unused__)) *data)
 {
