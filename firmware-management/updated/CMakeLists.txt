@@ -20,5 +20,6 @@ target_compile_options(updated
     -Wconversion
     -Wlogical-op)
 
+target_link_libraries(updated systemd)
 
 install(TARGETS updated DESTINATION ${CMAKE_INSTALL_BINDIR})
