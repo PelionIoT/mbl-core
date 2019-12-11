@@ -337,11 +337,11 @@ close:
 
 int remove_do_not_reboot_flag(void)
 {
-    static const char *const = do_not_reboot_filename = "do_not_reboot";
+    static const char *const do_not_reboot_filename = "do_not_reboot";
     char reboot_flag_path[PATH_MAX];
     const int num_written = snprintf(reboot_flag_path
-            , "%s/%s"
             , PATH_MAX
+            , "%s/%s"
             , TMP_DIR
             , do_not_reboot_filename);
 
