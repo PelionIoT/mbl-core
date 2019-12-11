@@ -27,7 +27,8 @@ class TestBSP:
             [
                 "shell",
                 'sh -l -c "badblocks -v '
-                "$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]+$//')"
+                "/dev/"
+                "$(cat /config/factory/part-info/MBL_ROOT_DEVICE_NAME_BANK1)"
                 '"',
             ],
             TestBSP.dut_address,
