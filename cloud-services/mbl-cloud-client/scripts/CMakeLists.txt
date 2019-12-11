@@ -18,10 +18,7 @@ set(TMP_DIR "/tmp" CACHE PATH "Path to directory used to temporarily store small
 set(UPDATE_PAYLOAD_DIR "/tmp" CACHE PATH "Path to directory used to temporarily store update payload files")
 set(PAYLOAD_TMP_DIR "${UPDATE_PAYLOAD_DIR}/arm_update_activate" CACHE PATH "Path to directory used to temporarily store payload files")
 set(LOG_DIR "/var/log" CACHE FILEPATH "Path to directory in which to write log files")
-set(ROOTFS1_LABEL "rootfs1" CACHE STRING "Label used for the first root file system bank")
-set(ROOTFS2_LABEL "rootfs2" CACHE STRING "Label used for the second root file system bank")
-set(ROOTFS_TYPE "ext4" CACHE STRING "Type of file system used for root file systems")
-set(FACTORY_CONFIG_PARTITION "/config/factory" CACHE STRING "Factory config partition mount point.")
+set(PART_INFO_DIR "/config/factory/part-info" CACHE STRING "Directory containing partition info files")
 
 # Replace config value placeholders with values from CMake variables.
 configure_file("arm_update_common.sh.in" "arm_update_common.sh" @ONLY)
@@ -30,7 +27,6 @@ configure_file("swupdate_handlers.lua" "swupdate_handlers.lua" @ONLY)
 # but for consistency, copy them to the build directory.
 configure_file("arm_update_activate.sh" "arm_update_activate.sh" COPYONLY)
 configure_file("arm_update_active_details.sh" "arm_update_active_details.sh" COPYONLY)
-configure_file("rootfs_installer.sh" "rootfs_installer.sh" COPYONLY)
 configure_file("bootloader_installer.sh" "bootloader_installer.sh" COPYONLY)
 configure_file("boot_partition_installer.sh" "boot_partition_installer.sh" COPYONLY)
 configure_file("apps_installer.sh" "apps_installer.sh" COPYONLY)

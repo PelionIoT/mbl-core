@@ -32,7 +32,7 @@ wfod_file="$1"
 wfod_offset_B="$2"
 wfod_max_size_B="$3"
 
-    wfod_disk_name=$(get_disk_name_from_label_or_die "$ROOTFS1_LABEL")
+    wfod_device_path=$(get_device_for_mbl_partitions)
     exit_on_error "$?"
 
     if ! wfod_actual_size_B=$(wc -c < "$wfod_file"); then
@@ -51,7 +51,7 @@ wfod_max_size_B="$3"
     # the device's actual block size is. We just let dd use its default block size and
     # ensure the seek is always a byte count.
     # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/linux/types.h?id=v4.4-rc6#n121
-    if ! dd if="$wfod_file" of="$wfod_disk_name" oflag=seek_bytes conv=fsync seek="$wfod_offset_B"; then
+    if ! dd if="$wfod_file" of="$wfod_device_path" oflag=seek_bytes conv=fsync seek="$wfod_offset_B"; then
         printf "Writing \"%s\" to disk failed.\n" "$wfod_file"
         exit 63
     fi
