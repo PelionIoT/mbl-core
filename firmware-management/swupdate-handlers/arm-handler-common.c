@@ -334,3 +334,37 @@ close:
 
     return ret_val;
 }
+
+int remove_do_not_reboot_flag(void)
+{
+    static const char *const = do_not_reboot_filename = "do_not_reboot";
+    char reboot_flag_path[PATH_MAX];
+    const int num_written = snprintf(reboot_flag_path
+            , "%s/%s"
+            , PATH_MAX
+            , TMP_DIR
+            , do_not_reboot_filename);
+
+    if (num_written < 0)
+    {
+        ERROR("%s %s/%s %s" "Failed to write ", TMP_DIR, do_not_reboot_filename, "to destination buffer");
+        return -1;
+    }
+
+    if (num_written >= PATH_MAX)
+    {
+        ERROR("%s %s", "The reboot flag filepath was truncated, it is larger than PATH_MAX");
+        return -1;
+    }
+
+    if (remove(reboot_flag_path) == -1)
+    {
+        if (errno != ENOENT)
+        {
+            ERROR("%s: %s", "Failed to remove reboot flag", strerror(errno));
+            return -1;
+        }
+    }
+
+    return 0;
+}

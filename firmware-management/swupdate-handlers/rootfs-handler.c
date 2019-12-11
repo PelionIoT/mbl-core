@@ -76,7 +76,14 @@ int rootfsv4_handler(struct img_type *img, void __attribute__ ((__unused__)) *da
         {
             ERROR("%s", "Failed to remove bootflag file.");
             return_value = 1;
+            goto clean;
         }
+    }
+
+    if (remove_do_not_reboot_flag() == -1)
+    {
+        ERROR("%s", "Failed to remove 'do not reboot' flag.");
+        return_value = 1;
     }
 
 clean:

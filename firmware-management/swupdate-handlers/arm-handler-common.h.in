@@ -16,6 +16,7 @@ static const char *const LOG_DIR = "@LOG_DIR@";
 static const char *const ROOTFS_TYPE = "@ROOTFS_TYPE@";
 static const char *const FACTORY_CONFIG_DIR= "@FACTORY_CONFIG_DIR@";
 static const char *const PART_INFO_DIR = "@PART_INFO_DIR@";
+static const char *const TMP_DIR = "@TMP_DIR@";
 
 /* Create a new string buffer.
    This function allocates memory for a new string buffer. It is the caller's
@@ -69,5 +70,8 @@ int remove_bootflag_file(const char *filename);
 
 /* Copy an image to a device using swupdate's copyimage function. */
 int copy_image_and_sync(struct img_type *img, const char *device_filepath);
+
+/* remove the file which tells the system not to perform a reboot after the update */
+int remove_do_not_reboot_flag(void);
 
 #endif // swupdate_handlers_arm_handler_common_h_
