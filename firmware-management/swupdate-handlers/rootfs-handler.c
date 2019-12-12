@@ -19,7 +19,6 @@
 
 int rootfsv4_handler(struct img_type *img, void __attribute__ ((__unused__)) *data)
 {
-    static const size_t MAX_DEVICE_FILE_PATH = 512;
     static const char *const root_mnt_point = "/";
 
     char mounted_device_filepath[MAX_DEVICE_FILE_PATH];
