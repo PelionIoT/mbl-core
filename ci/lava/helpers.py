@@ -81,9 +81,13 @@ def read_partition_to_file(
                 component_size / 1024, partition_size
             )
         )
+    device_file_name = get_mounted_bank_device_name(
+        "/", dut_addr, execute_helper
+    )
+    device_file_name = device_file_name.split("p")[0]
     dd_command = (
         "set -x; "
-        r"BD=$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]\+$//'); "
+        r"BD=/dev/{device_file}; "
         "OF={ofile}; "
         "SKIP=$(cat {align})K; "
         "COUNT={count}; "
@@ -93,6 +97,7 @@ def read_partition_to_file(
             align=align_file_path,
             count=count,
             magnitude=size_magnitude,
+            device_file=device_file_name,
         )
     )
     execute_helper.send_mbl_cli_command(
@@ -273,6 +278,39 @@ def get_app_info(app_name, dut_addr, execute_helper, app_output):
         )
         output = "{}{}".format(output, output_cat)
     return output
+
+
+def get_local_conf_assignments_dict(local_conf_file):
+    """
+    Get a list of the variable (name, value) pairs.
+
+    Note that this function only deals with values that are double quoted and
+    doesn't deal with override syntax, variable appends, variable prepends or
+    "weak" assignments.
+
+    I.e. the variable values returned by this function are NOT guaranteed to be
+    final values used by BitBake.
+
+    Returns a dict mapping variable names to the values assigned to them.
+    """
+    assignment_re = re.compile(
+        r"""^\s*
+            (?P<var_name> [A-Za-z0-9_]+ )
+            \s* = \s*
+            "(?P<var_value> [^"]* )"
+            \s*
+        $""",
+        re.X,
+    )
+    assignments = {}
+    with open(local_conf_file, "r") as config:
+        for line in config:
+            m = assignment_re.match(line)
+            if m:
+                # Don't check if the var name is already in our dict - just let
+                # later assignments take precedence.
+                assignments[m.group("var_name")] = m.group("var_value")
+    return assignments
 
 
 class ExecuteHelper:

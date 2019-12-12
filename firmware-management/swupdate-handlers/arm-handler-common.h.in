@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+*/
+
+#ifndef swupdate_handlers_arm_handler_common_h_
+#define swupdate_handlers_arm_handler_common_h_
+
+#include "swupdate/swupdate.h"
+#include <stddef.h>
+
+#define MAX_DEVICE_FILE_PATH 512
+
+static const char *const BOOTFLAGS_DIR = "@BOOTFLAGS_DIR@";
+static const char *const UPDATE_PAYLOAD_DIR = "@UPDATE_PAYLOAD_DIR@";
+static const char *const LOG_DIR = "@LOG_DIR@";
+static const char *const ROOTFS_TYPE = "@ROOTFS_TYPE@";
+static const char *const FACTORY_CONFIG_DIR= "@FACTORY_CONFIG_DIR@";
+static const char *const PART_INFO_DIR = "@PART_INFO_DIR@";
+static const char *const TMP_DIR = "@TMP_DIR@";
+
+/* Create a new string buffer.
+   This function allocates memory for a new string buffer. It is the caller's
+   responsibility to free the allocated memory. */
+void *malloc_or_abort(size_t size);
+
+/* Copy a string.
+   This function allocates memory for the new string src is copied into.
+   It is the caller's responsibility to free the allocated memory. */
+char *str_copy_to_new(const char *src);
+
+/* Return 0 if fullstr ends with substr, else return non-zero */
+int str_endswith(const char *substr, const char *fullstr);
+
+/* Read a file to a new string.
+   Allocate memory for a new string buffer the size of the file.
+   Returns a pointer to the newly allocated string buffer.
+   This function should not be used to read large files.
+   It is the callers responsibility to free the memory allocated. */
+char *read_file_to_new_str(const char *filepath);
+
+/* Get the device file path for the device at the given mount point and store
+   it in dst */
+int get_mounted_device(char *dst, const char *mount_point, size_t dst_size);
+
+/* Deduce the target bank by comparing the bank part numbers against the device file path
+   store the target device file path in dst */
+int find_target_partition(char *dst
+        , const char *mounted_partition
+        , const char *bank1_part_num
+        , const char *bank2_part_num
+        , size_t dst_size);
+
+/* Get the full path to a file from the part-info directory.
+   This function gives no guarantee the path actually exists */
+int get_part_info_filepath(char *dst, const char *file_name, size_t dst_size);
+
+/* Read the contents of a file from the part info directory to a new string.
+   It is the callers responsibilty to free the memory allocated for the new string */
+char *read_part_info_file_to_new_str(const char *file_name);
+
+/* Get the full path to a file in the bootflags directory.
+   The file does not need to exist, this function just appends filename to BOOTFLAGS_DIR/ */
+int get_bootflag_file_path(char *bootflags_file_path, const char *filename, size_t size);
+
+/* Write an empty file to the bootflags dir */
+int write_bootflag_file(const char *filename);
+
+/* Remove a file from the bootflags dir */
+int remove_bootflag_file(const char *filename);
+
+/* Copy an image to a device using swupdate's copyimage function. */
+int copy_image_and_sync(struct img_type *img, const char *device_filepath);
+
+/* remove the file which tells the system not to perform a reboot after the update */
+int remove_do_not_reboot_flag(void);
+
+#endif // swupdate_handlers_arm_handler_common_h_

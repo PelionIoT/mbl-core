@@ -128,21 +128,6 @@ boot = function(image)
 end
 
 
-rootfs = function(image)
-    local img_path, cp_err = copy_image_to_file(image)
-    if cp_err ~= 0 then
-        return 1
-    end
-
-    local ri_err = run_installer("/opt/arm/rootfs_installer.sh", img_path)
-    if ri_err ~= 0 then
-        return 1
-    end
-
-    return 0
-end
-
-
 apps = function(image)
     local img_path, cp_err = copy_image_to_file(image)
     if cp_err ~= 0 then
@@ -161,5 +146,5 @@ end
 swupdate.register_handler("WKS_BOOTLOADER1v3", wks_bootloader1, swupdate.HANDLER_MASK.IMAGE_HANDLER)
 swupdate.register_handler("WKS_BOOTLOADER2v3", wks_bootloader2, swupdate.HANDLER_MASK.IMAGE_HANDLER)
 swupdate.register_handler("BOOTv3", boot, swupdate.HANDLER_MASK.IMAGE_HANDLER)
-swupdate.register_handler("ROOTFSv3", rootfs, swupdate.HANDLER_MASK.IMAGE_HANDLER)
 swupdate.register_handler("APPSv3", apps, swupdate.HANDLER_MASK.IMAGE_HANDLER)
+-- NOTE: The ROOTFS handler(s) are implemented in C in MBL's 'swupdate-handlers' component.

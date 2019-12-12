@@ -10,6 +10,7 @@ devices, etc.)
 import glob
 import os
 import pathlib
+import pytest
 import re
 import subprocess
 
@@ -187,3 +188,51 @@ def test_part_device_name_files():
                 get_var_for_part("DEVICE_NAME_BANK{}".format(bank), part_name)
                 == device_name
             )
+
+
+@pytest.mark.parametrize("part_name", get_fs_part_names())
+def test_size_KiB_consistent_with_size_MiB(part_name):
+    """
+    Test that the size in KiB recorded for a partition is always 1024 times the
+    size in MiB recorded for that partition
+    """
+    size_KiB = int(get_var_for_part("SIZE_KiB", part_name))
+    size_MiB = int(get_var_for_part("SIZE_MiB", part_name))
+    assert size_KiB == 1024 * size_MiB
+
+
+def test_local_conf_part_setting_has_taken_effect(local_conf_assignments_dict):
+    """
+    If a partition property was set in local.conf, check that the property
+    matches what was set in the partition info files.
+    """
+    local_conf_assignment = local_conf_assignments_dict.items()
+
+    for local_conf_assignment in local_conf_assignments_dict.items():
+        var_name, var_value = local_conf_assignment
+        var_path = EXPECTED_PART_INFO_DIR / var_name
+        if var_path.is_file():
+            assert var_path.read_text() == var_value
+
+
+@pytest.mark.parametrize("part_name", get_fs_part_names())
+def test_local_conf_flash_erase_block_size_setting_has_taken_effect(
+    local_conf_assignments_dict, part_name
+):
+    """
+    If the flash erase block size was set in local.conf, make sure all file
+    system partition alignments match that block size... Unless the partition's
+    alignment itself was overriden in local.conf.
+    """
+    flash_erase_block_size_KiB = int(
+        local_conf_assignments_dict.get("MBL_FLASH_ERASE_BLOCK_SIZE_KiB", 0)
+    )
+    if (
+        flash_erase_block_size_KiB
+        and "MBL_{}_ALIGN_KiB".format(part_name)
+        not in local_conf_assignments_dict
+    ):
+        assert (
+            int(get_var_for_part("ALIGN_KiB", part_name))
+            == flash_erase_block_size_KiB
+        )
