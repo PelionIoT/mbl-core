@@ -258,18 +258,20 @@ def get_file_mtime(path, dut_addr, execute_helper):
     return mtime
 
 
-def get_app_info(app_name, dut_addr, execute_helper, app_output):
+def get_app_info(
+    app_name, dut_addr, execute_helper, app_output, raise_on_error
+):
     """Get app info using runc and reading its log file."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
         ["shell", "runc state {}".format(app_name)],
         dut_addr,
-        raise_on_error=True,
+        raise_on_error=raise_on_error,
     )
     if app_output:
         exit_code, output_cat, error = execute_helper.send_mbl_cli_command(
             ["shell", "cat /var/log/app/{}.log".format(app_name)],
             dut_addr,
-            raise_on_error=True,
+            raise_on_error=raise_on_error,
         )
         output = "{}{}".format(output, output_cat)
     return output

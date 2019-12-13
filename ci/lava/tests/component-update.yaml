@@ -33,8 +33,13 @@ parameters:
     #
     update_method:
 
+    #
+    # soak_test: specifies if the update is part of soak tests, so some of the verification steps can be disabled.
+    #
+    soak_test:
+
 run:
     steps:
         # Activate virtual environment
         - . $virtual_env/bin/activate
-        - pytest --verbose --debug-output -x -s ./ci/lava/tests/test-component-update.py --update-component-name $component_name --update-payload-url $payload_url --update-payload-testinfo-url $payload_testinfo_url --update-method $update_method
+        - pytest --verbose --debug-output -x -s ./ci/lava/tests/test-component-update.py --update-component-name $component_name --update-payload-url $payload_url --update-payload-testinfo-url $payload_testinfo_url --update-method $update_method $soak_test
