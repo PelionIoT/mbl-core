@@ -2,7 +2,8 @@ project(UpdateD)
 
 cmake_minimum_required(VERSION 3.5)
 
-add_executable(updated ${CMAKE_CURRENT_SOURCE_DIR}/updated.cpp)
+add_executable(updated ${CMAKE_CURRENT_SOURCE_DIR}/updated.cpp ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp)
+target_include_directories(updated PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 target_compile_options(updated
     PUBLIC
