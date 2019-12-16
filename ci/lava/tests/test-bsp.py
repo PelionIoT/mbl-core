@@ -21,21 +21,6 @@ class TestBSP:
 
         assert dut_addr
 
-    def test_badblocks(self, execute_helper):
-        """Perform the test on the DUT via the mbl-cli."""
-        err, stdout, stderr = execute_helper.send_mbl_cli_command(
-            [
-                "shell",
-                'sh -l -c "badblocks -v '
-                "/dev/"
-                "$(cat /config/factory/part-info/MBL_ROOT_DEVICE_NAME_BANK1)"
-                '"',
-            ],
-            TestBSP.dut_address,
-        )
-        print(stdout)
-        assert err == 0 and "Pass" in stdout
-
     def test_memtester(self, execute_helper):
         """Perform the test on the DUT via the mbl-cli."""
         err, stdout, stderr = execute_helper.send_mbl_cli_command(
