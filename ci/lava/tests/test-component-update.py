@@ -145,7 +145,7 @@ class TestComponentUpdate:
                             item["args"],
                             get_expected_app_version(
                                 item["args"]["app_name"],
-                                dut_addr,
+                                TestComponentUpdate.dut_address,
                                 execute_helper,
                             ),
                         )
