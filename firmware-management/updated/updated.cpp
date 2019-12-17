@@ -16,8 +16,6 @@
 
 #include <systemd/sd-daemon.h>
 
-#include <unistd.h>
-
 
 int main()
 {

@@ -10,8 +10,6 @@
 
 #include <systemd/sd-daemon.h>
 
-#include <unistd.h>
-
 
 namespace updated {
     namespace init {
