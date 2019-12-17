@@ -30,9 +30,6 @@ namespace updated {
                 case Status::FailedToStart:
                     sd_notify(0, "STATUS=Failed to start\n");
                     break;
-
-                default:
-                    break;
             }
         }
     } // namespace init
