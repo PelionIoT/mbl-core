@@ -39,6 +39,7 @@ from helpers import (
     get_mounted_bank_device_name,
     get_file_mtime,
     get_pelion_device_id,
+    get_expected_app_version,
 )
 
 
@@ -138,34 +139,11 @@ class TestComponentUpdate:
                         (image_data["image_name"], item["args"])
                     )
                 elif item["test_type"] == "app_bank_compare":
-                    # Work out the version of the currently installed
-                    # application. If there isn't an application installed
-                    # then nothing will be found and the expected_version
-                    # will be set to 0.
-                    #
-                    # We look in the output for a line with the format:
-                    #   "bundle": "/home/app/sample-app-5-good/1"
-                    # and extract the "1"
-
-                    app_info = get_app_info(
-                        item["args"]["app_name"],
-                        TestComponentUpdate.dut_address,
-                        execute_helper,
-                        app_output=True,
-                        raise_on_error=False,
-                    )
-                    expected_version = 0
-                    for line in app_info.splitlines():
-                        if '"bundle":' in line:
-                            bundle_values = re.compile('"[^"]*"').findall(line)
-                            path_to_bundle = bundle_values[1].strip('"')
-                            current_version = os.path.basename(path_to_bundle)
-                            expected_version = int(current_version) + 1
                     app_bank_test_info.append(
                         (
                             image_data["image_name"],
                             item["args"],
-                            expected_version,
+                            get_expected_app_version(item["args"]["app_name"]),
                         )
                     )
         assert not all(

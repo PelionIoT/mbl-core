@@ -282,6 +282,35 @@ def get_app_info(
     return output
 
 
+def get_expected_app_version(app_name):
+    """Work out the version of app to be installed.
+
+    Fetch the currently installed version of the application. If there isn't
+    an application installed then nothing will be found and the expected
+    version will be set to 0.
+
+    We look in the output for a line with the format:
+       "bundle": "/home/app/sample-app-5-good/1"
+    and extract the "1"
+    """
+    app_info = get_app_info(
+        item["args"]["app_name"],
+        TestComponentUpdate.dut_address,
+        execute_helper,
+        app_output=True,
+        raise_on_error=False,
+    )
+    expected_version = 0
+
+    for line in app_info.splitlines():
+        if '"bundle":' in line:
+            bundle_values = re.compile('"[^"]*"').findall(line)
+            path_to_bundle = bundle_values[1].strip('"')
+            current_version = os.path.basename(path_to_bundle)
+            expected_version = int(current_version) + 1
+    return expected_version
+
+
 def get_local_conf_assignments_dict(local_conf_file):
     """
     Get a list of the variable (name, value) pairs.
