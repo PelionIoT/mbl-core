@@ -155,7 +155,7 @@ class TestComponentUpdate:
                         raise_on_error=False,
                     )
                     expected_version = 0
-                    for line in app_info.split("\n"):
+                    for line in app_info.splitlines():
                         if '"bundle":' in line:
                             bundle_values = re.compile('"[^"]*"').findall(line)
                             path_to_bundle = bundle_values[1].strip('"')
