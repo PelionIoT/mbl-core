@@ -263,21 +263,52 @@ def get_file_mtime(path, dut_addr, execute_helper):
     return mtime
 
 
-def get_app_info(app_name, dut_addr, execute_helper, app_output):
+def get_app_info(
+    app_name, dut_addr, execute_helper, app_output, raise_on_error
+):
     """Get app info using runc and reading its log file."""
     exit_code, output, error = execute_helper.send_mbl_cli_command(
         ["shell", "runc state {}".format(app_name)],
         dut_addr,
-        raise_on_error=True,
+        raise_on_error=raise_on_error,
     )
     if app_output:
         exit_code, output_cat, error = execute_helper.send_mbl_cli_command(
             ["shell", "cat /var/log/app/{}.log".format(app_name)],
             dut_addr,
-            raise_on_error=True,
+            raise_on_error=raise_on_error,
         )
         output = "{}{}".format(output, output_cat)
     return output
+
+
+def get_expected_app_version(app_name, dut_addr, execute_helper):
+    """Work out the version of app to be installed.
+
+    Fetch the currently installed version of the application. If there isn't
+    an application installed then nothing will be found and the expected
+    version will be set to 0.
+
+    We look in the output for a line with the format:
+       "bundle": "/home/app/sample-app-5-good/1"
+    and extract the "1"
+    """
+    app_info = get_app_info(
+        app_name,
+        dut_addr,
+        execute_helper,
+        app_output=True,
+        raise_on_error=False,
+    )
+    expected_version = 0
+
+    for line in app_info.splitlines():
+        if '"bundle":' in line:
+            bundle_values = re.compile('"[^"]*"').findall(line)
+            path_to_bundle = bundle_values[1].strip('"')
+            current_version = os.path.basename(path_to_bundle)
+            expected_version = int(current_version) + 1
+    return expected_version
 
 
 def get_local_conf_assignments_dict(local_conf_file):

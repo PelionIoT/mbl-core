@@ -64,6 +64,7 @@ def pytest_addoption(parser):
         default="",
         choices=["pelion", "mbl-cli"],
     )
+    parser.addoption("--soak-test", action="store_true", default=False)
 
 
 def pytest_configure(config):
@@ -245,6 +246,12 @@ def update_payload_testinfo(request):
 def update_method(request):
     """Fixture for --update-method."""
     return request.config.getoption("--update-method")
+
+
+@pytest.fixture
+def soak_test(request):
+    """Fixture for --soak-test."""
+    return request.config.getoption("--soak-test")
 
 
 # DUT fixtures

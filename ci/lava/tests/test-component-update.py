@@ -27,6 +27,8 @@ import os
 import time
 
 import pytest
+import re
+
 
 from helpers import (
     read_partition_to_file,
@@ -37,6 +39,7 @@ from helpers import (
     get_mounted_bank_device_name,
     get_file_mtime,
     get_pelion_device_id,
+    get_expected_app_version,
 )
 
 
@@ -70,7 +73,11 @@ class TestComponentUpdate:
         assert TestComponentUpdate.update_payload
 
     def test_get_pre_update_testinfo(
-        self, execute_helper, update_payload_testinfo, update_component_name
+        self,
+        execute_helper,
+        update_payload_testinfo,
+        update_component_name,
+        soak_test,
     ):
         """Gather test info from the image before updating it."""
         expected_test_info = _get_testinfo_from_json(update_payload_testinfo)
@@ -102,17 +109,20 @@ class TestComponentUpdate:
                         )
                     )
                 elif item["test_type"] == "file_timestamp_compare":
-                    file_timestamp_test_info.append(
-                        (
-                            image_data["image_name"],
-                            item["args"],
-                            get_file_mtime(
-                                **item["args"],
-                                dut_addr=TestComponentUpdate.dut_address,
-                                execute_helper=execute_helper
-                            ),
+                    # Checking the timestamps is not possible during soak
+                    # tests as the same payload is used for each update.
+                    if not soak_test:
+                        file_timestamp_test_info.append(
+                            (
+                                image_data["image_name"],
+                                item["args"],
+                                get_file_mtime(
+                                    **item["args"],
+                                    dut_addr=TestComponentUpdate.dut_address,
+                                    execute_helper=execute_helper
+                                ),
+                            )
                         )
-                    )
                 elif item["test_type"] == "partition_sha256":
                     pre_update_img = read_partition_to_file(
                         TestComponentUpdate.dut_address,
@@ -130,7 +140,15 @@ class TestComponentUpdate:
                     )
                 elif item["test_type"] == "app_bank_compare":
                     app_bank_test_info.append(
-                        (image_data["image_name"], item["args"])
+                        (
+                            image_data["image_name"],
+                            item["args"],
+                            get_expected_app_version(
+                                item["args"]["app_name"],
+                                TestComponentUpdate.dut_address,
+                                execute_helper,
+                            ),
+                        )
                     )
         assert not all(
             not x
@@ -306,20 +324,24 @@ class TestComponentUpdate:
         # Wait few seconds for the app to start running
         time.sleep(5)
         for item in app_bank_test_info:
-            img_name, data = item
+            img_name, data, expected_version = item
             app_name = data["app_name"]
             app_info = get_app_info(
                 app_name,
                 TestComponentUpdate.dut_address,
                 execute_helper,
                 app_output=True,
+                raise_on_error=True,
             )
             print(
                 "Checking the app {} is installed and its output".format(
                     app_name
                 )
             )
-            assert '"bundle": "/home/app/{}/0'.format(app_name) in app_info
+            assert (
+                '"bundle": "/home/app/{}/{}'.format(app_name, expected_version)
+                in app_info
+            )
             # The app might still be running running, so just checking there is
             # some output in the log.
             assert app_info.count("Hello, world") > 0
