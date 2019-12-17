@@ -143,7 +143,11 @@ class TestComponentUpdate:
                         (
                             image_data["image_name"],
                             item["args"],
-                            get_expected_app_version(item["args"]["app_name"]),
+                            get_expected_app_version(
+                                item["args"]["app_name"],
+                                dut_addr,
+                                execute_helper,
+                            ),
                         )
                     )
         assert not all(

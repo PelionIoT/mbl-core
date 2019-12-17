@@ -282,7 +282,7 @@ def get_app_info(
     return output
 
 
-def get_expected_app_version(app_name):
+def get_expected_app_version(app_name, dut_addr, execute_helper):
     """Work out the version of app to be installed.
 
     Fetch the currently installed version of the application. If there isn't
@@ -294,8 +294,8 @@ def get_expected_app_version(app_name):
     and extract the "1"
     """
     app_info = get_app_info(
-        item["args"]["app_name"],
-        TestComponentUpdate.dut_address,
+        app_name,
+        dut_addr,
         execute_helper,
         app_output=True,
         raise_on_error=False,
