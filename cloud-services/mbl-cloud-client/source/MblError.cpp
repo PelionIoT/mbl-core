@@ -55,6 +55,8 @@ const char* MblError_to_str(const MblError error)
         case Error::UpdateWarningDeviceMismatch: return "UpdateWarningDeviceMismatch";
         case Error::UpdateWarningURINotFound: return "UpdateWarningURINotFound";
         case Error::UpdateWarningRollbackProtection: return "UpdateWarningRollbackProtection";
+        case Error::UpdateWarningAuthorizationRejected: return "UpdateWarningAuthorizationRejected";
+        case Error::UpdateWarningAuthorizationUnavailable: return "UpdateWarningAuthorizationUnavailable";
         case Error::UpdateWarningUnknown: return "UpdateWarningUnknown";
         case Error::UpdateErrorWriteToStorage: return "UpdateErrorWriteToStorage";
         case Error::UpdateWarningNoActionRequired: return "UpdateWarningNoActionRequired";
@@ -101,6 +103,8 @@ MblError CloudClientError_to_MblError(MbedCloudClient::Error error)
         case MbedCloudClient::UpdateWarningDeviceMismatch: return Error::UpdateWarningDeviceMismatch;
         case MbedCloudClient::UpdateWarningURINotFound: return Error::UpdateWarningURINotFound;
         case MbedCloudClient::UpdateWarningRollbackProtection: return Error::UpdateWarningRollbackProtection;
+        case MbedCloudClient::UpdateWarningAuthorizationRejected: return Error::UpdateWarningAuthorizationRejected;
+        case MbedCloudClient::UpdateWarningAuthorizationUnavailable: return Error::UpdateWarningAuthorizationUnavailable;
         case MbedCloudClient::UpdateWarningUnknown: return Error::UpdateWarningUnknown;
         case MbedCloudClient::UpdateErrorWriteToStorage: return Error::UpdateErrorWriteToStorage;
         case MbedCloudClient::UpdateWarningNoActionRequired: return Error::UpdateWarningNoActionRequired;
@@ -110,7 +114,7 @@ MblError CloudClientError_to_MblError(MbedCloudClient::Error error)
         case MbedCloudClient::UpdateWarningBadKeytable: return Error::UpdateWarningBadKeytable;
         case MbedCloudClient::UpdateCertificateInsertion: return Error::UpdateCertificateInsertion;
         case MbedCloudClient::UpdateErrorConnection: return Error::UpdateErrorConnection;
-    
+
         case MbedCloudClient::EnrollmentErrorBase: return Error::EnrollmentErrorBase;
         case MbedCloudClient::EnrollmentErrorEnd: return Error::EnrollmentErrorEnd;
     }
