@@ -54,7 +54,7 @@ ubpd_skip_ok="$4"
         exit 60
     fi
 
-    ubpd_mount_point_file="${PART_INFO_FILES_DIR}/MBL_${ubpd_part_name}_MOUNT_POINT"
+    ubpd_mount_point_file="${PART_INFO_DIR}/MBL_${ubpd_part_name}_MOUNT_POINT"
     if ! ubpd_mount_point=$(cat "$ubpd_mount_point_file") || [ -z "$ubpd_mount_point" ]; then
         printf "Failed to find the mount point for partition \"%s\" from partition info file \"%s\"\n" \
             "$ubpd_part_name" \

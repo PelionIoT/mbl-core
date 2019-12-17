@@ -81,9 +81,13 @@ def read_partition_to_file(
                 component_size / 1024, partition_size
             )
         )
+    device_file_name = get_mounted_bank_device_name(
+        "/", dut_addr, execute_helper
+    )
+    device_file_name = device_file_name.split("p")[0]
     dd_command = (
         "set -x; "
-        r"BD=$(/sbin/blkid -L rootfs1 | sed 's/p[0-9]\+$//'); "
+        r"BD=/dev/{device_file}; "
         "OF={ofile}; "
         "SKIP=$(cat {align})K; "
         "COUNT={count}; "
@@ -93,6 +97,7 @@ def read_partition_to_file(
             align=align_file_path,
             count=count,
             magnitude=size_magnitude,
+            device_file=device_file_name,
         )
     )
     execute_helper.send_mbl_cli_command(
