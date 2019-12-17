@@ -9,13 +9,20 @@
  * to a device will be the responsibility of an external delivery mechanism.
  * UpdateD runs in the background on a device and listens for update requests.
  * When a request is received, UpdateD will hand off responsibility for applying
- * the update to swupdate. */
+ * the update to swupdate.
+ */
+
+#include "init.h"
 
 #include <unistd.h>
 
+
 int main()
 {
-    while(1)
+    const updated::init::Status init_status = updated::init::initialise();
+    updated::init::notify_start(init_status);
+
+    while(true)
     {
         pause();
     }

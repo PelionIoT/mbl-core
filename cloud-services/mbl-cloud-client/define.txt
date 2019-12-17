@@ -27,7 +27,8 @@ add_definitions(-DPAL_USER_DEFINED_CONFIGURATION="\\"sotp_fs_config_linux.h"\\")
 
 SET(PAL_TLS_BSP_DIR ${NEW_CMAKE_SOURCE_DIR}/mbed-cloud-client/mbed-client-pal/Configs/${TLS_LIBRARY})
 
-# PAL specific configurations for Linux platform simulation
+# PAL specific configurations for Linux platform tests and simulation
+set(DISABLE_PAL_TESTS 1)
 add_definitions(-DPAL_SIMULATOR_TEST_ENABLE=0)
 add_definitions(-DPAL_SIMULATE_RTOS_REBOOT=0)
 add_definitions(-DPAL_SIMULATOR_FLASH_OVER_FILE_SYSTEM=1)
