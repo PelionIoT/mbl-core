@@ -14,11 +14,14 @@
 
 #include "init.h"
 
+#include "rpc/Server.h"
+
 #include <unistd.h>
 
 
 int main()
 {
+    updated::rpc::Server rpc_server;
     const updated::init::Status init_status = updated::init::initialise();
     updated::init::notify_start(init_status);
 
