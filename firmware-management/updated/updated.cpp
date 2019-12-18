@@ -13,6 +13,7 @@
  */
 
 #include "init.h"
+#include "logging/logger.h"
 
 #include <unistd.h>
 
@@ -21,6 +22,8 @@ int main()
 {
     const updated::init::Status init_status = updated::init::initialise();
     updated::init::notify_start(init_status);
+
+    updated::logger::info("Hello from the logger");
 
     while(true)
     {
