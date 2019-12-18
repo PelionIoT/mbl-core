@@ -36,7 +36,7 @@ jobs:
           command: sudo apt-get install -y libsystemd-dev && sudo apt-get install -y clang-tidy
       - run:
           name: Run clang tidy
-          command: ci/clang-tidy/run-clang-tidy.py
+          command: repo-under-test/ci/clang-tidy/run-clang-tidy.py
 
 workflows:
   version: 2
