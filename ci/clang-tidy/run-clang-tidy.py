@@ -38,15 +38,18 @@ class ClangTidyRunner:
     def _fetch_extra_headers(self):
         for header_info in self.data["headers"]:
             repo_url, header_loc = header_info["repo"].split(";")
-            dst_dir = self.project_path / header_info["destdir"]
-            subprocess.run(["git", "clone", repo_url, "dst"], check=True)
-            path = pathlib.Path(SCRIPT_DIR, "dst", header_loc).absolute()
-            shutil.copytree(str(path), dst_dir)
-            self.extra_flags = "-DCMAKE_{lang}_FLAGS=-I {incdir}".format(
-                incdir=str(dst_dir),
-                lang=self.data["lang"]
-            )
-            shutil.rmtree(str(SCRIPT_DIR / "dst"))
+            repo_path = SCRIPT_DIR / "dst"
+            subprocess.run(["git", "clone", repo_url, str(repo_path)], check=True)
+            try:
+                hdr_dst_dir = self.project_path / header_info["destdir"]
+                hdr_path = pathlib.Path(SCRIPT_DIR, "dst", header_loc).absolute()
+                shutil.copytree(str(hdr_path), hdr_dst_dir)
+                self.extra_flags = "-DCMAKE_{lang}_FLAGS=-I {incdir}".format(
+                    incdir=str(hdr_dst_dir),
+                    lang=self.data["lang"]
+                )
+            finally:
+                shutil.rmtree(str(repo_path))
 
     def run(self):
         subprocess.run(
