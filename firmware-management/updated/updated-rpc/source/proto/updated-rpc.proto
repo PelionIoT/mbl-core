@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
+syntax = "proto3";
+
+package updated.rpc;
+
+service UpdateDService {
+    rpc GetUpdateHeader(Empty) returns (GetUpdateHeaderResponse) {}
+    rpc StartUpdate(StartUpdateRequest) returns (ErrorCodeMessage) {}
+}
+
+message Empty {
+}
+
+message ErrorCodeMessage {
+    enum ErrorCode {
+        // UNKNOWN_ERROR has the value 0 because that's the default that enum
+        // values get in protobuf.
+        UNKNOWN_ERROR = 0;
+        SUCCESS = 1;
+    }
+    ErrorCode value = 1;
+}
+
+message GetUpdateHeaderResponse {
+    bytes update_header = 1;
+    ErrorCodeMessage error_code = 2;
+}
+
+message StartUpdateRequest {
+    string payload_path = 1;
+    bytes update_header = 2;
+}

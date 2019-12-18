@@ -1,6 +1,6 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-clang-analyzer-*,clang-analyzer-cplusplus-*'
-WarningsAsErrors: 'clang-diagnostic-*,clang-analyzer-*,*,-clang-analyzer-*,clang-analyzer-cplusplus-*'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-clang-analyzer-alpha.*,-llvm-include-order,-modernize-use-trailing-return-type,-modernize-use-trailing-return-type,-modernize-concat-nested-namespaces,-fuchsia-default-arguments-calls'
+WarningsAsErrors: 'clang-diagnostic-*,clang-analyzer-*,*,-clang-analyzer-alpha.*,-llvm-include-order,-google-readability-todo,-modernize-use-trailing-return-type, -modernize-concat-nested-namespaces'
 HeaderFilterRegex: ''
 AnalyzeTemporaryDtors: false
 FormatStyle:     none
