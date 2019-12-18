@@ -33,7 +33,7 @@ jobs:
           path: repo-under-test
       - run:
           name: Install libs
-          command: sudo apt-get install -y libsystemd-dev && sudo apt-get install -y clang-tidy
+          command: sudo apt-get install -y libsystemd-dev && sudo apt-get install -y clang-tidy && sudo apt-get install -y cmake
       - run:
           name: Run clang tidy
           command: repo-under-test/ci/clang-tidy/run-clang-tidy.py
