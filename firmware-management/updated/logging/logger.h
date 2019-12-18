@@ -9,7 +9,7 @@ namespace updated
 {
     namespace logger = spdlog;
     auto systemd_sink = std::make_shared<logger::sinks::systemd_sink_st>();
-    logger::logger systemd_logger("updated_logger", systemd_sink);
+    auto systemd_logger = std::make_shared<logger::logger>("updated_logger", systemd_sink);
     logger::set_default_logger(systemd_logger);
 }
 
