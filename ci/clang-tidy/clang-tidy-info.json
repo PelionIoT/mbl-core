@@ -3,5 +3,9 @@
     {
         "lang": "C",
         "headers": [{"repo": "git@github.com:sbabic/swupdate.git;include", "destdir": "swupdate"}]
+    },
+    "../../firmware-management/updated":
+    {
+        "lang": "CXX"
     }
 }
