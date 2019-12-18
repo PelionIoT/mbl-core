@@ -1,8 +1,8 @@
 #ifndef UPDATED_LOGGER_H
 #define UPDATED_LOGGER_H
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/systemd_sink.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/systemd_sink.h>
 
 
 namespace updated
