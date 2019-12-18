@@ -19,8 +19,8 @@ target_compile_options(updated
     -Wcast-align
     -Wwrite-strings
     -Wconversion
-    -Wlogical-op)
+    "$<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>")
 
 target_link_libraries(updated systemd)
 
-install(TARGETS updated DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS updated RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})

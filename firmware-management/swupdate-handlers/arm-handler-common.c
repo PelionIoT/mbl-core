@@ -347,13 +347,13 @@ int remove_do_not_reboot_flag(void)
 
     if (num_written < 0)
     {
-        ERROR("%s %s/%s %s" "Failed to write ", TMP_DIR, do_not_reboot_filename, "to destination buffer");
+        ERROR("%s %s/%s %s", "Failed to write ", TMP_DIR, do_not_reboot_filename, "to destination buffer");
         return -1;
     }
 
     if (num_written >= PATH_MAX)
     {
-        ERROR("%s %s", "The reboot flag filepath was truncated, it is larger than PATH_MAX");
+        ERROR("%s", "The reboot flag filepath was truncated, it is larger than PATH_MAX");
         return -1;
     }
 

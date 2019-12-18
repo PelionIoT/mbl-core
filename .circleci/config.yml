@@ -25,6 +25,18 @@ jobs:
           name: Sanity check
           command: mbl-tools/ci/sanity-check/run-me.sh --no-tty --workdir repo-under-test
 
+  clang-tidy:
+    machine: true
+    steps:
+      - checkout:
+          path: repo-under-test
+      - run:
+          name: Get mbl-tools
+          command: git clone https://github.com/ARMmbed/mbl-tools
+      - run:
+          name: Run clang tidy
+          command: mbl-tools/ci/clang-tidy-check/run-me.sh --workdir repo-under-test/firmware-management/updated
+
 workflows:
   version: 2
 
@@ -32,3 +44,4 @@ workflows:
     jobs:
       - licenses
       - sanity
+      - clang-tidy
