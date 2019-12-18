@@ -1,0 +1,7 @@
+{
+    "../../firmware-management/swupdate-handlers":
+    {
+        "lang": "C",
+        "headers": [{"repo": "git@github.com:sbabic/swupdate.git;include", "destdir": "swupdate"}]
+    }
+}

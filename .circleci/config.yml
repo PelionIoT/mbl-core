@@ -25,6 +25,16 @@ jobs:
           name: Sanity check
           command: mbl-tools/ci/sanity-check/run-me.sh --no-tty --workdir repo-under-test
 
+  clang-tidy:
+    docker:
+      - image: circleci/python:3.7.5
+    steps:
+      - checkout:
+          path: repo-under-test
+      - run:
+          name: Run clang tidy
+          command: ci/clang-tidy/run-clang-tidy.py
+
 workflows:
   version: 2
 
