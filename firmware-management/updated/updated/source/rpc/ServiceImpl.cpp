@@ -14,6 +14,7 @@ grpc::Status ServiceImpl::GetUpdateHeader(
     const Empty* const /* request */,
     GetUpdateHeaderResponse* const response)
 {
+    // TODO: return actual update HEADER data, not this dummy data.
     response->set_update_header("asdf");
     response->mutable_error_code()->set_value(ErrorCodeMessage::SUCCESS);
     return grpc::Status::OK;
@@ -24,6 +25,7 @@ grpc::Status ServiceImpl::StartUpdate(
     const StartUpdateRequest* const /* request */,
     ErrorCodeMessage* const response)
 {
+    // TODO: actually ask UpdateCoordinator to start an update.
     response->set_value(ErrorCodeMessage::SUCCESS);
     return grpc::Status::OK;
 }

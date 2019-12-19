@@ -18,6 +18,8 @@ message Empty {
 
 message ErrorCodeMessage {
     enum ErrorCode {
+        // UNKNOWN_ERROR has the value 0 because that's the default that enum
+        // values get in protobuf.
         UNKNOWN_ERROR = 0;
         SUCCESS = 1;
     }

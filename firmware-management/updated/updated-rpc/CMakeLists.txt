@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 
+# The "protoc" program is used to translate .proto files into code
 find_program(PROTOC protoc)
+
+# grpc_cpp_plugin is used by protoc to generate C++ code.
 find_program(GRPC_PLUGIN grpc_cpp_plugin)
 
 include(FindProtobuf)
@@ -9,11 +12,17 @@ find_package(Protobuf REQUIRED)
 # Non generated source files
 set(UPDATED_RPC_NON_GEN_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/source/config.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/source/Error.cpp"
 )
 
 # Generate protobuf and grpc source from our .proto file
 set(UPDATED_RPC_PROTO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/source/proto")
 set(UPDATED_RPC_PROTO "${UPDATED_RPC_PROTO_PATH}/updated-rpc.proto")
+
+# This is the destination dir for the files that protoc will generate. protoc
+# will generate .cc files as well as .h files... The .cc files shouldn't really
+# live in this "include" directory but they're not doing much harm at the
+# moment.
 set(UPDATED_RPC_GEN_DEST "${CMAKE_CURRENT_BINARY_DIR}/include/updated-rpc")
 
 # .cc files that "protoc" will generate from the proto file
@@ -25,6 +34,7 @@ set(UPDATED_RPC_GEN_H
     "${UPDATED_RPC_GEN_DEST}/updated-rpc.pb.h"
     "${UPDATED_RPC_GEN_DEST}/updated-rpc.grpc.pb.h")
 
+# The rule to generate our protobuf/grpc source files
 add_custom_command(
     OUTPUT ${UPDATED_RPC_GEN_CC} ${UPDATED_RPC_GEN_H}
     COMMAND "${PROTOC}"
