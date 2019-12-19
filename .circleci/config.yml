@@ -33,7 +33,7 @@ jobs:
           path: repo-under-test
       - run:
           name: Install env
-          command: apt-get update && apt-get install -y clang-tidy && apt-get install -y cmake
+          command: apt-get update && apt-get install -y python3 && apt-get install -y clang-tidy && apt-get install -y cmake
       - run:
           name: Install libs
           command: apt-get install -y libsystemd-dev
