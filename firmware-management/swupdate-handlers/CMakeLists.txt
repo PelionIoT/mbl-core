@@ -9,20 +9,21 @@ set_target_properties(swupdate-handlers PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(swupdate-handlers PROPERTIES PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/rootfs-handler.h)
 
 target_include_directories(swupdate-handlers PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_compile_options(swupdate-handlers
-    PUBLIC
-    -Wall
-    -Wextra
-    -Werror
-    -Wformat=2
-    -Wunused-parameter
-    -Wfloat-equal
-    -Wshadow
-    -Wcast-qual
-    -Wcast-align
-    -Wwrite-strings
-    -Wconversion
-    -Wlogical-op
+target_compile_options(
+    swupdate-handlers
+        PUBLIC
+        -Wall
+        -Wextra
+        -Werror
+        -Wformat=2
+        -Wunused-parameter
+        -Wfloat-equal
+        -Wshadow
+        -Wcast-qual
+        -Wcast-align
+        -Wwrite-strings
+        -Wconversion
+        -Wlogical-op
 )
 
 set(BOOTFLAGS_DIR "/var/bootflags" CACHE PATH "Path to directory containing boot flag files")
@@ -35,5 +36,9 @@ set(PART_INFO_DIR "${FACTORY_CONFIG_DIR}/part-info" CACHE PATH "Path to the dire
 # Replace placeholder variables with our cache variables defined above.
 configure_file("arm-handler-common.h.in" "arm-handler-common.h" @ONLY)
 
-install(TARGETS swupdate-handlers LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(
+    TARGETS swupdate-handlers
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
