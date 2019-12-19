@@ -39,6 +39,5 @@ configure_file("arm-handler-common.h.in" "arm-handler-common.h" @ONLY)
 install(
     TARGETS swupdate-handlers
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )

@@ -61,6 +61,7 @@ class ClangTidyRunner:
                 self.extra_flags,
                 "-S{}".format(str(self.project_path)),
                 "-B{}".format(str(self.project_path)),
+                "--trace-expand",
             ],
             check=True
         )
