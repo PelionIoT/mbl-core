@@ -10,7 +10,6 @@
 #include "updated-rpc/config.h"
 #include "updated-rpc/Error.h"
 
-#include <grpc++/server.h>
 #include <grpc++/server_builder.h>
 
 #include <cassert>

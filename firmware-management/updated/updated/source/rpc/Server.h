@@ -6,12 +6,9 @@
 #ifndef UPDATED_RPC_SERVER_H
 #define UPDATED_RPC_SERVER_H
 
-#include <memory>
+#include <grpc++/server.h>
 
-namespace grpc {
-class Server;
-class Service;
-} // namespace grpc
+#include <memory>
 
 namespace updated {
 namespace rpc {
