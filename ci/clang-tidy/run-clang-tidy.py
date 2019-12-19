@@ -58,6 +58,8 @@ class ClangTidyRunner:
                 '"-DCMAKE_{}_CLANG_TIDY=clang-tidy;-checks=*"'.format(
                     self.data["lang"]
                 ),
+                "-DCMAKE_INSTALL_LIBDIR={}".format(SCRIPT_DIR),
+                "-DCMAKE_INSTALL_BINDIR={}".format(SCRIPT_DIR),
                 self.extra_flags,
                 "-S{}".format(str(self.project_path)),
                 "-B{}".format(str(self.project_path)),
