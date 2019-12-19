@@ -27,7 +27,7 @@ jobs:
 
   clang-tidy:
     docker:
-      - image: circleci/python:3.7.5
+      - image: ubuntu
     steps:
       - checkout:
           path: repo-under-test
