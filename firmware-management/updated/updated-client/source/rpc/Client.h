@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 namespace updated {
 namespace rpc {
@@ -36,6 +37,8 @@ public:
      * each update transaction (something like update transaction handles).
      */
     std::string GetUpdateHeader();
+
+    void StartUpdate(std::string_view payload_path, std::string_view update_header);
 
 private:
     std::unique_ptr<UpdateDService::Stub> service_stub_;
