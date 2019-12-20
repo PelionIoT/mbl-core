@@ -56,7 +56,7 @@ void Client::StartUpdate(std::string_view payload_path, std::string_view update_
     StartUpdateRequest request;
     request.set_payload_path(payload_path.data(), payload_path.size());
     request.set_update_header(update_header.data(), update_header.size());
-    const auto rpc_status = service_stub_->StartUpdate(&context, &request, &response);
+    const auto rpc_status = service_stub_->StartUpdate(&context, request, &response);
     throw_on_grpc_error(rpc_status);
     throw_on_updated_rpc_error(response);
 }
