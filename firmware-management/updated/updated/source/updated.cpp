@@ -21,14 +21,12 @@
 
 int main()
 {
-    updated::rpc::Server rpc_server;
+    updated::UpdateCoordinator update_coordinator;
+    updated::rpc::Server rpc_server{update_coordinator};
     const updated::init::Status init_status = updated::init::initialise();
     updated::init::notify_start(init_status);
 
-    while(true)
-    {
-        pause();
-    }
+    update_coordinator.run();
 
     return 0;
 }

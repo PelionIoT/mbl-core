@@ -14,20 +14,27 @@ grpc::Status ServiceImpl::GetUpdateHeader(
     const Empty* const /* request */,
     GetUpdateHeaderResponse* const response)
 {
-    // TODO: return actual update HEADER data, not this dummy data.
-    response->set_update_header("asdf");
+    response->set_update_header(update_coordinator.get_manifest().header);
     response->mutable_error_code()->set_value(ErrorCodeMessage::SUCCESS);
     return grpc::Status::OK;
 }
 
 grpc::Status ServiceImpl::StartUpdate(
     grpc::ServerContext* const /* context */,
-    const StartUpdateRequest* const /* request */,
+    const StartUpdateRequest* const request,
     ErrorCodeMessage* const response)
 {
-    // TODO: actually ask UpdateCoordinator to start an update.
-    response->set_value(ErrorCodeMessage::SUCCESS);
-    return grpc::Status::OK;
+    try
+    {
+        update_coordinator.start(request.payload_path, request.update_header);
+        response->set_value(ErrorCodeMessage::SUCCESS);
+        return grpc::Status::OK;
+    }
+    catch(...)
+    {
+        response->set_value(ErrorCodeMessage::UNKNOWN_ERROR);
+        return grpc::Status::ABORTED;
+    }
 }
 
 } // namespace rpc

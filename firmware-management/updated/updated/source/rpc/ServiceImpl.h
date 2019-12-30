@@ -7,6 +7,7 @@
 #define UPDATED_RPC_SERVICEIMPL_H
 
 #include "updated-rpc/updated-rpc.grpc.pb.h"
+#include "UpdateCoordinator.h"
 
 namespace updated {
 namespace rpc {
@@ -18,7 +19,9 @@ class ServiceImpl final
     : public UpdateDService::Service
 {
 public:
-    ServiceImpl() = default;
+    ServiceImpl(UpdateCoordinator &c)
+        :update_coordinator{c}
+    {}
 
 private:
     /**
@@ -43,6 +46,8 @@ private:
         const StartUpdateRequest* request,
         ErrorCodeMessage* response
     ) override;
+
+    UpdateCoordinator &update_coordinator;
 };
 
 } // namespace rpc
