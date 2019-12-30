@@ -21,7 +21,7 @@ public:
     Manifest get_manifest() const noexcept;
 
 private:
-    std::filesystem::path update_payload_path{ "/scratch" };
+    std::filesystem::path update_payload_path{ "/tmp/updated" };
     std::mutex mutex;
     std::condition_variable condition_var;
 

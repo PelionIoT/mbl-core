@@ -12,10 +12,11 @@ void UpdateCoordinator::start(const std::filesystem::path &payload_path, const s
     assert(!payload_path.empty());
     assert(header_data.size());
 
+    std::unique_lock<std::mutex> ul{ mutex };
     update_manifest.header = header_data;
+    std::filesystem::create_directories(update_payload_path);
     update_payload_path /= payload_path.filename();
     std::filesystem::create_hard_link(payload_path, update_payload_path);
-    std::unique_lock<std::mutex> ul{ mutex };
     //TODO: set global update state to UPDATING
     ul.unlock();
     condition_var.notify_all();
@@ -25,7 +26,7 @@ void UpdateCoordinator::run()
 {
     std::unique_lock<std::mutex> ul{ mutex };
     // TODO: query UpdateTracker state to guard against spurious wakeups
-    condition_var.wait(ul, [](){ return true; });
+    condition_var.wait(ul, [this](){ return update_manifest.header.size() > 0; });
     // TODO: call swupdate
     std::cout << "call swupdate" << '\n';
     ul.unlock();

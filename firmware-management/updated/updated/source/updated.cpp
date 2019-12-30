@@ -28,7 +28,8 @@ int main()
     const updated::init::Status init_status = updated::init::initialise();
     updated::init::notify_start(init_status);
 
-    update_coordinator.run();
+    while(true)
+        update_coordinator.run();
 
     return 0;
 }

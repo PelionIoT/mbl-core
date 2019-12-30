@@ -9,7 +9,7 @@
 int main()
 {
     updated::rpc::Client client;
-    client.StartUpdate("/some/nonexistent/payload/path", "dummy_update_header");
+    client.StartUpdate("/tmp/testpayload", "dummy_update_header");
     std::cout << client.GetUpdateHeader() << '\n';
     return 0;
 }

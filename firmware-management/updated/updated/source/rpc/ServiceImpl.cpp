@@ -6,6 +6,8 @@
 
 #include "ServiceImpl.h"
 
+#include <exception>
+
 namespace updated {
 namespace rpc {
 
@@ -30,8 +32,9 @@ grpc::Status ServiceImpl::StartUpdate(
         response->set_value(ErrorCodeMessage::SUCCESS);
         return grpc::Status::OK;
     }
-    catch(...)
+    catch(std::exception &e)
     {
+        std::cerr << e.what() << '\n';
         response->set_value(ErrorCodeMessage::UNKNOWN_ERROR);
         return grpc::Status::CANCELLED;
     }
