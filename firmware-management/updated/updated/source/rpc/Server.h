@@ -33,7 +33,7 @@ public:
      * This includes setting up a socket for listening and starting a new
      * thread (or threads) for servicing RPC requests.
      */
-    Server(UpdateCoordinator&);
+    Server(updated::UpdateCoordinator&);
 
     /**
      * Shut down the RPC server and wait for in-progress RPCs to finish.

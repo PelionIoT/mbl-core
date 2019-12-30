@@ -15,7 +15,7 @@ class UpdateCoordinator final
 public:
     UpdateCoordinator() = default;
 
-    void start(const std::filesystem::path &payload_path, const std::string_view header_data);
+    void start(const std::filesystem::path &payload_path, std::string header_data);
     void run();
 
     Manifest get_manifest() const noexcept;

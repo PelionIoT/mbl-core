@@ -7,9 +7,11 @@
 
 namespace updated {
 
-void UpdateCoordinator::start(const std::filesystem::path &payload_path, std::string_view header_data)
+void UpdateCoordinator::start(const std::filesystem::path &payload_path, const std::string header_data)
 {
-    assert(payload_path && header_data);
+    assert(!payload_path.empty());
+    assert(header_data.size());
+
     update_manifest.header = header_data;
     update_payload_path /= payload_path.filename();
     std::filesystem::create_hard_link(payload_path, update_payload_path);
@@ -30,7 +32,7 @@ void UpdateCoordinator::run()
     condition_var.notify_all();
 }
 
-void UpdateCoordinator::get_manifest() const noexcept
+Manifest UpdateCoordinator::get_manifest() const noexcept
 {
     return update_manifest;
 }

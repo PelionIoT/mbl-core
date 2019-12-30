@@ -19,7 +19,7 @@ class ServiceImpl final
     : public UpdateDService::Service
 {
 public:
-    ServiceImpl(UpdateCoordinator &c)
+    ServiceImpl(updated::UpdateCoordinator &c)
         :update_coordinator{c}
     {}
 
@@ -47,7 +47,7 @@ private:
         ErrorCodeMessage* response
     ) override;
 
-    UpdateCoordinator &update_coordinator;
+    updated::UpdateCoordinator &update_coordinator;
 };
 
 } // namespace rpc
