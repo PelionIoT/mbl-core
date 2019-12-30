@@ -6,6 +6,8 @@
 #ifndef UPDATED_RPC_SERVER_H
 #define UPDATED_RPC_SERVER_H
 
+#include "../UpdateCoordinator.h"
+
 #include <grpc++/server.h>
 
 #include <memory>
@@ -31,7 +33,7 @@ public:
      * This includes setting up a socket for listening and starting a new
      * thread (or threads) for servicing RPC requests.
      */
-    Server();
+    Server(UpdateCoordinator&);
 
     /**
      * Shut down the RPC server and wait for in-progress RPCs to finish.

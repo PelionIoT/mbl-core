@@ -26,14 +26,14 @@ grpc::Status ServiceImpl::StartUpdate(
 {
     try
     {
-        update_coordinator.start(request.payload_path, request.update_header);
+        update_coordinator.start(request->payload_path(), request->update_header());
         response->set_value(ErrorCodeMessage::SUCCESS);
         return grpc::Status::OK;
     }
     catch(...)
     {
         response->set_value(ErrorCodeMessage::UNKNOWN_ERROR);
-        return grpc::Status::ABORTED;
+        return grpc::Status::CANCELLED;
     }
 }
 

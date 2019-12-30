@@ -16,6 +16,8 @@
 
 #include "rpc/Server.h"
 
+#include "UpdateCoordinator.h"
+
 #include <unistd.h>
 
 

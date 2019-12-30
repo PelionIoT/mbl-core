@@ -42,8 +42,8 @@ std::unique_ptr<grpc::Server> create_grpc_server(grpc::Service* const service)
 
 } // anonymous namespace
 
-Server::Server()
-    : service_{std::make_unique<ServiceImpl>()}
+Server::Server(UpdateCoordinator &c)
+    : service_{std::make_unique<ServiceImpl>(c)}
     , server_{create_grpc_server(service_.get())}
 {
 }
