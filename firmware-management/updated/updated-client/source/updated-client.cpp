@@ -6,6 +6,9 @@
 
 #include "rpc/Client.h"
 
+#include <string>
+
+
 int main()
 {
     updated::rpc::Client client;

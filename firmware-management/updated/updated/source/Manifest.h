@@ -5,6 +5,9 @@
 
 namespace updated {
 
+/** Manifest contains information about an update bundle.
+ *  Currently this object just contains the data from the update HEADER file.
+ */
 struct Manifest final
 {
     std::string header;

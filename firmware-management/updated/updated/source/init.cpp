@@ -12,25 +12,26 @@
 
 
 namespace updated {
-    namespace init {
-        Status initialise()
-        {
-            return Status::Started;
-        }
+namespace init {
 
-        // Notify the init system that we started successfully
-        void notify_start(const Status startup_status)
-        {
-            switch(startup_status)
-            {
-                case Status::Started:
-                    sd_notify(0, "READY=1");
-                    break;
+Status initialise()
+{
+    return Status::Started;
+}
 
-                case Status::FailedToStart:
-                    sd_notify(0, "STATUS=Failed to start\n");
-                    break;
-            }
-        }
-    } // namespace init
+void notify_start(const Status startup_status)
+{
+    switch(startup_status)
+    {
+        case Status::Started:
+            sd_notify(0, "READY=1");
+            break;
+
+        case Status::FailedToStart:
+            sd_notify(0, "STATUS=Failed to start\n");
+            break;
+    }
+}
+
+} // namespace init
 } // namespace updated

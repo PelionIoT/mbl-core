@@ -20,7 +20,6 @@
 
 #include <unistd.h>
 
-
 int main()
 {
     updated::UpdateCoordinator update_coordinator;
