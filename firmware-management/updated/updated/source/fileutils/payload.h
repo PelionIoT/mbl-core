@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #ifndef UPDATED_PAYLOAD_H
 #define UPDATED_PAYLOAD_H
 
@@ -21,14 +27,18 @@ public:
     {
         assert(source_path.is_absolute());
 
+        // Create a temporary directory in which to store the hard link.
+        // it is important that the hard link remains on the same fs as
+        // the source. filesystem::create_hard_link will fail to create
+        // links across filesystem boundaries.
+        // We also remove the directory first if it already exists.
         payload_path /= source_path.root_path()
                      /= source_path.relative_path().remove_filename();
         payload_path /= "updated";
-
         if (std::filesystem::exists(payload_path))
             std::filesystem::remove_all(payload_path);
         std::filesystem::create_directories(payload_path);
-
+        // now create the hard link in the temporary dir
         payload_path /= source_path.filename();
         std::filesystem::create_hard_link(source_path, payload_path);
     }

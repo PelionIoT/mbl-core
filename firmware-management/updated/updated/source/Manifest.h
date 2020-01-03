@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2019 Arm Limited and Contributors. All rights reserved.
+ *
+ * SPDX-License-Identifier: BSD-3-Clause
+ */
+
 #ifndef UPDATED_MANIFEST_H
 #define UPDATED_MANIFEST_H
 
