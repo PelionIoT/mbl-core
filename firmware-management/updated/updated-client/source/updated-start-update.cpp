@@ -6,6 +6,8 @@
 
 #include "rpc/Client.h"
 
+#include <getopt.h>
+
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -16,13 +18,16 @@
  */
 std::pair<std::string, std::string> parse_args(const int argc, char **argv)
 {
+    if (argc < 2)
+        throw std::invalid_argument("No arguments given!");
+
     int current_opt;
     int optindex;
 
-    std::vector<option> long_opts {
+    static const std::vector<option> long_opts {
         {"payload-filepath", required_argument, 0, 'p'},
-        {"update-header-filepath", required_argument, 0, 'u'}
-    }
+        {"update-header", required_argument, 0, 'u'}
+    };
 
     std::pair<std::string, std::string> arg_values;
     while ((current_opt = getopt_long(argc, argv, "p:u:", long_opts.data(), &optindex)) != -1)
@@ -45,7 +50,7 @@ std::pair<std::string, std::string> parse_args(const int argc, char **argv)
     if (!arg_values.first.size())
         throw std::invalid_argument("Must provide payload file path!");
     if (!arg_values.second.size())
-        throw std::invalid_argument("Must provide HEADER file path!");
+        throw std::invalid_argument("Must provide HEADER data!");
 
     return arg_values;
 }

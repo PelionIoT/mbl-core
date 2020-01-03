@@ -2,14 +2,26 @@ cmake_minimum_required(VERSION 3.5)
 
 include(GNUInstallDirs)
 
-set(UPDATED_CLIENT_SRC
+set(UPDATED_GET_STATUS_SRC
     source/rpc/Client.cpp
-    source/updated-client.cpp
+    source/updated-get-status.cpp
 )
 
-add_executable(updated-client ${UPDATED_CLIENT_SRC})
-target_link_libraries(updated-client common_compile_options)
-target_link_libraries(updated-client common_compile_warnings)
-target_link_libraries(updated-client updated-rpc)
+set(UPDATED_START_UPDATE_SRC
+    source/rpc/Client.cpp
+    source/updated-start-update.cpp
+)
 
-install(TARGETS updated-client DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_executable(updated-get-status ${UPDATED_GET_STATUS_SRC})
+
+add_executable(updated-start-update ${UPDATED_START_UPDATE_SRC})
+
+target_link_libraries(updated-start-update common_compile_options)
+target_link_libraries(updated-start-update common_compile_warnings)
+target_link_libraries(updated-start-update updated-rpc)
+
+target_link_libraries(updated-get-status common_compile_options)
+target_link_libraries(updated-get-status common_compile_warnings)
+target_link_libraries(updated-get-status updated-rpc)
+
+install(TARGETS updated-get-status updated-start-update DESTINATION ${CMAKE_INSTALL_BINDIR})

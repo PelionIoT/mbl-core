@@ -10,6 +10,8 @@
 int main()
 {
     updated::rpc::Client client;
-    std::cout << client.GetUpdateHeader() << '\n';
+    const auto header = client.GetUpdateHeader();
+    if (!header.size()) return 1;
+    std::cout << header << '\n';
     return 0;
 }
