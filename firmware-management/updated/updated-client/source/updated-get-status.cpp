@@ -6,13 +6,10 @@
 
 #include "rpc/Client.h"
 
-#include <string>
-
 
 int main()
 {
     updated::rpc::Client client;
-    client.StartUpdate("/tmp/testpayload", "dummy_update_header");
     std::cout << client.GetUpdateHeader() << '\n';
     return 0;
 }
