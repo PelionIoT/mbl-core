@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+namespace {
 /**
  * Return help text.
  */
@@ -71,6 +72,8 @@ std::pair<std::string, std::string> parse_args(const int argc, char **argv)
 
     return arg_values;
 }
+
+} // anonymous namespace
 
 int main(int argc, char **argv)
 {
