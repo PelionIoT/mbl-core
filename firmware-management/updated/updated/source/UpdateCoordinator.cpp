@@ -45,7 +45,7 @@ void UpdateCoordinator::run()
     payload_link.reset();
 }
 
-Manifest UpdateCoordinator::get_manifest() const noexcept
+Manifest UpdateCoordinator::manifest() const noexcept
 {
     return update_manifest;
 }

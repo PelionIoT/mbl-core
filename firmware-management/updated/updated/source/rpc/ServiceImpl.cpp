@@ -16,7 +16,7 @@ grpc::Status ServiceImpl::GetUpdateHeader(
     const Empty* const /* request */,
     GetUpdateHeaderResponse* const response)
 {
-    response->set_update_header(update_coordinator.get_manifest().header);
+    response->set_update_header(update_coordinator.manifest().header);
     response->mutable_error_code()->set_value(ErrorCodeMessage::SUCCESS);
     return grpc::Status::OK;
 }

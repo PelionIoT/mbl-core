@@ -8,10 +8,22 @@
 
 #include <getopt.h>
 
+#include <cstdlib>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
+
+/**
+ * Return help text.
+ */
+const char* usage()
+{
+    return R"(Usage: updated-start-update [-p] PATH [-u] HEADER_DATA
+Send an RPC to UpdateD, passing the update payload file and header data.
+Example: updated-start-update -p /tmp/payload.swu -u $(cat /tmp/update-header))";
+}
 
 /**
  * Parse command line arguments.
@@ -26,11 +38,12 @@ std::pair<std::string, std::string> parse_args(const int argc, char **argv)
 
     static const std::vector<option> long_opts {
         {"payload-filepath", required_argument, 0, 'p'},
-        {"update-header", required_argument, 0, 'u'}
+        {"update-header", required_argument, 0, 'u'},
+        {"help", no_argument, 0, 'h'}
     };
 
     std::pair<std::string, std::string> arg_values;
-    while ((current_opt = getopt_long(argc, argv, "p:u:", long_opts.data(), &optindex)) != -1)
+    while ((current_opt = getopt_long(argc, argv, "p:u:h", long_opts.data(), &optindex)) != -1)
     {
         switch (current_opt)
         {
@@ -40,7 +53,11 @@ std::pair<std::string, std::string> parse_args(const int argc, char **argv)
             case 'u':
                 arg_values.second = optarg;
                 break;
+            case 'h':
+                std::cout << usage() << '\n';
+                std::exit(0);
             case '?':
+                std::cout << usage() << '\n';
                 throw std::invalid_argument("Unrecognized argument!");
             default:
                 break;

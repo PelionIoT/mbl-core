@@ -44,8 +44,8 @@ public:
      */
     void run();
 
-    /** Get the update manifest */
-    Manifest get_manifest() const noexcept;
+    /** Return the update manifest */
+    Manifest manifest() const noexcept;
 
 private:
     std::mutex mutex;

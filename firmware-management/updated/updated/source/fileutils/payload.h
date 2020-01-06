@@ -45,7 +45,9 @@ public:
 
     // non-copyable and non-movable
     PayloadHardLink(const PayloadHardLink&) = delete;
-    PayloadHardLink operator=(const PayloadHardLink&) = delete;
+    PayloadHardLink(const PayloadHardLink&&) = delete;
+    PayloadHardLink& operator=(const PayloadHardLink&) = delete;
+    PayloadHardLink& operator=(const PayloadHardLink&&) = delete;
 
     ~PayloadHardLink() noexcept
     {
