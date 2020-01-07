@@ -35,7 +35,7 @@ jobs:
           command: git clone https://github.com/ARMmbed/mbl-tools
       - run:
           name: Run clang tidy
-          command: mbl-tools/ci/clang-tidy-check/run-me.sh --workdir repo-under-test/firmware-management/updated
+          command: mbl-tools/ci/clang-tidy-check/run-me.sh --no-tty --workdir repo-under-test
 
 workflows:
   version: 2

@@ -2,6 +2,12 @@ project(UpdateD)
 
 cmake_minimum_required(VERSION 3.5)
 
+option(RUN_CODE_CHECKS OFF)
+
+if(RUN_CODE_CHECKS)
+    set(CMAKE_CXX_CLANG_TIDY clang-tidy;-checks=*,-clang-analyzer-cplusplus-*,clang-analyzer-*)
+endif(RUN_CODE_CHECKS)
+
 add_executable(updated ${CMAKE_CURRENT_SOURCE_DIR}/updated.cpp ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp)
 target_include_directories(updated PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
