@@ -1,8 +1,12 @@
+# Copyright (c) 2020 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 cmake_minimum_required(VERSION 3.5)
 
- # we don't want static analysis on this project as protobuf produces
- # warnings which aren't our responsibility to fix here.
- set(CMAKE_CXX_CLANG_TIDY "")
+# We don't want static analysis on this project as protobuf produces
+# warnings which aren't our responsibility to fix here.
+set(CMAKE_CXX_CLANG_TIDY "")
 
 # The "protoc" program is used to translate .proto files into code
 find_program(PROTOC protoc)

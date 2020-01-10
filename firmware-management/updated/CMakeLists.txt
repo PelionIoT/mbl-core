@@ -1,3 +1,8 @@
+# Copyright (c) 2020 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+
 project(UpdateD)
 
 cmake_minimum_required(VERSION 3.5)
