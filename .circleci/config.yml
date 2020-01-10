@@ -32,7 +32,7 @@ jobs:
           path: repo-under-test
       - run:
           name: Get mbl-tools
-          command: git clone --branch rw-test-dockerhub-image https://github.com/ARMmbed/mbl-tools
+          command: git clone --branch rw-test-with-dockerhub-image https://github.com/ARMmbed/mbl-tools
       - run:
           name: Run clang tidy
           command: mbl-tools/ci/clang-tidy-check/run-me.sh --no-tty --workdir repo-under-test
