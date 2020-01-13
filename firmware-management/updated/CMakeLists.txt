@@ -1,22 +1,29 @@
+# Copyright (c) 2020 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
+
 project(UpdateD)
 
 cmake_minimum_required(VERSION 3.5)
 
 option(RUN_CODE_CHECKS OFF)
 
-if(RUN_CODE_CHECKS)
-    set(CMAKE_CXX_CLANG_TIDY clang-tidy;-checks=*,-clang-analyzer-cplusplus-*,clang-analyzer-*)
-endif(RUN_CODE_CHECKS)
+# INTERFACE library for compile options that are not for enabling warnings.
+# To maintain ABI compatibility between libs/executables, every C++ target
+# should do "target_link_libraries(target common_compile_options).
+add_library(common_compile_options INTERFACE)
+target_compile_options(common_compile_options INTERFACE
+    -std=c++17
+)
 
-add_executable(updated ${CMAKE_CURRENT_SOURCE_DIR}/updated.cpp ${CMAKE_CURRENT_SOURCE_DIR}/init.cpp)
-target_include_directories(updated PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-
-target_compile_options(updated
-    PUBLIC
+# INTERFACE library for compile options that are for enabling warnings/errors.
+# Options that affect ABI compatibility should NOT go here.
+add_library(common_compile_warnings INTERFACE)
+target_compile_options(common_compile_warnings INTERFACE
     -Wall
     -Werror
     -Wextra
-    -std=c++17
     -Wformat=2
     -Wunused-parameter
     -Wfloat-equal
@@ -27,6 +34,6 @@ target_compile_options(updated
     -Wconversion
     "$<$<CXX_COMPILER_ID:GNU>:-Wlogical-op>")
 
-target_link_libraries(updated systemd)
-
-install(TARGETS updated RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+add_subdirectory("updated-rpc")
+add_subdirectory("updated")
+add_subdirectory("updated-client")
