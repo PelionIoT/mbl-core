@@ -1,3 +1,7 @@
+# Copyright (c) 2020 Arm Limited and Contributors. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 include mbl/open_ports_checker/white_list.json
 include mbl/open_ports_checker/empty_list.json
 

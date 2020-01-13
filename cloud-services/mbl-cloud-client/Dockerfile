@@ -1,4 +1,4 @@
-# Copyright (c) 2017 ARM Ltd.
+# Copyright (c) 2017-2020 Arm Limited and Contributors. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 # Licensed under the Apache License, Version 2.0 (the License); you may
