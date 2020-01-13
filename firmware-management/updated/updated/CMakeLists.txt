@@ -13,6 +13,8 @@ set(UPDATED_SRC
 
     source/rpc/Server.cpp
     source/rpc/ServiceImpl.cpp
+
+    source/logging/logger.cpp
 )
 
 add_executable(updated ${UPDATED_SRC})

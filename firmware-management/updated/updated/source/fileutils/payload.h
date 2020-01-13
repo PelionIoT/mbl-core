@@ -13,12 +13,13 @@
 namespace updated {
 namespace fileutils {
 
-/** Manage a hard link to an update payload
+/**
+ * Manage a hard link to an update payload
  *
- *  This object will create the hard link in a temporary directory, and ensure
- *  it is cleaned up in an exception safe way.
- *  If the temporary directory already exists, it and its contents are removed
- *  before creating the hard link.
+ * This object will create the hard link in a temporary directory, and ensure
+ * it is cleaned up in an exception safe way.
+ * If the temporary directory already exists, it and its contents are removed
+ * before creating the hard link.
  */
 class PayloadHardLink final
 {
