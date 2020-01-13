@@ -1,0 +1,2 @@
+[mbl-licensing-checker]
+match = .*(c|cpp|h|in|proto|py|sh|lua|txt|Dockerfile|cmake|yaml|service)$
