@@ -13,6 +13,8 @@ namespace logging {
 
 namespace {
 
+constexpr auto LOGGER_NAME = "systemd";
+
 void set_global_level(Level level)
 {
     switch (level)
@@ -54,7 +56,7 @@ Level level_from_string(const std::string_view str)
 
 std::shared_ptr<spdlog::logger> create_systemd_logger(Level level)
 {
-    auto logger = spdlog::systemd_logger_mt("systemd"); // NOLINT: spdlog misuses std::move, disable checking here
+    auto logger = spdlog::systemd_logger_mt(LOGGER_NAME); // NOLINT: spdlog misuses std::move, disable checking here
     set_global_level(level);
     return logger;
 }
