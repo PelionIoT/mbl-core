@@ -19,11 +19,24 @@
 
 #include "rpc/Server.h"
 
+#include <string>
+#include <stdexcept>
 #include <unistd.h>
 
 int main(int argc, char** argv)
 {
-    const auto log_level = updated::cli::parse_args(argc, argv);
+    std::string log_level;
+
+    try
+    {
+        log_level = updated::cli::parse_args(argc, argv);
+    }
+    catch (std::invalid_argument &e)
+    {
+        std::cerr << e.what() << '\n';
+        updated::init::notify_start(updated::init::Status::FailedToStart);
+        return 1;
+    }
 
     updated::UpdateCoordinator update_coordinator;
     updated::rpc::Server rpc_server{update_coordinator};

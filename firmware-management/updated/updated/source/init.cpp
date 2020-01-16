@@ -16,7 +16,7 @@
 namespace updated {
 namespace init {
 
-Status initialise(const InitData init_data)
+Status initialise(const InitData &init_data)
 {
     logging::create_systemd_logger(
         logging::level_from_string(init_data.log_level)

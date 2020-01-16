@@ -6,12 +6,14 @@
 
 #include "logger.h"
 
+#include <string_view>
+
 namespace updated {
 namespace logging {
 
 namespace {
 
-static constexpr char LOGGER_NAME[] = "systemd";
+constexpr auto LOGGER_NAME = "systemd";
 
 void set_global_level(Level level)
 {

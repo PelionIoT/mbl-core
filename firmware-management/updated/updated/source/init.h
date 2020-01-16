@@ -42,7 +42,7 @@ struct InitData
  *
  * Returns init::Status, which is used to notify the init system.
  */
-Status initialise(InitData init_data);
+Status initialise(const InitData &init_data);
 
 /**
  * Notify systemd that UpdateD started.

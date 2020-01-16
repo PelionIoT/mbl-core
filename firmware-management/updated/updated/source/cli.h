@@ -28,7 +28,7 @@ UpdateD, a system daemon that coordinates firmware updates.
 Example: updated -l CRITICAL
 
 Options:
-    -l          Set the logging level. Possible values: CRITICAL|ERROR|WARNING|INFO|DEBUG|TRACE
+    -l          Set the logging level (default INFO). Possible values: CRITICAL|ERROR|WARNING|INFO|DEBUG|TRACE
 )";
 }
 
@@ -39,14 +39,14 @@ std::string parse_args(const int argc, char **argv)
 {
     if (argc < 2)
     {
-        throw std::invalid_argument("No arguments given!");
+        return "INFO";
     }
 
     int current_opt;
     int optindex;
 
     static const std::vector<option> long_opts {
-        {"log-level", required_argument, nullptr, 'l'},
+        {"log-level", optional_argument, nullptr, 'l'},
         {"help", no_argument, nullptr, 'h'}
     };
 
