@@ -13,8 +13,6 @@ namespace logging {
 
 namespace {
 
-constexpr auto LOGGER_NAME = "systemd";
-
 void set_global_level(Level level)
 {
     switch (level)
