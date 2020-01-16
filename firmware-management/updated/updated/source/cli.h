@@ -39,6 +39,7 @@ std::string parse_args(const int argc, char **argv)
 {
     if (argc < 2)
     {
+        // No arguments given, we return the default log_level.
         return "INFO";
     }
 

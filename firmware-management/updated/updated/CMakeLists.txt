@@ -6,10 +6,6 @@ cmake_minimum_required(VERSION 3.5)
 
 include(GNUInstallDirs)
 
-if(${RUN_CODE_CHECKS})
-    find_package(spdlog REQUIRED)
-endif()
-
 set(UPDATED_SRC
     source/init.cpp
     source/updated.cpp
@@ -26,9 +22,5 @@ target_link_libraries(updated common_compile_options)
 target_link_libraries(updated common_compile_warnings)
 target_link_libraries(updated updated-rpc)
 target_link_libraries(updated systemd)
-
-if(${RUN_CODE_CHECKS})
-    target_link_libraries(updated spdlog::spdog)
-endif()
 
 install(TARGETS updated DESTINATION ${CMAKE_INSTALL_BINDIR})

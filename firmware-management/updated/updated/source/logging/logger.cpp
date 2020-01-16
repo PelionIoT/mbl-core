@@ -44,19 +44,19 @@ void set_global_level(Level level)
 
 Level level_from_string(const std::string_view str)
 {
-    if (str == "CRITICAL") return Level::CRITICAL;
-    if (str == "ERROR") return Level::ERROR;
-    if (str == "WARNING") return Level::WARN;
-    if (str == "INFO") return Level::INFO;
-    if (str == "DEBUG") return Level::DEBUG;
-    if (str == "TRACE") return Level::TRACE;
+    if (str == "CRITICAL") { return Level::CRITICAL; }
+    if (str == "ERROR") { return Level::ERROR; }
+    if (str == "WARNING") { return Level::WARN; }
+    if (str == "INFO") { return Level::INFO; }
+    if (str == "DEBUG") { return Level::DEBUG; }
+    if (str == "TRACE") { return Level::TRACE; }
 
     throw std::invalid_argument("Unrecognized string level.");
 }
 
 std::shared_ptr<spdlog::logger> create_systemd_logger(Level level)
 {
-    auto logger = spdlog::systemd_logger_mt(LOGGER_NAME);
+    auto logger = spdlog::systemd_logger_mt("systemd"); // NOLINT: spdlog misuses std::move, disable checking here
     set_global_level(level);
     return logger;
 }
