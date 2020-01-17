@@ -7,8 +7,11 @@
 /**
  * This module contains initialisation functions and state
  */
+
 #ifndef UPDATED_INIT_H
 #define UPDATED_INIT_H
+
+#include <string>
 
 namespace updated {
 namespace init {
@@ -19,18 +22,32 @@ enum class Status
     FailedToStart,
 };
 
-/** Initialise UpdateD.
- *
- *  This is where we add our signal handlers, initialise our logging
- *  mechanism and perform any other startup housekeeping.
- *
- *  Returns init::Status, which is used to notify the init system.
+/**
+ * InitData contains initialisation state for UpdateD
  */
-Status initialise();
+struct InitData
+{
+    std::string log_level;
 
-/** Notify systemd that UpdateD started.
+    InitData(std::string log_lvl)
+        : log_level{log_lvl}
+    {}
+};
+
+/**
+ * Initialise UpdateD.
  *
- *  Take an init::Status and use it to notify systemd of the startup status.
+ * This is where we add our signal handlers, initialise our logging
+ * mechanism and perform any other startup housekeeping.
+ *
+ * Returns init::Status, which is used to notify the init system.
+ */
+Status initialise(const InitData &init_data);
+
+/**
+ * Notify systemd that UpdateD started.
+ *
+ * Take an init::Status and use it to notify systemd of the startup status.
  */
 void notify_start(Status startup_status);
 

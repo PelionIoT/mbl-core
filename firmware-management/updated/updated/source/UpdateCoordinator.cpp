@@ -6,6 +6,8 @@
 
 #include "UpdateCoordinator.h"
 
+#include "logging/logger.h"
+
 #include <cassert>
 #include <filesystem>
 #include <iostream>
@@ -23,7 +25,7 @@ void UpdateCoordinator::start(const std::filesystem::path &payload_path, const s
     payload_link = std::make_unique<fileutils::PayloadHardLink>(payload_path);
     //TODO: set global update state to UPDATING instead of using this flag
     updating = true;
-    std::cout << "starting update: updating flag = " << updating << '\n';
+    logging::trace("starting update: updating flag = {}", updating);
     // manually unlock the mutex before notifying waiting threads.
     ul.unlock();
     condition_var.notify_all();
@@ -34,14 +36,14 @@ void UpdateCoordinator::run()
     std::unique_lock<std::mutex> ul{ mutex };
     // TODO: query UpdateTracker state to guard against spurious wakeups
     // instead of using this flag
-    std::cout << "run thread waiting: updating flag = " << updating << '\n';
+    logging::trace("run thread waiting: updating flag = {}", updating);
     condition_var.wait(ul, [this](){ return updating; });
     // TODO: call swupdate as a subprocess and block until it completes
-    std::cout << "run thread wakeup: updating flag = " << updating << '\n';
+    logging::trace("run thread wakeup: updating flag = {}", updating);
     assert(payload_link != nullptr);//NOLINT
-    std::cout << "call swupdate with payload " << payload_link->get() << '\n';
+    logging::info("call swupdate with payload {}", payload_link->get().string());
     updating = false;
-    std::cout << "Removing payload hard link" << '\n';
+    logging::trace("Removing payload hard link");
     payload_link.reset(nullptr);
 }
 

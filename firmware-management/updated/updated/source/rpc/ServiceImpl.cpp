@@ -5,6 +5,7 @@
  */
 
 #include "ServiceImpl.h"
+#include "../logging/logger.h"
 
 #include <exception>
 
@@ -34,7 +35,7 @@ grpc::Status ServiceImpl::StartUpdate(
     }
     catch(std::exception &e)
     {
-        std::cerr << e.what() << '\n';
+        logging::error(e.what());
         response->set_value(ErrorCodeMessage::UNKNOWN_ERROR);
         return grpc::Status::CANCELLED;
     }
