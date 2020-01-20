@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "signal.h"
+#include "sig.h"
 
 namespace updated {
 namespace signal {

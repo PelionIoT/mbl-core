@@ -10,7 +10,7 @@
 
 #include "init.h"
 #include "logging/logger.h"
-#include "signal.h"
+#include "sig.h"
 
 #include <systemd/sd-daemon.h>
 
