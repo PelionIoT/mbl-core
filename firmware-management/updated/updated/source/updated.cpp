@@ -14,6 +14,7 @@
 
 #include "cli.h"
 #include "init.h"
+#include "sig.h"
 #include "UpdateCoordinator.h"
 #include "logging/logger.h"
 
@@ -43,7 +44,7 @@ int main(int argc, char** argv)
     const updated::init::Status init_status = updated::init::initialise({log_level});
     updated::init::notify_start(init_status);
 
-    while(true)
+    while(updated::signal::sigint == 0)
     {
         update_coordinator.run();
     }

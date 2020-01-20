@@ -10,6 +10,7 @@
 
 #include "init.h"
 #include "logging/logger.h"
+#include "sig.h"
 
 #include <systemd/sd-daemon.h>
 
@@ -21,6 +22,7 @@ Status initialise(const InitData &init_data)
     logging::create_systemd_logger(
         logging::level_from_string(init_data.log_level)
     );
+    signal::register_handlers();
     return Status::Started;
 }
 

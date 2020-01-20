@@ -9,6 +9,7 @@ include(GNUInstallDirs)
 set(UPDATED_SRC
     source/init.cpp
     source/updated.cpp
+    source/sig.cpp
     source/UpdateCoordinator.cpp
 
     source/rpc/Server.cpp
