@@ -9,15 +9,23 @@
  */
 
 #include "init.h"
-#include "logging/logger.h"
-#include "sig.h"
+
+#include "../logging/logger.h"
+#include "../signal/handlers.h"
 
 #include <systemd/sd-daemon.h>
 
 namespace updated {
 namespace init {
 
-Status initialise(const InitData &init_data)
+DaemonInitialiser::DaemonInitialiser(const InitData &init_data)
+    : instance_lock{"/tmp/updated_lock"}
+{
+    const Status init_status = initialise(init_data);
+    notify_start(init_status);
+}
+
+DaemonInitialiser::Status DaemonInitialiser::initialise(const InitData &init_data)
 {
     logging::create_systemd_logger(
         logging::level_from_string(init_data.log_level)
@@ -26,7 +34,7 @@ Status initialise(const InitData &init_data)
     return Status::Started;
 }
 
-void notify_start(const Status startup_status)
+void DaemonInitialiser::notify_start(const DaemonInitialiser::Status startup_status)
 {
     switch(startup_status)
     {

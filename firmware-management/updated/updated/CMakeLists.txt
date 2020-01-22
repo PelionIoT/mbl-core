@@ -7,15 +7,15 @@ cmake_minimum_required(VERSION 3.5)
 include(GNUInstallDirs)
 
 set(UPDATED_SRC
-    source/init.cpp
-    source/updated.cpp
-    source/sig.cpp
     source/UpdateCoordinator.cpp
+    source/updated.cpp
 
+    source/daemon/init.cpp
+    source/fileutils/LockFile.cpp
+    source/logging/logger.cpp
     source/rpc/Server.cpp
     source/rpc/ServiceImpl.cpp
-
-    source/logging/logger.cpp
+    source/signal/handlers.cpp
 )
 
 add_executable(updated ${UPDATED_SRC})
