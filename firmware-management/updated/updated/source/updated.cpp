@@ -12,11 +12,12 @@
  * the update to swupdate.
  */
 
-#include "cli.h"
-#include "init.h"
-#include "sig.h"
 #include "UpdateCoordinator.h"
+
+#include "cli/parser.h"
+#include "daemon/init.h"
 #include "logging/logger.h"
+#include "signal/handlers.h"
 
 #include "rpc/Server.h"
 
@@ -35,14 +36,12 @@ int main(int argc, char** argv)
     catch (std::invalid_argument &e)
     {
         std::cerr << e.what() << '\n';
-        updated::init::notify_start(updated::init::Status::FailedToStart);
         return 1;
     }
 
+    updated::init::DaemonInitialiser initialiser{{log_level}};
     updated::UpdateCoordinator update_coordinator;
     updated::rpc::Server rpc_server{update_coordinator};
-    const updated::init::Status init_status = updated::init::initialise({log_level});
-    updated::init::notify_start(init_status);
 
     while(updated::signal::sigint == 0)
     {
