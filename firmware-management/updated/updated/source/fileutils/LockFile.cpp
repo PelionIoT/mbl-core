@@ -16,14 +16,14 @@ namespace fileutils {
 
 LockFile::LockFile(const std::filesystem::path &path)
 {
-    fd = open(path.string().c_str(), O_RDWR | O_CREAT, S_IRWXU); // NOLINT
+    fd = open(path.string().c_str(), O_RDWR | O_CREAT | O_CLOEXEC, S_IRWXU); // NOLINT(hicpp-signed-bitwise, cppcoreguidelines-pro-type-vararg, hicpp-vararg)
     if (fd == -1)
     {
         logging::error("Failed to open the lock file at path {}", path.string());
         throw LockFileError{errno};
     }
 
-    const auto lockf_ret = lockf(fd, F_TLOCK, 0); // NOLINT
+    const auto lockf_ret = lockf(fd, F_TLOCK, 0);
     if (lockf_ret == -1)
     {
         logging::error("Failed to obtain a lock on the lock file. Path {}, FD {}", path.string(), fd);
@@ -33,9 +33,7 @@ LockFile::LockFile(const std::filesystem::path &path)
 
 LockFile::~LockFile()
 {
-    if (close(fd) == -1)
-    {
-    }
+    close(fd);
 }
 
 } // namespace fileutils
